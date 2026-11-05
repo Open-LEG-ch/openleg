@@ -39,6 +39,7 @@
   </div>
 
   <article class="bg-white rounded-xl border border-line p-6" aria-labelledby="invoice-title">
+    {% include 'documents/simulation.html' %}
     <h1 id="invoice-title" class="text-2xl font-bold mb-4">{{ _('Rechnung') }} {{ invoice.invoice_number }}</h1>
     <dl class="grid gap-2 text-sm mb-6">
       <div><dt class="font-semibold text-ink inline">{{ _('Aussteller:') }}</dt> <dd class="inline">{{ invoice.issuer_name }}</dd></div>

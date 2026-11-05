@@ -55,6 +55,9 @@ def create_worker():
     from sandbox_metering import install as install_metering
 
     install_metering(web)
+    from sandbox_billing import install as install_billing
+
+    install_billing(web)
 
     def seeded_household(profile):
         """A reused building ID cannot adopt the original demo registration."""
@@ -167,7 +170,10 @@ def create_worker():
     def inbox():
         from sandbox_mail import messages
 
-        return render_template("sandbox/inbox.html", messages=messages())
+        return render_template(
+            "sandbox/inbox.html",
+            messages=messages(viewer=_dashboard_session_building_id()),
+        )
 
     @web.get("/sandbox/onboarding")
     def onboarding():
