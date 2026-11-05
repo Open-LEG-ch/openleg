@@ -14,7 +14,8 @@ from psycopg2 import sql
 from psycopg2.extras import Json, execute_values
 
 LEGACY_SCHEMA_VERSION = "openleg-community-archive/1"
-SCHEMA_VERSION = "openleg-community-archive/2"
+PREVIOUS_SCHEMA_VERSION = "openleg-community-archive/2"
+SCHEMA_VERSION = "openleg-community-archive/3"
 SOURCE_PROVENANCE = "OpenLEG PostgreSQL operational store"
 
 
@@ -111,7 +112,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
             "conflicts": [],
         }
     version = manifest.get("schema_version")
-    if version not in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}:
+    if version not in {LEGACY_SCHEMA_VERSION, PREVIOUS_SCHEMA_VERSION, SCHEMA_VERSION}:
         errors.append("Unsupported schema version")
     hashes = manifest.get("hashes")
     if not isinstance(hashes, dict):
@@ -120,7 +121,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
             "errors": ["Archive hashes manifest is not a mapping"],
             "conflicts": [],
         }
-    dataset_specs = _LEGACY_DATASETS if version == LEGACY_SCHEMA_VERSION else _DATASETS
+    dataset_specs = _ARCHIVE_DATASETS.get(version, _DATASETS)
     expected_datasets = {table for table, _, _ in dataset_specs}
     if set(datasets) != expected_datasets:
         errors.append("Archive dataset list does not match schema")
@@ -159,7 +160,7 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
         for row in dataset_rows("metering_point_readings")
         if isinstance(row, dict) and row.get("source_document_id") is not None
     }
-    if version == SCHEMA_VERSION:
+    if version != LEGACY_SCHEMA_VERSION:
         source_document_ids.update(
             row["vnb_case_id"]
             for row in dataset_rows("vnb_calculated_values_deliveries")
@@ -378,6 +379,15 @@ _DATASETS += (
 )
 
 
+_VERSION2_DATASETS = _DATASETS
+_DATASETS += (("leg_signature_receipts", "community_id = %s", "community_id"),)
+_ARCHIVE_DATASETS = {
+    LEGACY_SCHEMA_VERSION: _LEGACY_DATASETS,
+    PREVIOUS_SCHEMA_VERSION: _VERSION2_DATASETS,
+    SCHEMA_VERSION: _DATASETS,
+}
+
+
 _VNB_IDENTIFIERS = {
     "vnb_calculated_values_deliveries": {"id": (int,), "vnb_case_id": (str,)},
     "vnb_calculated_values_events": {"id": (int,), "delivery_id": (int,)},
@@ -386,6 +396,10 @@ _VNB_IDENTIFIERS = {
     "vnb_mutation_events": {"id": (int,), "case_id": (str,)},
 }
 _OPERATING_IDENTIFIERS = {
+    "leg_signature_receipts": {
+        "building_id": (str,),
+        "bundle_fingerprint": (str,),
+    },
     "bank_statement_imports": {"id": (int,)},
     "bank_statement_entries": {
         "id": (int,),
@@ -528,6 +542,16 @@ def _validate_operating_relations(datasets):
     queries = {row.get("id") for row in datasets.get("invoice_queries", [])}
     imports = {row.get("id") for row in datasets.get("bank_statement_imports", [])}
     members = {row.get("building_id") for row in datasets.get("community_members", [])}
+    if any(
+        row["building_id"] not in members
+        or len(row["bundle_fingerprint"]) != 64
+        or any(
+            character not in "0123456789abcdef"
+            for character in row["bundle_fingerprint"]
+        )
+        for row in datasets.get("leg_signature_receipts", [])
+    ):
+        errors.append("Formation signature scope violation")
     for row in datasets.get("invoice_queries", []):
         invoice = invoices.get(row.get("invoice_id"))
         if not invoice or row.get("participant_id") != invoice.get("participant_id"):
