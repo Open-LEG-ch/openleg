@@ -439,8 +439,8 @@ def submit_membership_mutation(
             or previous["mutation_type"] != command.mutation_type
             or str(previous["effective_date"]) != effective_date.isoformat()
             or previous["source_agreement_id"] != command.source_agreement_id
-            or _mutation_after(previous["before_facts"], command)
-            != previous["after_facts"]
+            or _fingerprint(_mutation_after(previous["before_facts"], command))
+            != _fingerprint(previous["after_facts"])
         ):
             raise db.VnbSubmissionConflict(
                 "Diese Mutations-ID bezeichnet bereits einen anderen Inhalt."
