@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, urlsplit
 from flask import abort, g, request, session
 
 import database as db
+import security_utils
 from dashboard_routes import _clear_dashboard_session, _set_dashboard_session
 
 _IDENTITIES = ("dashboard_building_id", "municipality_id", "utility_client_id")
@@ -20,6 +21,16 @@ _EXCHANGES = {
     "municipality.access_exchange": ("municipality_id", "/gemeinde/dashboard"),
     "utility.login_page": ("utility_client_id", "/utility/dashboard"),
 }
+
+
+def _valid_unsubscribe_request():
+    """Use the ordinary view's format, expiry, purpose and usage checks."""
+    try:
+        token = security_utils.validate_uuid((request.view_args or {}).get("token", ""))
+    except ValueError:
+        return False
+    record = db.get_token(token)
+    return bool(record and record.get("token_type") == "unsubscribe")
 
 
 class VillageSessions:
@@ -115,6 +126,8 @@ class VillageSessions:
                 request.endpoint == "main.unsubscribe_token"
                 and request.method == "POST"
             ):
+                if not _valid_unsubscribe_request():
+                    abort(404)
                 # Revoke before the ordinary deletion transaction can commit.
                 # Failure leaves the profile intact and blocks the mutation.
                 try:

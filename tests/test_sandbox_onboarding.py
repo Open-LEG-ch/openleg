@@ -5,6 +5,8 @@ import html
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from uuid import uuid4
 
 import psycopg2
 import pytest
@@ -334,11 +336,40 @@ def test_profile_deletion_retires_copied_sessions_pending_links_and_demo_login(v
     assert "simulation-sonnwil" in exported.headers["Content-Disposition"]
 
 
+@contextmanager
 def _workspace_connection(gateway, client):
     with client.session_transaction() as state:
         manager = gateway.extensions["villages"]
         name = manager.workspaces[state["workspace"]]["name"]
-    return psycopg2.connect(make_dsn(manager.postgres.dsn, dbname=name))
+    connection = psycopg2.connect(make_dsn(manager.postgres.dsn, dbname=name))
+    try:
+        with connection:
+            yield connection
+    finally:
+        connection.close()
+
+
+def test_invalid_deletion_links_do_not_retire_the_current_household_login(village):
+    owner, anonymous = village.test_client(), village.test_client()
+    prefix, _ = _start(owner, "resident")
+    copied_cookie = owner.get_cookie("openleg_product", path=prefix).value
+    anonymous.set_cookie("openleg_sandbox", owner.get_cookie("openleg_sandbox").value)
+    tokens = [str(uuid4()) for _ in range(4)]
+    with (
+        _workspace_connection(village, owner) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            """INSERT INTO tokens(token,building_id,token_type,expires_at,used_at) VALUES
+            (%s,'sonnwil-resident','unsubscribe',CURRENT_TIMESTAMP-INTERVAL '1 second',NULL),
+            (%s,'sonnwil-resident','unsubscribe',CURRENT_TIMESTAMP+INTERVAL '1 hour',CURRENT_TIMESTAMP),
+            (%s,'sonnwil-resident','verify',CURRENT_TIMESTAMP+INTERVAL '1 hour',NULL)""",
+            tokens[:3],
+        )
+    for token in ["not-a-uuid", *tokens]:
+        assert anonymous.post(prefix + "/unsubscribe/" + token).status_code == 404
+        owner.set_cookie("openleg_product", copied_cookie, path=prefix)
+        assert owner.get(prefix + "/dashboard/export").status_code == 200
 
 
 @pytest.mark.parametrize("wait_for_token_lock", [False, True])
