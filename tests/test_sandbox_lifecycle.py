@@ -1363,3 +1363,90 @@ def test_damaged_pidfile_shutdown_timeout_retains_cluster_for_retry(
             if pidfile.parent.exists() and ScratchOwner._running(pid, start):
                 pidfile.write_text(original)
             postgres.close()
+
+
+@pytest.mark.parametrize("timeout", [2, 0.1])
+def test_recovery_waits_for_postmaster_exit_after_control_returns(
+    tmp_path, monkeypatch, timeout
+):
+    """A completed control command alone cannot prove the real process exited."""
+    import os
+    import signal
+    import sys
+    import tempfile
+    import time
+    from pathlib import Path
+    from threading import Event, Thread
+
+    import sandbox_lifecycle
+    from sandbox_lifecycle import ScratchOwner
+    from sandbox_runtime import LocalPostgres
+
+    binary = Path(
+        os.environ.get("OPENLEG_SANDBOX_POSTGRES_BIN", "/usr/lib/postgresql/16/bin")
+    )
+    if not (binary / "initdb").is_file():
+        pytest.skip("requires local PostgreSQL 16 binaries")
+    directory = tmp_path / "villages"
+    directory.mkdir(mode=0o700)
+    stale = directory / "postgres-012345abcdef"
+    control = tmp_path / "control"
+    control.mkdir()
+    ready = tmp_path / "control-returned"
+    command = control / "pg_ctl"
+    command.write_text(
+        f"#!{sys.executable}\nimport pathlib\n"
+        f"pathlib.Path({str(stale / 'data/postmaster.pid')!r}).unlink()\n"
+        f"pathlib.Path({str(ready)!r}).touch()\n"
+    )
+    command.chmod(0o700)
+    with tempfile.TemporaryDirectory(prefix="ols-post-control-") as transport:
+        postgres = LocalPostgres(stale, Path(transport) / "pg", binary)
+        pidfile = stale / "data/postmaster.pid"
+        original = pidfile.read_text()
+        pid = int(original.splitlines()[0])
+        start = ScratchOwner.start_token(pid)
+        finished = Event()
+
+        def finish_postmaster():
+            """Keep the owned postmaster alive briefly after its journal vanishes."""
+            while not ready.exists():
+                if finished.wait(0.01):
+                    return
+            time.sleep(0.3)
+            if ScratchOwner._running(pid, start):
+                os.kill(pid, signal.SIGQUIT)
+                os.kill(pid, signal.SIGCONT)
+
+        thread = Thread(target=finish_postmaster)
+        try:
+            os.kill(pid, signal.SIGSTOP)
+            thread.start()
+            monkeypatch.setattr(
+                sandbox_lifecycle, "POSTGRES_CONTROL_TIMEOUT_SECONDS", timeout
+            )
+            if timeout < 0.3:
+                with pytest.raises(
+                    RuntimeError, match="PostgreSQL could not be stopped"
+                ):
+                    ScratchOwner(directory, control)
+                assert stale.exists() and ScratchOwner._running(pid, start)
+            else:
+                owner = ScratchOwner(directory, control)
+                try:
+                    assert not stale.exists()
+                    assert not ScratchOwner._running(pid, start)
+                finally:
+                    owner.close()
+        finally:
+            finished.set()
+            thread.join(timeout=5)
+            if ScratchOwner._running(pid, start):
+                os.kill(pid, signal.SIGCONT)
+                os.kill(pid, signal.SIGQUIT)
+                deadline = time.monotonic() + 5
+                while ScratchOwner._running(pid, start) and time.monotonic() < deadline:
+                    time.sleep(0.05)
+            if pidfile.parent.exists() and ScratchOwner._running(pid, start):
+                pidfile.write_text(original)
+            postgres.close()

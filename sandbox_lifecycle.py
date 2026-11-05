@@ -173,11 +173,15 @@ class ScratchOwner:
                 os.kill(pid, signal.SIGQUIT)
             except ProcessLookupError:
                 continue
-            deadline = time.monotonic() + POSTGRES_CONTROL_TIMEOUT_SECONDS
-            while self._running(pid, start) and time.monotonic() < deadline:
-                time.sleep(0.05)
-            if self._running(pid, start):
-                raise RuntimeError("scratch PostgreSQL could not be stopped")
+            self._wait_postgres(pid, start)
+
+    def _wait_postgres(self, pid, start):
+        """Wait for the verified postmaster to exit before deleting its storage."""
+        deadline = time.monotonic() + POSTGRES_CONTROL_TIMEOUT_SECONDS
+        while self._running(pid, start) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        if self._running(pid, start):
+            raise RuntimeError("scratch PostgreSQL could not be stopped")
 
     def recover(self):
         """Retire owned processes and scratch storage before accepting villages."""
@@ -224,10 +228,7 @@ class ScratchOwner:
                             stderr=subprocess.DEVNULL,
                             timeout=POSTGRES_CONTROL_TIMEOUT_SECONDS,
                         )
-                        if self._running(pid, start):
-                            raise RuntimeError(
-                                "scratch PostgreSQL could not be stopped"
-                            )
+                        self._wait_postgres(pid, start)
                         stopped = True
                 if not stopped:
                     self._stop_unrecorded_postgres(data)
