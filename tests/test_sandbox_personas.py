@@ -288,6 +288,14 @@ def test_real_foreign_invoice_equipment_attachment_and_community_stay_private(vi
         item["participant_id"] = "sonnwil-producer"
     columns = [key for key in invoice if key != "id"]
     with _connection(village, prefix) as conn, conn.cursor() as cursor:
+        # This fixture represents a new invoice for the original seeded owner.
+        cursor.execute(
+            "SELECT referral_code FROM buildings WHERE building_id=%s",
+            ("sonnwil-producer",),
+        )
+        invoice["provenance_snapshot"]["participant_registration_id"] = (
+            cursor.fetchone()[0]
+        )
         cursor.execute(
             "INSERT INTO invoices("
             + ",".join(columns)
