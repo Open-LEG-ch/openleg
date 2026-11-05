@@ -13,6 +13,7 @@ from flask import has_request_context, request
 
 
 def mailbox():
+    """Locate the current worker's private captured-mail directory."""
     directory = Path(os.environ["OPENLEG_SANDBOX_DIRECTORY"]).resolve()
     if os.environ.get("OPENLEG_SANDBOX_WORKER") != "1" or directory != Path.cwd():
         raise RuntimeError("simulated mail requires a village worker")
@@ -61,6 +62,7 @@ def capture(recipient, subject, body, *, event_key=None):
 
 
 def messages(*, viewer=None):
+    """List mail visible to this viewer and extract links within the village."""
     directory = mailbox()
     origin = urlsplit(os.environ["APP_BASE_URL"])
     result = []
