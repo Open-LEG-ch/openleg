@@ -300,3 +300,36 @@ The guide and PDF downloads recheck current invoice-owner or billing-preparer
 scope. Other residents and operators lacking that capability cannot see the
 case, messages or evidence. Workspaces remain independent. No case action
 changes an issued invoice snapshot or sends external notifications.
+
+## Household telemetry
+
+The telemetry guide uses ordinary equipment forms and telemetry enrollment,
+credential, ingestion and sharing commands. All device/source identities and
+2500 W observations are fictional. It opens no device, household network or
+broker connection and supplies no hardware compatibility evidence.
+
+A local manual source publishes two bounded samples per request, power and a
+boolean device-fault report. Replay resubmits the identical payload. Pause
+prevents publishing; after at least 61 real seconds the ordinary one-second
+cadence contract reports old samples as stale. Resume and publish restore fresh
+samples. Device fault, acknowledgement and clearance use the normal notice
+lifecycle. No operation changes the process clock or authentication expiry.
+
+Successful controls redirect to the guide so browser refresh does not repeat
+a write. Enrollment and rotation show the issued credential once. A private
+receipt is consumed under the source lock; the signed session cookie carries
+only its nonce and installation identifier. Even a copied pre-display cookie
+cannot redisplay a consumed key. The source keeps its
+current and immediately preceding credential, last payload and pause state in
+private 0600 files under the worker's 0700 simulation-telemetry directory. A
+per-installation file lock serializes source updates. Secrets never appear in
+URLs, general logs, shared views or archives. Reset/expiry removes these files
+with the rest of the workspace. Revocation leaves the old source credential
+ineligible; rotation is required to resume delivery. The old-key test exercises
+the same authentication check as ingestion.
+
+Owner-only controls recheck current storage authorization. Noah's common
+telemetry view also requires an explicit share and Lea's neighbour consent.
+Revocation removes access on the next read. Private equipment details and notice
+acknowledgement remain owner-only. Telemetry stays separate from E66 evidence,
+billing periods and issued invoice snapshots.

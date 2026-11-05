@@ -75,6 +75,11 @@ The equipment advisory workflow is documented under `store/advisories` below.
 - Credentials: ingestion-only, installation/community-bound, hashed at rest;
   rotation preserves the sequence watermark. Deletion cascades all four tables.
 
+The disposable village adapter additionally keeps a local manual source state
+(current/previous credential, last sample payload and pause flag) in private
+workspace files. These are excluded from community archives and removed by
+workspace reset or expiry; they do not enter regulated meter or billing tables.
+
 ## store/telemetry_notices
 
 - Table: `telemetry_notices` (DDL in `store/telemetry_notices.py`, initialized
