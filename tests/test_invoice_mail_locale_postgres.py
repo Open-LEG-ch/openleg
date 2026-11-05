@@ -29,6 +29,9 @@ def test_invoice_notice_uses_member_language_and_keeps_delivery_idempotent(
         )
     community = db.create_community_record("Synthetic LEG", "operator", "simple", "")
     policy = {"delivery_method": "email"}
+    provenance = {
+        "participant_registration_id": db.get_building("member")["referral_code"]
+    }
     with db.get_connection() as connection, connection.cursor() as cursor:
         cursor.execute(
             """
@@ -36,11 +39,17 @@ def test_invoice_notice_uses_member_language_and_keeps_delivery_idempotent(
                 community_id, participant_id, invoice_number, status,
                 policy_snapshot, provenance_snapshot, line_items_snapshot,
                 net_chf, vat_rate_pct, vat_chf, gross_chf, issue_date, due_date
-            ) VALUES (%s, 'member', 'SYNTHETIC-INVOICE-1', 'issued', %s, '{}',
+            ) VALUES (%s, 'member', 'SYNTHETIC-INVOICE-1', 'issued', %s, %s,
                       '[]', 9.67, 0, 0, 9.67, %s, %s)
             RETURNING id
             """,
-            (community, json.dumps(policy), date(2026, 10, 19), date(2026, 11, 18)),
+            (
+                community,
+                json.dumps(policy),
+                json.dumps(provenance),
+                date(2026, 10, 19),
+                date(2026, 11, 18),
+            ),
         )
         invoice = cursor.fetchone()["id"]
     captured = []

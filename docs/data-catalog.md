@@ -294,6 +294,21 @@ it.
   reads remain available. Member display fails closed on unreadable figures (#528).
 - **Consent gate:** not neighbour-visible.
 
+## store/invoice_identity
+
+- **Tables:** no additional tables; reads original registration references in
+  `buildings` and frozen billing snapshots.
+- **Holds:** no independent records. Billing reconciliation and issued provenance
+  retain the references under `store/billing` retention.
+- **Purpose:** compare and lock the original participants before persistence or
+  issuance, and share the registration predicate used by member invoice reads.
+- **Owner:** the LEG's accounting process.
+- **Sensitivity:** opaque household references associated with financial records.
+- **Resident-visible:** only the member's own retained invoice is accessible when
+  its frozen reference matches the current registration.
+- **Consent gate:** financial ownership and operator capabilities apply;
+  neighbour-sharing consent grants no access.
+
 ## store/battery
 
 - **Tables:** `community_batteries`, `community_battery_shares`
