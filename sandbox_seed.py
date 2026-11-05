@@ -151,6 +151,7 @@ FIXTURE_MANIFEST = {
         "webhooks": "workspace-local",
     },
     "available_scenarios": [
+        "community-archive-private-restore",
         "invoice-question",
         "operator-api-signed-local-delivery",
         "household-telemetry",

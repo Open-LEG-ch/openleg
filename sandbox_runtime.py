@@ -46,6 +46,8 @@ HOP_HEADERS = {
     "host",
     "content-length",
     "x-openleg-initial-persona",
+    "x-openleg-restore-actor",
+    "x-openleg-restore-community",
 }
 
 
@@ -255,11 +257,24 @@ class Villages:
         owner=None,
         replacement=None,
         initial_persona="resident",
+        restore_parent=None,
     ):
-        self.reap()
+        # Child allocation runs under its source's reentrant operation lock.
+        # Reaping here could synchronously retire that source before linking
+        # the child. The reaper owns expiry; reject stale parents atomically.
+        if not restore_parent:
+            self.reap()
         with self.lock:
             if self.closed:
                 raise RuntimeError("sandbox is closed")
+            if restore_parent:
+                parent = self.workspaces.get(restore_parent)
+                if (
+                    not parent
+                    or self._expired(parent)
+                    or restore_parent in self.retirement_claims
+                ):
+                    raise RetirementConflict(restore_parent)
             existing = next(
                 (
                     workspace
@@ -292,6 +307,7 @@ class Villages:
                     "ready": False,
                     "owner": owner,
                     "initial_persona": initial_persona,
+                    "restore_parent": restore_parent,
                 }
                 self.workspaces[identifier] = workspace
                 # The new in-progress workspace now owns this allocation.
@@ -373,6 +389,22 @@ class Villages:
                 "DB_POOL_MIN": "1",
                 "DB_POOL_MAX": "4",
             }
+            if workspace.get("restore_parent"):
+                env["OPENLEG_SANDBOX_RESTORE_SOURCE"] = (
+                    "/v/" + workspace["restore_parent"]
+                )
+                with self.lock:
+                    parent = self.workspaces.get(workspace["restore_parent"])
+                    if not parent:
+                        raise RetirementConflict(workspace["restore_parent"])
+                proofs = (parent["directory"] / "fixture.json").read_bytes()
+                descriptor = os.open(
+                    directory / "fixture.json",
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                    0o600,
+                )
+                with os.fdopen(descriptor, "wb") as output:
+                    output.write(proofs)
             with (directory / "worker.log").open("wb") as log:
                 workspace["process"] = subprocess.Popen(
                     [
@@ -562,6 +594,20 @@ class Villages:
                 workspace["attempts"] += 1
                 self._record_cleanup()
             try:
+                # An in-flight source operation may finish creating a target
+                # before this lock is acquired. Collect children only now.
+                with self.lock:
+                    children = [
+                        key
+                        for key, candidate in {
+                            **self.workspaces,
+                            **self.retiring,
+                        }.items()
+                        if candidate.get("restore_parent") == identifier
+                    ]
+                for child in children:
+                    if not self.destroy(child):
+                        raise RuntimeError("restore destination cleanup failed")
                 if not workspace.get("worker_stopped"):
                     self.owner.stop_workspace(workspace["directory"])
                     process = workspace["process"]
@@ -768,12 +814,35 @@ def create_gateway(
         return render_template("sandbox/expired.html"), 410
 
     def owned(identifier):
-        return session.get("workspace") == identifier and villages.get(identifier)
+        primary_id = session.get("workspace")
+        primary = villages.get(primary_id)
+        if not primary:
+            return None
+        if primary_id == identifier:
+            return primary
+        with villages.lock:
+            candidate = villages.workspaces.get(identifier)
+            if not candidate or candidate.get("restore_parent") != primary_id:
+                return None
+        return villages.get(identifier)
 
     @web.get("/v/<identifier>/sandbox/manage")
     def manage(identifier):
-        if not owned(identifier):
+        workspace = owned(identifier)
+        if not workspace:
             return expired()
+        if workspace.get("restore_parent"):
+            with villages.lock:
+                parent = villages.workspaces.get(workspace["restore_parent"])
+                if not parent:
+                    return expired()
+                community_id = parent.get("archive", {}).get("community_id")
+            return render_template(
+                "sandbox/archive_destination.html",
+                source_prefix="/v/" + workspace["restore_parent"],
+                destination_prefix="/v/" + identifier,
+                community_id=community_id,
+            )
         return render_template(
             "sandbox/manage.html",
             prefix="/v/" + identifier,
@@ -786,8 +855,11 @@ def create_gateway(
     @web.post("/v/<identifier>/sandbox/reset")
     @web.post("/v/<identifier>/sandbox/discard")
     def retire(identifier):
-        if not owned(identifier):
+        workspace = owned(identifier)
+        if not workspace:
             return expired()
+        if workspace.get("restore_parent"):
+            abort(400)
         reset = request.path.endswith("/reset")
         if request.form.get("confirm") != ("reset" if reset else "discard"):
             abort(400)
@@ -840,7 +912,7 @@ def create_gateway(
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
     )
     def product(identifier, path):
-        if session.get("workspace") != identifier:
+        if not owned(identifier):
             return expired()
         # Reading an incomplete upload must not hold the village's retirement
         # lock. Recheck ownership/lifetime after the request body arrives.
@@ -850,7 +922,8 @@ def create_gateway(
                 return expired()
             return proxy(workspace, path, body)
 
-    def proxy(workspace, path, body):
+    def proxy(workspace, path, body, *, method=None):
+        method = method or request.method
         prefix = "/v/" + workspace["id"]
         headers = {
             key: value
@@ -869,16 +942,21 @@ def create_gateway(
         headers["X-Forwarded-Prefix"] = prefix
         # Only the gateway's explicit start POST grants one initial login.
         # A stale enter URL or a browser-supplied header cannot restore a role.
-        if request.method == "GET" and path == "sandbox/enter":
+        if method == "GET" and path == "sandbox/enter":
             initial_persona = workspace.pop("initial_persona", None)
             if initial_persona:
                 headers["X-OpenLEG-Initial-Persona"] = initial_persona
+        if method == "GET" and path == "sandbox/archive/enter":
+            login = workspace.pop("restore_login", None)
+            if login and workspace.get("restore_parent"):
+                headers["X-OpenLEG-Restore-Actor"] = login["actor"]
+                headers["X-OpenLEG-Restore-Community"] = login["community_id"]
         target = "/" + quote(path, safe="/:@!$&'()*+,;=-._~")
         if request.query_string:
             target += "?" + quote(request.query_string, safe="%&=+;:@/?!$'()*,-._~[]")
         try:
             with UnixConnection(workspace["socket"]) as channel:
-                channel.request(request.method, target, body=body, headers=headers)
+                channel.request(method, target, body=body, headers=headers)
                 upstream = channel.getresponse()
                 body = upstream.read()
                 response_headers = [
@@ -905,4 +983,7 @@ def create_gateway(
         except (OSError, http.client.HTTPException):
             return "Das Übungsdorf ist nicht verfügbar. Bitte starten Sie neu.", 503
 
+    from sandbox_archive_runtime import install as install_archive
+
+    install_archive(web, villages, origin, proxy, expired)
     return web
