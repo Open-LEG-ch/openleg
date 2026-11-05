@@ -304,11 +304,17 @@ def submit_participant_mutation(
     actor_building_id: str,
     adapter: VnbAdapter,
     cases,
+    *,
+    recorded_fingerprint: str | None = None,
 ) -> MutationOutcome:
-    """Claim and deliver an immutable participant mutation idempotently."""
+    """Deliver a mutation; authorized recovery retains its recorded fingerprint."""
     contract = adapter.contract()
     manifest = _mutation_manifest(mutation, contract)
-    fingerprint = _fingerprint(manifest)
+    fingerprint = (
+        recorded_fingerprint
+        if recorded_fingerprint is not None
+        else _fingerprint(manifest)
+    )
     row = cases.claim_mutation(
         MutationClaim(
             **mutation.__dict__,
@@ -505,6 +511,7 @@ def submit_membership_mutation(
         command.actor_building_id,
         adapter,
         cases,
+        recorded_fingerprint=previous["payload_fingerprint"] if previous else None,
     )
 
 
