@@ -281,12 +281,17 @@ it.
   `invoice_delivery_jobs`
 - **Holds:** tariffs (`internal_price_chf_per_kwh`, `grid_fee_chf_per_kwh`,
   frozen `policy_snapshot`), per-member invoice lines, lifecycle and delivery
-  state.
+  state. Draft reconciliation binds participants to their server-generated
+  registration references. Issued provenance contains only its own participant's
+  reference. These references authorize retained-record ownership, not login.
 - **Purpose:** the LEG's financial accounting and member invoices.
 - **Owner:** the LEG (operator approves); members see their own invoices.
 - **Sensitivity:** financial personal data.
 - **Resident-visible:** own invoices only; the operator workspace is
-  admin-gated. Member display fails closed on unreadable figures (#528).
+  admin-gated. Member reads and questions require the current registration to
+  match the frozen invoice reference. Missing legacy references fail closed;
+  they are never inferred from a current profile or email. Operator retention
+  reads remain available. Member display fails closed on unreadable figures (#528).
 - **Consent gate:** not neighbour-visible.
 
 ## store/battery

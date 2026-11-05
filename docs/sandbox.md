@@ -247,8 +247,12 @@ one. The guide includes an unequal-total source and an unsupported battery
 example to exercise normal refusal. There is no demo approval override.
 
 Deliver issued invoices through the normal delivery command. Invoice mail stays
-in this workspace and is visible only to its participant, including after a
-persona switch. Other captured registration/access messages keep their existing
+in this workspace and is visible only to its original participant registration,
+including after a persona switch. Deleting and recreating an identifier or email
+does not transfer historical invoices, questions, attachments or captured invoice
+mail. Missing legacy registration references require operator reconciliation;
+member access and email delivery fail closed. Draft persistence and issuance
+compare and lock the original registrations. Other captured registration/access messages keep their existing
 workspace scope. Members use the ordinary invoice pages and real PDF renderer.
 HTML, PDF and JSON exports carry simulation labels. There is no payable QR or
 bank destination in the fictional invoice. The ordinary cancellation command

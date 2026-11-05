@@ -1355,6 +1355,7 @@ def test_saved_periods_carry_a_default_system_preparer(monkeypatch):
         "total_network_discount_chf": 0,
         "line_items": [],
         "participants": [],
+        "reconciliation": {"participant_registrations": {}},
     }
 
     billing.save_billing_period("c1", "2026-01-01", "2026-02-01", summary)

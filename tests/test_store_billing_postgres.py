@@ -60,6 +60,15 @@ def billing_database(monkeypatch):
 
 
 def _insert_issued_invoice(invoice_number, *, participant_id=MEMBER):
+    if not db.get_building(participant_id):
+        assert db.save_building(
+            participant_id,
+            participant_id + "@example.invalid",
+            {"address": "Synthetic invoice owner", "lat": 47.2, "lon": 8.2},
+            {},
+            verified=True,
+        )
+    registration = db.get_building(participant_id)["referral_code"]
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
@@ -76,7 +85,9 @@ def _insert_issued_invoice(invoice_number, *, participant_id=MEMBER):
                 participant_id,
                 invoice_number,
                 json.dumps({"internal_price_rp_kwh": "11.00"}),
-                json.dumps({"issuer": "LEG Test"}),
+                json.dumps(
+                    {"issuer": "LEG Test", "participant_registration_id": registration}
+                ),
                 json.dumps([{"kind": "consumer_charge", "amount_chf": "9.67"}]),
                 date(2026, 10, 17),
                 date(2026, 11, 16),

@@ -2649,7 +2649,7 @@ msgstr ""
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr ""
 
-#: sandbox_billing.py:54
+#: sandbox_billing.py:57
 msgid "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
 msgstr ""
 
@@ -3786,6 +3786,12 @@ msgstr ""
 
 #: sandbox_seed.py:53
 msgid "Eine neue LEG gründen"
+msgstr ""
+
+#: sandbox_billing.py:54
+msgid ""
+"Eine ursprüngliche Teilnehmerregistrierung fehlt oder wurde ersetzt. Klären Sie die Zuordnung vor"
+" einer neuen Abrechnung."
 msgstr ""
 
 #: billing_policy.py:89 billing_workspace.py:257 billing_workspace.py:258

@@ -476,6 +476,7 @@ def load_period_frames(
         "period_start": period_start,
         "period_end": period_end,
         "timezone": timezone,
+        "participant_registrations": snapshot.get("participant_registrations", {}),
     }
 
     result = PeriodFrames(

@@ -172,6 +172,7 @@ def test_withdrawn_draft_keeps_its_inputs_and_allows_a_new_version(calculated_cl
         datetime.fromisoformat(payload[key]) for key in ("period_start", "period_end")
     )
     summary = {
+        "reconciliation": {"participant_registrations": {}},
         "total_production_kwh": 0.25,
         "total_allocated_kwh": 0.25,
         "total_network_discount_chf": 0,
@@ -287,6 +288,10 @@ def _invoice_evidence(calculated_client):
     assert response.status_code == 201
     delivery = response.get_json()
     summary = _draft(community_id=cid)
+    summary["reconciliation"]["participant_registrations"] = {
+        item["participant_id"]: db.get_building(item["participant_id"])["referral_code"]
+        for item in summary["line_items"]
+    }
     summary["billing_policy_snapshot"]["community_id"] = cid
     summary.update(
         total_production_kwh=13.366670,
@@ -344,6 +349,7 @@ def test_late_draft_preserves_history_and_leaves_room_for_correction(calculated_
         datetime.fromisoformat(payload[key]) for key in ("period_start", "period_end")
     )
     summary = {
+        "reconciliation": {"participant_registrations": {}},
         "total_production_kwh": 0.25,
         "total_allocated_kwh": 0.25,
         "total_network_discount_chf": 0,
@@ -598,6 +604,7 @@ def test_late_storage_failure_rolls_back_withdrawal_and_draft_invalidation(
         start,
         end,
         {
+            "reconciliation": {"participant_registrations": {}},
             "total_production_kwh": 0.25,
             "total_allocated_kwh": 0.25,
             "total_network_discount_chf": 0,

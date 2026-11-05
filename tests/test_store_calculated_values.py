@@ -26,6 +26,10 @@ class Cursor:
         return next(self.rows)
 
     def fetchall(self):
+        if "FROM buildings" in self.executed[-1][0]:
+            return [
+                {"building_id": "building-a", "referral_code": "original-registration"}
+            ]
         return list(self.rows)
 
 
@@ -132,6 +136,9 @@ def test_save_billing_period_persists_the_calculated_values_fingerprint(monkeypa
         datetime(2026, 10, 25, 0, 0, tzinfo=ZoneInfo("Europe/Zurich")),
         datetime(2026, 10, 26, 0, 0, tzinfo=ZoneInfo("Europe/Zurich")),
         {
+            "reconciliation": {
+                "participant_registrations": {"building-a": "original-registration"}
+            },
             "total_production_kwh": 1.5,
             "total_allocated_kwh": 1.5,
             "total_network_discount_chf": 0.05,
@@ -150,10 +157,10 @@ def test_save_billing_period_persists_the_calculated_values_fingerprint(monkeypa
     )
 
     assert period_id == 42
-    assert "FROM communities" in cursor.executed[0][0]
-    assert "FOR UPDATE" in cursor.executed[0][0]
-    assert "evidence_current" in cursor.executed[1][0]
-    query, params = cursor.executed[2]
+    assert "FROM communities" in cursor.executed[1][0]
+    assert "FOR UPDATE" in cursor.executed[1][0]
+    assert "evidence_current" in cursor.executed[2][0]
+    query, params = cursor.executed[3]
     assert "INSERT INTO billing_periods" in query
     assert "calculated_values_fingerprint" in query
     assert params[0] == "leg-1"

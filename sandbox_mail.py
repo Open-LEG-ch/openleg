@@ -2,6 +2,7 @@
 """Capture simulated mail inside the current disposable village."""
 
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -40,7 +41,11 @@ def capture(recipient, subject, body, *, event_key=None):
         )
         if not invoice:
             return False
+        registration = invoice.get("participant_registration_id")
+        if not isinstance(registration, str) or not registration:
+            return False
         payload["owner"] = invoice["participant_id"]
+        payload["owner_registration_id"] = registration
     name = (
         hashlib.sha256(event_key.encode()).hexdigest()
         if event_key is not None
@@ -65,13 +70,25 @@ def messages(*, viewer=None):
     """List mail visible to this viewer and extract links within the village."""
     directory = mailbox()
     origin = urlsplit(os.environ["APP_BASE_URL"])
+    import database as db
+
+    profile = db.get_building(viewer) if viewer else None
+    registration = profile.get("referral_code") if profile else None
     result = []
     for path in sorted(
         directory.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True
     )[:100]:
         message = json.loads(path.read_text(encoding="utf-8"))
-        if "owner" in message and message["owner"] != viewer:
-            continue
+        if "owner" in message:
+            proof = message.get("owner_registration_id")
+            if (
+                message["owner"] != viewer
+                or not isinstance(registration, str)
+                or not isinstance(proof, str)
+                or not proof
+                or not hmac.compare_digest(registration.encode(), proof.encode())
+            ):
+                continue
         message["links"] = []
         for value in re.findall(r'https?://[^\s<>"\']+', message["body"]):
             parsed = urlsplit(value)

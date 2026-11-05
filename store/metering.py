@@ -484,11 +484,12 @@ def get_billable_period_snapshot(community_id, period_start, period_end):
     """Alle Abrechnungsgrundlagen einer Periode in einem stabilen Snapshot.
 
     Die Transaktion wird vor der ersten Abfrage explizit als REPEATABLE READ
-    READ ONLY gesetzt. Erst dann sehen alle drei Abfragen garantiert denselben
+    READ ONLY gesetzt. Erst dann sehen alle vier Abfragen garantiert denselben
     Datenbankstand: die aktiven, dieser Community zugeordneten Messpunkte
     (inklusive deklarierter Richtungen und VNB Provenienz), die Messwerte im
     halboffenen Intervall [period_start, period_end) und die fachlich
-    zugehörigen, aber noch nicht zugeordneten Messpunkte. READ COMMITTED ist
+    zugehörigen, aber noch nicht zugeordneten Messpunkte sowie die ursprünglichen
+    Teilnehmerregistrierungen. READ COMMITTED ist
     ungültig: jedes Statement sähe einen eigenen Stand, und ein paralleler
     Import könnte die Grundlage der Rechnung mitten im Lauf verändern.
 
@@ -496,7 +497,7 @@ def get_billable_period_snapshot(community_id, period_start, period_end):
     ausfallen statt auf einem leeren oder halben Bestand weiterzurechnen.
 
     Returns:
-        dict mit points, readings und unassigned_point_ids.
+        dict mit points, readings, unassigned_point_ids und participant_registrations.
     """
     with _get_connection() as conn:
         with conn.cursor() as cur:
@@ -510,10 +511,27 @@ def get_billable_period_snapshot(community_id, period_start, period_end):
                 (period_start, period_end, period_start, period_end, community_id),
             )
             unassigned = [row["metering_point_id"] for row in cur.fetchall()]
+            cur.execute(
+                """SELECT building_id,referral_code FROM buildings
+                   WHERE building_id=ANY(%s) ORDER BY building_id""",
+                (
+                    sorted(
+                        {
+                            point["building_id"]
+                            for point in points
+                            if point.get("building_id")
+                        }
+                    ),
+                ),
+            )
+            registrations = {
+                row["building_id"]: row["referral_code"] for row in cur.fetchall()
+            }
     return {
         "points": points,
         "readings": readings,
         "unassigned_point_ids": unassigned,
+        "participant_registrations": registrations,
     }
 
 

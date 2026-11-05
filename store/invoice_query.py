@@ -5,8 +5,17 @@ from collections import defaultdict
 from datetime import datetime
 
 import invoice_queries
+from store.invoice_identity import REGISTRATION_MATCH_SQL
 from store.operator_api import enqueue_event
 from store.operator_operations import _remember, _replay, request_hash
+
+_MEMBER_REGISTRATION_SQL = f"""
+    AND EXISTS (
+        SELECT 1 FROM invoices i JOIN buildings b ON b.building_id=i.participant_id
+        WHERE i.id=q.invoice_id AND i.participant_id=q.participant_id
+          AND {REGISTRATION_MATCH_SQL}
+    )
+"""
 
 
 def _get_connection():
@@ -28,14 +37,16 @@ def open_invoice_query(
     response_due_at, reminder_due_at = invoice_queries.deadlines()
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """
+            f"""
                 INSERT INTO invoice_queries (
                     invoice_id, community_id, participant_id, category, status,
                     response_due_at, reminder_due_at
                 )
-                SELECT id, community_id, participant_id, %s, 'open', %s, %s
-                FROM invoices
-                WHERE id = %s AND participant_id = %s AND status = 'issued'
+                SELECT i.id, i.community_id, i.participant_id, %s, 'open', %s, %s
+                FROM invoices i JOIN buildings b ON b.building_id=i.participant_id
+                WHERE i.id = %s AND i.participant_id = %s AND i.status = 'issued'
+                  AND {REGISTRATION_MATCH_SQL}
+                FOR KEY SHARE OF b
                 RETURNING id
             """,
             (category, response_due_at, reminder_due_at, invoice_id, participant_id),
@@ -106,13 +117,14 @@ def list_invoice_queries(
         else ("community_id", community_id)
     )
     with _get_connection() as conn, conn.cursor() as cur:
-        invoice_filter = "invoice_id = %s AND " if invoice_id is not None else ""
+        invoice_filter = "q.invoice_id = %s AND " if invoice_id is not None else ""
+        registration_filter = _MEMBER_REGISTRATION_SQL if participant_id else ""
         params = (invoice_id, value) if invoice_id is not None else (value,)
         cur.execute(
             f"""
-                SELECT * FROM invoice_queries
-                WHERE {invoice_filter}{field} = %s
-                ORDER BY created_at, id
+                SELECT q.* FROM invoice_queries q
+                WHERE {invoice_filter}q.{field} = %s {registration_filter}
+                ORDER BY q.created_at, q.id
             """,
             params,
         )
@@ -169,8 +181,10 @@ def add_invoice_query_message(
         else ("community_id", community_id)
     )
     with _get_connection() as conn, conn.cursor() as cur:
+        registration_filter = _MEMBER_REGISTRATION_SQL if participant_id else ""
         cur.execute(
-            f"SELECT id FROM invoice_queries WHERE id = %s AND {field} = %s",
+            f"""SELECT q.id FROM invoice_queries q
+                WHERE q.id = %s AND q.{field} = %s {registration_filter}""",
             (query_id, value),
         )
         if not cur.fetchone():
