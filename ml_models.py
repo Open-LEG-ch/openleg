@@ -73,7 +73,11 @@ def cluster_labels(coordinates, radius_meters=150, min_community_size=3) -> list
 def generate_mock_profiles(
     annual_consumption_kwh, potential_pv_kwp, num_intervals=35040
 ):
-    """Generiert vereinfachte 15-Minuten-Zeitreihenprofile."""
+    """Generate interval estimates; missing inputs contribute no load or output."""
+    annual_consumption_kwh = (
+        0.0 if pd.isna(annual_consumption_kwh) else float(annual_consumption_kwh)
+    )
+    potential_pv_kwp = 0.0 if pd.isna(potential_pv_kwp) else float(potential_pv_kwp)
     timestamps = pd.date_range(start="2025-01-01", periods=num_intervals, freq="15min")
 
     # Konvertiere zu numpy arrays, um Index-Probleme zu vermeiden
