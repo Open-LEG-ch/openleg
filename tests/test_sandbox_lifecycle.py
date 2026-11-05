@@ -1365,14 +1365,14 @@ def test_damaged_pidfile_shutdown_timeout_retains_cluster_for_retry(
             postgres.close()
 
 
-@pytest.mark.parametrize("timeout", [2, 0.1])
+@pytest.mark.parametrize("timeout", [4, 1])
 def test_recovery_waits_for_postmaster_exit_after_control_returns(
     tmp_path, monkeypatch, timeout
 ):
     """A completed control command alone cannot prove the real process exited."""
     import os
+    import shlex
     import signal
-    import sys
     import tempfile
     import time
     from pathlib import Path
@@ -1395,9 +1395,13 @@ def test_recovery_waits_for_postmaster_exit_after_control_returns(
     ready = tmp_path / "control-returned"
     command = control / "pg_ctl"
     command.write_text(
-        f"#!{sys.executable}\nimport pathlib\n"
-        f"pathlib.Path({str(stale / 'data/postmaster.pid')!r}).unlink()\n"
-        f"pathlib.Path({str(ready)!r}).touch()\n"
+        "#!/bin/sh\nset -e\n"
+        + "rm -- "
+        + shlex.quote(str(stale / "data/postmaster.pid"))
+        + "\n"
+        + ": > "
+        + shlex.quote(str(ready))
+        + "\n"
     )
     command.chmod(0o700)
     with tempfile.TemporaryDirectory(prefix="ols-post-control-") as transport:
@@ -1413,7 +1417,7 @@ def test_recovery_waits_for_postmaster_exit_after_control_returns(
             while not ready.exists():
                 if finished.wait(0.01):
                     return
-            time.sleep(0.3)
+            time.sleep(2)
             if ScratchOwner._running(pid, start):
                 os.kill(pid, signal.SIGQUIT)
                 os.kill(pid, signal.SIGCONT)
@@ -1425,7 +1429,7 @@ def test_recovery_waits_for_postmaster_exit_after_control_returns(
             monkeypatch.setattr(
                 sandbox_lifecycle, "POSTGRES_CONTROL_TIMEOUT_SECONDS", timeout
             )
-            if timeout < 0.3:
+            if timeout < 2:
                 with pytest.raises(
                     RuntimeError, match="PostgreSQL could not be stopped"
                 ):
