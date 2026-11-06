@@ -147,10 +147,32 @@ def test_sparse_public_record_escapes_content_and_labels_missing_dates(directory
     assert '<p class="text-ink-muted">None' not in response.text
 
 
+def test_malformed_stored_website_is_absent_without_breaking_results(directory):
+    client, db = directory
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE leg_registry SET website_url='https://[' WHERE slug='fictional-00'"
+        )
+    assert client.get("/leg-verzeichnis?q=Fictional+LEG+00").status_code == 200
+    detail = client.get("/leg-verzeichnis/fictional-00")
+    assert detail.status_code == 200 and "https://[" not in detail.text
+
+
+def test_invalid_postcode_has_linked_and_inline_recovery(directory):
+    client, _db = directory
+    page = client.get("/leg-verzeichnis?q=Fictional&plz=54")
+    assert page.status_code == 400
+    assert 'href="#plz"' in page.text and 'id="plz-error"' in page.text
+    assert re.search(r'<input[^>]*id="plz"[^>]*aria-invalid="true"', page.text)
+    assert 'value="Fictional"' in page.text and 'value="54"' in page.text
+
+
 def test_leg_check_links_published_entries_and_reports_a_failed_read(
     directory, monkeypatch
 ):
     client, db = directory
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE leg_registry SET ort='Fictional district'")
     monkeypatch.setattr(
         db,
         "search_municipality_profiles",
@@ -170,7 +192,10 @@ def test_leg_check_links_published_entries_and_reports_a_failed_read(
         re.search(r'href="(/leg-verzeichnis/fictional[^\"]+)"', page.text)[1]
     )
     assert parse_qs(urlsplit(link).query)["bfs"] == ["4021"]
-    assert client.get(link).status_code == 200
+    detail = client.get(link)
+    assert detail.status_code == 200
+    back = client.get(_href(detail, "data-directory-back"))
+    assert back.text.count("data-directory-entry=") == 25
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("DROP TABLE leg_registry")
     failed = client.get("/leg-check?q=Fictional+Baden&bfs=4021")

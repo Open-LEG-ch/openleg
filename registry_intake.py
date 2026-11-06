@@ -22,7 +22,10 @@ def normalize_website_url(raw_value) -> str:
         return ""
     if len(value) > 512:
         return ""
-    parsed = urlsplit(value)
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return ""
     if (
         parsed.scheme.lower() not in {"http", "https"}
         or not parsed.netloc

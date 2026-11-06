@@ -1068,7 +1068,7 @@ msgid "Alle Mitglieder"
 msgstr "Tous les membres"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:14
 msgid "Alle Status"
 msgstr "Tous les statuts"
 
@@ -2571,7 +2571,7 @@ msgstr ""
 " datée. La date ne peut pas être dans le futur."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:87
+#: site_release.py:87 site_release.py:105
 msgid "Bitte prüfen Sie die Suchangaben."
 msgstr "Veuillez vérifier les critères de recherche."
 
@@ -2884,7 +2884,7 @@ msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr "Le modèle de répartition de la règle de facturation n'est pas valide."
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:21
+#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:23
 msgid ""
 "Das Verzeichnis enthält nur freigeschaltete Selbstauskünfte. Ein fehlender Eintrag sagt nichts "
 "über die Eignung einer Adresse aus."
@@ -3790,6 +3790,11 @@ msgid ""
 msgstr ""
 "Le développement est basé sur le code, les tests, les traductions et les retours d'information. "
 "L'historique des contributions publiques montre la collaboration réelle."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:78
+msgid "Die Ergebnisseite ist ungültig. Starten Sie die Suche erneut."
+msgstr "Cette page de résultats est invalide. Relancez la recherche."
 
 #: member_savings.py:284 member_savings.py:288
 msgid "Die Ersparnis dieser Periode ist nicht berechenbar."
@@ -5617,7 +5622,7 @@ msgid "Ergebnis zum Fernzugriff"
 msgstr "Résultat de l'accès à distance"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:20
+#: templates/leg_verzeichnis/liste.html:20 templates/leg_verzeichnis/liste.html:22
 msgid "Ergebnisseiten"
 msgstr "Pages de résultats"
 
@@ -5658,7 +5663,7 @@ msgid "Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeind
 msgstr "Recenser l’intérêt confirmé au sein d’une commune politique"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:17
+#: templates/leg_verzeichnis/liste.html:17 templates/leg_verzeichnis/liste.html:19
 msgid "Erneut versuchen"
 msgstr "Réessayer"
 
@@ -6016,7 +6021,8 @@ msgid "Fragen zum Betrieb?"
 msgstr "Des questions sur l’exploitation ?"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/detail.html:63 templates/leg_verzeichnis/liste.html:22
+#: templates/leg_verzeichnis/detail.html:63 templates/leg_verzeichnis/detail.html:64
+#: templates/leg_verzeichnis/liste.html:22 templates/leg_verzeichnis/liste.html:24
 msgid "Fragen zum Verzeichnis"
 msgstr "Questions sur le répertoire"
 
@@ -6411,6 +6417,16 @@ msgstr ""
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
 msgstr "Saisissez une référence de 255 caractères au maximum."
 
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:98
+msgid "Geben Sie eine gültige BFS-Gemeindenummer ein."
+msgstr "Saisissez un numéro de commune BFS valide."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:89
+msgid "Geben Sie eine vierstellige PLZ ein."
+msgstr "Saisissez un code postal à quatre chiffres."
+
 #: store/formation_activation.py:86
 msgid "Geben Sie einen gültigen Beleg und ein Startdatum an."
 msgstr "Indiquez un justificatif et une date de mise en service valides."
@@ -6578,6 +6594,11 @@ msgstr "Accompagner les communes"
 #: templates/gemeinde/vergleich.html:18
 msgid "Gemeinden vergleichen"
 msgstr "Comparer les communes"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:15
+msgid "Gemeindenummer (BFS)"
+msgstr "Numéro de commune (BFS)"
 
 #: templates/gemeinde/dashboard.html:33
 msgid "Gemeindestatistik"
@@ -11315,7 +11336,7 @@ msgid "Pilotgemeinde"
 msgstr "Commune pilote"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:14
 msgid "Planung"
 msgstr "Planification"
 
@@ -12393,7 +12414,7 @@ msgstr ""
 "votre commune et vous accompagne dans la création. Gratuit, open source, hébergé en Suisse."
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:20
+#: templates/leg_verzeichnis/liste.html:20 templates/leg_verzeichnis/liste.html:22
 #, python-format
 msgid "Seite %(page)s"
 msgstr "Page %(page)s"
@@ -13204,7 +13225,8 @@ msgid "Suche aktuell nicht verfügbar."
 msgstr "Recherche actuellement indisponible."
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:16 templates/leg_verzeichnis/liste.html:21
+#: templates/leg_verzeichnis/liste.html:8 templates/leg_verzeichnis/liste.html:16
+#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:23
 msgid "Suche zurücksetzen"
 msgstr "Réinitialiser la recherche"
 
@@ -14043,6 +14065,11 @@ msgid ""
 msgstr ""
 "Utilisez la date %(date)s et la référence %(reference)s. Confirmez explicitement le justificatif "
 "de démarrage. Vous pourrez ensuite activer la CEL."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:81
+msgid "Verwenden Sie höchstens 200 Zeichen für die Suche."
+msgstr "Utilisez au maximum 200 caractères pour la recherche."
 
 #: templates/api_docs.html:241
 msgid "Verzeichniseintrag nicht gefunden."
@@ -14909,6 +14936,16 @@ msgstr "Choisissez l'accès approprié. Connectez-vous ensuite en toute sécurit
 #: sandbox_seed.py:105
 msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
 msgstr "Choisissez une autre langue d'affichage et rechargez le tableau de bord."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:83
+msgid "Wählen Sie einen Kanton aus der Liste."
+msgstr "Choisissez un canton dans la liste."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:91
+msgid "Wählen Sie einen Status aus der Liste."
+msgstr "Choisissez un statut dans la liste."
 
 #: store/formation_activation.py:65
 msgid "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
