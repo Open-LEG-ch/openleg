@@ -28,13 +28,14 @@ class VereinUnavailable(RuntimeError):
 
 
 @contextmanager
-def transaction_cursor():
+def transaction_cursor(*, policy_errors=()):
+    """Rollback and preserve caller policy errors; map storage failures to 503."""
     import database
 
     try:
         with database.get_connection() as conn, conn.cursor() as cur:
             yield cur
-    except VereinDenied:
+    except (VereinDenied, *policy_errors):
         raise
     except Exception as exc:
         raise VereinUnavailable("Association storage unavailable") from exc

@@ -1179,6 +1179,14 @@ msgstr "Anbietergebühr"
 msgid "Anderes"
 msgstr "Anderes"
 
+#: verein_finance.py:329
+msgid ""
+"Anfangsbestand plus Buchungen stimmt für dieses Konto und diesen Fonds nicht mit dem "
+"Schlussbestand überein."
+msgstr ""
+"Anfangsbestand plus Buchungen stimmt für dieses Konto und diesen Fonds nicht mit dem "
+"Schlussbestand überein."
+
 #: verein_finance_routes.py:69
 msgid "Anfangseinlage"
 msgstr "Anfangseinlage"
@@ -2048,6 +2056,14 @@ msgstr "Bereits importiert"
 msgid "Bereits registriert?"
 msgstr "Bereits registriert?"
 
+#: store/verein_finance.py:92
+msgid ""
+"Bereits veröffentlichte Quellbelege dürfen nicht verschwinden. Erfassen Sie eine nachvollziehbare"
+" Korrektur."
+msgstr ""
+"Bereits veröffentlichte Quellbelege dürfen nicht verschwinden. Erfassen Sie eine nachvollziehbare"
+" Korrektur."
+
 #: templates/dashboard.html:74 templates/leg_dashboard.html:36
 msgid "Bereitschaft"
 msgstr "Bereitschaft"
@@ -2210,6 +2226,10 @@ msgstr ""
 "\n"
 "Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren"
 " Sie diese E-Mail."
+
+#: verein_finance.py:142
+msgid "Bestätigen Sie den vollständigen Konten- und Anbieterumfang ohne fehlende Fremdwährungsbestände."
+msgstr "Bestätigen Sie den vollständigen Konten- und Anbieterumfang ohne fehlende Fremdwährungsbestände."
 
 #: app.py:740 app.py:743 app.py:768 app.py:770 app.py:780 app.py:782 app.py:784 app.py:785
 #, python-format
@@ -2854,6 +2874,10 @@ msgstr ""
 "den persönlichen Vereinszugang eingereicht werden. Verbindliche Regeln zu Beitragskorrekturen und"
 " Datenaufbewahrung werden vor der Aufnahme geprüft."
 
+#: verein_finance.py:244
+msgid "Das Buchungsdatum liegt ausserhalb des Quartals."
+msgstr "Das Buchungsdatum liegt ausserhalb des Quartals."
+
 #: templates/fuer_gemeinden.html:37
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
@@ -3199,7 +3223,15 @@ msgstr "Der Austausch nutzt die bestehende Netzinfrastruktur."
 msgid "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
 msgstr "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
 
-#: verein_finance_routes.py:107
+#: verein_finance_routes.py:114
+msgid ""
+"Der Bericht wurde nicht gespeichert. Korrigieren Sie die markierten Angaben. Ihre Eingaben "
+"bleiben erhalten."
+msgstr ""
+"Der Bericht wurde nicht gespeichert. Korrigieren Sie die markierten Angaben. Ihre Eingaben "
+"bleiben erhalten."
+
+#: verein_finance_routes.py:107 verein_finance_routes.py:118
 msgid ""
 "Der Bericht wurde nicht gespeichert. Prüfen Sie CSV-Spalten, Quellen, Beträge und Datum, alle "
 "Konten und Fonds sowie die Übereinstimmung der Anfangs- und Schlussbestände. Für eine neue "
@@ -3210,6 +3242,10 @@ msgstr ""
 "Konten und Fonds sowie die Übereinstimmung der Anfangs- und Schlussbestände. Für eine neue "
 "Version ist eine öffentliche Begründung erforderlich. Bereits veröffentlichte Belege dürfen nicht"
 " verschwinden. Ihre Eingaben bleiben erhalten."
+
+#: verein_finance.py:115
+msgid "Der Buchungsbetrag muss grösser als null sein."
+msgstr "Der Buchungsbetrag muss grösser als null sein."
 
 #: templates/release/pricing.html:6
 msgid ""
@@ -3426,6 +3462,10 @@ msgstr ""
 #: templates/release/event.html:6
 msgid "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
 msgstr "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
+
+#: verein_finance.py:63
+msgid "Der Text ist zu lang oder enthält ungültige Zeichen."
+msgstr "Der Text ist zu lang oder enthält ungültige Zeichen."
 
 #: store/formation_signatures.py:165
 msgid "Der Unterschriftsbeleg ist ungültig."
@@ -3684,6 +3724,14 @@ msgstr "Die Adresse konnte nicht analysiert werden."
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 
+#: verein_finance.py:400
+msgid ""
+"Die Anfangsbestände müssen den zuletzt veröffentlichten Schlussbeständen des Vorquartals "
+"entsprechen."
+msgstr ""
+"Die Anfangsbestände müssen den zuletzt veröffentlichten Schlussbeständen des Vorquartals "
+"entsprechen."
+
 #: templates/index.html:405 templates/index.html:501
 msgid ""
 "Die Anleitung beschreibt Installation, Updates, Backups und den Zugriff über ein privates "
@@ -3777,6 +3825,14 @@ msgstr ""
 " Gebietsanfrage. Bereits ausgestellte Rechnungen, abrechnungsrelevante Messdaten und "
 "Nutzungsereignisse bleiben erhalten."
 
+#: verein_finance.py:98
+msgid "Die CSV-Schreibweise ist ungültig. Prüfen Sie Anführungszeichen und Trennzeichen."
+msgstr "Die CSV-Schreibweise ist ungültig. Prüfen Sie Anführungszeichen und Trennzeichen."
+
+#: verein_finance.py:86
+msgid "Die CSV-Zeile ist unvollständig oder die Tabelle überschreitet 3’000 Zeilen."
+msgstr "Die CSV-Zeile ist unvollständig oder die Tabelle überschreitet 3’000 Zeilen."
+
 #: sandbox_metering.py:54
 msgid ""
 "Die Datei ist kein unterstützter vollständiger E66-Beleg. Verwenden Sie eine der bereitgestellten"
@@ -3868,6 +3924,14 @@ msgstr "Die Firmware fehlt. Die Betroffenheit bleibt offen."
 #: templates/verein/dues.html:6
 msgid "Die Forderung ist noch nicht fällig."
 msgstr "Die Forderung ist noch nicht fällig."
+
+#: verein_finance.py:298
+msgid ""
+"Die Freigabe zurückgehaltener Mittel braucht die tatsächliche Unabhängigkeitsprüfung in "
+"funding_check."
+msgstr ""
+"Die Freigabe zurückgehaltener Mittel braucht die tatsächliche Unabhängigkeitsprüfung in "
+"funding_check."
 
 #: templates/gemeinde/verzeichnis.html:65
 msgid "Die Gemeinden sind nach Namen sortiert."
@@ -4473,6 +4537,10 @@ msgstr ""
 "vierteljährliche Berichterstattung, Belegzugang und zweite Prüfung abdecken. Ein Zahlungseingang "
 "ist keine Ausgabenfreigabe. Dieses Formular führt keine Bankzahlung aus."
 
+#: verein_finance.py:265
+msgid "Die private Referenz zur tatsächlichen Prüfung der Finanzierungsunabhängigkeit fehlt."
+msgstr "Die private Referenz zur tatsächlichen Prüfung der Finanzierungsunabhängigkeit fehlt."
+
 #: templates/sandbox/formation.html:43
 msgid ""
 "Die simulierte Anmeldung wurde abgelehnt. Sie bleibt mit ihrem Beleg erhalten. Beginnen Sie mit "
@@ -4529,6 +4597,10 @@ msgstr ""
 "Diese Anfrage konnte nicht ausgeführt werden. Prüfen Sie Ihre Angaben und Ihren Zugang oder "
 "versuchen Sie es später erneut."
 
+#: verein_finance.py:67
+msgid "Diese Angabe ist erforderlich."
+msgstr "Diese Angabe ist erforderlich."
+
 #: templates/advisories.html:67
 msgid ""
 "Diese Angaben bleiben bei Ihrem Eigentümerzugang. OpenLEG prüft den Nachweis nicht. Eine "
@@ -4579,6 +4651,10 @@ msgstr "Diese Felder fehlen im Installateur-Download. Keine Passwörter oder Zug
 #: templates/contact_requests.html:8
 msgid "Diese Kontaktdaten gebe ich nach beidseitiger Zustimmung frei:"
 msgstr "Diese Kontaktdaten gebe ich nach beidseitiger Zustimmung frei:"
+
+#: verein_finance.py:409
+msgid "Diese Korrektur würde die Anfangsbestände des folgenden veröffentlichten Quartals ungültig machen."
+msgstr "Diese Korrektur würde die Anfangsbestände des folgenden veröffentlichten Quartals ungültig machen."
 
 #: templates/leg_verzeichnis/detail.html:64
 msgid "Diese LEG betreiben Sie? Eintrag beanspruchen"
@@ -5093,6 +5169,18 @@ msgstr ""
 msgid "Ein Messwert dieser Periode ist ungültig."
 msgstr "Ein Messwert dieser Periode ist ungültig."
 
+#: store/verein_finance.py:111
+msgid ""
+"Ein Quellbeleg gehört bereits zu einem anderen Quartal. Importieren Sie denselben Beleg nicht "
+"nochmals."
+msgstr ""
+"Ein Quellbeleg gehört bereits zu einem anderen Quartal. Importieren Sie denselben Beleg nicht "
+"nochmals."
+
+#: verein_finance.py:280
+msgid "Ein Transfer wechselt das Konto und behält denselben Fonds."
+msgstr "Ein Transfer wechselt das Konto und behält denselben Fonds."
+
 #: sandbox_metering.py:39
 msgid ""
 "Ein Viertelstundenwert fehlt. Laden Sie die vollständige gültige Lieferung, statt Werte zu "
@@ -5239,6 +5327,10 @@ msgstr "Eine Erinnerung ist bereits vorbereitet."
 msgid "Eine Erinnerung ist erst nach Fälligkeit möglich und wird pro Beitragsjahr einmal vorbereitet."
 msgstr "Eine Erinnerung ist erst nach Fälligkeit möglich und wird pro Beitragsjahr einmal vorbereitet."
 
+#: verein_finance.py:287
+msgid "Eine Fondsumbuchung wechselt den Fonds innerhalb desselben Kontos."
+msgstr "Eine Fondsumbuchung wechselt den Fonds innerhalb desselben Kontos."
+
 #: templates/release/knowledge.html:6
 msgid "Eine Gründung vorbereiten"
 msgstr "Eine Gründung vorbereiten"
@@ -5348,6 +5440,10 @@ msgstr "Eine gültige Ersatzrechnung ist erforderlich."
 msgid "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 msgstr "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 
+#: verein_finance.py:273
+msgid "Eine interne Bewegung braucht zwei unterschiedliche erfasste Konto-Fonds-Kombinationen."
+msgstr "Eine interne Bewegung braucht zwei unterschiedliche erfasste Konto-Fonds-Kombinationen."
+
 #: templates/release/home.html:55
 msgid ""
 "Eine lokale Elektrizitätsgemeinschaft organisiert die gemeinsame Nutzung von lokal erzeugtem "
@@ -5371,6 +5467,10 @@ msgstr ""
 #: sandbox_seed.py:53
 msgid "Eine neue LEG gründen"
 msgstr "Eine neue LEG gründen"
+
+#: store/verein_finance.py:79
+msgid "Eine neue Version braucht eine öffentliche Korrekturbegründung."
+msgstr "Eine neue Version braucht eine öffentliche Korrekturbegründung."
 
 #: templates/release/pricing.html:10
 msgid "Einen Dienstleister beauftragen"
@@ -5718,6 +5818,10 @@ msgid ""
 msgstr ""
 "Er übernimmt die ihm zugewiesene Messung, Netznutzungsabrechnung und Datenlieferung. Bei "
 "Grundversorgung liefert er auch den übrigen Strom."
+
+#: verein_finance.py:150
+msgid "Erfassen Sie alle kontrollierten Konten und Anbieter."
+msgstr "Erfassen Sie alle kontrollierten Konten und Anbieter."
 
 #: sandbox_seed.py:88
 msgid "Erfassen Sie einen Quartierakku mit Kapazität, Jahreskosten und Kostenanteilen."
@@ -6585,6 +6689,14 @@ msgid ""
 msgstr ""
 "Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen"
 " nicht an, ob bereits ein Profil existiert."
+
+#: verein_finance.py:124
+msgid "Geben Sie ein Kalenderquartal im Format 2026-Q3 an."
+msgstr "Geben Sie ein Kalenderquartal im Format 2026-Q3 an."
+
+#: verein_finance.py:240
+msgid "Geben Sie ein gültiges Buchungsdatum im Format 2026-07-02 an."
+msgstr "Geben Sie ein gültiges Buchungsdatum im Format 2026-07-02 an."
 
 #: store/formation_activation.py:90
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
@@ -8562,7 +8674,7 @@ msgstr "Keine Datenverkäufe"
 msgid "Keine ElCom-Daten hinterlegt."
 msgstr "Keine ElCom-Daten hinterlegt."
 
-#: verein_finance_routes.py:184
+#: verein_finance_routes.py:184 verein_finance_routes.py:196
 msgid ""
 "Keine Freigabe. Eine andere aktive berechtigte Person muss den aktuellen Stand anhand der "
 "Originalquellen, des vollständigen Umfangs und der bereinigten öffentlichen Angaben prüfen und "
@@ -9292,6 +9404,10 @@ msgstr ""
 #: templates/telemetry_dashboard.html:16
 msgid "Ladezustand"
 msgstr "Ladezustand"
+
+#: verein_finance.py:305
+msgid "Lassen Sie bei externen Buchungen to_account_id und to_fund leer."
+msgstr "Lassen Sie bei externen Buchungen to_account_id und to_fund leer."
 
 #: templates/leg_gruenden.html:131
 msgid ""
@@ -10678,6 +10794,10 @@ msgstr ""
 msgid "Noch mehr Nachbarn einladen?"
 msgstr "Noch mehr Nachbarn einladen?"
 
+#: verein_finance.py:259
+msgid "Noch nicht angenommene Finanzierung muss im Fonds held mit Kategorie held stehen."
+msgstr "Noch nicht angenommene Finanzierung muss im Fonds held mit Kategorie held stehen."
+
 #: templates/verein/finance_edit.html:13
 msgid "Noch nicht freigegeben"
 msgstr "Noch nicht freigegeben"
@@ -10737,6 +10857,10 @@ msgstr "Nur LEG-Teilnahme, Daten mit Nachbarn und Gemeinde teilen"
 #: templates/dashboard.html:50
 msgid "Nur Lesezugriff"
 msgstr "Nur Lesezugriff"
+
+#: verein_finance.py:132
+msgid "Nur abgeschlossene Kalenderquartale sind zulässig."
+msgstr "Nur abgeschlossene Kalenderquartale sind zulässig."
 
 #: templates/verein/finance_edit.html:4
 msgid ""
@@ -11843,6 +11967,14 @@ msgstr ""
 msgid "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
 msgstr "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
 
+#: verein_finance.py:195
+msgid ""
+"Prüfen Sie Kontoart, Fonds und private Quellenreferenz. Jede Konto-Fonds-Kombination darf nur "
+"einmal vorkommen."
+msgstr ""
+"Prüfen Sie Kontoart, Fonds und private Quellenreferenz. Jede Konto-Fonds-Kombination darf nur "
+"einmal vorkommen."
+
 #: templates/verein/finance_review.html:5
 msgid ""
 "Prüfen Sie Originalauszüge, Anbieterabrechnungen und Belege ausserhalb dieser Zusammenstellung. "
@@ -11852,6 +11984,22 @@ msgstr ""
 "Prüfen Sie Originalauszüge, Anbieterabrechnungen und Belege ausserhalb dieser Zusammenstellung. "
 "Erst die tatsächliche zweite Prüfung erlaubt die Veröffentlichung. Diese Prüfung ist keine "
 "gesetzliche Revision und keine Zahlungsfreigabe."
+
+#: verein_finance.py:232
+msgid ""
+"Prüfen Sie Quellkennung, Buchungsart, Konto, Fonds und Quellenreferenz. Quellkennungen dürfen "
+"nicht doppelt vorkommen."
+msgstr ""
+"Prüfen Sie Quellkennung, Buchungsart, Konto, Fonds und Quellenreferenz. Quellkennungen dürfen "
+"nicht doppelt vorkommen."
+
+#: verein_finance.py:346
+msgid ""
+"Prüfen Sie Quellkennung, Fonds und Quellenreferenz der Verpflichtung. Ein bereits gebuchter oder "
+"doppelt erfasster Beleg darf nicht als unbezahlte Verpflichtung erscheinen."
+msgstr ""
+"Prüfen Sie Quellkennung, Fonds und Quellenreferenz der Verpflichtung. Ein bereits gebuchter oder "
+"doppelt erfasster Beleg darf nicht als unbezahlte Verpflichtung erscheinen."
 
 #: templates/sandbox/formation.html:17
 msgid ""
@@ -11912,6 +12060,14 @@ msgstr "Prüfen Sie die Gemeinschaftsvereinbarung."
 #: templates/telemetry_dashboard.html:34
 msgid "Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."
 msgstr "Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."
+
+#: verein_finance.py:251
+msgid ""
+"Prüfen Sie die Kategorie für diese Buchungsart und die bereinigte Belegkennung mit 3 bis 40 "
+"Grossbuchstaben, Ziffern oder Bindestrichen."
+msgstr ""
+"Prüfen Sie die Kategorie für diese Buchungsart und die bereinigte Belegkennung mit 3 bis 40 "
+"Grossbuchstaben, Ziffern oder Bindestrichen."
 
 #: templates/leg_verzeichnis/leg_check.html:90 templates/leg_verzeichnis/leg_check.html:92
 msgid "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
@@ -13879,6 +14035,14 @@ msgstr "Unbestätigte Anbieterzahlungen, nicht als Eingang oder verfügbares Gel
 msgid "Unbestätigte Zahlungen"
 msgstr "Unbestätigte Zahlungen"
 
+#: verein_finance.py:206
+msgid ""
+"Unbestätigte Zahlungen gehören ausschliesslich in pending_chf eines Anbieterkontos vom Typ "
+"clearing."
+msgstr ""
+"Unbestätigte Zahlungen gehören ausschliesslich in pending_chf eines Anbieterkontos vom Typ "
+"clearing."
+
 #: templates/release/finance.html:7 templates/release/finance.html:8 templates/release/finance.html:9
 #: templates/release/finance.html:10
 msgid "Unbezahlte Verpflichtungen"
@@ -14193,7 +14357,7 @@ msgstr ""
 "Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem Netzbetreiber. "
 "Ein Entwurf ist noch keine freigegebene Rechnung."
 
-#: verein_finance_routes.py:223
+#: verein_finance_routes.py:223 verein_finance_routes.py:235
 msgid "Vereinsfinanzen"
 msgstr "Vereinsfinanzen"
 
@@ -14387,13 +14551,25 @@ msgstr ""
 "Verwenden Sie das Datum %(date)s und die Referenz %(reference)s. Bestätigen Sie den Startbeleg "
 "ausdrücklich. Erst danach können Sie die LEG aktivieren."
 
+#: verein_finance.py:78
+msgid "Verwenden Sie die Spaltenüberschriften der CSV-Vorlage in derselben Reihenfolge."
+msgstr "Verwenden Sie die Spaltenüberschriften der CSV-Vorlage in derselben Reihenfolge."
+
 #: site_release.py:81 site_release.py:89
 msgid "Verwenden Sie höchstens 200 Zeichen für die Suche."
 msgstr "Verwenden Sie höchstens 200 Zeichen für die Suche."
 
+#: verein_finance.py:109
+msgid "Verwenden Sie nichtnegative CHF-Beträge mit Punkt und höchstens zwei Nachkommastellen."
+msgstr "Verwenden Sie nichtnegative CHF-Beträge mit Punkt und höchstens zwei Nachkommastellen."
+
 #: templates/api_docs.html:241
 msgid "Verzeichniseintrag nicht gefunden."
 msgstr "Verzeichniseintrag nicht gefunden."
+
+#: verein_finance.py:378
+msgid "Veröffentlichen Sie aufeinanderfolgende Quartale ab dem festgelegten Anfangszeitraum."
+msgstr "Veröffentlichen Sie aufeinanderfolgende Quartale ab dem festgelegten Anfangszeitraum."
 
 #: templates/verein/finance_edit.html:13
 msgid "Veröffentlicht"
@@ -14437,7 +14613,7 @@ msgstr "Vier Punkte entscheiden, ob die Anmeldung starten kann."
 msgid "Vier-Augen-Prinzip"
 msgstr "Vier-Augen-Prinzip"
 
-#: verein_finance_routes.py:225
+#: verein_finance_routes.py:225 verein_finance_routes.py:237
 msgid ""
 "Vierteljährliche Berichte über alle kontrollierten Mittel des Vereins, mit Quellenabgleich und "
 "unabhängiger zweiter Prüfung."
@@ -15372,6 +15548,11 @@ msgstr "Zeile %(line)s: Ungültiger Zeitstempel"
 #, python-format
 msgid "Zeile %(line)s: Ungültiger Zeitstempel '%(timestamp)s'"
 msgstr "Zeile %(line)s: Ungültiger Zeitstempel '%(timestamp)s'"
+
+#: verein_finance_routes.py:108
+#, python-format
+msgid "Zeile %(row)s: %(detail)s"
+msgstr "Zeile %(row)s: %(detail)s"
 
 #: templates/telemetry_dashboard.html:18 templates/telemetry_dashboard.html:25
 #: templates/telemetry_shared.html:14

@@ -742,3 +742,23 @@ Reset, discard and expiry remove the entire capture directory and database.
   links. No attendance record, member inference or recording is collected.
 - No automated retention horizon is asserted. Withdrawal changes publication
   without deleting the private revision history.
+
+## store/verein_finance
+
+- `verein_finance_reports` keeps immutable private CSV-derived account/fund
+  balances, source references, independence assessments, commitments, preparation
+  and independent review identities/evidence. It stores the separately redacted
+  public snapshot and version/correction history. These are association finances,
+  not LEG electricity invoices or bank payment execution.
+- `verein_finance_sources` privately maps canonical source IDs to quarters and
+  random stable public booking UUIDs. Source IDs may contain counterparty or
+  provider details; no public read selects them or the private report input.
+- Access: individually provisioned current board sessions. The preparer cannot
+  publish their own report. Public reads select only independently approved
+  snapshots with totals, fund summaries, four reviewed purposes and redacted
+  evidence codes. Personal data in free text requires actual redaction review.
+  Public donor recognition remains a separate opt-in decision.
+- Retention: prior published versions and private traceability remain. No
+  automated financial retention horizon or statutory audit is asserted. Actual
+  source access, scope approval, redaction and retention must be reviewed before
+  importing real finances. No account or fixture balance is seeded in production.
