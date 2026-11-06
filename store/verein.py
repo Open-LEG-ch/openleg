@@ -155,28 +155,11 @@ def submit_member_request(token, kind, reason):
             raise VereinDenied("Active membership required")
         if kind == "resignation":
             now = now_utc()
-            cur.execute(
-                """UPDATE verein_members SET status='resigned',ended_at=%s,end_reason=%s,
-                end_reviewer=NULL WHERE application_id=%s AND status='active'""",
-                (now, reason.strip(), identifier),
-            )
+            _receive_resignation(cur, identifier, reason.strip(), now)
             cur.execute(
                 """INSERT INTO verein_member_requests(id,application_id,kind,reason,status,created_at,resolved_at)
                 VALUES (%s,%s,'resignation',%s,'received',%s,%s)""",
                 (str(uuid.uuid4()), identifier, reason.strip(), now, now),
-            )
-            cur.execute(
-                "INSERT INTO verein_events(application_id,action,reason) VALUES (%s,'resignation_received',%s) RETURNING id",
-                (identifier, reason.strip()),
-            )
-            event = cur.fetchone()["id"]
-            cur.execute(
-                "UPDATE verein_notifications SET superseded_at=%s WHERE application_id=%s AND sent_at IS NULL AND superseded_at IS NULL",
-                (now, identifier),
-            )
-            cur.execute(
-                "INSERT INTO verein_notifications(id,application_id,kind,event_id) VALUES (%s,%s,'resignation_received',%s)",
-                (str(uuid.uuid4()), identifier, event),
             )
             return
         if (
@@ -301,6 +284,28 @@ def resolve_member_request(token, identifier, outcome, reason, evidence):
         )
 
 
+def _receive_resignation(cur, identifier, reason, received_at):
+    cur.execute(
+        """UPDATE verein_members SET status='resigned',ended_at=%s,end_reason=%s,
+        end_reviewer=NULL WHERE application_id=%s""",
+        (received_at, reason, identifier),
+    )
+    cur.execute(
+        """INSERT INTO verein_events(application_id,action,reason,occurred_at)
+        VALUES (%s,'resignation_received',%s,%s) RETURNING id""",
+        (identifier, reason, received_at),
+    )
+    event = cur.fetchone()["id"]
+    cur.execute(
+        "UPDATE verein_notifications SET superseded_at=%s WHERE application_id=%s AND sent_at IS NULL AND superseded_at IS NULL",
+        (now_utc(), identifier),
+    )
+    cur.execute(
+        "INSERT INTO verein_notifications(id,application_id,kind,event_id) VALUES (%s,%s,'resignation_received',%s)",
+        (str(uuid.uuid4()), identifier, event),
+    )
+
+
 def create_tables(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS verein_applications (
@@ -411,6 +416,32 @@ def create_tables(cur):
         ALTER TABLE verein_member_requests ADD CONSTRAINT verein_member_requests_status_check
             CHECK(status IN ('pending','approved','dismissed','received'));
     """)
+    # Upgrade declarations saved by the former board-resolution workflow. The
+    # original receipt remains the effective date; startup never invents a vote.
+    cur.execute("""SELECT r.id,r.application_id,r.reason,r.created_at,m.ended_at
+        FROM verein_member_requests r JOIN verein_applications a ON a.id=r.application_id
+        JOIN verein_members m ON m.application_id=a.id
+        WHERE r.kind='resignation' AND r.status='pending'
+        ORDER BY a.id,r.created_at FOR UPDATE OF a,m,r""")
+    for request in cur.fetchall():
+        earlier_end = (
+            request["ended_at"] and request["ended_at"] < request["created_at"]
+        )
+        if not earlier_end:
+            _receive_resignation(
+                cur, request["application_id"], request["reason"], request["created_at"]
+            )
+        cur.execute(
+            """UPDATE verein_member_requests SET status=%s,resolved_at=created_at,
+            resolution=%s WHERE id=%s""",
+            (
+                "dismissed" if earlier_end else "received",
+                "Membership already ended before receipt"
+                if earlier_end
+                else "Effective on original receipt; migrated from pending declaration",
+                request["id"],
+            ),
+        )
 
 
 def token_digest(value):
@@ -731,10 +762,16 @@ def decide(token, identifier, decision, reason):
         )
 
 
+_CURRENT_CONTRIBUTION_NOTICE = """(n.kind NOT IN ('accepted','renewal','reminder')
+    OR EXISTS (SELECT 1 FROM verein_members m
+        WHERE m.application_id=n.application_id AND m.status='active'))"""
+
+
 def pending_notifications(token):
     with transaction_cursor() as cur:
         require_reviewer(cur, token)
-        cur.execute("""SELECT n.id,n.kind,a.email,a.preferred_locale,e.reason AS decision_reason,
+        cur.execute(
+            """SELECT n.id,n.kind,a.email,a.preferred_locale,e.reason AS decision_reason,
             d.period_start,d.amount_chf-(SELECT COALESCE(SUM(r.amount_chf),0)
                 FROM verein_dues_receipts r WHERE r.dues_id=d.id) AS outstanding_chf,
             COALESCE(d.due_on,(SELECT first.due_on FROM verein_dues first JOIN verein_members m ON m.id=first.member_id
@@ -742,27 +779,69 @@ def pending_notifications(token):
             FROM verein_notifications n JOIN verein_applications a ON a.id=n.application_id
             JOIN verein_events e ON e.id=n.event_id
             LEFT JOIN verein_dues d ON d.id=n.dues_id
-            WHERE n.sent_at IS NULL AND n.superseded_at IS NULL ORDER BY n.created_at,due_on,n.id LIMIT 50""")
+            WHERE n.sent_at IS NULL AND n.superseded_at IS NULL AND """
+            + _CURRENT_CONTRIBUTION_NOTICE
+            + " ORDER BY n.created_at,due_on,n.id LIMIT 50"
+        )
         return [dict(row) for row in cur.fetchall()]
+
+
+def _delivery_notice(cur, identifier):
+    cur.execute(
+        "SELECT application_id FROM verein_notifications WHERE id=%s", (identifier,)
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    # Use the same application lock as resignation, termination and payment.
+    # Keep it until SMTP returns so those actions cannot race a stale batch.
+    cur.execute(
+        "SELECT id FROM verein_applications WHERE id=%s FOR UPDATE",
+        (row["application_id"],),
+    )
+    cur.execute(
+        """SELECT n.id,n.kind,n.dues_id FROM verein_notifications n
+        WHERE n.id=%s AND n.sent_at IS NULL AND n.superseded_at IS NULL AND """
+        + _CURRENT_CONTRIBUTION_NOTICE
+        + " FOR UPDATE OF n",
+        (identifier,),
+    )
+    return cur.fetchone()
+
+
+def _record_delivery(cur, notice, sent):
+    now = now_utc()
+    cur.execute(
+        """UPDATE verein_notifications SET attempts=attempts+1,
+        sent_at=CASE WHEN %s THEN %s ELSE sent_at END WHERE id=%s""",
+        (sent, now, notice["id"]),
+    )
+    if sent and notice["kind"] == "reminder":
+        cur.execute(
+            """UPDATE verein_dues SET reminder_sent_at=%s
+            WHERE id=%s AND paid_at IS NULL AND reminder_sent_at IS NULL""",
+            (now, notice["dues_id"]),
+        )
+
+
+def send_notification(token, identifier, send):
+    """Recheck a queued notice under the membership lock before calling SMTP."""
+    with transaction_cursor() as cur:
+        require_reviewer(cur, token)
+        notice = _delivery_notice(cur, identifier)
+        if not notice:
+            return None
+        sent = send()
+        _record_delivery(cur, notice, sent)
+        return sent
 
 
 def record_delivery(token, identifier, sent):
     with transaction_cursor() as cur:
         require_reviewer(cur, token)
-        now = now_utc()
-        cur.execute(
-            """UPDATE verein_notifications SET attempts=attempts+1,
-            sent_at=CASE WHEN %s THEN %s ELSE sent_at END
-            WHERE id=%s AND sent_at IS NULL AND superseded_at IS NULL RETURNING kind,dues_id""",
-            (sent, now, identifier),
-        )
-        notice = cur.fetchone()
-        if sent and notice and notice["kind"] == "reminder":
-            cur.execute(
-                """UPDATE verein_dues SET reminder_sent_at=%s
-                WHERE id=%s AND paid_at IS NULL AND reminder_sent_at IS NULL""",
-                (now, notice["dues_id"]),
-            )
+        notice = _delivery_notice(cur, identifier)
+        if notice:
+            _record_delivery(cur, notice, sent)
 
 
 def _dues(cur, identifier, *, require_active=True, dues_id=None):
@@ -905,6 +984,12 @@ def terminate(token, identifier, reason, *, dues_id=None):
             """UPDATE verein_members SET status='terminated',ended_at=%s,
             end_reason=%s,end_reviewer=%s WHERE id=%s""",
             (now, reason, actor["id"], dues["membership_id"]),
+        )
+        cur.execute(
+            """UPDATE verein_notifications SET superseded_at=%s
+            WHERE application_id=%s AND kind IN ('accepted','renewal','reminder')
+            AND sent_at IS NULL AND superseded_at IS NULL""",
+            (now, identifier),
         )
         cur.execute(
             """INSERT INTO verein_events (application_id,actor_id,action,reason)

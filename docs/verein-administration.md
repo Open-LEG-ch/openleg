@@ -38,6 +38,15 @@ accounting and decision records remain available. Mandatory fee corrections and
 retention still need reviewed rules before actual intake. No automatic erasure
 or unsupported waiver is implemented.
 
+The schema upgrade also reconciles pending resignations saved by the former
+board-resolution workflow. It preserves the declaration and original receipt
+timestamp, applies that effective date and queues one receipt confirmation.
+An already earlier membership end is retained. Repeated initialization does not
+repeat the transition. Ending membership cancels unsent contribution notices
+across every year. Delivery rechecks current eligibility while holding the same
+membership lock as resignation and termination, including for an older fetched
+batch. Sent correspondence remains in the history.
+
 ## Meetups
 
 `/verein/vorstand/treffen` uses the same individually authenticated board
