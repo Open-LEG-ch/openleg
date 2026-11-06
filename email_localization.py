@@ -23,7 +23,7 @@ _TEMPLATES = frozenset(
 ).union({"emails/municipality_interest.html", "emails/formation_nudge.html"})
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=4)
 def _catalog(locale):
     return Translations.load(_ROOT / "translations", locales=[locale])
 
@@ -47,7 +47,7 @@ def recipient_locale(profile, email, *, email_field="email"):
     return resolve_locale(profile.get("preferred_locale"))
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=4)
 def _environment(locale):
     environment = Environment(
         loader=FileSystemLoader(_ROOT / "templates"),

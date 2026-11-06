@@ -4,6 +4,7 @@
 import re
 from datetime import date
 from functools import wraps
+from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from babel.dates import format_date
@@ -23,15 +24,27 @@ from flask_babel import ngettext as babel_ngettext
 from jinja2 import pass_context
 from werkzeug.exceptions import HTTPException
 
-from locale_policy import normalize_locale, resolve_locale
+from locale_policy import extended_locales_enabled, normalize_locale, resolve_locale
 from translation_markers import gettext_noop
 
 SUPPORTED_LOCALES = {"de_CH": "Deutsch", "fr_CH": "Français"}
+RELEASE_LOCALES = {
+    "de_CH": "Deutsch",
+    "en": "English",
+    "fr_CH": "Français",
+    "it_CH": "Italiano",
+}
+
+
+def supported_locales():
+    return RELEASE_LOCALES if extended_locales_enabled() else SUPPORTED_LOCALES
+
 
 LOCALIZED_ASSETS = frozenset(
     {
         "/static/images/og-image.png",
         "/static/images/og-image.svg",
+        "/static/images/release/og-image.png",
         "/static/images/product/resident-dashboard.gif",
         "/static/images/product/resident-dashboard-static.webp",
         "/static/images/product/municipality-dashboard.gif",
@@ -58,7 +71,12 @@ def localized_asset(path):
     if selected == "de_CH":
         return path
     directory, filename = path.rsplit("/", 1)
-    return directory + "/" + selected.replace("_", "-") + "/" + filename
+    candidate = directory + "/" + selected.replace("_", "-") + "/" + filename
+    if (Path(__file__).resolve().parent / candidate.lstrip("/")).is_file():
+        return candidate
+    if has_request_context():
+        g.untranslated_media = True
+    return path
 
 
 HTTP_ERROR_TITLES = {
@@ -179,7 +197,14 @@ def language_switch_url(locale):
         (key, value) for key, value in request.args.items(multi=True) if key != "lang"
     ]
     arguments.append(("lang", selected.replace("_", "-")))
-    return "/" + request.path.lstrip("/") + "?" + urlencode(arguments)
+    # Confirmation has consumed the credential by the time its page renders.
+    # Language selection must lead to a stable access request, not replay it.
+    path = (
+        "/verein/mitglied/zugang"
+        if request.path.startswith("/verein/bestaetigen/")
+        else request.path
+    )
+    return "/" + path.lstrip("/") + "?" + urlencode(arguments)
 
 
 def localized_url(url, locale=None):
@@ -222,6 +247,35 @@ def localized_url(url, locale=None):
     )
 
 
+def public_language_url(path, locale):
+    """Stable query equivalents; never move private or machine routes."""
+    selected = normalize_locale(locale)
+    if selected is None:
+        raise ValueError("Unsupported display language")
+    parts = urlsplit(path)
+    arguments = [
+        (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if key != "lang"
+    ]
+    default = (
+        normalize_locale(current_app.config.get("BABEL_DEFAULT_LOCALE")) or "de_CH"
+    )
+    if selected != "de_CH" or default != "de_CH":
+        arguments.append(("lang", selected.replace("_", "-")))
+    return urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urlencode(arguments), "")
+    )
+
+
+def public_canonical_path(path):
+    return (
+        public_language_url(path, str(get_locale()))
+        if extended_locales_enabled()
+        else path
+    )
+
+
 def _request_local_filter(formatter):
     @pass_context
     @wraps(formatter)
@@ -235,15 +289,24 @@ def init_app(app):
     """Install gettext in Python/Jinja and publish presentation-only metadata."""
     app.config.setdefault("BABEL_DEFAULT_LOCALE", "de_CH")
     app.config.setdefault("BABEL_DEFAULT_TIMEZONE", "Europe/Zurich")
-    default = normalize_locale(app.config["BABEL_DEFAULT_LOCALE"])
+    default = normalize_locale(
+        app.config["BABEL_DEFAULT_LOCALE"],
+        extended=app.config.get("SITE_RELEASE_ENABLED") is True,
+    )
     if not default:
-        raise ValueError("BABEL_DEFAULT_LOCALE must be de_CH or fr_CH")
+        raise ValueError(
+            "BABEL_DEFAULT_LOCALE must be a supported active presentation locale"
+        )
     app.config["BABEL_DEFAULT_LOCALE"] = default
     Babel(app, configure_jinja=False, locale_selector=select_locale)
     app.jinja_env.add_extension("jinja2.ext.i18n")
     # Old-style Jinja preserves literal '%' in German source text. Flask-Babel's
     # gettext still supports named interpolation when kwargs are supplied.
     app.jinja_env.install_gettext_callables(gettext, ngettext, newstyle=False)
+    app.jinja_env.globals.update(
+        public_language_url=public_language_url,
+        public_canonical_path=public_canonical_path,
+    )
     # Locale-sensitive filters must execute per render, even for literals.
     # Without pass_context Jinja folds them into the compiled template cache.
     for name, formatter in {
@@ -281,7 +344,7 @@ def init_app(app):
     def language_context():
         return {
             "current_locale": str(get_locale()).replace("_", "-"),
-            "supported_locales": SUPPORTED_LOCALES,
+            "supported_locales": supported_locales(),
             "language_switch_url": language_switch_url,
         }
 
@@ -293,7 +356,7 @@ def init_app(app):
                 language = next(
                     (
                         locale.replace("_", "-")
-                        for locale in SUPPORTED_LOCALES
+                        for locale in supported_locales()
                         if "/" + locale.replace("_", "-") + "/" in request.path
                     ),
                     "de-CH",

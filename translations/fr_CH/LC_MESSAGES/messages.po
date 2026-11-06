@@ -161,7 +161,7 @@ msgid_plural "%(num)s Nachbarn sind über Ihren Link beigetreten."
 msgstr[0] "%(num)s voisin a rejoint la communauté via votre lien."
 msgstr[1] "%(num)s voisins ont rejoint la communauté via votre lien."
 
-#: templates/leg_billing_policy.html:126 templates/member_invoice_detail.html:52
+#: templates/leg_billing_policy.html:126 templates/member_invoice_detail.html:51
 #, python-format
 msgid "%(num)s Tag"
 msgid_plural "%(num)s Tage"
@@ -421,37 +421,13 @@ msgstr "1’000 kWh"
 msgid "1. Adresse prüfen"
 msgstr "1. Vérifier l’adresse"
 
-#: templates/sandbox/telemetry.html:11
-msgid "1. Als Lea ein erfundenes Gerät erfassen"
-msgstr "1. Enregistrer un appareil fictif en tant que Lea"
-
-#: templates/sandbox/questions.html:9
-msgid "1. Als Lea eine Frage stellen"
-msgstr "1. Poser une question en tant que Lea"
-
-#: templates/sandbox/operator.html:8
-msgid "1. Einen API-Schlüssel ausstellen"
-msgstr "1. Émettre une clé API"
-
-#: templates/sandbox/billing.html:9
-msgid "1. Quelle und Richtlinie prüfen"
-msgstr "1. Vérifier la source et la politique"
-
 #: templates/index.html:289
 msgid "1. Rang prüfen"
 msgstr "1. Consulter le classement"
 
-#: templates/sandbox/payments.html:9
-msgid "1. Rechnungen ausstellen und zustellen"
-msgstr "1. Émettre et envoyer les factures"
-
 #: templates/documents/community_agreement.html:17
 msgid "1. Teilnehmer"
 msgstr "1. Participants"
-
-#: templates/sandbox/archive.html:8
-msgid "1. Umfang prüfen und herunterladen"
-msgstr "1. Vérifier le contenu et télécharger"
 
 #: templates/datenschutz.html:27
 msgid "1. Verantwortliche Stelle"
@@ -469,33 +445,9 @@ msgstr "Projection financière sur 10 ans"
 msgid "15'000 kWh"
 msgstr "15’000 kWh"
 
-#: templates/sandbox/telemetry.html:15
-msgid "2. Aktualität, Störung und Schlüssel prüfen"
-msgstr "2. Vérifier la fraîcheur, les défauts et les clés"
-
-#: templates/sandbox/questions.html:12
-msgid "2. Als Sam bestätigen und beantworten"
-msgstr "2. Accuser réception et répondre en tant que Sam"
-
-#: templates/sandbox/operator.html:22
-msgid "2. Anfragen bearbeiten und ausführen"
-msgstr "2. Modifier et exécuter des requêtes"
-
-#: templates/sandbox/billing.html:17
-msgid "2. Entwurf vorbereiten und freigeben"
-msgstr "2. Préparer et approuver le projet"
-
-#: templates/sandbox/payments.html:14
-msgid "2. Kontoauszüge herunterladen und importieren"
-msgstr "2. Télécharger et importer les relevés"
-
 #: templates/index.html:401
 msgid "2. Nachbarn finden"
 msgstr "2. Trouver des voisins"
-
-#: templates/sandbox/archive.html:14
-msgid "2. Neues Ziel prüfen und wiederherstellen"
-msgstr "2. Vérifier une nouvelle destination et restaurer"
 
 #: templates/datenschutz.html:33
 msgid "2. Verarbeitete Daten"
@@ -509,18 +461,6 @@ msgstr "2. Modèle de répartition"
 msgid "2. Ziel sehen"
 msgstr "2. Visualiser l’objectif"
 
-#: templates/sandbox/questions.html:14
-msgid "3. Als Lea die vollständige Historie lesen"
-msgstr "3. Lire tout l’historique en tant que Lea"
-
-#: templates/sandbox/payments.html:36
-msgid "3. Einträge prüfen und eine Zuordnung bestätigen"
-msgstr "3. Vérifier les écritures et confirmer une correspondance"
-
-#: templates/sandbox/telemetry.html:18
-msgid "3. Für Noah freigeben und wieder entziehen"
-msgstr "3. Partager avec Noah puis retirer l’accès"
-
 #: templates/index.html:297
 msgid "3. Gemeinde anmelden"
 msgstr "3. Inscrire la commune"
@@ -532,18 +472,6 @@ msgstr "3. Lancer une CEL"
 #: templates/documents/community_agreement.html:24
 msgid "3. Rechtsgrundlage"
 msgstr "3. Base légale"
-
-#: templates/sandbox/operator.html:29
-msgid "3. Signierte Zustellung und Wiederholung prüfen"
-msgstr "3. Vérifier la livraison signée et sa reprise"
-
-#: templates/sandbox/archive.html:40
-msgid "3. Wiederholung und Ablehnung vergleichen"
-msgstr "3. Comparer la répétition et le refus"
-
-#: templates/sandbox/billing.html:32
-msgid "3. Zustellen und als Mitglied prüfen"
-msgstr "3. Envoyer et consulter en tant que membre"
 
 #: templates/datenschutz.html:41
 msgid "3. Zweck der Verarbeitung"
@@ -642,27 +570,15 @@ msgstr "Documentation de l’API"
 msgid "API-Dokumentation öffnen"
 msgstr "Ouvrir la documentation de l’API"
 
-#: templates/sandbox/operator.html:14
-msgid "API-Schlüssel ausstellen"
-msgstr "Émettre une clé API"
-
-#: templates/sandbox/operator.html:18
-msgid "API-Schlüssel erneuern"
-msgstr "Renouveler la clé API"
-
 #: templates/utility/dashboard.html:82 templates/utility/dashboard.html:106
 msgid "API-Schlüssel erstellen"
 msgstr "Créer une clé API"
-
-#: templates/sandbox/operator.html:16
-msgid "API-Schlüssel für diese Seite"
-msgstr "Clé API pour cette page"
 
 #: utility_portal.py:297
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 msgstr "Clé API générée. Conservez-la en lieu sûr, elle ne s’affiche qu’une seule fois."
 
-#: templates/sandbox/operator.html:18 templates/utility/dashboard.html:86
+#: templates/utility/dashboard.html:86
 msgid "API-Schlüssel widerrufen"
 msgstr "Révoquer la clé API"
 
@@ -705,9 +621,10 @@ msgstr "Expiré"
 msgid "Abgelehnt"
 msgstr "Rejeté"
 
-#: templates/sandbox/billing.html:37
-msgid "Abgelehnte Abrechnungen ausprobieren"
-msgstr "Essayer les facturations refusées"
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:6
+msgid "Abgelehnte Anträge"
+msgstr "Demandes rejetées"
 
 #: templates/sandbox/banner.html:3
 msgid "Abgemeldet"
@@ -739,6 +656,11 @@ msgstr "Dépendance au cloud constructeur"
 msgid "Abklärung geplant"
 msgstr "Vérification prévue"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:39
+msgid "Ablauf der Abrechnung"
+msgstr "Étapes de la facturation"
+
 #: templates/admin/ops.html:148 templates/contact_requests.html:52
 msgid "Ablehnen"
 msgstr "Refuser"
@@ -761,12 +683,6 @@ msgstr "Se désinscrire"
 #: templates/unsubscribe.html:6 templates/unsubscribe.html:9
 msgid "Abmeldung | "
 msgstr "Se désabonner |"
-
-#: templates/sandbox/billing.html:2 templates/sandbox/billing.html:5 templates/sandbox/home.html:27
-#: templates/sandbox/home.html:29 templates/sandbox/payments.html:11
-#: templates/sandbox/questions.html:11
-msgid "Abrechnung ausprobieren"
-msgstr "Essayer la facturation"
 
 #: community_access.py:65
 msgid "Abrechnung freigeben"
@@ -801,7 +717,7 @@ msgid "Abrechnungs-Richtlinie"
 msgstr "Politique de facturation"
 
 #: member_invoices.py:39 templates/admin/abrechnungen.html:121 templates/leg_billing_policy.html:107
-#: templates/member_invoice_detail.html:88
+#: templates/member_invoice_detail.html:87
 msgid "Abrechnungsentgelt"
 msgstr "Frais de décompte"
 
@@ -809,7 +725,7 @@ msgstr "Frais de décompte"
 msgid "Abrechnungsentgelt (Rp./kWh)"
 msgstr "Frais de facturation (ct./kWh)"
 
-#: templates/member_invoice_detail.html:91
+#: templates/member_invoice_detail.html:90
 msgid "Abrechnungsentgelt dieser Rechnung"
 msgstr "Frais de facturation pour cette facture"
 
@@ -850,6 +766,11 @@ msgstr "Vérifier l’écart"
 #: templates/admin/ops.html:139
 msgid "Abweichung von ElCom"
 msgstr "Déviation par rapport à l'ElCom"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:9
+msgid "Abweisung erfassen"
+msgstr "Saisir le rejet"
 
 #: templates/utility/dashboard.html:13
 msgid "Active"
@@ -954,6 +875,11 @@ msgstr ""
 "Vérifier son adresse, trouver des voisins, lancer une CEL : jusqu’à 40% de réduction sur "
 "l’utilisation du réseau pour l’électricité solaire locale."
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:8
+msgid "Adresse und Nachbarschaft"
+msgstr "Adresse et voisinage"
+
 #: templates/documents/participant_contract.html:16
 msgid "Adresse:"
 msgstr "Adresse :"
@@ -981,6 +907,11 @@ msgstr "Action impossible dans l’état actuel"
 #: formation_wizard.py:57 municipality.py:102 municipality.py:291
 msgid "Aktiv"
 msgstr "Actif"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:6
+msgid "Aktive Mitglieder"
+msgstr "Membres actifs"
 
 #: templates/leg_dashboard.html:310
 msgid ""
@@ -1022,10 +953,6 @@ msgstr ""
 "Les informations actuelles et les nouvelles confirmations sont mises en pause. Les attributions "
 "documentées ne constituent pas une vérification de source actuelle."
 
-#: templates/sandbox/billing.html:14
-msgid "Aktuelle angenommene Quelle"
-msgstr "Source acceptée en vigueur"
-
 #: templates/gemeinde/methodik.html:75
 msgid "Aktueller Snapshot:"
 msgstr "État actuel :"
@@ -1037,6 +964,11 @@ msgstr "Tous les tarifs"
 #: templates/telemetry_dashboard.html:41
 msgid "Alle Angaben gelten beim Laden dieser Seite. Jede Quelle wird einzeln angezeigt."
 msgstr "Les données correspondent au chargement de cette page. Chaque source est affichée séparément."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/application.html:5
+msgid "Alle Anträge"
+msgstr "Toutes les demandes"
 
 #: rangliste.py:30
 msgid "Alle Dichten"
@@ -1077,6 +1009,7 @@ msgstr ""
 " réseau et dans la même zone de desserte, utilisent au maximum"
 
 #: templates/how-it-works.html:52
+#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1089,6 +1022,11 @@ msgstr ""
 #: templates/emails/day_14_formation.html:51
 msgid "Alle Teilnehmer unterzeichnen den Gemeinschaftsvertrag digital."
 msgstr "Tous les participants signent le contrat communautaire par voie numérique."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:6
+msgid "Alle bestätigten Anträge"
+msgstr "Toutes les demandes confirmées"
 
 #: templates/leg_gruenden.html:74
 msgid "Alle drei Modelle vergleichen"
@@ -1113,10 +1051,6 @@ msgstr "Spécifié comme désactivé"
 #: advisories.py:45
 msgid "Als erledigt angegeben"
 msgstr "Signalé comme terminé"
-
-#: templates/sandbox/telemetry.html:22
-msgid "Alten Geräteschlüssel prüfen"
-msgstr "Tester l’ancienne clé de l’appareil"
 
 #: templates/telemetry_dashboard.html:109 templates/telemetry_shared.html:59
 msgid "Alter beim Laden"
@@ -1145,11 +1079,11 @@ msgstr "Transmettre au niveau supérieur du GRD"
 msgid "An:"
 msgstr "À :"
 
-#: templates/member_invoice_detail.html:224
+#: templates/member_invoice_detail.html:223
 msgid "Anderes"
 msgstr "Autre"
 
-#: templates/api_docs.html:233 templates/sandbox/operator.html:25
+#: templates/api_docs.html:233
 msgid "Anfrage ausführen"
 msgstr "Exécuter la requête"
 
@@ -1205,6 +1139,15 @@ msgstr "Les pièces jointes doivent être des fichiers PDF."
 msgid "Anlagen-Matching"
 msgstr "Attribution des installations"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:16
+msgid ""
+"Anlagenbetreiber stellen lokal erzeugten Strom bereit. Die Bedingungen und Vergütung regelt die "
+"Gemeinschaft mit den Beteiligten."
+msgstr ""
+"Les exploitants d'installations fournissent de l'électricité produite localement. La communauté "
+"convient des conditions et de la rémunération avec les participants."
+
 #: templates/telemetry_dashboard.html:55
 msgid "Anlagenhinweise"
 msgstr "Messages de l’installation"
@@ -1216,6 +1159,11 @@ msgstr "Guide d’auto-hébergement"
 #: templates/self_host.html:74
 msgid "Anleitung zum privaten Netzwerk"
 msgstr "Guide du réseau privé"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/footer.html:10 templates/release/navigation.html:20 templates/verein/login.html:10
+msgid "Anmelden"
+msgstr "Connexion"
 
 #: templates/leg_dashboard.html:279
 msgid "Anmeldepaket herunterladen"
@@ -1287,7 +1235,7 @@ msgstr "Personne de contact"
 msgid "Anteil"
 msgstr "Part"
 
-#: templates/member_invoice_detail.html:118
+#: templates/member_invoice_detail.html:117
 msgid "Anteil am Quartierakku dieser Rechnung"
 msgstr "Part de la batterie de quartier pour cette facture"
 
@@ -1304,8 +1252,18 @@ msgstr "Part en %"
 msgid "Anteil lokal verbrauchbar:"
 msgstr "Part consommable localement :"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/join.html:18
+msgid "Antrag senden"
+msgstr "Envoyer la demande"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:6
+msgid "Anträge und Mitglieder filtern"
+msgstr "Filtrer les demandes et les membres"
+
 #: templates/api_docs.html:234 templates/leg_billing.html:182 templates/leg_dashboard.html:241
-#: templates/member_invoice_detail.html:213 templates/sandbox/questions.html:27
+#: templates/member_invoice_detail.html:212
 msgid "Antwort"
 msgstr "Réponse"
 
@@ -1317,21 +1275,22 @@ msgstr "Simuler la réponse à l'adhésion"
 msgid "Antwort oder Status ist erforderlich."
 msgstr "Une réponse ou un statut est requis."
 
-#: templates/sandbox/questions.html:30
-msgid "Antwort und Status speichern"
-msgstr "Enregistrer la réponse et l’état"
-
 #: templates/leg_dashboard.html:275
 msgid "Antwort:"
 msgstr "Réponse :"
 
-#: templates/api_docs.html:235 templates/member_invoice_detail.html:215
+#: templates/api_docs.html:235 templates/member_invoice_detail.html:214
 msgid "Antworten"
 msgstr "Réponses"
 
 #: templates/equipment_form.html:63
 msgid "Anwendbarkeit für dieses Modell"
 msgstr "Applicabilité pour ce modèle"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:6
+msgid "Anzeigen"
+msgstr "Afficher"
 
 #: templates/utility/register.html:62
 msgid "Appenzell A.Rh."
@@ -1350,10 +1309,6 @@ msgid "Architektur, Datenpipeline, Repo-Grenzen und Selbsthosting der freien Ope
 msgstr ""
 "Architecture, chaîne de données, périmètre des dépôts et auto-hébergement de l’infrastructure "
 "libre OpenLEG."
-
-#: templates/sandbox/archive.html:27
-msgid "Archiv abgelehnt. Es wurden keine Datensätze importiert."
-msgstr "Archive refusée. Aucun enregistrement n’a été importé."
 
 #: templates/fuer_gemeinden.html:77 templates/leg_gruenden.html:212
 msgid "Art. 17d und 17e StromVG"
@@ -1376,6 +1331,7 @@ msgid "Art. 19h StromVV"
 msgstr "Art. 19h OApEl"
 
 #: templates/leg_kalkulator.html:267
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1397,6 +1353,7 @@ msgstr ""
 "tension."
 
 #: templates/leg_kalkulator.html:288
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -1416,19 +1373,6 @@ msgstr "Art. 8a decies, al. 6, OApEl"
 msgid "Auch der unbequeme Teil"
 msgstr "Les questions difficiles aussi"
 
-#: templates/sandbox/billing.html:40
-msgid ""
-"Auch ein Akku ohne vollständige passende Messreihen ergibt keine freigegebene Rechnung. Erfassen "
-"Sie beispielsweise im gewöhnlichen LEG-Dashboard den Speicher sonnwil-unmapped-battery mit 20 "
-"kWh, CHF 100 Jahreskosten und je 25% Kostenanteil für die vier bestätigten Mitglieder. Der "
-"Abrechnungslauf bleibt abgelehnt. Setzen Sie danach das Übungsdorf zurück."
-msgstr ""
-"Une batterie sans séries de mesures complètes et correspondantes ne permet pas non plus "
-"d’approuver une facture. Par exemple, dans le tableau de bord CEL habituel, saisissez la batterie"
-" sonnwil-unmapped-battery avec 20 kWh, CHF 100 de coûts annuels et une part de 25% pour chacun "
-"des quatre membres confirmés. Le traitement reste refusé. Réinitialisez ensuite le village "
-"d’essai."
-
 #: templates/index.html:449
 msgid ""
 "Auch ohne eindeutigen Adresstreffer können wir Nachfrage sammeln. Der Eintrag wird nicht als "
@@ -1440,6 +1384,11 @@ msgstr ""
 #: templates/leg_billing.html:152
 msgid "Audit-Verlauf"
 msgstr "Historique des audits"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:50
+msgid "Auf GitHub mitarbeiten"
+msgstr "Contribuer sur GitHub"
 
 #: templates/gemeinde/rangliste.html:118
 msgid "Auf Kurs"
@@ -1463,6 +1412,16 @@ msgstr "Sur votre propre infrastructure"
 msgid "Auffällige Messfenster:"
 msgstr "Intervalles de mesure inhabituels :"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:15
+msgid "Aufgaben im Quartier"
+msgstr "Rôles dans le quartier"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:27
+msgid "Aufgaben und Zusammenarbeit verstehen"
+msgstr "Comprendre les rôles et la collaboration"
+
 #: templates/equipment_form.html:64
 msgid "Aufgabenstatus"
 msgstr "Statut de la tâche"
@@ -1470,6 +1429,11 @@ msgstr "Statut de la tâche"
 #: templates/index.html:231
 msgid "Aufnahmen aus dem laufenden Produkt, keine Mockups. Klicken Sie sich durch die Demo."
 msgstr "Captures de l’application en fonctionnement. Parcourez la démo."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/application.html:16
+msgid "Aufnehmen"
+msgstr "Accepter"
 
 #: templates/fuer_gemeinden.html:97
 msgid "Aufwand"
@@ -1479,7 +1443,7 @@ msgstr "Travail nécessaire"
 msgid "Aus Messwerten berechnet"
 msgstr "Calculé à partir des mesures"
 
-#: templates/member_invoice_detail.html:196
+#: templates/member_invoice_detail.html:195
 msgid "Aus dem Speicher"
 msgstr "Depuis le stockage"
 
@@ -1512,6 +1476,11 @@ msgstr ""
 "Profils exclus : %(overlap)s avec des sources qui se chevauchent, %(unavailable)s sans mesure "
 "actuelle, %(estimated)s avec des estimations, %(unsynchronized)s avec des instants différents."
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:6
+msgid "Ausgetretene Mitglieder"
+msgstr "Membres démissionnaires"
+
 #: templates/leg_kalkulator.html:90
 msgid "Ausgewählt:"
 msgstr "Sélection :"
@@ -1537,13 +1506,18 @@ msgstr "Hors de cette plage de micrologiciel"
 msgid "Ausstehende LEG-Einträge"
 msgstr "Entrées CEL en attente"
 
-#: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:45
+#: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:44
 msgid "Aussteller:"
 msgstr "Émetteur :"
 
 #: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Austritt"
 msgstr "Départ"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/member.html:9
+msgid "Austritt beantragen"
+msgstr "Annoncer sa démission"
 
 #: templates/documents/participant_contract.html:29
 msgid ""
@@ -1553,9 +1527,15 @@ msgstr ""
 "Sortie pour la fin d’un trimestre, moyennant un préavis de 3 mois. Tous les décomptes en suspens\n"
 "sont réglés avant la sortie."
 
-#: templates/sandbox/payments.html:27
-msgid "Auszug in der Abrechnungsübersicht importieren"
-msgstr "Importer le relevé dans la vue de facturation"
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:7
+msgid "Austritte und Beschwerden"
+msgstr "Démissions et recours"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/member.html:8 templates/verein/member.html:9 templates/verein/queue.html:8
+msgid "Austrittsantrag"
+msgstr "Demande de démission"
 
 #: payment_reconciliation.py:19
 msgid "Automatisch verbucht"
@@ -1646,11 +1626,6 @@ msgstr "Intégrer le badge"
 msgid "Bankzahlungen abgleichen"
 msgstr "Rapprocher les paiements bancaires"
 
-#: templates/sandbox/home.html:32 templates/sandbox/home.html:34 templates/sandbox/payments.html:2
-#: templates/sandbox/payments.html:5
-msgid "Bankzahlungen ausprobieren"
-msgstr "Essayer le rapprochement des paiements"
-
 #: templates/utility/register.html:50
 msgid "Basel-Landschaft"
 msgstr "Bâle-Campagne"
@@ -1693,6 +1668,16 @@ msgstr "Si la CEL demande un système de mesure intelligent, le GRD l’installe
 msgid "Beantragt die LEG ein intelligentes Messsystem, installiert er es innert drei Monaten."
 msgstr "Si la CEL demande un système de mesure intelligent, il l’installe dans un délai de trois mois."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:6
+msgid "Beendete Mitgliedschaften"
+msgstr "Adhésions résiliées"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:11
+msgid "Beendigung"
+msgstr "Fin de l'adhésion"
+
 #: templates/partials/install_console.html:20 templates/partials/install_console.html:32
 #: templates/partials/install_console.html:44
 msgid "Befehl kopieren"
@@ -1702,7 +1687,7 @@ msgstr "Copier la commande"
 msgid "Befehl kopiert."
 msgstr "Commande copiée."
 
-#: templates/sandbox/home.html:67
+#: templates/sandbox/home.html:37
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
@@ -1713,7 +1698,7 @@ msgstr ""
 "gestionnaire de réseau. Activez la CEL uniquement avec un justificatif de démarrage fictif "
 "distinct."
 
-#: templates/sandbox/home.html:59
+#: templates/sandbox/home.html:29
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -1722,6 +1707,17 @@ msgstr ""
 "Créez un nouveau ménage fictif. Confirmez-le dans la boîte de réception et connectez-vous avec un"
 " lien d'accès. Modifiez ensuite le profil énergétique et calculez les économies avec les "
 "hypothèses affichées."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:12 templates/verein/application.html:15
+#: templates/verein/application.html:25 templates/verein/member.html:7
+msgid "Begründung"
+msgstr "Motif"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:9
+msgid "Begründung des Entscheids"
+msgstr "Motif de la décision"
 
 #: templates/emails/formation_nudge.html:43
 msgid "Bei Fragen antworten Sie direkt auf diese E-Mail oder kontaktieren Sie uns unter"
@@ -1751,6 +1747,11 @@ msgstr ""
 "La réinitialisation supprime vos modifications, messages, documents et identifiants. Les anciens "
 "onglets ne peuvent pas modifier le nouveau village."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:41
+msgid "Beispiel-Dashboard öffnen"
+msgstr "Ouvrir le tableau de bord de démonstration"
+
 #: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Beitritt"
 msgstr "Adhésion"
@@ -1758,22 +1759,6 @@ msgstr "Adhésion"
 #: templates/sandbox/formation.html:76
 msgid "Beitritt melden oder erneut abrufen"
 msgstr "Annoncer l'adhésion ou retrouver son annonce"
-
-#: templates/sandbox/operator.html:9
-msgid ""
-"Belassen Sie die drei gewählten Fähigkeiten. Schlüssel und Signiergeheimnis erscheinen nur bei "
-"der Ausstellung oder Erneuerung. Diese Seite speichert sie nicht im Browser-Speicher. Nach einem "
-"Seitenwechsel können Sie den kopierten Schlüssel einfügen oder einen neuen ausstellen. Eine "
-"fremde Callback-Adresse wird abgelehnt."
-msgstr ""
-"Conservez les trois capacités sélectionnées. La clé et le secret de signature apparaissent "
-"uniquement à l’émission ou au renouvellement. Cette page ne les conserve pas dans le stockage du "
-"navigateur. Après une navigation, collez la clé copiée ou émettez-en une nouvelle. Toute autre "
-"adresse de rappel est refusée."
-
-#: sandbox_payments.py:28
-msgid "Belastung statt Gutschrift"
-msgstr "Débit au lieu de crédit"
 
 #: templates/admin/abrechnungen.html:120
 msgid "Belastungen"
@@ -1811,47 +1796,6 @@ msgstr "Calculé à partir du classement OpenLEG"
 msgid "Bereich laut Quelle"
 msgstr "Plage selon la source"
 
-#: templates/sandbox/billing.html:19
-msgid ""
-"Bereiten Sie als Sam den Entwurf vor. Wechseln Sie anschliessend zu Robin und prüfen Sie die "
-"gewöhnliche Freigabe. Eine Wiederholung erstellt keine zweite Periode und keine zweiten "
-"Rechnungen. Bei geänderten Eingaben bleibt der ursprüngliche Stand erhalten."
-msgstr ""
-"Préparez le projet en tant que Sam. Passez ensuite à Robin et vérifiez l’approbation habituelle. "
-"Répéter une opération ne crée ni seconde période ni doublons de factures. Si les données ont "
-"changé, l’état initial est conservé."
-
-#: templates/sandbox/questions.html:10
-msgid ""
-"Bereiten Sie als Sam eine September-Abrechnung vor, geben Sie sie als Robin frei und stellen Sie "
-"Leas Rechnung zu. Wechseln Sie zu Lea, öffnen Sie die eigene Rechnung und senden Sie eine Frage. "
-"Optional können Sie die eigene SIMULATION-Rechnung als PDF herunterladen und als Beleg anhängen, "
-"höchstens 2 MB."
-msgstr ""
-"Préparez la facturation de septembre en tant que Sam, approuvez-la en tant que Robin et envoyez "
-"la facture de Lea. Passez à Lea, ouvrez sa facture et posez une question. Vous pouvez télécharger"
-" votre facture SIMULATION en PDF et la joindre comme justificatif, au maximum 2 Mo."
-
-#: templates/sandbox/home.html:28
-msgid ""
-"Bereiten Sie als Sam einen September-Entwurf vor, geben Sie ihn als Robin frei und prüfen Sie als"
-" Lea oder Noah die eigene erfundene Rechnung."
-msgstr ""
-"Préparez le projet de septembre en tant que Sam, approuvez-le en tant que Robin, puis consultez "
-"votre facture fictive en tant que Lea ou Noah."
-
-#: templates/sandbox/payments.html:10
-msgid ""
-"Bereiten Sie zuerst die September-Abrechnung als Sam vor. Geben Sie die Rechnungen als Robin frei"
-" und stellen Sie mindestens zwei Rechnungen mit positivem Betrag zu. Bleiben Sie für den "
-"Zahlungsabgleich als Robin angemeldet. Eine ausgestellte, noch nicht zugestellte Rechnung ist "
-"nicht zahlungsberechtigt."
-msgstr ""
-"Préparez d’abord la facturation de septembre en tant que Sam. En tant que Robin, approuvez les "
-"factures et envoyez au moins deux factures de montant positif. Restez connecté en tant que Robin "
-"pour le rapprochement. Une facture émise mais pas encore envoyée ne peut pas recevoir de "
-"paiement."
-
 #: templates/index.html:385
 #, python-format
 msgid "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalt registriert"
@@ -1887,17 +1831,42 @@ msgstr "Berne"
 msgid "Berücksichtigt der Rechner Investitionskosten?"
 msgstr "Le calculateur tient-il compte des coûts d’investissement ?"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/join.html:16
+msgid "Beschlossene Statuten und Aufnahmebedingungen"
+msgstr "Statuts adoptés et conditions d'admission"
+
 #: sandbox_seed.py:79
 msgid "Beschränkter LEG-Betrieb"
 msgstr "Exploitation limitée de la CEL"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/member.html:8 templates/verein/queue.html:8
+msgid "Beschwerde"
+msgstr "Recours"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/member.html:10
+msgid "Beschwerde an die Mitgliederversammlung"
+msgstr "Recours à l'assemblée des membres"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/member.html:10
+msgid "Beschwerde einreichen"
+msgstr "Déposer un recours"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:9
+msgid ""
+"Beschwerden entscheidet die Mitgliederversammlung. Erfassen Sie hier nur den tatsächlichen "
+"Beschluss."
+msgstr ""
+"L'assemblée des membres statue sur les recours. Consignez ici uniquement la décision "
+"effectivement prise."
+
 #: templates/datenschutz.html:73
 msgid "Beschwerderecht bei einer Aufsichtsbehörde"
 msgstr "Droit de déposer une réclamation auprès d’une autorité de surveillance"
-
-#: templates/sandbox/archive.html:20
-msgid "Beschädigtes Manifest simulieren"
-msgstr "Simuler un manifeste endommagé"
 
 #: templates/gemeinde/profil.html:132
 msgid "Bestehende LEG eintragen"
@@ -1919,9 +1888,25 @@ msgstr ""
 msgid "Bestimmt eine Ansprechperson."
 msgstr "Désigne une personne de contact."
 
-#: templates/leg_billing.html:183 templates/sandbox/questions.html:28
+#: templates/leg_billing.html:183
 msgid "Bestätigen"
 msgstr "Confirmer"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:263
+#, python-format
+msgid ""
+"Bestätigen Sie Ihre E-Mail für den Mitgliedsantrag:\n"
+"\n"
+"%(link)s\n"
+"\n"
+"Die Bestätigung ist noch keine Aufnahme. Der Vorstand prüft den Antrag."
+msgstr ""
+"Confirmez votre adresse e-mail pour votre demande d'adhésion :\n"
+"\n"
+"%(link)s\n"
+"\n"
+"Cette confirmation ne vaut pas admission. Le comité examine votre demande."
 
 #: app.py:235
 #, python-format
@@ -2044,13 +2029,18 @@ msgstr "Renvoyer le lien de confirmation"
 msgid "Bestätigungslink senden"
 msgstr "Envoyer le lien de confirmation"
 
-#: templates/admin/abrechnungen.html:134 templates/member_invoice_detail.html:224
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:29
+msgid "Beteiligte und Anschlüsse klären"
+msgstr "Identifier les participants et les raccordements"
+
+#: templates/admin/abrechnungen.html:134 templates/member_invoice_detail.html:223
 msgid "Betrag"
 msgstr "Montant"
 
 #: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:68 templates/member_invoice_detail.html:97
-#: templates/member_invoice_detail.html:124 templates/member_invoice_detail.html:152
+#: templates/member_invoice_detail.html:67 templates/member_invoice_detail.html:96
+#: templates/member_invoice_detail.html:123 templates/member_invoice_detail.html:151
 msgid "Betrag (CHF)"
 msgstr "Montant (CHF)"
 
@@ -2066,6 +2056,11 @@ msgstr "Exploitation"
 #: templates/index.html:500
 msgid "Betrieb dokumentiert"
 msgstr "Une exploitation documentée"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:41
+msgid "Betrieb vorbereiten"
+msgstr "Préparer l'exploitation"
 
 #: templates/partials/install_console.html:52
 msgid "Betrieb, Updates und privates Netzwerk"
@@ -2131,7 +2126,7 @@ msgstr ""
 "Tableau de bord des habitants avec état de préparation, liste des étapes et calculateur "
 "d’économies"
 
-#: billing_lifecycle.py:17 templates/sandbox/payments.html:59
+#: billing_lifecycle.py:17
 msgid "Bezahlt"
 msgstr "Payée"
 
@@ -2263,6 +2258,11 @@ msgstr ""
 "applicable et une source datée. Les liens sources doivent être des adresses HTTPS publiques sans "
 "informations d'identification, paramètres de recherche ou fragments."
 
+#. Draft translation; native language and domain review pending.
+#: verein_routes.py:240
+msgid "Bitte prüfen Sie Name, E-Mail und die Aufnahmebedingungen."
+msgstr "Veuillez vérifier le nom, l'e-mail et les conditions d'admission."
+
 #: templates/advisories.html:34
 msgid ""
 "Bitte prüfen Sie die Angaben. Für «Als erledigt angegeben» brauchen Sie eine datierte Quelle. Das"
@@ -2282,6 +2282,11 @@ msgstr "Veuillez envoyer un objet JSON."
 #: templates/utility/dashboard.html:89
 msgid "Bitte sicher speichern, wird nur einmal angezeigt:"
 msgstr "Conservez-la en lieu sûr, elle ne sera affichée qu’une fois :"
+
+#. Draft translation; native language and domain review pending.
+#: verein_routes.py:40
+msgid "Bitte versuchen Sie es später erneut."
+msgstr "Veuillez réessayer plus tard."
 
 #: templates/partials/form_validation.html:12
 msgid "Bitte verwenden Sie das verlangte Format."
@@ -2415,6 +2420,11 @@ msgstr "Regrouper les bâtiments pour une CEL"
 msgid "Code auf GitHub"
 msgstr "Code sur GitHub"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:50
+msgid "Code beitragen, Wissen teilen und die Gemeinschaft mitgestalten."
+msgstr "Contribuer au code, partager ses connaissances et participer à la vie de la communauté."
+
 #: templates/index.html:180
 msgid "Codebase und Install"
 msgstr "Code et installation"
@@ -2462,20 +2472,6 @@ msgstr "Les frais de facturation définis dans la règle dépassent les limites 
 #: templates/leg_dashboard.html:295
 msgid "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
 msgstr "Le dossier d’inscription peut être préparé une fois que toutes les signatures sont complètes."
-
-#: templates/sandbox/archive.html:9
-msgid ""
-"Das Archiv umfasst die deklarierten LEG-Datensätze: Mitgliedschaft, Dokumente und "
-"Unterschriftsbelege, Mess- und Quellenbelege, Rechnungen, Zahlungen, Fragen und Prüfverlauf. "
-"Live-Zugangsschlüssel, ausstehende Webhook-Zustellungen, private Geräte und Telemetrie sowie "
-"Betriebseinstellungen bleiben ausgeschlossen. Die Wiederherstellung sendet keine historischen "
-"E-Mails oder Webhooks und überträgt keine vollständige Installation."
-msgstr ""
-"L’archive couvre les données déclarées de la CEL : adhésions, documents et preuves de signature, "
-"mesures et sources, factures, paiements, questions et historique. Les clés d’accès actives, "
-"livraisons webhook en attente, appareils et télémétrie privés ainsi que les paramètres "
-"d’exploitation sont exclus. La restauration n’envoie aucun ancien e-mail ou webhook et ne "
-"transfère pas une installation complète."
 
 #: templates/fuer_gemeinden.html:37
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
@@ -2539,10 +2535,6 @@ msgstr "Le modèle de répartition de la règle de facturation n'est pas valide.
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr "La double validation n’a pas pu être modifiée."
 
-#: templates/sandbox/archive.html:35
-msgid "Das Ziel ist abgelaufen. Nehmen Sie den Export für ein neues Ziel erneut auf."
-msgstr "La destination a expiré. Reprenez l’export pour créer une nouvelle destination."
-
 #: store/formation_activation.py:161
 msgid "Das bestätigte Startdatum liegt noch in der Zukunft."
 msgstr "La date de mise en service confirmée est encore à venir."
@@ -2590,10 +2582,6 @@ msgstr "Ouvrir le tableau de bord"
 msgid "Dashboard-Zugang"
 msgstr "Accès au tableau de bord"
 
-#: templates/sandbox/telemetry.html:22
-msgid "Dasselbe Muster wiederholen"
-msgstr "Renvoyer le même échantillon"
-
 #: templates/partials/form_validation.html:13
 msgid "Datei auswählen"
 msgstr "Choisir un fichier"
@@ -2605,10 +2593,6 @@ msgstr "Faites glisser le fichier ici ou"
 #: templates/admin/ops.html:62
 msgid "Dateien"
 msgstr "fichiers"
-
-#: templates/sandbox/payments.html:20
-msgid "Dateien für diese Rechnung anzeigen"
-msgstr "Afficher les fichiers pour cette facture"
 
 #: i18n.py:75
 msgid "Dateiformat nicht unterstützt"
@@ -2626,9 +2610,19 @@ msgstr "Importer les données"
 msgid "Daten melden oder korrigieren"
 msgstr "Signaler ou corriger des données"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:31
+msgid "Daten prüfen und Rechnungen freigeben"
+msgstr "Vérifier les données et approuver les factures"
+
 #: templates/self_host.html:66
 msgid "Daten und Lizenz"
 msgstr "Données et licence"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/navigation.html:11
+msgid "Daten und Methodik"
+msgstr "Données et méthode"
 
 #: templates/gemeinde/verzeichnis.html:127
 msgid "Daten werden wöchentlich aktualisiert."
@@ -2745,10 +2739,6 @@ msgstr "Ouvrir le tableau de bord de démonstration"
 msgid "Den Ablauf zuerst selbst prüfen"
 msgstr "Vérifiez d'abord le processus vous-même"
 
-#: sandbox_billing.py:51
-msgid "Den Messwerten fehlt ein nachvollziehbarer Importbeleg."
-msgstr "Les mesures ne disposent pas d’une preuve d’import traçable."
-
 #: templates/leg_dashboard.html:305
 msgid "Den Originalbeleg finden Sie im Korrespondenzjournal."
 msgstr "Le justificatif original se trouve dans le journal de correspondance."
@@ -2773,9 +2763,19 @@ msgstr "Le projet de facturation ne contient pas de copie de politique."
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr "La pièce jointe n'est pas un fichier PDF valide."
 
+#. Draft translation; native language and domain review pending.
+#: verein_routes.py:271
+msgid "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
+msgstr "La demande est enregistrée. Veuillez réessayer l'envoi par e-mail."
+
 #: store/formation_activation.py:154
 msgid "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
 msgstr "Le justificatif ne correspond plus à la confirmation de mise en service."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:244
+msgid "Der E-Mail-Versand ist derzeit nicht verfügbar."
+msgstr "L'envoi d'e-mails est momentanément indisponible."
 
 #: registry_intake.py:101
 msgid "Der Eintrag konnte nicht gespeichert werden."
@@ -2788,10 +2788,6 @@ msgid ""
 msgstr ""
 "La progression mesure l’évolution du score durant la dernière année complète, en points de "
 "pourcentage. Elle provient uniquement du panel et n’est jamais mélangée à l’état actuel."
-
-#: sandbox_telemetry.py:35
-msgid "Der Geräteschlüssel ist widerrufen oder nicht mehr gültig. Erneuern Sie ihn als Eigentümer."
-msgstr "La clé de l’appareil est révoquée ou n’est plus valide. Renouvelez-la en tant que propriétaire."
 
 #: templates/self_host.html:20
 msgid ""
@@ -2828,6 +2824,7 @@ msgstr ""
 "une part des coûts."
 
 #: templates/gemeinde/methodik.html:95
+#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -2956,6 +2953,24 @@ msgstr ""
 msgid "Der VNB-Austausch ist derzeit nicht verfügbar."
 msgstr "L’échange GRD n’est actuellement pas disponible."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/index.html:7 templates/verein/index.html:8
+msgid ""
+"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Statuten und Vorstand werden an "
+"der tatsächlichen Gründung beschlossen."
+msgstr ""
+"L'association, dont le siège est prévu à Baden, n'est pas encore constituée. Les statuts seront "
+"adoptés et le comité élu lors de l'assemblée constitutive."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/index.html:10 templates/verein/index.html:11
+msgid ""
+"Der Verein pflegt Software, Dokumentation und Community. Er übernimmt nicht den Betrieb des "
+"gehosteten Produkts."
+msgstr ""
+"L'association entretient le logiciel, la documentation et la communauté. Elle n'assure pas "
+"l'exploitation du produit hébergé."
+
 #: templates/leg_gruenden.html:204
 msgid ""
 "Der Verteilnetzbetreiber misst die einzelnen Anschlüsse und ermittelt die Anteile von LEG-Strom "
@@ -2981,6 +2996,16 @@ msgstr ""
 "représenter ensemble au moins 5 pour cent de la puissance de raccordement de tous les "
 "consommateurs finaux participants."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:19
+msgid ""
+"Der Verteilnetzbetreiber prüft die Voraussetzungen und liefert die vereinbarten Messdaten. "
+"Datenzugang, Format und Zuständigkeit müssen vor dem Betrieb geklärt sein."
+msgstr ""
+"Le gestionnaire du réseau de distribution vérifie les conditions et fournit les données de mesure"
+" convenues. L'accès aux données, leur format et les responsabilités doivent être définis avant "
+"l'exploitation."
+
 #: app.py:104 formation_guide.py:35
 msgid ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der "
@@ -2990,6 +3015,32 @@ msgstr ""
 "Le gestionnaire de réseau de distribution facture l’utilisation du réseau et la mesure, ainsi que"
 " les autres achats d’électricité des participants à l’approvisionnement de base. La CEL ou son "
 "prestataire établit le décompte de l’électricité échangée au sein de la communauté."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/member.html:9
+msgid "Der Vorstand bestätigt den Austritt und das wirksame Datum gemäss den beschlossenen Statuten."
+msgstr "Le comité confirme la démission et sa date d'effet conformément aux statuts adoptés."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:351
+#, python-format
+msgid ""
+"Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
+"\n"
+"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Le comité a mis fin à votre adhésion. Motif : %(reason)s\n"
+"\n"
+"Vous pouvez recourir auprès de l'assemblée des membres. Contact : hallo@openleg.ch."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/join.html:6
+msgid ""
+"Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag "
+"von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen Beitragserlass."
+msgstr ""
+"Le comité examine votre demande. L'adhésion commence à l'admission. La cotisation annuelle de CHF"
+" 50 est alors due dans un délai de 30 jours. Aucune dispense de cotisation n'est prévue."
 
 #: templates/partials/form_validation.html:8
 #, python-format
@@ -3037,14 +3088,6 @@ msgstr "L'entrée de paiement ne contient pas de montant valide."
 #: municipality.py:167
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Le lien d’accès est invalide ou a déjà été utilisé."
-
-#: templates/sandbox/archive.html:25
-msgid "Der gespeicherte Stand ist im privaten Ziel wiederhergestellt."
-msgstr "L’état enregistré a été restauré dans la destination privée."
-
-#: sandbox_billing.py:57
-msgid "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
-msgstr "Le traitement habituel de facturation a refusé ce projet. Vérifiez la politique et la source."
 
 #: templates/documents/community_agreement.html:28
 msgid ""
@@ -3100,10 +3143,6 @@ msgstr ""
 "Les processus des opérateurs de réseaux peuvent changer. Par conséquent, vérifiez les détails "
 "liés du GRD responsable avant de vous inscrire."
 
-#: sandbox_billing.py:48
-msgid "Die Abrechnungsablage ist nicht verfügbar. Versuchen Sie es später erneut."
-msgstr "Les données de facturation sont indisponibles. Réessayez plus tard."
-
 #: quartierakku.py:243 quartierakku.py:249 quartierakku.py:254
 msgid "Die Abrechnungsperiode ist ungültig."
 msgstr "La période de décompte n’est pas valide."
@@ -3112,17 +3151,9 @@ msgstr "La période de décompte n’est pas valide."
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr "L’adresse n’a pas pu être analysée."
 
-#: sandbox_billing.py:45
-msgid "Die Akku-Konfiguration ist unvollständig oder passt nicht zu den abgerechneten Mitgliedern."
-msgstr "La configuration de la batterie est incomplète ou ne correspond pas aux membres facturés."
-
 #: dashboard_routes.py:979
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr "Cette action n’est pas autorisée pour le statut actuel de la facture."
-
-#: sandbox_telemetry.py:131
-msgid "Die Aktion wurde abgelehnt. Prüfen Sie Anmeldung, Eigentum, Freigabe und Geräteschlüssel."
-msgstr "L’action a été refusée. Vérifiez la connexion, la propriété, le partage et la clé de l’appareil."
 
 #: templates/index.html:501
 msgid ""
@@ -3169,6 +3200,13 @@ msgstr "Les parts contiennent des participants inconnus."
 #: quartierakku.py:41
 msgid "Die Anteile müssen zusammen 100 Prozent ergeben."
 msgstr "La somme des parts doit être égale à 100 pour cent."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:221
+msgid "Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der Datenschutzangaben."
+msgstr ""
+"Les admissions ouvriront après la constitution effective de l'association et la validation des "
+"informations sur la protection des données."
 
 #: templates/gemeinde/pilotgemeinde.html:18
 msgid "Die Ausgangslage"
@@ -3249,14 +3287,6 @@ msgid ""
 msgstr ""
 "L'EBL ne gère aucune facturation interne. Le représentant de la CEL ou un prestataire de services"
 " mandaté en est responsable."
-
-#: sandbox_billing.py:36
-msgid ""
-"Die Eingaben dieses Entwurfs wurden verändert. Der vorhandene Entwurf und ausgestellte Rechnungen"
-" werden nicht überschrieben."
-msgstr ""
-"Les données de ce projet ont changé. Le projet existant et les factures émises ne seront pas "
-"remplacés."
 
 #: templates/gemeinde/pilotgemeinde.html:40
 msgid "Die ElCom ist die zuständige Aufsichts- und Schlichtungsstelle für Streitfälle im Strommarkt."
@@ -3506,14 +3536,6 @@ msgstr ""
 "La source contient des valeurs plus précises que le profil E66 pris en charge. Utilisez le "
 "fichier valide sans arrondir les valeurs."
 
-#: sandbox_billing.py:39
-msgid ""
-"Die Quelle und die unterstützte Verteilung stimmen nicht überein. Für diesen Fall gibt es keine "
-"Freigabe-Umgehung."
-msgstr ""
-"La source et la répartition prise en charge ne correspondent pas. Aucun contournement de "
-"l’approbation n’est disponible pour ce cas."
-
 #: templates/index.html:286
 msgid ""
 "Die Rangliste zeigt, wie viel Dachpotenzial Ihre Gemeinde nutzt, wer im Vergleich weiter ist und "
@@ -3626,18 +3648,6 @@ msgstr ""
 "Les projets de contrats ne contiennent pas tous les participants actuels. Générez de nouveaux "
 "projets."
 
-#: templates/sandbox/archive.html:15
-msgid ""
-"Die Vorprüfung nimmt einen neuen Export direkt aus Ihrem Quelldorf. Die folgende "
-"Wiederherstellung verwendet genau diesen gespeicherten Stand. Ihre Browser-Anmeldung und die "
-"normale LEG-Administration werden bei jedem Befehl erneut geprüft. Es wird kein Plattform-"
-"Schlüssel angezeigt."
-msgstr ""
-"La vérification prend un nouvel export directement dans votre village source. La restauration "
-"suivante utilise exactement cet état enregistré. Chaque commande vérifie à nouveau votre "
-"connexion et vos droits habituels d’administration de la CEL. Aucune clé de plateforme n’est "
-"affichée."
-
 #: billing_policy.py:230
 msgid "Die Zahlungsfrist der Richtlinie ist ungültig."
 msgstr "Les conditions de paiement de la règle de facturation sont invalides."
@@ -3645,19 +3655,6 @@ msgstr "Les conditions de paiement de la règle de facturation sont invalides."
 #: billing_policy.py:211
 msgid "Die Zustellmethode der Richtlinie ist ungültig."
 msgstr "La méthode de livraison de la règle de facturation n’est pas valide."
-
-#: templates/sandbox/operator.html:30
-msgid ""
-"Die angenommene Mitgliedschaftsanfrage erzeugt ein echtes Outbox-Ereignis. Simulieren Sie zuerst "
-"eine fehlgeschlagene Zustellung. Der lokale Empfänger prüft die Signatur, antwortet aber mit 503."
-" Setzen Sie die fehlgeschlagene Zustellung über den gewöhnlichen Wiederholungsbefehl erneut an "
-"und stellen Sie danach erfolgreich zu. Pro Klick wird höchstens eine Zustellung bearbeitet. "
-"Historische Ereignisse werden nicht neu erzeugt."
-msgstr ""
-"La demande d’adhésion acceptée crée un véritable événement dans la file d’envoi. Simulez d’abord "
-"un échec de livraison. Le récepteur local vérifie la signature, mais répond avec 503. Réarmez la "
-"livraison échouée avec la commande habituelle de reprise, puis livrez-la avec succès. Chaque clic"
-" traite au maximum une livraison. Les événements historiques ne sont pas recréés."
 
 #: templates/leg_gruenden.html:187
 msgid "Die eingereichte Anmeldung und die Korrespondenz mit dem Netzbetreiber."
@@ -3689,7 +3686,7 @@ msgstr ""
 "La langue des e-mails et l'état de la clé enregistrés sont conservés lorsque vous changez de "
 "compte."
 
-#: sandbox_seed.py:45 sandbox_worker.py:110
+#: sandbox_seed.py:45 sandbox_worker.py:87
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Les informations enregistrées apparaissent après le rechargement."
 
@@ -3728,20 +3725,6 @@ msgstr ""
 "La dernière vérification de source a échoué. Les sources précédentes restent documentées ci-"
 "dessous."
 
-#: templates/sandbox/telemetry.html:8
-msgid ""
-"Die lokale Musterquelle bewahrt diesen Schlüssel nur in Ihrem Übungsdorf auf. Nach dem Neuladen "
-"wird er nicht erneut angezeigt. Erneuern oder widerrufen Sie ihn unten."
-msgstr ""
-"La source locale conserve cette clé uniquement dans votre village d’essai. Elle ne sera plus "
-"affichée après le rechargement. Renouvelez-la ou révoquez-la ci-dessous."
-
-#: sandbox_telemetry.py:29
-msgid ""
-"Die lokale Quelle ist pausiert oder hat keinen gültigen Schlüssel. Setzen Sie sie fort oder "
-"erneuern Sie den Schlüssel."
-msgstr "La source locale est en pause ou n’a pas de clé valide. Reprenez la source ou renouvelez la clé."
-
 #: sandbox_seed.py:60
 msgid "Die neue LEG erscheint in Ihrem LEG-Dashboard."
 msgstr "La nouvelle CEL apparaît dans votre tableau de bord CEL."
@@ -3753,6 +3736,22 @@ msgid ""
 msgstr ""
 "L'annonce simulée a été refusée. Elle est conservée avec son justificatif. Créez une nouvelle CEL"
 " ou réinitialisez le village pour essayer un parcours réussi."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:18
+msgid ""
+"Die verantwortlichen Personen pflegen die Beteiligten, prüfen Messdaten und geben Abrechnungen "
+"frei. OpenLEG unterstützt diese Arbeit."
+msgstr ""
+"Les personnes responsables tiennent les données des participants à jour, vérifient les mesures et"
+" approuvent les décomptes. OpenLEG facilite ce travail."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:24
+msgid "Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der Erinnerung."
+msgstr ""
+"Le délai supplémentaire de 60 jours commence uniquement lorsque le rappel a été envoyé avec "
+"succès."
 
 #: i18n.py:80
 msgid "Dienst vorübergehend nicht verfügbar"
@@ -3808,14 +3807,6 @@ msgid ""
 msgstr ""
 "Cette capture provient de la démo réelle. Ouvrez le parcours, vérifiez son fonctionnement, puis "
 "lancez la même application en local."
-
-#: sandbox_payments.py:143
-msgid ""
-"Diese Auswahl ist nicht zulässig. Nur eine passende CHF-Gutschrift für eine zugestellte Rechnung "
-"kann verbucht werden."
-msgstr ""
-"Cette sélection est refusée. Seul un crédit CHF correspondant à une facture envoyée peut être "
-"comptabilisé."
 
 #: templates/gemeinde/verzeichnis.html:135
 msgid "Diese Daten per API nutzen"
@@ -3914,12 +3905,6 @@ msgstr ""
 "Ce projet de décompte n’a pas pu être validé. Il est incomplet, n’a pas été entièrement rapproché"
 " ou a été modifié entre-temps. Vérifiez la période et réessayez."
 
-#: sandbox_payments.py:152
-msgid "Dieser Eintrag fehlt oder kann nicht bestätigt werden. Prüfen Sie Rechnung, Status und Auszug."
-msgstr ""
-"Cette écriture est absente ou ne peut pas être confirmée. Vérifiez la facture, son état et le "
-"relevé."
-
 #: templates/leg_billing.html:89
 msgid ""
 "Dieser Entwurf ist nicht freigabebereit: Der Abgleich weicht ab oder Quelldokumente fehlen. Die "
@@ -3956,14 +3941,6 @@ msgstr ""
 msgid "Dieser Statuswechsel ist nicht zulässig."
 msgstr "Ce changement de statut n'est pas autorisé."
 
-#: sandbox_questions.py:130
-msgid ""
-"Dieser Statuswechsel oder diese Wiederholung ist nicht zulässig. Prüfen Sie den Fall und "
-"verwenden Sie für eine neue Antwort einen neuen Schlüssel."
-msgstr ""
-"Ce changement d’état ou cette répétition est refusé. Vérifiez le dossier et utilisez une nouvelle"
-" clé pour une nouvelle réponse."
-
 #: templates/leg_dashboard.html:116
 msgid "Dieser Teilnehmer führt Ladung und Entladung des Speichers über seinen eigenen Messpunkt."
 msgstr "Ce participant charge et décharge le dispositif de stockage via son propre point de mesure."
@@ -3992,14 +3969,6 @@ msgid ""
 msgstr ""
 "Ce village a été fermé ou réinitialisé. Cet onglet ne peut plus enregistrer de modifications. "
 "Ouvrez votre village actuel ou recommencez."
-
-#: templates/sandbox/archive_destination.html:5
-msgid ""
-"Dieses Ziel gehört zu Ihrem Quelldorf. Dort können Sie es verwerfen oder einen neuen Export "
-"prüfen. Ein Reset oder das Ablaufen des Quelldorfs entfernt beide Kopien."
-msgstr ""
-"Cette destination appartient à votre village source. Vous pouvez l’y supprimer ou vérifier un "
-"nouvel export. La réinitialisation ou l’expiration du village source supprime les deux copies."
 
 #: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
 msgid "Dieses Übungsdorf ist abgelaufen"
@@ -4376,6 +4345,16 @@ msgstr ""
 "Une date de démarrage future empêche l'activation avant cette date. Un accusé de réception ou une"
 " pièce jointe manquante ne suffit pas."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:20
+msgid "Eindeutige Buchungsreferenz"
+msgstr "Référence unique de l'écriture comptable"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/base.html:17 templates/product_base.html:26
+msgid "Eine Abbildung auf dieser Seite zeigt die Oberfläche auf Deutsch."
+msgstr "Une illustration sur cette page montre l'interface en allemand."
+
 #: templates/telemetry_dashboard.html:56
 msgid "Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt sichtbar."
 msgstr "Une confirmation reporte le message pendant une heure. L’état des mesures reste visible."
@@ -4398,6 +4377,21 @@ msgstr ""
 " de réseau de distribution. Vous ne pouvez utiliser que les niveaux de réseau légalement "
 "autorisés. Des CEL locaux distincts sont nécessaires pour un projet impliquant plusieurs communes"
 " ou zones GRD."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/assets/release/og-image.svg:1 templates/assets/release/og-image.svg:7
+#: templates/release/home.html:4
+msgid "Eine LEG gründen und betreiben."
+msgstr "Créer et exploiter une LEG."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/index.html:10
+msgid ""
+"Eine LEG gründen und betreiben. Lernen Sie die Aufgaben kennen, prüfen Sie Ihre Adresse und "
+"bereiten Sie den eigenen Softwarebetrieb vor."
+msgstr ""
+"Créer et exploiter une LEG. Découvrez les tâches, vérifiez votre adresse et préparez "
+"l'exploitation du logiciel."
 
 #: templates/leg_gruenden.html:132
 msgid "Eine Liste der passenden Anschlüsse und Anlagen."
@@ -4439,10 +4433,6 @@ msgstr ""
 msgid "Eine Zahlungsreferenz ist erforderlich."
 msgstr "Une référence de paiement est requise."
 
-#: templates/sandbox/operator.html:32
-msgid "Eine Zustellung erfolgreich ausführen"
-msgstr "Effectuer une livraison réussie"
-
 #: templates/leg_gruenden.html:148
 msgid "Eine abgestimmte Teilnehmenden- und Anlagenliste."
 msgstr "Une liste coordonnée des participants et des installations."
@@ -4459,31 +4449,31 @@ msgstr "Une facture de remplacement valide est requise."
 msgid "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 msgstr "Un aperçu orienté vers l'action, de la vérification de l'adresse à l'exploitation."
 
-#: templates/sandbox/payments.html:37
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:55
 msgid ""
-"Eine manuelle Auswahl hebt keine Regel auf. Nur CHF-Gutschriften mit exakt passendem Betrag für "
-"zugestellte Rechnungen können verbucht werden. Prüfen Sie unbekannte Referenzen; verlangen Sie "
-"bei falschem Betrag oder Währung einen korrigierten Auszug. Belastungen und Rückbuchungen sind "
-"keine Zahlungseingänge. Wiederholen Sie eine bereits bestätigte Zuordnung unverändert, um die "
-"Wiederholungssicherheit zu prüfen."
+"Eine lokale Elektrizitätsgemeinschaft organisiert die gemeinsame Nutzung von lokal erzeugtem "
+"Strom über das öffentliche Netz. Der Netzbetreiber prüft, ob die beteiligten Anschlüsse die "
+"Voraussetzungen erfüllen."
 msgstr ""
-"Une sélection manuelle ne contourne aucune règle. Seuls les crédits CHF dont le montant "
-"correspond exactement à une facture envoyée peuvent être comptabilisés. Vérifiez les références "
-"inconnues ; si le montant ou la devise est erroné, demandez un relevé corrigé. Les débits et "
-"extournes ne sont pas des paiements reçus. Répétez une correspondance déjà confirmée sans la "
-"modifier pour vérifier l’absence de doublon."
+"Une communauté électrique locale organise l'utilisation commune d'électricité produite localement"
+" par le réseau public. Le gestionnaire de réseau vérifie si les raccordements concernés "
+"remplissent les conditions."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:10
+msgid ""
+"Eine lokale Elektrizitätsgemeinschaft, kurz LEG, organisiert die gemeinsame Nutzung von lokal "
+"erzeugtem Strom. Ob Ihre Anschlüsse die Voraussetzungen erfüllen, klären Sie mit Ihrem "
+"Netzbetreiber."
+msgstr ""
+"Une communauté électrique locale, appelée LEG, organise l'utilisation commune d'électricité "
+"produite localement. Vérifiez avec votre gestionnaire de réseau si vos raccordements remplissent "
+"les conditions."
 
 #: sandbox_seed.py:53
 msgid "Eine neue LEG gründen"
 msgstr "Créer une nouvelle CEL"
-
-#: sandbox_billing.py:54
-msgid ""
-"Eine ursprüngliche Teilnehmerregistrierung fehlt oder wurde ersetzt. Klären Sie die Zuordnung vor"
-" einer neuen Abrechnung."
-msgstr ""
-"Une inscription initiale de participant est manquante ou a été remplacée. Clarifiez l’attribution"
-" avant d’établir un nouveau décompte."
 
 #: billing_policy.py:89 billing_workspace.py:257 billing_workspace.py:258
 #: templates/leg_community_create.html:22
@@ -4541,10 +4531,6 @@ msgstr "Initiation à nouveau possible"
 msgid "Einloggen"
 msgstr "Se connecter"
 
-#: templates/sandbox/operator.html:17
-msgid "Einmaliges Signiergeheimnis"
-msgstr "Secret de signature affiché une seule fois"
-
 #: templates/gemeinde/profil.html:87 templates/gemeinde/rangliste.html:87
 msgid "Einordnung"
 msgstr "Mise en perspective"
@@ -4557,10 +4543,6 @@ msgstr "tarif de rachat"
 msgid "Einstellung speichern"
 msgstr "Enregistrer le paramètre"
 
-#: templates/sandbox/telemetry.html:20
-msgid "Einstellungen"
-msgstr "Paramètres"
-
 #: templates/fuer_gemeinden.html:98 templates/utility/dashboard.html:18
 msgid "Einstieg"
 msgstr "Offre de base"
@@ -4568,6 +4550,11 @@ msgstr "Offre de base"
 #: templates/index.html:153
 msgid "Einstieg für Bewohner"
 msgstr "Premiers pas pour les habitants"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:46
+msgid "Einstieg für Gemeinden"
+msgstr "Parcours pour les communes"
 
 #: templates/leg_verzeichnis/beanspruchen.html:24
 msgid "Eintrag beanspruchen"
@@ -4662,10 +4649,6 @@ msgstr "Tarifs ElCom"
 msgid "Empfang bestätigt"
 msgstr "Réception confirmée"
 
-#: templates/sandbox/operator.html:34
-msgid "Empfangene Signatur prüfen"
-msgstr "Vérifier la signature reçue"
-
 #: templates/gemeinde/profil.html:75
 msgid "Energie"
 msgstr "Énergie"
@@ -4705,7 +4688,7 @@ msgstr ""
 "Profil énergétique et potentiel CEL de %(name)s : tarifs électriques, exploitation du potentiel "
 "solaire et score de transition énergétique."
 
-#: sandbox_seed.py:27 sandbox_worker.py:104
+#: sandbox_seed.py:27 sandbox_worker.py:81
 msgid "Energieprofil ändern"
 msgstr "Modifier le profil énergétique"
 
@@ -4746,10 +4729,6 @@ msgstr "Décider"
 msgid "Entscheiden und gründen"
 msgstr "Décider et créer"
 
-#: templates/sandbox/telemetry.html:22
-msgid "Entwarnung senden"
-msgstr "Envoyer la fin du défaut"
-
 #: templates/index.html:178
 msgid "Entwickler und Self-Hosting"
 msgstr "Développeurs et auto-hébergement"
@@ -4761,6 +4740,11 @@ msgstr "Brouillon"
 #: templates/leg_dashboard.html:206
 msgid "Entwurf bereit"
 msgstr "Brouillon prêt"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:39
+msgid "Entwurf kontrollieren"
+msgstr "Contrôler le projet de facture"
 
 #: templates/leg_dashboard.html:217
 msgid "Entwurf prüfen"
@@ -4786,6 +4770,11 @@ msgstr ""
 "Enregistrez d’abord la confirmation de mise en service comme courrier entrant avec pièce jointe "
 "dans le journal de correspondance. Sélectionnez ensuite ce justificatif."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:10 templates/verein/member.html:5
+msgid "Erfasste Zahlungseingänge"
+msgstr "Paiements reçus enregistrés"
+
 #: templates/sandbox/metering.html:67
 msgid "Erfolgreich"
 msgstr "Réussi"
@@ -4806,10 +4795,6 @@ msgstr "Télécharger le contrat d'adhésion fictif"
 msgid "Erfundenen Startbeleg herunterladen"
 msgstr "Télécharger le justificatif de démarrage fictif"
 
-#: templates/sandbox/archive.html:11 templates/sandbox/archive_destination.html:6
-msgid "Erfundenes LEG-Archiv herunterladen"
-msgstr "Télécharger l’archive fictive de la CEL"
-
 #: templates/sandbox/formation.html:40
 msgid "Ergebnis simulieren"
 msgstr "Simuler le résultat"
@@ -4822,7 +4807,12 @@ msgstr "Résultat de l'accès à distance"
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Complétez votre consommation électrique"
 
-#: templates/sandbox/home.html:60
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:20
+msgid "Erhaltener Betrag in CHF"
+msgstr "Montant reçu en CHF"
+
+#: templates/sandbox/home.html:30
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4832,7 +4822,7 @@ msgstr ""
 "ménages et la liste de contacts. Les coordonnées apparaissent après l'accord des deux parties. "
 "Révoquez votre accord et vérifiez à nouveau la liste."
 
-#: templates/leg_billing.html:183 templates/sandbox/questions.html:28
+#: templates/leg_billing.html:183
 msgid "Erledigen"
 msgstr "Clore"
 
@@ -4873,7 +4863,7 @@ msgstr "Versions de catalogue remplacées"
 msgid "Ersparnis berechnen"
 msgstr "Calculer les économies"
 
-#: templates/member_invoice_detail.html:184
+#: templates/member_invoice_detail.html:183
 msgid "Ersparnis durch reduziertes Netzentgelt:"
 msgstr "Économies grâce à des frais de réseau réduits :"
 
@@ -4892,14 +4882,6 @@ msgstr "Créer la première CEL"
 #: templates/utility/dashboard.html:114
 msgid "Erste LEG-Gründung starten"
 msgstr "Créer la première CEL"
-
-#: templates/sandbox/home.html:48
-msgid ""
-"Erstellen Sie als Robin einen beschränkten API-Schlüssel, bearbeiten Sie echte Anfragen und "
-"prüfen Sie eine signierte Zustellung mit fehlgeschlagenem und erfolgreichem Versuch."
-msgstr ""
-"En tant que Robin, créez une clé API limitée, modifiez de vraies requêtes et vérifiez une "
-"livraison signée après un échec puis une réussite."
 
 #: formation_wizard.py:358
 msgid "Erstellen Sie die rechtlichen Dokumente."
@@ -4953,10 +4935,6 @@ msgstr "Il télécharge une copie superficielle du dépôt public."
 msgid "Es prüft den lokalen Health-Endpunkt."
 msgstr "Il vérifie le point de contrôle de santé local."
 
-#: sandbox_payments.py:24
-msgid "Exakte CHF-Gutschrift"
-msgstr "Crédit CHF exact"
-
 #: billing_workspace.py:278
 msgid "Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen"
 msgstr "Source exacte du GRD déterminante, écart par rapport au modèle indiqué"
@@ -4965,20 +4943,6 @@ msgstr "Source exacte du GRD déterminante, écart par rapport au modèle indiqu
 msgid "Expired"
 msgstr "Expiré"
 
-#: templates/sandbox/archive.html:21
-msgid "Export aufnehmen und Ziel vorprüfen"
-msgstr "Prendre un export et vérifier la destination"
-
-#: templates/sandbox/home.html:53
-msgid ""
-"Exportieren Sie als Robin die Betriebs-LEG oder als Mira die selbst gegründete LEG. Prüfen Sie "
-"eine neue private Kopie, stellen Sie das Archiv wieder her und vergleichen Sie Wiederholung, "
-"Konflikt und beschädigtes Manifest."
-msgstr ""
-"En tant que Robin, exportez la CEL en exploitation, ou en tant que Mira, celle que vous avez "
-"créée. Vérifiez une nouvelle copie privée, restaurez l’archive et comparez une répétition, un "
-"conflit et un manifeste endommagé."
-
 #: templates/index.html:302
 msgid "Fairer Vergleich nach Kanton, Grösse und Dichte"
 msgstr "Comparaison équitable selon le canton, la taille et la densité"
@@ -4986,6 +4950,15 @@ msgstr "Comparaison équitable selon le canton, la taille et la densité"
 #: templates/dashboard.html:18
 msgid "Falls Sie keinen gültigen Link mehr haben, senden wir Ihnen einen neuen Zugang per E-Mail."
 msgstr "Si votre lien n’est plus valable, nous vous envoyons un nouveau lien d’accès par e-mail."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:81
+msgid ""
+"Falls die Adresse zu einem bestätigten Antrag gehört, wird ein Zugangslink versendet. Bei einem "
+"Versandproblem können Sie es erneut versuchen."
+msgstr ""
+"Si cette adresse correspond à une demande confirmée, un lien d'accès sera envoyé. En cas de "
+"problème d'envoi, vous pouvez réessayer."
 
 #: app.py:757
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
@@ -5032,18 +5005,6 @@ msgstr "Étude de cas : potentiel CEL à %(name)s"
 msgid "Fallstudie: Was eine LEG in %(profile_name)s bringt"
 msgstr "Étude de cas : les avantages d’une CEL à %(profile_name)s"
 
-#: sandbox_payments.py:27
-msgid "Falsche Währung"
-msgstr "Devise erronée"
-
-#: sandbox_payments.py:26
-msgid "Falscher Betrag"
-msgstr "Montant erroné"
-
-#: templates/sandbox/operator.html:24
-msgid "Fehlende Fähigkeit prüfen"
-msgstr "Tester une capacité manquante"
-
 #: sandbox_metering.py:65
 msgid "Fehlende Viertelstunde"
 msgstr "Quart d'heure manquant"
@@ -5076,10 +5037,6 @@ msgstr "Erreur:"
 msgid "Fehlgeschlagen"
 msgstr "Échoué"
 
-#: templates/sandbox/operator.html:33
-msgid "Fehlgeschlagene Zustellung erneut ansetzen"
-msgstr "Réarmer la livraison échouée"
-
 #: templates/leg_verzeichnis/liste.html:85
 msgid "Fehlt Ihre LEG?"
 msgstr "Votre CEL manque ?"
@@ -5092,6 +5049,24 @@ msgstr "Accès à distance possible"
 #: templates/sandbox/accounts.html:5
 msgid "Fiktives Konto wählen"
 msgstr "Choisir un compte fictif"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:12
+msgid ""
+"Fiktives Quartier mit Wohnhäusern, Solardächern und einem Gewerbebau. Die farbigen Linien "
+"veranschaulichen Beziehungen und zeigen keine geprüften Netzanschlüsse."
+msgstr ""
+"Quartier fictif comprenant des logements, des toitures solaires et un bâtiment d'activité. Les "
+"lignes colorées illustrent les relations ; elles ne représentent pas des raccordements vérifiés."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:13
+msgid ""
+"Fiktives Quartier. Eine LEG verbindet Beteiligte mit unterschiedlichen Aufgaben. Die Darstellung "
+"belegt keine Netzzugehörigkeit oder bestehende Installation."
+msgstr ""
+"Quartier fictif. Une LEG réunit des participants aux rôles différents. Cette illustration ne "
+"prouve ni l'appartenance à un réseau ni l'existence d'une installation."
 
 #: templates/api_docs.html:200
 msgid "Financial projections"
@@ -5173,11 +5148,11 @@ msgstr ""
 msgid "Fortschritt:"
 msgstr "Progression :"
 
-#: templates/member_invoice_detail.html:230
+#: templates/member_invoice_detail.html:229
 msgid "Frage senden"
 msgstr "Envoyer une question"
 
-#: templates/sandbox/home.html:61
+#: templates/sandbox/home.html:31
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -5190,11 +5165,16 @@ msgstr ""
 msgid "Fragen ausserhalb der Gründungsschritte"
 msgstr "Des questions en dehors des étapes fondatrices"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:54
+msgid "Fragen vor dem Start"
+msgstr "Questions avant le lancement"
+
 #: templates/pricing.html:153
 msgid "Fragen zu Betrieb, Finanzierung oder Self-Hosting?"
 msgstr "Des questions sur l’exploitation, le financement ou l’auto-hébergement ?"
 
-#: templates/member_invoice_detail.html:202
+#: templates/member_invoice_detail.html:201
 msgid "Fragen zu dieser Rechnung"
 msgstr "Questions sur cette facture"
 
@@ -5230,21 +5210,14 @@ msgstr "Une infrastructure énergétique libre, vérifiable et auto-hébergeable
 msgid "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
 msgstr "Infrastructure libre pour les communautés électriques suisses. Open source, hébergé en Suisse."
 
-#: templates/sandbox/telemetry.html:25
-msgid "Freigabe entziehen"
-msgstr "Retirer l’accès"
-
-#: templates/sandbox/billing.html:29 templates/sandbox/payments.html:11
-msgid "Freigabe und Rechnungen öffnen"
-msgstr "Ouvrir l’approbation et les factures"
+#. Draft translation; native language and domain review pending.
+#: templates/release/footer.html:5
+msgid "Freie Software für lokale Elektrizitätsgemeinschaften in der Schweiz."
+msgstr "Logiciels libres pour les communautés locales d'électricité en Suisse."
 
 #: templates/contact_requests.html:58
 msgid "Freigabe widerrufen"
 msgstr "Révoquer le partage"
-
-#: templates/sandbox/telemetry.html:25
-msgid "Freigeben"
-msgstr "Partager"
 
 #: billing_lifecycle.py:15
 msgid "Freigegeben"
@@ -5270,10 +5243,6 @@ msgstr ""
 msgid "Freischalten"
 msgstr "Publier"
 
-#: templates/sandbox/operator.html:24
-msgid "Fremde LEG prüfen"
-msgstr "Tester une autre CEL"
-
 #: templates/index.html:214
 msgid "Frist für den Netzbetreiber, das Messsystem zu installieren."
 msgstr "Délai dont dispose le gestionnaire de réseau pour installer le système de mesure."
@@ -5286,15 +5255,11 @@ msgstr "Confirmations précédentes et détails de l'appareil"
 msgid "Funktion nicht verfügbar"
 msgstr "Fonction non disponible"
 
-#: templates/sandbox/operator.html:12
-msgid "Fähigkeiten"
-msgstr "Capacités"
-
 #: templates/member_invoices.html:24
 msgid "Fällig am"
 msgstr "Échéance le"
 
-#: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:48
+#: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:47
 msgid "Fällig am:"
 msgstr "Échéance :"
 
@@ -5354,16 +5319,6 @@ msgstr "Pour les personnes qui créent une CEL"
 msgid "Für Netzbetreiber und Integrationspartner"
 msgstr "Pour les gestionnaires de réseau et les partenaires d’intégration"
 
-#: templates/sandbox/archive.html:10
-msgid ""
-"Für Rechnungen und Quellenbelege führen Sie zuerst die Messdaten- und Abrechnungsübung durch. Für"
-" Gründungsbelege wählen Sie danach die selbst gegründete LEG. Das Archiv zeigt nur tatsächlich "
-"vorhandene Datensätze."
-msgstr ""
-"Pour disposer de factures et de preuves de source, effectuez d’abord les exercices de mesures et "
-"de facturation. Pour les preuves de constitution, choisissez ensuite la CEL que vous avez créée. "
-"L’archive ne contient que les données réellement présentes."
-
 #: templates/how-it-works.html:120
 msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um"
 msgstr ""
@@ -5371,6 +5326,7 @@ msgstr ""
 "du réseau diminue de"
 
 #: templates/how-it-works.html:42
+#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -5448,20 +5404,6 @@ msgid "Für direkt benachbarte Häuser kommt je nach Anschluss auch ein vZEV inf
 msgstr ""
 "Pour des maisons directement voisines, un RCP virtuel peut aussi être envisageable selon le "
 "raccordement."
-
-#: templates/sandbox/billing.html:20
-msgid ""
-"Für eine Korrektur vor der Freigabe ziehen Sie die Originalquelle in den Messdaten zurück und "
-"importieren Sie die Korrektur. Der alte Entwurf bleibt ungültig und kann nicht freigegeben "
-"werden. Ein neuer Lauf erstellt einen neuen Entwurf: je Haushalt 432 kWh LEG-Bezug und CHF 51.84 "
-"Belastung; Noah erhält CHF 207.36 Gutschrift und bezahlt netto CHF -155.52. Bereits ausgestellte "
-"Rechnungen werden durch eine Ersatzquelle nicht geändert."
-msgstr ""
-"Pour corriger avant l’approbation, retirez la source originale dans les données de mesure et "
-"importez la correction. L’ancien projet reste invalidé et ne peut pas être approuvé. Un nouveau "
-"traitement crée un nouveau projet : chaque ménage prélève 432 kWh dans la CEL et reçoit une "
-"charge de CHF 51.84 ; Noah reçoit un crédit de CHF 207.36 et sa facture nette est CHF -155.52. "
-"Une source de remplacement ne modifie pas les factures déjà émises."
 
 #: templates/gemeinde/methodik.html:96
 msgid ""
@@ -5548,18 +5490,6 @@ msgid ""
 msgstr ""
 "Saisissez l'adresse e-mail utilisée par la personne pour s'inscrire sur OpenLEG. Nous n'indiquons"
 " pas si un profil existe déjà."
-
-#: templates/sandbox/telemetry.html:19
-msgid ""
-"Geben Sie die Quelle für Noah frei. Die Nachbarschaftsfreigabe in Leas gewöhnlichen Einstellungen"
-" muss ebenfalls aktiv sein. Wechseln Sie zu Noah und öffnen Sie die gemeinsamen Messwerte. Kehren"
-" Sie zu Lea zurück und entziehen Sie die Freigabe. Noah sieht die Quelle beim nächsten Lesen "
-"nicht mehr. Private Geräteangaben und Anlagenhinweise bleiben beim Eigentümer."
-msgstr ""
-"Partagez la source avec Noah. Le partage de voisinage dans les paramètres habituels de Lea doit "
-"aussi être activé. Passez à Noah et ouvrez les mesures partagées. Revenez à Lea et retirez "
-"l’accès. Noah ne voit plus la source à la lecture suivante. Les données privées de l’appareil et "
-"ses alertes restent réservées au propriétaire."
 
 #: store/formation_activation.py:90
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
@@ -5724,6 +5654,11 @@ msgstr "Voir les communes"
 msgid "Gemeinden im Solarnutzungs-Vergleich"
 msgstr "Comparaison de l’utilisation solaire des communes"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/navigation.html:10
+msgid "Gemeinden unterstützen"
+msgstr "Accompagner les communes"
+
 #: templates/gemeinde/vergleich.html:18
 msgid "Gemeinden vergleichen"
 msgstr "Comparer les communes"
@@ -5751,9 +5686,10 @@ msgstr ""
 "Ensemble, vous créez votre CEL et pouvez économiser plusieurs centaines de francs par an selon "
 "votre situation."
 
-#: templates/sandbox/telemetry.html:20
-msgid "Gemeinsame Messwerte"
-msgstr "Mesures partagées"
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:27
+msgid "Gemeinsam planen. Verantwortlich handeln."
+msgstr "Planifier ensemble. Assumer ses responsabilités."
 
 #: templates/leg_dashboard.html:328
 msgid ""
@@ -5776,6 +5712,11 @@ msgstr "Créer la communauté"
 msgid "Gemeinschaft bilden"
 msgstr "Former la communauté"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:18
+msgid "Gemeinschaft organisieren"
+msgstr "Organiser la communauté"
+
 #: templates/documents/community_agreement.html:13
 msgid "Gemeinschaftsvereinbarung"
 msgstr "Convention de communauté"
@@ -5792,7 +5733,7 @@ msgstr "Informations déclarées confirmées le"
 msgid "Gemessen"
 msgstr "Mesuré"
 
-#: templates/member_invoice_detail.html:180
+#: templates/member_invoice_detail.html:179
 msgid "Gemessene Werte der Periode"
 msgstr "Valeurs mesurées de la période"
 
@@ -5833,14 +5774,6 @@ msgstr "Essayer l'import planifié"
 msgid "Geprüfte Modellbezeichnung"
 msgstr "Nom du modèle testé"
 
-#: templates/sandbox/payments.html:47
-msgid "Geprüfte Zielrechnung"
-msgstr "Facture vérifiée à rapprocher"
-
-#: templates/sandbox/payments.html:50
-msgid "Geprüfte Zuordnung bestätigen"
-msgstr "Confirmer la correspondance vérifiée"
-
 #: templates/leg_gruenden.html:174
 msgid "Geprüfte und unterzeichnete Gründungsdokumente."
 msgstr "Documents fondateurs vérifiés et signés."
@@ -5849,7 +5782,7 @@ msgstr "Documents fondateurs vérifiés et signés."
 msgid "Gerät"
 msgstr "Appareil"
 
-#: templates/equipment_index.html:9 templates/sandbox/telemetry.html:13
+#: templates/equipment_index.html:9
 msgid "Gerät erfassen"
 msgstr "Ajouter un appareil"
 
@@ -5885,23 +5818,6 @@ msgstr "Fiche de l’appareil indisponible"
 msgid "Gerätemeldung"
 msgstr "Signalement de l’appareil"
 
-#: templates/sandbox/home.html:42 templates/sandbox/home.html:44 templates/sandbox/telemetry.html:2
-#: templates/sandbox/telemetry.html:5
-msgid "Gerätemesswerte ausprobieren"
-msgstr "Essayer les mesures des appareils"
-
-#: templates/sandbox/telemetry.html:22
-msgid "Geräteschlüssel erneuern"
-msgstr "Renouveler la clé de l’appareil"
-
-#: templates/sandbox/telemetry.html:22
-msgid "Geräteschlüssel widerrufen"
-msgstr "Révoquer la clé de l’appareil"
-
-#: templates/sandbox/telemetry.html:8
-msgid "Geräteschlüssel, einmalig angezeigt"
-msgstr "Clé de l’appareil, affichée une seule fois"
-
 #: templates/telemetry_dashboard.html:14
 msgid "Gerätestatus"
 msgstr "État de l’appareil"
@@ -5910,7 +5826,7 @@ msgstr "État de l’appareil"
 msgid "Gerätezugang |"
 msgstr "Accès aux appareils |"
 
-#: templates/documents/member_invoice.html:43 templates/member_invoice_detail.html:174
+#: templates/documents/member_invoice.html:43 templates/member_invoice_detail.html:173
 msgid "Gesamtbetrag"
 msgstr "Montant total"
 
@@ -5971,10 +5887,6 @@ msgstr ""
 "Enregistré. Ouvrez le lien de confirmation dans la boîte de réception. Revenez ensuite dans la "
 "boîte de réception pour demander le lien d'accès."
 
-#: templates/sandbox/questions.html:35
-msgid "Gespeicherte Fallereignisse"
-msgstr "Événements de dossier enregistrés"
-
 #: templates/sandbox/metering.html:37 templates/sandbox/metering.html:39
 msgid "Gespeicherte Messwerte je Messpunkt"
 msgstr "Mesures enregistrées par point de mesure"
@@ -5984,33 +5896,13 @@ msgstr "Mesures enregistrées par point de mesure"
 msgid "Gespeicherte Messwerte: %(count)s."
 msgstr "Mesures enregistrées : %(count)s."
 
-#: templates/sandbox/operator.html:24
-msgid "Gespeicherte Mutationen lesen"
-msgstr "Lire les mutations enregistrées"
-
-#: templates/sandbox/billing.html:26
-msgid "Gespeicherte Periode"
-msgstr "Période enregistrée"
-
-#: templates/sandbox/billing.html:27
-msgid "Gespeicherte Positionen vor Freigabe"
-msgstr "Postes enregistrés avant approbation"
-
 #: templates/sandbox/metering.html:45
 msgid "Gespeicherte Quellen"
 msgstr "Sources enregistrées"
 
-#: templates/sandbox/payments.html:57
-msgid "Gespeicherte Zahlungsereignisse"
-msgstr "Événements de paiement enregistrés"
-
 #: templates/equipment_form.html:108
 msgid "Gespeicherte Übergabe herunterladen"
 msgstr "Télécharger le transfert enregistré"
-
-#: templates/sandbox/archive.html:33
-msgid "Gespeicherten Stand wiederherstellen"
-msgstr "Restaurer l’état enregistré"
 
 #: templates/advisories.html:70
 msgid "Gespeicherter Stand:"
@@ -6027,10 +5919,6 @@ msgid ""
 msgstr ""
 "Pondération : solaire 30 pour cent, voitures électriques 20 pour cent, chauffages renouvelables "
 "25 pour cent, production renouvelable 25 pour cent."
-
-#: templates/sandbox/payments.html:23
-msgid "Gewählte Rechnung"
-msgstr "Facture sélectionnée"
 
 #: templates/gemeinde/profil.html:34
 #, python-format
@@ -6100,7 +5988,7 @@ msgstr "Fort potentiel"
 msgid "Grosse Gemeinden"
 msgstr "Grandes communes"
 
-#: templates/member_invoice_detail.html:222
+#: templates/member_invoice_detail.html:221
 msgid "Grund"
 msgstr "Raison"
 
@@ -6157,6 +6045,15 @@ msgstr "Plus fortes progressions de l’exploitation du potentiel solaire | Open
 msgid "Gründen Sie eine"
 msgstr "Créez une"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:27
+msgid ""
+"Gründen Sie eine Stromgemeinschaft mit klaren Rollen. Die Software übernimmt weder den Entscheid "
+"des Netzbetreibers noch die Verantwortung Ihrer LEG."
+msgstr ""
+"Créez une communauté électrique avec des rôles définis. Le logiciel ne prend ni les décisions du "
+"gestionnaire de réseau ni la responsabilité de votre LEG."
+
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
 msgid "Gründung"
 msgstr "Création"
@@ -6165,7 +6062,7 @@ msgstr "Création"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Les étapes de création"
 
-#: templates/sandbox/home.html:68
+#: templates/sandbox/home.html:38
 msgid "Gründung ausprobieren"
 msgstr "Essayer la création d'une CEL"
 
@@ -6210,10 +6107,6 @@ msgstr "Afficher l'assistant de démarrage et les modèles"
 msgid "Gründungsassistent öffnen"
 msgstr "Ouvrir l’assistant de création"
 
-#: templates/sandbox/operator.html:24
-msgid "Gründungsstand lesen"
-msgstr "Lire l’état de constitution"
-
 #: utility_portal.py:392
 #, python-format
 msgid ""
@@ -6237,15 +6130,20 @@ msgstr ""
 "\n"
 "L’équipe OpenLEG"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:9
+msgid "Gutheissung erfassen"
+msgstr "Consigner l'acceptation"
+
 #: templates/admin/abrechnungen.html:123
 msgid "Gutschriften"
 msgstr "Crédits"
 
-#: templates/documents/member_invoice.html:31 templates/member_invoice_detail.html:141
+#: templates/documents/member_invoice.html:31 templates/member_invoice_detail.html:140
 msgid "Gutschriften und Ausgleich"
 msgstr "Avoirs et ajustements"
 
-#: templates/member_invoice_detail.html:146
+#: templates/member_invoice_detail.html:145
 msgid "Gutschriften und Rundungsausgleich dieser Rechnung"
 msgstr "Crédits et ajustements d'arrondi pour cette facture"
 
@@ -6290,15 +6188,20 @@ msgstr "Exclusion de responsabilité"
 msgid "Hallo,"
 msgstr "Bonjour,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:99 templates/contact_requests.html:70
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:2
+msgid "Hauptnavigation"
+msgstr "Navigation principale"
+
+#: sandbox_seed.py:23 sandbox_worker.py:76 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
-#: templates/gemeinde/dashboard.html:40 templates/sandbox/telemetry.html:25
+#: templates/gemeinde/dashboard.html:40
 msgid "Haushalt"
 msgid_plural "Haushalte"
 msgstr[0] "ménage"
 msgstr[1] "ménages"
 
-#: templates/sandbox/home.html:58 templates/sandbox/home.html:63 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:28 templates/sandbox/home.html:33 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr "Inscrire un ménage"
@@ -6318,6 +6221,15 @@ msgstr "Ménages de la CEL"
 #: templates/dashboard.html:84
 msgid "Haushalte in der Nähe"
 msgstr "Ménages à proximité"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:17
+msgid ""
+"Haushalte und Betriebe verbrauchen Strom. Für ihre Teilnahme braucht es eine Vereinbarung und die"
+" Prüfung der Anschlüsse durch den Netzbetreiber."
+msgstr ""
+"Les ménages et les entreprises consomment de l'électricité. Leur participation nécessite un "
+"accord et la vérification des raccordements par le gestionnaire de réseau."
 
 #: templates/advisories.html:7
 msgid "Herausgeber"
@@ -6448,13 +6360,19 @@ msgstr "État du message modifié"
 msgid "Häufige Fragen"
 msgstr "Questions fréquentes"
 
-#: templates/sandbox/questions.html:29
-msgid "Ich bestätige diese Antwort und den gewählten Status."
-msgstr "Je confirme cette réponse et l’état choisi."
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/join.html:13
+msgid ""
+"Ich arbeite nicht für einen Energieversorger, kontrolliere oder vertrete keinen Energieversorger "
+"und unterstütze den Vereinszweck."
+msgstr ""
+"Je ne travaille pour aucun fournisseur d'énergie, je n'en contrôle ni n'en représente aucun, et "
+"je soutiens le but de l'association."
 
-#: templates/sandbox/payments.html:49
-msgid "Ich habe Betrag, Währung, Richtung, Referenz und Rechnungsstatus geprüft."
-msgstr "J’ai vérifié le montant, la devise, le sens, la référence et l’état de la facture."
+#. Draft translation; native language and domain review pending.
+#: templates/verein/join.html:12
+msgid "Ich bin mindestens 18 Jahre alt und stelle den Antrag persönlich."
+msgstr "J'ai au moins 18 ans et j'en fais personnellement la demande."
 
 #: templates/leg_billing.html:72
 msgid ""
@@ -6470,17 +6388,19 @@ msgstr ""
 "J'ai examiné le tarif, le rapprochement et les documents sources et je soumets ce projet pour "
 "approbation."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:20
+msgid "Ich habe den tatsächlichen Zahlungseingang und die Zuordnung geprüft."
+msgstr "J'ai vérifié la réception effective du paiement et son affectation."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/join.html:14
+msgid "Ich habe die Aufnahmebedingungen und die Datenschutzhinweise gelesen."
+msgstr "J'ai lu les conditions d'admission et les informations sur la protection des données."
+
 #: templates/sandbox/formation.html:22
 msgid "Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts."
 msgstr "J'ai examiné les projets et je simule la signature de mon ménage actuel."
-
-#: templates/sandbox/billing.html:23
-msgid ""
-"Ich habe die Quelle und die gespeicherte Richtlinie geprüft und starte den gewöhnlichen "
-"Abrechnungslauf."
-msgstr ""
-"J’ai vérifié la source et la politique enregistrée et je lance le traitement habituel de "
-"facturation."
 
 #: templates/advisories.html:57
 msgid "Ich habe diese Version des Hinweises gelesen."
@@ -6502,14 +6422,6 @@ msgstr "Je souhaite supprimer ce village et recommencer avec le modèle choisi."
 msgid "Ich möchte dieses Dorf und alle Übungsdaten löschen."
 msgstr "Je souhaite supprimer ce village et toutes ses données d'essai."
 
-#: templates/sandbox/archive.html:33
-msgid "Ich stelle diesen geprüften Stand im privaten Ziel wieder her."
-msgstr "Je restaure cet état vérifié dans la destination privée."
-
-#: templates/sandbox/archive.html:36
-msgid "Ich verwerfe das private Ziel und seinen gespeicherten Export."
-msgstr "Je supprime la destination privée et son export enregistré."
-
 #: templates/sandbox/metering.html:55
 msgid "Ich ziehe diese Quelle ausdrücklich zurück, bevor ich die Korrektur importiere."
 msgstr "Je retire explicitement cette source avant d'importer la correction."
@@ -6517,6 +6429,11 @@ msgstr "Je retire explicitement cette source avant d'importer la correction."
 #: sandbox_metering.py:63
 msgid "Identische Wiederholung"
 msgstr "Répétition identique"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:296
+msgid "Ihr Antrag wartet auf die Prüfung durch den Vorstand. Sie sind noch kein Mitglied."
+msgstr "Votre demande attend l'examen du comité. Vous n'êtes pas encore membre."
 
 #: dashboard_routes.py:398
 msgid "Ihr Dashboard-Zugangslink"
@@ -6530,6 +6447,17 @@ msgstr "Votre lien d’accès au tableau de bord communal"
 msgid "Ihr Haushalt am Musterweg 2 hat eine Solaranlage."
 msgstr "Votre foyer du Musterweg 2 possède une installation photovoltaïque."
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:346
+msgid ""
+"Ihr Jahresbeitrag von CHF 50 ist offen. Bitte zahlen Sie innerhalb von weiteren 60 Tagen ab "
+"dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur Beendigung treffen. "
+"Sie können Beschwerde einlegen. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Votre cotisation annuelle de CHF 50 reste ouverte. Veuillez payer dans un délai supplémentaire de"
+" 60 jours à compter de ce rappel. Le comité peut ensuite prendre une décision motivée mettant fin"
+" à l'adhésion. Vous pouvez déposer un recours. Contact : hallo@openleg.ch."
+
 #: templates/leg_verzeichnis/bestaetigt.html:7
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
 msgstr "Votre fiche CEL dans le répertoire ouvert est toujours à jour."
@@ -6537,6 +6465,30 @@ msgstr "Votre fiche CEL dans le répertoire ouvert est toujours à jour."
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:7
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr "Votre fiche CEL dans le répertoire ouvert a bien été revendiquée."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:340
+#, python-format
+msgid ""
+"Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
+"\n"
+"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Votre demande d'adhésion a été refusée. Motif : %(reason)s\n"
+"\n"
+"Vous pouvez recourir auprès de l'assemblée des membres. Contact : hallo@openleg.ch."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:334
+#, python-format
+msgid ""
+"Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
+"Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und Rückfragen: "
+"hallo@openleg.ch."
+msgstr ""
+"Votre demande d'adhésion a été acceptée. L'adhésion commence à l'admission. La cotisation "
+"annuelle de CHF 50 est due le %(due_on)s. Pour les coordonnées de paiement et les questions : "
+"hallo@openleg.ch."
 
 #: templates/index.html:202
 msgid "Ihr Recht"
@@ -6558,13 +6510,18 @@ msgstr "Votre village d'essai"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Votre gestionnaire de réseau fictif est actif et n'a pas encore de clé API."
 
-#: sandbox_worker.py:105
+#: sandbox_worker.py:82
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Votre nouveau ménage est confirmé."
 
 #: templates/index.html:408
 msgid "Ihre Adresse"
 msgstr "Votre adresse"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:21
+msgid "Ihre Adresse prüfen und Interessierte in Ihrer Gemeinde finden"
+msgstr "Vérifier votre adresse et trouver des personnes intéressées dans votre commune"
 
 #: templates/contact_requests.html:31
 msgid "Ihre Anfragen"
@@ -6646,6 +6603,17 @@ msgstr[1] ""
 #: dashboard_routes.py:153
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr "Vos demandes de contact sur OpenLEG"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:58
+msgid ""
+"Ihre LEG bestimmt die verantwortlichen Personen oder beauftragt einen Dienstleister. Open Source "
+"ermöglicht den eigenen Betrieb. Die Veröffentlichung des Codes ist keine Betriebs- oder "
+"Supportzusage."
+msgstr ""
+"Votre LEG désigne les personnes responsables ou mandate un prestataire. Le code ouvert permet une"
+" exploitation autonome. La publication du code ne constitue pas un engagement d'exploitation ou "
+"d'assistance."
 
 #: templates/emails/day_14_formation.html:6
 msgid "Ihre LEG kann starten"
@@ -6732,7 +6700,7 @@ msgstr "Vos habitudes de consommation, en journée ou en soirée"
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr "Votre consommation annuelle approximative en kWh (indiquée sur la facture d’électricité)"
 
-#: templates/sandbox/home.html:62
+#: templates/sandbox/home.html:32
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -6766,29 +6734,12 @@ msgstr "Aucune CEL de %(profile_name)s n’est encore inscrite dans le répertoi
 msgid "Import fehlgeschlagen"
 msgstr "Échec de l'import"
 
-#: templates/sandbox/home.html:33
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:31
 msgid ""
-"Importieren Sie als Robin erfundene Kontoauszüge, prüfen Sie abgelehnte Einträge und bestätigen "
-"Sie eine zulässige Zuordnung. Es wird kein Geld bewegt."
-msgstr ""
-"En tant que Robin, importez des relevés fictifs, examinez les écritures refusées et confirmez une"
-" correspondance admissible. Aucun argent n’est transféré."
-
-#: templates/sandbox/billing.html:10
-msgid ""
-"Importieren Sie als Sam zuerst den vollständigen September. Speichern Sie danach die gewöhnliche "
-"Richtlinie: gültig ab 01.09.2026, intern 12 Rp./kWh, Netz 8 Rp./kWh, Abrechnungsentgelt 0, "
-"gleiche Netzebene, proportional, keine Mehrwertsteuer (Satzfeld leer lassen), 30 Tage, Präfix "
-"SIMULATION, Zustellung per E-Mail."
-msgstr ""
-"En tant que Sam, importez d’abord le mois de septembre complet. Enregistrez ensuite la politique "
-"habituelle : valable dès le 01.09.2026, prix interne 12 ct./kWh, réseau 8 ct./kWh, frais de "
-"décompte 0, même niveau de réseau, proportionnel, sans TVA (laisser le taux vide), 30 jours, "
-"préfixe SIMULATION, envoi par e-mail."
-
-#: sandbox_billing.py:33
-msgid "Importieren Sie die vollständige gültige Septemberquelle. Eine zurückgezogene Quelle genügt nicht."
-msgstr "Importez la source valide complète de septembre. Une source retirée ne suffit pas."
+"Importieren Sie Messwerte, prüfen Sie die Periode und kontrollieren Sie den Entwurf, bevor "
+"Rechnungen ausgegeben werden."
+msgstr "Importez les mesures, vérifiez la période et contrôlez le projet avant d'émettre les factures."
 
 #: templates/impressum.html:21 templates/partials/site_footer.html:11
 msgid "Impressum"
@@ -6835,7 +6786,7 @@ msgstr "En cours de vérification"
 msgid "In Vorbereitung"
 msgstr "En préparation"
 
-#: templates/member_invoice_detail.html:194
+#: templates/member_invoice_detail.html:193
 msgid "In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs."
 msgstr ""
 "Durant cette période de facturation, le stockage partagé couvrait une partie de votre "
@@ -6907,10 +6858,6 @@ msgstr ""
 msgid "Installierte PV-Leistung"
 msgstr "Puissance photovoltaïque installée"
 
-#: templates/sandbox/operator.html:18
-msgid "Integrationskonto"
-msgstr "Compte d’intégration"
-
 #: templates/gemeinde/dashboard.html:65
 msgid "Interesse an einer LEG"
 msgstr "Intérêt pour une CEL"
@@ -6976,8 +6923,7 @@ msgstr "Prix interne (ct./kWh)"
 msgid "Interner Preis in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 msgstr "Prix interne en ct./kWh, entre 0 et 1000, maximum 4 décimales."
 
-#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:50
-#: templates/sandbox/billing.html:13
+#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:49
 msgid "Interner Preis:"
 msgstr "Prix interne :"
 
@@ -7001,10 +6947,6 @@ msgstr "OpenLEG est-il lié à un gestionnaire de réseau particulier ?"
 msgid "Ist die Berechnung genau?"
 msgstr "Le calcul est-il précis ?"
 
-#: templates/sandbox/operator.html:25
-msgid "JSON-Inhalt"
-msgstr "Contenu JSON"
-
 #: templates/dashboard.html:167 templates/index.html:439 templates/index.html:461
 msgid "Ja"
 msgstr "Oui"
@@ -7020,6 +6962,11 @@ msgstr ""
 " que d’en créer un fork. Si vous proposez une version modifiée via un réseau, vous devez donner "
 "aux utilisateurs accès au code source correspondant. Ce résumé pratique ne constitue pas un "
 "conseil juridique."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:10 templates/verein/member.html:6
+msgid "Jahresbeitrag"
+msgstr "Cotisation annuelle"
 
 #: templates/leg_dashboard.html:125
 msgid "Jahreskosten (CHF)"
@@ -7344,7 +7291,7 @@ msgstr "Aucune commune trouvée"
 msgid "Keine Gutschriften"
 msgstr "Aucun avoir"
 
-#: templates/member_invoice_detail.html:168
+#: templates/member_invoice_detail.html:167
 msgid "Keine Gutschriften."
 msgstr "Aucun crédit."
 
@@ -7406,13 +7353,14 @@ msgstr "Aucun tarif disponible pour cette commune."
 msgid "Keine Verbrauchskosten"
 msgstr "Aucun coût de consommation"
 
-#: templates/member_invoice_detail.html:84
+#: templates/member_invoice_detail.html:83
 msgid "Keine Verbrauchskosten."
 msgstr "Pas de frais de consommation."
 
-#: templates/sandbox/billing.html:14
-msgid "Keine aktuelle angenommene Septemberquelle."
-msgstr "Aucune source acceptée de septembre en vigueur."
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:9
+msgid "Keine angegeben"
+msgstr "Aucun lien déclaré"
 
 #: templates/admin/ops.html:154
 msgid "Keine ausstehenden Einträge"
@@ -7447,6 +7395,16 @@ msgstr "Aucune nouvelle transmission du collecteur"
 #: dashboard.py:1075
 msgid "Keine offene Einladung gefunden."
 msgstr "Aucune invitation ouverte trouvée."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:14
+msgid "Keine offenen Anträge."
+msgstr "Pas de demandes ouvertes."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/member.html:8 templates/verein/queue.html:9
+msgid "Keine offenen Gesuche."
+msgstr "Pas de demandes ouvertes."
 
 #: templates/leg_dashboard.html:57
 msgid "Keine offenen Schritte."
@@ -7491,10 +7449,6 @@ msgstr "Cliquez sur « Exporter CSV »"
 #: templates/index.html:161
 msgid "Klären Sie Mitglieder, Verträge, Netzbetreiber und Abrechnung."
 msgstr "Clarifiez les membres, les contrats, le gestionnaire de réseau et la facturation."
-
-#: templates/sandbox/archive.html:26
-msgid "Konflikt: Der vorhandene Zielstand wurde nicht überschrieben."
-msgstr "Conflit : l’état existant de la destination n’a pas été remplacé."
 
 #: templates/gemeinde/profil.html:122
 msgid "Konkrete Massnahmen"
@@ -7544,16 +7498,16 @@ msgid "Konto nicht verfügbar"
 msgstr "Compte indisponible"
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/billing.html:34 templates/sandbox/home.html:56 templates/sandbox/payments.html:61
-#: templates/sandbox/questions.html:11 templates/sandbox/telemetry.html:20
+#: templates/sandbox/home.html:26
 msgid "Konto wechseln"
 msgstr "Changer de compte"
 
-#: templates/sandbox/payments.html:30
-msgid "Kontoauszug (camt.053 oder camt.054)"
-msgstr "Relevé de compte (camt.053 ou camt.054)"
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:20
+msgid "Konto- oder Anbieterkennung"
+msgstr "Identifiant du compte ou du prestataire"
 
-#: templates/leg_billing.html:33 templates/sandbox/payments.html:32
+#: templates/leg_billing.html:33
 msgid "Kontoauszug importieren"
 msgstr "Importer un relevé bancaire"
 
@@ -7565,10 +7519,6 @@ msgstr "Informations du compte"
 #: templates/gemeinde/dashboard.html:182
 msgid "Kopieren"
 msgstr "Copier"
-
-#: templates/sandbox/operator.html:4
-msgid "Kopieren Sie zuerst den aktuellen Schlüssel und erneuern Sie ihn."
-msgstr "Copiez d’abord la clé actuelle, puis renouvelez-la."
 
 #: templates/dashboard.html:291 templates/gemeinde/dashboard.html:180
 msgid "Kopiert"
@@ -7582,7 +7532,7 @@ msgstr "Correction après retrait"
 msgid "Korrektur verknüpfen"
 msgstr "Lier la correction"
 
-#: templates/member_invoice_detail.html:54
+#: templates/member_invoice_detail.html:53
 msgid "Korrektur zu:"
 msgstr "Correction à :"
 
@@ -7602,13 +7552,28 @@ msgstr "Journal de correspondance de cette communauté électrique"
 msgid "Korrigiert"
 msgstr "Corrigée"
 
-#: templates/member_invoice_detail.html:55
+#: templates/member_invoice_detail.html:54
 msgid "Korrigiert durch:"
 msgstr "Corrigé par :"
 
 #: templates/pricing.html:24
 msgid "Kosten"
 msgstr "Coûts"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/navigation.html:11
+msgid "Kosten abschätzen"
+msgstr "Estimer les coûts"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/navigation.html:9
+msgid "Kosten und Betrieb"
+msgstr "Coûts et exploitation"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:56
+msgid "Kosten und Betriebsaufgaben ansehen"
+msgstr "Consulter les coûts et les tâches d'exploitation"
 
 #: templates/leg_dashboard.html:94
 msgid "Kostenanteil pro Jahr"
@@ -7747,7 +7712,7 @@ msgid "LEG gesetzlich möglich"
 msgstr "Les CEL sont autorisées par la loi"
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:66
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:36
 msgid "LEG gründen"
 msgstr "Créer une CEL"
 
@@ -7789,9 +7754,19 @@ msgstr "La CEL n’a pas pu être créée."
 msgid "LEG nicht gefunden."
 msgstr "CEL introuvable."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/navigation.html:8
+msgid "LEG prüfen"
+msgstr "Vérifier les possibilités d'une LEG"
+
 #: templates/api_docs.html:103
 msgid "LEG value-gap analysis"
 msgstr "Analyse du potentiel économique de la CEL"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:7
+msgid "LEG vorbereiten"
+msgstr "Préparer LEG"
 
 #: sandbox_seed.py:64 templates/leg_dashboard.html:216
 msgid "LEG-Administration"
@@ -7809,18 +7784,9 @@ msgstr "Informations CEL de l’EBL"
 msgid "LEG-Angaben von Primeo Energie"
 msgstr "Informations CEL de Primeo Energie"
 
-#: templates/sandbox/archive.html:2 templates/sandbox/archive.html:5 templates/sandbox/home.html:52
-#: templates/sandbox/home.html:54
-msgid "LEG-Archiv ausprobieren"
-msgstr "Essayer l’archive de la CEL"
-
 #: templates/index.html:160
 msgid "LEG-Betreiber"
 msgstr "Exploitants de CEL"
-
-#: templates/sandbox/billing.html:18
-msgid "LEG-Bezug (kWh)"
-msgstr "Prélèvement dans la CEL (kWh)"
 
 #: templates/leg_verzeichnis/leg_check.html:17
 msgid "LEG-Check"
@@ -8067,22 +8033,6 @@ msgstr "Puissance de votre système en kWc"
 msgid "Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst."
 msgstr "Consultez le code, utilisez l’API ou hébergez OpenLEG vous-même."
 
-#: templates/sandbox/operator.html:23
-msgid ""
-"Lesen Sie zuerst den Gründungsstand. Die Mitgliedschaftsanfrage bereitet eine manuelle VNB-"
-"Mutation vor; sie ändert die tatsächliche Teilnahme noch nicht. Die mutation_id ist der "
-"gewöhnliche Wiederholungsschlüssel. Wiederholen Sie denselben Inhalt und ändern Sie danach bei "
-"gleicher ID access_roles zu documents: Die Änderung wird mit 409 abgelehnt. Eine "
-"Gründungseinreichung ohne formation.mutate ergibt 403, eine fremde LEG ergibt 404. Nach dem "
-"Widerruf ergibt derselbe Schlüssel 401."
-msgstr ""
-"Lisez d’abord l’état de constitution. La demande d’adhésion prépare une mutation manuelle pour le"
-" GRD ; elle ne modifie pas encore la participation réelle. Le champ mutation_id est la clé "
-"habituelle de répétition. Renvoyez le même contenu, puis remplacez access_roles par documents "
-"avec la même ID : la modification est refusée avec 409. Un dépôt de constitution sans "
-"formation.mutate renvoie 403 et une autre CEL renvoie 404. Après révocation, la même clé renvoie "
-"401."
-
 #: templates/telemetry_dashboard.html:96
 msgid "Letzte Gerätemeldung: Störung"
 msgstr "Dernier état signalé par l’appareil : défaut"
@@ -8184,7 +8134,7 @@ msgstr "Lien de connexion envoyé par e-mail."
 msgid "Login-Link senden"
 msgstr "Envoyer le lien de connexion"
 
-#: templates/member_invoice_detail.html:183
+#: templates/member_invoice_detail.html:182
 msgid "Lokal gedeckt:"
 msgstr "Couvert localement :"
 
@@ -8195,10 +8145,6 @@ msgstr "Distribué localement"
 #: templates/admin/abrechnungen.html:107
 msgid "Lokal zugeteilt"
 msgstr "Attribué localement"
-
-#: templates/sandbox/operator.html:13
-msgid "Lokale Callback-Adresse"
-msgstr "Adresse de rappel locale"
 
 #: formation_wizard.py:115
 msgid "Lokale Elektrizitätsgemeinschaft - Gemeinschaftsvereinbarung"
@@ -8337,8 +8283,7 @@ msgid "Mehrfaktor-Anmeldung"
 msgstr "Authentification multifacteur"
 
 #: templates/documents/member_invoice.html:36 templates/documents/member_invoice.html:42
-#: templates/leg_billing_policy.html:62 templates/member_invoice_detail.html:173
-#: templates/sandbox/billing.html:13
+#: templates/leg_billing_policy.html:62 templates/member_invoice_detail.html:172
 msgid "Mehrwertsteuer"
 msgstr "TVA"
 
@@ -8346,7 +8291,7 @@ msgstr "TVA"
 msgid "Mehrwertsteuer ausweisen"
 msgstr "Afficher la TVA"
 
-#: templates/member_invoice_detail.html:49
+#: templates/member_invoice_detail.html:48
 msgid "Mehrwertsteuer:"
 msgstr "TVA:"
 
@@ -8389,8 +8334,12 @@ msgstr ""
 msgid "Meine E-Mail-Adresse"
 msgstr "Mon adresse e-mail"
 
-#: templates/sandbox/telemetry.html:20 templates/telemetry_dashboard.html:4
-#: templates/telemetry_dashboard.html:39
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/member.html:8
+msgid "Meine Gesuche"
+msgstr "Mes demandes"
+
+#: templates/telemetry_dashboard.html:4 templates/telemetry_dashboard.html:39
 msgid "Meine Messwerte"
 msgstr "Mes mesures"
 
@@ -8398,8 +8347,7 @@ msgstr "Mes mesures"
 msgid "Meine Messwerte und ihre Aktualität"
 msgstr "Mes mesures et leur actualité"
 
-#: templates/dashboard.html:229 templates/member_invoices.html:11 templates/sandbox/billing.html:34
-#: templates/sandbox/questions.html:11
+#: templates/dashboard.html:229 templates/member_invoices.html:11
 msgid "Meine Rechnungen"
 msgstr "Mes factures"
 
@@ -8422,6 +8370,11 @@ msgstr "Mes appareils solaires |"
 #: templates/contact_requests.html:11
 msgid "Meine Telefonnummer"
 msgstr "Mon numéro de téléphone"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/member.html:2 templates/verein/member.html:3
+msgid "Meine Vereinsmitgliedschaft"
+msgstr "Mon adhésion à l'association"
 
 #: templates/gemeinde/onboarding.html:7 templates/gemeinde/onboarding.html:20
 msgid ""
@@ -8467,8 +8420,8 @@ msgid "Menge"
 msgstr "Quantité"
 
 #: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:66 templates/member_invoice_detail.html:95
-#: templates/member_invoice_detail.html:122 templates/member_invoice_detail.html:150
+#: templates/member_invoice_detail.html:65 templates/member_invoice_detail.html:94
+#: templates/member_invoice_detail.html:121 templates/member_invoice_detail.html:149
 msgid "Menge (kWh)"
 msgstr "Quantité (kWh)"
 
@@ -8480,11 +8433,16 @@ msgstr "Habitants d’un quartier urbain suisse"
 msgid "Menschen und öffentlicher Verkehr in einer Schweizer Stadt"
 msgstr "Habitants et transports publics dans une ville suisse"
 
-#: community_access.py:63 templates/member_invoice_detail.html:224
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:5
+msgid "Menü"
+msgstr "Menu"
+
+#: community_access.py:63 templates/member_invoice_detail.html:223
 msgid "Messdaten"
 msgstr "Données de mesure"
 
-#: templates/sandbox/billing.html:12 templates/sandbox/home.html:24
+#: templates/sandbox/home.html:24
 msgid "Messdaten ausprobieren"
 msgstr "Essayer les données de mesure"
 
@@ -8550,10 +8508,6 @@ msgstr "Heure de mesure inconnue"
 msgid "Messzeiten der geeigneten Werte"
 msgstr "Instants des valeurs utilisables"
 
-#: templates/sandbox/operator.html:25
-msgid "Methode"
-msgstr "Méthode"
-
 #: i18n.py:69
 msgid "Methode nicht erlaubt"
 msgstr "Méthode non autorisée"
@@ -8595,6 +8549,24 @@ msgstr ""
 msgid "Mit LEG"
 msgstr "Avec CEL"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/index.html:7
+msgid ""
+"Mit OpenLEG eine lokale Elektrizitätsgemeinschaft vorbereiten, Beteiligte verwalten und "
+"Abrechnungen prüfen. Freie Software für den eigenen Betrieb."
+msgstr ""
+"Préparer une communauté électrique locale, gérer ses participants et vérifier les décomptes avec "
+"OpenLEG. Un logiciel libre à exploiter vous-même."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:6
+msgid ""
+"Mit OpenLEG verwalten Sie Mitglieder und bereiten Abrechnungen vor. Sie können die Software "
+"selbst betreiben."
+msgstr ""
+"Avec OpenLEG, vous gérez les membres et préparez les décomptes. Vous pouvez exploiter le logiciel"
+" vous-même."
+
 #: templates/leg_kalkulator.html:157
 msgid "Mit Spannungstransformation"
 msgstr "Avec transformation de tension"
@@ -8626,6 +8598,11 @@ msgstr[1] "Membres"
 msgid "Mitglied einladen"
 msgstr "Inviter un membre"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/join.html:2 templates/verein/join.html:5
+msgid "Mitglied werden"
+msgstr "Devenir membre"
+
 #: templates/leg_dashboard.html:147
 msgid "Mitglieder"
 msgstr "Membres"
@@ -8637,6 +8614,11 @@ msgstr "Membres (estimation)"
 #: templates/leg_dashboard.html:151
 msgid "Mitglieder dieser Stromgemeinschaft"
 msgstr "Membres de cette communauté électrique"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/index.html:8
+msgid "Mitglieder entscheiden gemeinsam"
+msgstr "Les membres décident conjointement"
 
 #: sandbox_seed.py:68
 msgid "Mitglieder und LEG-Einstellungen verwalten"
@@ -8654,13 +8636,24 @@ msgstr "Gestion des membres"
 msgid "Mitgliederzahl (geschätzt, optional)"
 msgstr "Nombre de membres (estimation, facultatif)"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:2
+msgid "Mitgliedsantrag prüfen"
+msgstr "Examiner une demande d'adhésion"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:2 templates/verein/queue.html:5
+msgid "Mitgliedsanträge"
+msgstr "Demandes d'adhésion"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:10 verein_routes.py:219
+msgid "Mitgliedschaft"
+msgstr "Adhésion"
+
 #: templates/leg_dashboard.html:235
 msgid "Mitgliedschaft: LEG und VNB"
 msgstr "Adhésion : CEL et GRD"
-
-#: templates/sandbox/operator.html:24
-msgid "Mitgliedschaftsanfrage vorbereiten"
-msgstr "Préparer une demande d’adhésion"
 
 #: rangliste.py:32
 msgid "Mittel (< 1000)"
@@ -8729,14 +8722,6 @@ msgstr "Profils et données énergétiques des communes"
 msgid "Municipality profile"
 msgstr "Profil communal"
 
-#: templates/sandbox/telemetry.html:22
-msgid "Muster veröffentlichen"
-msgstr "Publier un échantillon"
-
-#: templates/sandbox/telemetry.html:14
-msgid "Musterquelle anmelden"
-msgstr "Enregistrer une source d’essai"
-
 #: templates/leg_billing_policy.html:110
 msgid "MwSt"
 msgstr "TVA"
@@ -8752,6 +8737,11 @@ msgstr "Potentiellement concerné / indéterminé"
 #: templates/utility/dashboard.html:65 templates/utility/dashboard.html:142
 msgid "N/A"
 msgstr "Non disponible"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:25
+msgid "Nach Ablauf der Frist beenden"
+msgstr "Résilier après l'expiration du délai"
 
 #: templates/gemeinde/verzeichnis.html:75
 msgid "Nach Kanton springen"
@@ -8813,7 +8803,7 @@ msgstr "Quartier d’une agglomération suisse"
 msgid "Nachbarschafts-Matching"
 msgstr "Mise en relation des voisins"
 
-#: templates/member_invoice_detail.html:226
+#: templates/member_invoice_detail.html:225
 msgid "Nachricht"
 msgstr "Message"
 
@@ -8832,7 +8822,7 @@ msgstr "Justificatif de l’installation ou des installations photovoltaïques"
 
 #: templates/admin/ops.html:120 templates/documents/community_agreement.html:18
 #: templates/documents/community_agreement.html:37 templates/documents/dso_registration.html:23
-#: templates/gemeinde/verzeichnis.html:51 templates/sandbox/operator.html:11
+#: templates/gemeinde/verzeichnis.html:51
 msgid "Name"
 msgstr "Nom"
 
@@ -8896,7 +8886,7 @@ msgstr ""
 " après réception d’une demande valable. Des tarifs de mesure réglementés peuvent continuer à "
 "s’appliquer."
 
-#: templates/documents/member_invoice.html:41 templates/member_invoice_detail.html:172
+#: templates/documents/member_invoice.html:41 templates/member_invoice_detail.html:171
 msgid "Nettobetrag"
 msgstr "Montant net"
 
@@ -8907,6 +8897,11 @@ msgstr "Réseau"
 #: templates/sandbox/metering.html:40
 msgid "Netz (kWh)"
 msgstr "Réseau (kWh)"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:19
+msgid "Netz und Messdaten"
+msgstr "Réseau et données de mesure"
 
 #: sandbox_seed.py:111
 msgid "Netzbetreiber"
@@ -8969,10 +8964,6 @@ msgstr "Gestionnaire de réseau : %(municipality_dso_name)s"
 msgid "Netzbezug"
 msgstr "Prélèvement sur le réseau"
 
-#: templates/sandbox/billing.html:18
-msgid "Netzbezug (kWh)"
-msgstr "Prélèvement sur le réseau (kWh)"
-
 #: templates/dashboard.html:213
 msgid "Netzbezugspreis"
 msgstr "Prix d'achat du réseau"
@@ -9002,11 +8993,11 @@ msgstr "Frais de réseau (ct./kWh)"
 msgid "Netzentgelt in Rp./kWh, zwischen 0 und 1000, höchstens 4 Nachkommastellen."
 msgstr "Frais de réseau en centimes/kWh, entre 0 et 1000, maximum 4 décimales."
 
-#: templates/member_invoice_detail.html:185
+#: templates/member_invoice_detail.html:184
 msgid "Netzentgelt-Tarif:"
 msgstr "Tarif des frais de réseau :"
 
-#: templates/member_invoice_detail.html:51 templates/sandbox/billing.html:13
+#: templates/member_invoice_detail.html:50
 msgid "Netzentgelt:"
 msgstr "Frais de réseau :"
 
@@ -9097,7 +9088,7 @@ msgstr "Créer une nouvelle clé"
 msgid "Neuenburg"
 msgstr "Neuchâtel"
 
-#: sandbox_worker.py:98
+#: sandbox_worker.py:75
 msgid "Neuer Haushalt"
 msgstr "Nouveau ménage"
 
@@ -9225,10 +9216,6 @@ msgstr "Aucune commune dans ce groupe pour le moment. Réinitialisez les filtres
 msgid "Noch keine Interessenmeldungen"
 msgstr "Aucun rapport d'intérêt pour l'instant"
 
-#: templates/sandbox/payments.html:54
-msgid "Noch keine Kontoauszüge importiert."
-msgstr "Aucun relevé de compte importé."
-
 #: templates/leg_verzeichnis/leg_check.html:61
 #, python-format
 msgid "Noch keine LEG aus %(profile_name)s eingetragen. Vielleicht gründen Sie die erste?"
@@ -9242,11 +9229,7 @@ msgstr "Aucun voisin trouvé pour le moment. Vous pouvez quand même vous lancer
 msgid "Noch keine Periode"
 msgstr "Aucune période pour le moment"
 
-#: templates/sandbox/payments.html:26
-msgid "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen aus."
-msgstr "Aucune facture de montant positif. Émettez d’abord les factures de septembre."
-
-#: templates/leg_billing.html:166 templates/sandbox/questions.html:35
+#: templates/leg_billing.html:166
 msgid "Noch keine Statusänderung protokolliert."
 msgstr "Aucun changement de statut n'a encore été enregistré."
 
@@ -9256,10 +9239,6 @@ msgstr ""
 "Aucune version enregistrée pour le moment. L'exécution de facturation démarre uniquement avec une"
 " politique enregistrée."
 
-#: templates/sandbox/payments.html:58
-msgid "Noch keine Zahlung verbucht."
-msgstr "Aucun paiement comptabilisé."
-
 #: templates/sandbox/metering.html:60
 msgid "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
 msgstr "Aucune source acceptée. Importez le mois de septembre complet."
@@ -9268,19 +9247,9 @@ msgstr "Aucune source acceptée. Importez le mois de septembre complet."
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr "Aucune facture publiée pour l'instant."
 
-#: templates/sandbox/questions.html:34
-msgid ""
-"Noch keine sichtbare Rechnungsfrage. Stellen Sie als Lea eine Frage zur eigenen zugestellten "
-"Rechnung."
-msgstr "Aucune question visible. En tant que Lea, posez une question sur votre facture envoyée."
-
 #: templates/sandbox/inbox.html:23
 msgid "Noch keine simulierten Nachrichten."
 msgstr "Aucun message simulé pour le moment."
-
-#: templates/sandbox/billing.html:13
-msgid "Noch keine vollständige September-Richtlinie."
-msgstr "Aucune politique complète pour septembre."
 
 #: templates/emails/day_3_smartmeter.html:41
 msgid ""
@@ -9330,6 +9299,15 @@ msgstr "Participation à la CEL uniquement, partage des données avec les voisin
 msgid "Nur Lesezugriff"
 msgstr "Lecture seule"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:10
+msgid ""
+"Nur bestätigte Anträge warten hier auf einen Entscheid. Eine E-Mail-Bestätigung ist noch keine "
+"Mitgliedschaft."
+msgstr ""
+"Seules les demandes confirmées attendent ici une décision. La confirmation d'une adresse e-mail "
+"ne vaut pas adhésion."
+
 #: templates/gemeinde/dashboard.html:66
 #, python-format
 msgid ""
@@ -9355,10 +9333,6 @@ msgstr "Seule l’administration peut démarrer la création."
 msgid "Nur die Administration kann einladen."
 msgstr "Seule l'administration peut inviter."
 
-#: templates/sandbox/operator.html:4
-msgid "Nur die gezeigten Operator-Pfade innerhalb dieses Übungsdorfs sind zulässig."
-msgstr "Seuls les chemins opérateur proposés dans ce village d’essai sont autorisés."
-
 #: templates/utility/dashboard.html:154
 msgid "Nutzen Sie LEG-Daten in Ihren bestehenden Systemen."
 msgstr "Utilisez les données CEL dans vos systèmes existants."
@@ -9379,6 +9353,11 @@ msgstr "Action suivante"
 #: templates/gemeinde/dashboard.html:86 templates/leg_dashboard.html:51
 msgid "Nächste Schritte"
 msgstr "Prochaines étapes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:15
+msgid "Nächste Seite"
+msgstr "Page suivante"
 
 #: templates/leg_dashboard.html:217
 msgid "Nächster Schritt"
@@ -9444,6 +9423,16 @@ msgstr ""
 "ne permet pas de récupérer les informations déjà lues ou copiées. Une modification du profil ou "
 "du consentement peut mettre fin au partage."
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:6
+msgid "Offene Anträge"
+msgstr "Demandes ouvertes"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:11
+msgid "Offene Benachrichtigungen senden"
+msgstr "Envoyer les notifications en attente"
+
 #: pv_badge.py:65
 msgid "Offene Daten von BFE und BFS"
 msgstr "Données ouvertes de l’OFEN et de l’OFS"
@@ -9463,6 +9452,16 @@ msgstr "Données énergétiques suisses ouvertes"
 #: templates/api_docs.html:6 templates/api_docs.html:9
 msgid "Offene Schweizer Energiedaten API | OpenLEG"
 msgstr "API ouverte de données énergétiques suisses | OpenLEG"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:50
+msgid "Offene Software braucht Menschen."
+msgstr "Le logiciel libre a besoin de vous."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/index.html:3 templates/verein/index.html:6 templates/verein/index.html:7
+msgid "Offene Software und praktisches Wissen für unabhängige Stromgemeinschaften."
+msgstr "Un logiciel libre et des connaissances pratiques pour des communautés électriques indépendantes."
 
 #: templates/leg_verzeichnis/liste.html:21
 msgid "Offenes LEG-Verzeichnis Schweiz"
@@ -9696,6 +9695,15 @@ msgstr ""
 "OpenLEG est une infrastructure libre pour les communautés électriques suisses. Aucun coût caché, "
 "aucune dépendance envers un fournisseur, aucune vente de données."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:56
+msgid ""
+"OpenLEG ist freie Software unter AGPL-3.0-or-later. Für Server, Einrichtung und Unterstützung "
+"können Kosten entstehen. Klären Sie vor dem Start, wer diese Aufgaben übernimmt."
+msgstr ""
+"OpenLEG est un logiciel libre sous licence AGPL-3.0-or-later. Les serveurs, la mise en place et "
+"l'assistance peuvent entraîner des coûts. Avant de commencer, définissez qui assume ces tâches."
+
 #: templates/index.html:485
 msgid ""
 "OpenLEG ist freie Software unter AGPL-3.0-or-later. Sie können den Code prüfen, die Plattform "
@@ -9820,6 +9828,15 @@ msgstr ""
 msgid "OpenLEG steht unter"
 msgstr "OpenLEG est distribué sous licence"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:38
+msgid ""
+"OpenLEG unterstützt den Import von Messdaten und die Vorbereitung von Rechnungen. Fehlende Daten "
+"bleiben sichtbar. Die Freigabe liegt bei den dafür berechtigten Personen."
+msgstr ""
+"OpenLEG facilite l'importation des données de mesure et la préparation des factures. Les données "
+"manquantes restent signalées. Les personnes habilitées approuvent les factures."
+
 #: templates/leg_gruenden.html:72
 msgid ""
 "OpenLEG unterstützt die Gründung und den Betrieb von LEGs. Für vZEV bietet OpenLEG diese "
@@ -9888,11 +9905,6 @@ msgstr "OpenLEG : confirmer la suppression"
 msgid "OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist kostenlos."
 msgstr "Le logiciel d'OpenLEG pour la facturation, les documents et la gestion des adhésions est gratuit."
 
-#: templates/sandbox/home.html:47 templates/sandbox/home.html:49 templates/sandbox/operator.html:2
-#: templates/sandbox/operator.html:5
-msgid "Operator-API ausprobieren"
-msgstr "Essayer l’API opérateur"
-
 #: templates/admin/ops.html:12
 msgid "Ops Dashboard"
 msgstr "Tableau de bord des opérations"
@@ -9921,7 +9933,7 @@ msgstr "Ouvrir le PDF"
 msgid "PDF-Anhang"
 msgstr "PDF en pièce jointe"
 
-#: templates/member_invoice_detail.html:228
+#: templates/member_invoice_detail.html:227
 msgid "PDF-Beleg, optional, höchstens 2 MB"
 msgstr "Reçu PDF, facultatif, maximum 2 Mo"
 
@@ -9937,6 +9949,11 @@ msgstr "NPA"
 #: templates/api_docs.html:214
 msgid "PLZ range e.g. 8000-8999"
 msgstr "Plage de NPA, p. ex. 8000-8999"
+
+#. Draft translation; native language and domain review pending.
+#: document_generator.py:160
+msgid "PV-Anlage:"
+msgstr "Système PV:"
 
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
@@ -9985,6 +10002,11 @@ msgstr "Erreur de lecture avec le séparateur « %(delimiter)s »."
 msgid "Partner gefunden!"
 msgstr "Des partenaires ont été trouvés !"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/login.html:9
+msgid "Passwort"
+msgstr "Mot de passe"
+
 #: app.py:1001
 msgid "Period not found"
 msgstr "Période introuvable"
@@ -9993,7 +10015,7 @@ msgstr "Période introuvable"
 msgid "Periode"
 msgstr "Période"
 
-#: templates/documents/member_invoice.html:16 templates/member_invoice_detail.html:46
+#: templates/documents/member_invoice.html:16 templates/member_invoice_detail.html:45
 msgid "Periode:"
 msgstr "Période :"
 
@@ -10005,9 +10027,10 @@ msgstr "Périodes"
 msgid "Person"
 msgstr "personne"
 
-#: templates/sandbox/operator.html:25
-msgid "Pfad innerhalb dieses Übungsdorfs"
-msgstr "Chemin dans ce village d’essai"
+#. Draft translation; native language and domain review pending.
+#: templates/verein/member_access.html:2 templates/verein/member_access.html:3
+msgid "Persönlicher Vereinszugang"
+msgstr "Accès personnel à l'association"
 
 #: templates/documents/participant_contract.html:21
 msgid "Pflichten"
@@ -10023,8 +10046,8 @@ msgstr "Plateforme"
 
 #: templates/admin/abrechnungen.html:129 templates/documents/member_invoice.html:23
 #: templates/documents/member_invoice.html:32 templates/leg_kalkulator.html:205
-#: templates/member_invoice_detail.html:65 templates/member_invoice_detail.html:94
-#: templates/member_invoice_detail.html:121 templates/member_invoice_detail.html:149
+#: templates/member_invoice_detail.html:64 templates/member_invoice_detail.html:93
+#: templates/member_invoice_detail.html:120 templates/member_invoice_detail.html:148
 msgid "Position"
 msgstr "Poste"
 
@@ -10032,8 +10055,7 @@ msgstr "Poste"
 msgid "Positionen"
 msgstr "postes"
 
-#: templates/sandbox/banner.html:6 templates/sandbox/billing.html:34 templates/sandbox/inbox.html:2
-#: templates/sandbox/onboarding.html:24
+#: templates/sandbox/banner.html:6 templates/sandbox/inbox.html:2 templates/sandbox/onboarding.html:24
 msgid "Postfach"
 msgstr "Boîte de réception"
 
@@ -10050,8 +10072,8 @@ msgid "Preis"
 msgstr "Prix"
 
 #: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:67 templates/member_invoice_detail.html:96
-#: templates/member_invoice_detail.html:123 templates/member_invoice_detail.html:151
+#: templates/member_invoice_detail.html:66 templates/member_invoice_detail.html:95
+#: templates/member_invoice_detail.html:122 templates/member_invoice_detail.html:150
 msgid "Preis (Rp./kWh)"
 msgstr "Prix (ct./kWh)"
 
@@ -10070,6 +10092,11 @@ msgstr "Voir l'aperçu des prix"
 #: templates/leg_gruenden.html:99
 msgid "Primeo Energie"
 msgstr "Primeo Energie"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:20
+msgid "Private Belegreferenz"
+msgstr "Référence de la pièce justificative privée"
 
 #: templates/admin/ops.html:80
 msgid "Private Betreiberansicht. Diese Daten erscheinen nicht im Gemeinde-Dashboard."
@@ -10111,14 +10138,6 @@ msgstr "Un réseau privé pour vos voisins"
 msgid "Privates Ops-Repo"
 msgstr "Dépôt privé d’exploitation"
 
-#: templates/sandbox/archive_destination.html:4
-msgid "Privates Wiederherstellungsziel"
-msgstr "Destination privée de restauration"
-
-#: templates/sandbox/archive.html:32
-msgid "Privates Ziel"
-msgstr "Destination privée"
-
 #: templates/sandbox/entry.html:8
 msgid ""
 "Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen "
@@ -10138,10 +10157,6 @@ msgstr "Ouvrir la démo du produit"
 #: templates/admin/abrechnungen.html:58 templates/sandbox/metering.html:41
 msgid "Produktion"
 msgstr "production"
-
-#: templates/sandbox/billing.html:18
-msgid "Produktion (kWh)"
-msgstr "Production (kWh)"
 
 #: templates/open_source.html:86
 msgid ""
@@ -10196,6 +10211,11 @@ msgstr "Point de prévision"
 msgid "Prognosestand"
 msgstr "Publication de la prévision"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/footer.html:8
+msgid "Projekt"
+msgstr "Projet"
+
 #: templates/fuer_gemeinden.html:120
 msgid "Projektsupport anfragen"
 msgstr "Demander un accompagnement de projet"
@@ -10216,10 +10236,6 @@ msgstr "Répartition proportionnelle à la consommation"
 msgid "Präfix"
 msgstr "préfixe"
 
-#: templates/sandbox/archive.html:20
-msgid "Prüfdatei"
-msgstr "Fichier à vérifier"
-
 #: templates/advisories.html:64
 msgid "Prüfdatum Ihrer Quelle"
 msgstr "Date de vérification de votre source"
@@ -10239,6 +10255,11 @@ msgstr "Vérifier"
 #: templates/admin/abrechnungen.html:14
 msgid "Prüfen Sie Entwürfe gegen Tarif, VNB-Abgleich und Quelldokumente."
 msgstr "Vérifiez les traites par rapport aux tarifs, au rapprochement GRD et aux documents sources."
+
+#. Draft translation; native language and domain review pending.
+#: verein_routes.py:277
+msgid "Prüfen Sie Ihr E-Mail-Postfach."
+msgstr "Vérifiez votre boîte aux lettres e-mail."
 
 #: templates/index.html:152
 msgid "Prüfen Sie Ihre Adresse und sehen Sie, ob Nachbarn schon Interesse angemeldet haben."
@@ -10283,6 +10304,15 @@ msgstr "Consultez le code, adaptez votre installation et gardez le contrôle de 
 msgid "Prüfen Sie den Kollektor und seine Verbindung."
 msgstr "Vérifiez le collecteur et sa connexion."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:20
+msgid ""
+"Prüfen Sie den tatsächlichen Eingang im Bank- oder Anbieterbeleg. Spenden und "
+"Zahlungsrückleitungen gleichen den Beitrag nicht automatisch aus."
+msgstr ""
+"Vérifiez la réception effective du paiement sur le justificatif bancaire ou du prestataire. Un "
+"don ou un retour depuis la page de paiement ne règle pas automatiquement la cotisation."
+
 #: templates/equipment_form.html:55
 msgid ""
 "Prüfen Sie die Anleitung für das erfasste Modell. Ohne Hersteller und Modell bleibt die "
@@ -10319,10 +10349,6 @@ msgstr "Vérifiez les contrats des participants."
 #: templates/leg_gruenden.html:216
 msgid "Prüfen Sie die Vorgaben für Ihren Fall bei den zuständigen Stellen:"
 msgstr "Vérifiez les conditions requises pour votre cas auprès des autorités compétentes :"
-
-#: sandbox_billing.py:42
-msgid "Prüfen Sie die vollständigen datierten Messwerte und die aktuelle Mitgliedschaft."
-msgstr "Vérifiez les mesures datées complètes et les membres actuels."
 
 #: templates/fuer_bewohner.html:8
 msgid ""
@@ -10382,13 +10408,9 @@ msgstr "Saisir un accumulateur de quartier"
 msgid "Quartierakku speichern"
 msgstr "Enregistrer la batterie de quartier"
 
-#: member_invoices.py:40 templates/admin/abrechnungen.html:122 templates/member_invoice_detail.html:115
+#: member_invoices.py:40 templates/admin/abrechnungen.html:122 templates/member_invoice_detail.html:114
 msgid "Quartierakku-Anteil"
 msgstr "Part de la batterie de quartier"
-
-#: templates/sandbox/archive.html:18
-msgid "Quell-LEG"
-msgstr "CEL source"
 
 #: templates/self_host.html:80
 msgid "Quellcode auf GitHub"
@@ -10402,11 +10424,7 @@ msgstr "Documents sources"
 msgid "Quelldokumente:"
 msgstr "Documents sources :"
 
-#: templates/sandbox/archive_destination.html:8
-msgid "Quelldorf verwalten"
-msgstr "Gérer le village source"
-
-#: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38 templates/sandbox/payments.html:42
+#: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38
 #: templates/telemetry_dashboard.html:52 templates/telemetry_dashboard.html:126
 #: templates/telemetry_shared.html:50
 msgid "Quelle"
@@ -10416,25 +10434,9 @@ msgstr "Source"
 msgid "Quelle Ihrer Angabe"
 msgstr "Source de vos informations"
 
-#: templates/sandbox/telemetry.html:23
-msgid "Quelle nicht pausiert"
-msgstr "Source non mise en pause"
-
 #: templates/equipment_form.html:19
 msgid "Quelle der Angabe"
 msgstr "Source d'informations"
-
-#: templates/sandbox/telemetry.html:22
-msgid "Quelle fortsetzen"
-msgstr "Reprendre la source"
-
-#: templates/sandbox/telemetry.html:22
-msgid "Quelle pausieren"
-msgstr "Mettre la source en pause"
-
-#: templates/sandbox/telemetry.html:23
-msgid "Quelle pausiert"
-msgstr "Source en pause"
 
 #: templates/sandbox/metering.html:24
 msgid "Quelle prüfen und importieren"
@@ -10581,7 +10583,7 @@ msgstr "Liste classée"
 msgid "Ranked municipalities"
 msgstr "Classement des communes"
 
-#: templates/member_invoice_detail.html:178
+#: templates/member_invoice_detail.html:177
 msgid "Realisierte Ersparnis"
 msgstr "Économies réalisées"
 
@@ -10594,14 +10596,9 @@ msgid "Recent Ops Snapshots"
 msgstr "Instantanés récents des opérations"
 
 #: templates/documents/member_invoice.html:14 templates/member_invoice_detail.html:4
-#: templates/member_invoice_detail.html:43 templates/sandbox/payments.html:59
-#: templates/sandbox/questions.html:20
+#: templates/member_invoice_detail.html:42
 msgid "Rechnung"
 msgstr "Facture"
-
-#: templates/sandbox/payments.html:18
-msgid "Rechnung für die Übungsdateien"
-msgstr "Facture pour les fichiers d’essai"
 
 #: dashboard.py:893
 msgid "Rechnung nicht gefunden."
@@ -10611,22 +10608,13 @@ msgstr "Facture introuvable."
 msgid "Rechnungen freigeben"
 msgstr "Valider les factures"
 
-#: templates/documents/member_invoice.html:17 templates/member_invoice_detail.html:47
+#: templates/documents/member_invoice.html:17 templates/member_invoice_detail.html:46
 msgid "Rechnungsdatum:"
 msgstr "Date de facture :"
-
-#: templates/sandbox/questions.html:19
-msgid "Rechnungsfrage"
-msgstr "Question sur une facture"
 
 #: templates/leg_billing.html:171
 msgid "Rechnungsfragen"
 msgstr "Questions de facturation"
-
-#: templates/sandbox/home.html:37 templates/sandbox/home.html:39 templates/sandbox/questions.html:2
-#: templates/sandbox/questions.html:5
-msgid "Rechnungsfragen ausprobieren"
-msgstr "Essayer les questions sur les factures"
 
 #: templates/leg_billing_policy.html:81
 msgid "Rechnungspräfix"
@@ -10641,6 +10629,7 @@ msgstr ""
 "d'union, commençant par une lettre ou un chiffre."
 
 #: templates/llms.txt:9
+#, python-format
 msgid ""
 "Rechtliche Fakten: LEGs sind seit dem 1. Januar 2026 in der ganzen Schweiz möglich (Art. 17d und "
 "17e StromVG, Art. 19e bis 19h StromVV). Für lokal erzeugten und verbrauchten Strom sinkt das "
@@ -10654,6 +10643,11 @@ msgstr ""
 " avec transformation (art. 19h OApEl). Conditions : même commune politique, même niveau de "
 "réseau, même zone de desserte, tension maximale de 36 kV, systèmes de mesure intelligents et "
 "puissance de raccordement renouvelable d’au moins 5%."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/footer.html:11
+msgid "Rechtliches"
+msgstr "Informations légales"
 
 #: templates/partials/site_footer.html:8
 msgid "Rechtliches und Kontakt"
@@ -10691,9 +10685,19 @@ msgstr "Référence"
 msgid "Referenz des Netzbetreibers"
 msgstr "Référence du gestionnaire de réseau"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/queue.html:9
+msgid "Referenz zum tatsächlichen Beschluss"
+msgstr "Référence de la décision effectivement prise"
+
 #: templates/leg_billing.html:160
 msgid "Referenz:"
 msgstr "Référence:"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:30
+msgid "Regeln und Zuständigkeiten festlegen"
+msgstr "Définir des règles et des responsabilités"
 
 #: templates/utility/login.html:47 templates/utility/register.html:106
 msgid "Registrieren"
@@ -10758,10 +10762,6 @@ msgstr "Ouvrir le dépôt"
 msgid "Richten Sie die Abrechnung ein."
 msgstr "Mettez en place la facturation."
 
-#: templates/sandbox/billing.html:12
-msgid "Richtlinie bearbeiten"
-msgstr "Modifier la politique"
-
 #: templates/leg_dashboard.html:416
 msgid "Richtlinie verwalten"
 msgstr "Gérer la politique"
@@ -10809,12 +10809,12 @@ msgid "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 msgstr "Routes, formulaires, profils communaux, classement et API JSON."
 
 #: i18n.py:123 templates/admin/abrechnungen.html:135 templates/admin/abrechnungen.html:138
-#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:50
-#: templates/member_invoice_detail.html:51
+#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:49
+#: templates/member_invoice_detail.html:50
 msgid "Rp./kWh"
 msgstr "ct./kWh"
 
-#: templates/member_invoice_detail.html:185
+#: templates/member_invoice_detail.html:184
 msgid "Rp./kWh,"
 msgstr "ct./kWh,"
 
@@ -10836,9 +10836,9 @@ msgstr "ct./kWh"
 msgid "Rundungsausgleich"
 msgstr "Ajustement d’arrondi"
 
-#: payment_reconciliation.py:24 sandbox_payments.py:29
+#: payment_reconciliation.py:24
 msgid "Rückbuchung"
-msgstr "Extourne"
+msgstr "Rétrofacturation"
 
 #: meter_data.py:312
 msgid "SDAT Parse-Fehler: Ungültiges Dateiformat."
@@ -10868,65 +10868,9 @@ msgstr ""
 "SIMULATION SONNWIL - Document fictif. Aucune signature juridiquement valable, aucune demande de "
 "paiement et aucune autorisation du gestionnaire de réseau."
 
-#: templates/sandbox/payments.html:6
-msgid ""
-"SIMULATION SONNWIL: Diese erfundenen Kontoauszüge lösen keine Überweisung aus. Es gibt keine "
-"Verbindung zu einer Bank. Beträge und Referenzen beziehen sich ausschliesslich auf Rechnungen "
-"dieses Übungsdorfs."
-msgstr ""
-"SIMULATION SONNWIL : ces relevés fictifs ne déclenchent aucun virement. Aucune connexion bancaire"
-" n’est établie. Les montants et références concernent uniquement les factures de ce village "
-"d’essai."
-
-#: templates/sandbox/telemetry.html:6
-msgid ""
-"SIMULATION SONNWIL: Diese lokale Musterquelle verbindet sich mit keinem Gerät, Heimnetz oder "
-"MQTT-Broker. Sie belegt keine Gerätekompatibilität. Betriebsdaten ersetzen keine validierten VNB-"
-"Messdaten für die Abrechnung."
-msgstr ""
-"SIMULATION SONNWIL : cette source locale ne se connecte à aucun appareil, réseau domestique ou "
-"courtier MQTT. Elle ne prouve aucune compatibilité matérielle. Les données de fonctionnement ne "
-"remplacent pas les mesures validées du GRD pour la facturation."
-
-#: templates/sandbox/operator.html:6
-msgid ""
-"SIMULATION SONNWIL: Erstellen Sie als Robin ein beschränktes Integrationskonto. Alle Anfragen "
-"bleiben in Ihrem Übungsdorf. Die Callback-Adresse bezeichnet nur den lokalen Empfänger; es wird "
-"keine HTTPS-Verbindung aufgebaut."
-msgstr ""
-"SIMULATION SONNWIL : en tant que Robin, créez un compte d’intégration limité. Toutes les requêtes"
-" restent dans votre village d’essai. L’adresse de rappel désigne uniquement le récepteur local ; "
-"aucune connexion HTTPS n’est établie."
-
-#: templates/sandbox/questions.html:6
-msgid ""
-"SIMULATION SONNWIL: Fragen, Antworten und Belege bleiben in diesem Übungsdorf. Die ausgestellte "
-"Rechnung wird dadurch nicht geändert."
-msgstr ""
-"SIMULATION SONNWIL : les questions, réponses et justificatifs restent dans ce village d’essai. La"
-" facture émise reste inchangée."
-
 #: sandbox_formation.py:130
 msgid "SIMULATION SONNWIL: LEG-Einladung"
 msgstr "SIMULATION SONNWIL : invitation à une CEL"
-
-#: templates/sandbox/billing.html:6
-msgid ""
-"SIMULATION SONNWIL: September 2026, ohne Akku. Alle Preise, Messwerte und Rechnungen sind "
-"erfunden. Es ist nichts zu bezahlen."
-msgstr ""
-"SIMULATION SONNWIL : septembre 2026, sans batterie. Tous les prix, mesures et factures sont "
-"fictifs. Aucun paiement n’est dû."
-
-#: templates/sandbox/archive.html:6
-msgid ""
-"SIMULATION SONNWIL: Sie exportieren nur erfundene Daten Ihrer LEG. Die Wiederherstellung "
-"verwendet eine neue Datenbank mit eigenem Produktprozess. Sie benötigt einen freien Dorfplatz und"
-" bleibt an dieses Quelldorf gebunden."
-msgstr ""
-"SIMULATION SONNWIL : vous exportez uniquement les données fictives de votre CEL. La restauration "
-"utilise une nouvelle base de données avec son propre processus. Elle nécessite une place libre et"
-" reste liée à ce village source."
 
 #: templates/leg_gruenden.html:147
 msgid "Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen."
@@ -10953,10 +10897,6 @@ msgstr ""
 #: templates/api_docs.html:231
 msgid "Schema"
 msgstr "Schéma"
-
-#: templates/sandbox/questions.html:26
-msgid "Schlüssel für diese Antwort"
-msgstr "Clé de cette réponse"
 
 #: email_automation.py:36
 msgid "Schnelle Frage: Haben Sie einen Smart Meter?"
@@ -11105,6 +11045,11 @@ msgstr ""
 msgid "Seite nicht gefunden"
 msgstr "Page introuvable"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:15
+msgid "Seiten der Antragsliste"
+msgstr "Pages de la liste des demandes"
+
 #: templates/fuer_gemeinden.html:90 templates/open_source.html:39 templates/open_source.html:58
 #: templates/open_source.html:66 templates/open_source.html:157 templates/partials/site_nav.html:13
 #: templates/partials/site_nav.html:38 templates/pricing.html:41 templates/pricing.html:122
@@ -11115,22 +11060,6 @@ msgstr "Auto-hébergement"
 #: templates/self_host.html:6
 msgid "Selbst betreiben | OpenLEG"
 msgstr "Auto-hébergement | OpenLEG"
-
-#: templates/sandbox/telemetry.html:17
-msgid ""
-"Senden Sie danach eine Störungsmeldung, bestätigen Sie den Hinweis in den eigenen Messwerten und "
-"senden Sie die Entwarnung. Das ist eine Meldung der erfundenen Quelle, keine Diagnose. Erneuern "
-"Sie den Geräteschlüssel und prüfen Sie, dass der alte Schlüssel abgelehnt wird. Nach dem Widerruf"
-" bleibt auch die lokale Lieferung abgelehnt, bis Sie einen neuen Schlüssel ausstellen."
-msgstr ""
-"Envoyez ensuite un signal de défaut, acquittez l’alerte dans vos mesures et envoyez la fin du "
-"défaut. Il s’agit d’un signal de la source fictive, pas d’un diagnostic. Renouvelez la clé et "
-"vérifiez le refus de l’ancienne clé. Après révocation, la livraison locale reste refusée jusqu’à "
-"l’émission d’une nouvelle clé."
-
-#: templates/sandbox/billing.html:24
-msgid "September-Entwurf vorbereiten"
-msgstr "Préparer le projet de septembre"
 
 #: templates/equipment_form.html:90
 msgid "Seriennummer (optional)"
@@ -11187,6 +11116,11 @@ msgstr "vous connaissez les adresses des raccordements intéressés."
 #: sandbox_seed.py:85
 msgid "Sie dürfen Abrechnungen vorbereiten. Die Administration bleibt einem anderen Konto vorbehalten."
 msgstr "Vous pouvez préparer les décomptes. L'administration reste réservée à un autre compte."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/member_access.html:3
+msgid "Sie erhalten einen einmal verwendbaren Link an Ihre bestätigte E-Mail-Adresse."
+msgstr "Vous recevrez un lien utilisable une seule fois à votre adresse e-mail confirmée."
 
 #: sandbox_seed.py:55
 msgid "Sie haben ein bestätigtes Profil und noch keine eigene LEG."
@@ -11252,9 +11186,15 @@ msgstr "Vous êtes invité à rejoindre « %(community)s »."
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 msgstr "Vous êtes désormais enregistré comme gestionnaire de « %(entry_name)s »."
 
-#: templates/sandbox/operator.html:34
-msgid "Signatur gültig"
-msgstr "Signature valide"
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:57
+msgid ""
+"Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber liefert "
+"dasselbe Format. Prüfen Sie den Import mit Ihren Daten, bevor Sie eine Abrechnung vorbereiten."
+msgstr ""
+"Convenez de l'accès aux données avec le gestionnaire du réseau de distribution. Tous les "
+"gestionnaires ne fournissent pas le même format. Testez l'importation de vos données avant de "
+"préparer un décompte."
 
 #: templates/sandbox/metering.html:9
 msgid ""
@@ -11417,6 +11357,26 @@ msgstr ""
 "Une fois qu’un nombre suffisant de membres ont confirmé, démarrez le processus de fondation "
 "formel ici."
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:9
+msgid "Software"
+msgstr "Logiciels"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:7
+msgid "Software ansehen"
+msgstr "Voir le logiciel"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:9
+msgid "Software und Quellcode"
+msgstr "Logiciel et code source"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/footer.html:10
+msgid "Software und Zugang"
+msgstr "Logiciel et accès"
+
 #: templates/api_docs.html:91
 msgid "Solar potential data"
 msgstr "Données de potentiel solaire"
@@ -11460,6 +11420,7 @@ msgstr ""
 "par la commune."
 
 #: templates/gemeinde/rangliste.html:127
+#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."
@@ -11566,10 +11527,6 @@ msgstr "Capacité de stockage :"
 msgid "Speichern"
 msgstr "Enregistrer"
 
-#: sandbox_billing.py:30
-msgid "Speichern Sie zuerst eine vollständige Richtlinie für September."
-msgstr "Enregistrez d’abord une politique complète pour septembre."
-
 #: templates/http_error.html:10 templates/partials/language_switcher.html:1
 msgid "Sprache"
 msgstr "Langue"
@@ -11582,6 +11539,15 @@ msgstr "Langue des e-mails"
 #: templates/dashboard.html:203 templates/utility/settings.html:14
 msgid "Sprache speichern"
 msgstr "Enregistrer la langue"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:29
+msgid ""
+"Sprechen Sie mit Nachbarn und dem Netzbetreiber. Halten Sie fest, wer teilnimmt und welche Daten "
+"gebraucht werden."
+msgstr ""
+"Échangez avec vos voisins et le gestionnaire de réseau. Consignez les participants et les données"
+" nécessaires."
 
 #: templates/utility/register.html:48
 msgid "St. Gallen"
@@ -11643,8 +11609,7 @@ msgstr "Commencez par votre adresse. Les ménages sont anonymisés sur la carte.
 
 #: templates/admin/ops.html:90 templates/admin/ops.html:232 templates/leg_dashboard.html:156
 #: templates/leg_dashboard.html:215 templates/leg_verzeichnis/detail.html:32
-#: templates/leg_verzeichnis/eintragen.html:66 templates/sandbox/questions.html:28
-#: templates/utility/dashboard.html:52
+#: templates/leg_verzeichnis/eintragen.html:66 templates/utility/dashboard.html:52
 msgid "Status"
 msgstr "Statut"
 
@@ -11661,7 +11626,7 @@ msgid "Status wird geprüft"
 msgstr "Le statut est vérifié"
 
 #: templates/leg_billing.html:57 templates/leg_dashboard.html:30 templates/leg_dashboard.html:274
-#: templates/member_invoice_detail.html:53
+#: templates/member_invoice_detail.html:52
 msgid "Status:"
 msgstr "Statut:"
 
@@ -11669,27 +11634,6 @@ msgstr "Statut:"
 #, python-format
 msgid "Steht auf Ihrer letzten Stromrechnung von %(utility)s."
 msgstr "Figure sur votre dernière facture d’électricité de %(utility)s."
-
-#: templates/sandbox/home.html:38
-msgid ""
-"Stellen Sie als Lea eine Frage zur eigenen Rechnung, antworten Sie als Sam und lesen Sie als Lea "
-"die vollständige Historie."
-msgstr ""
-"En tant que Lea, posez une question sur votre facture, répondez en tant que Sam, puis lisez tout "
-"l’historique en tant que Lea."
-
-#: templates/sandbox/billing.html:33
-msgid ""
-"Stellen Sie die freigegebenen Rechnungen in der Abrechnungsübersicht zu. Wechseln Sie zu Lea oder"
-" Noah und öffnen Sie deren Postfach und Rechnung als PDF. Nur das berechtigte Mitglied sieht "
-"seine Rechnungsnachricht und Rechnung. Probieren Sie als Robin auch eine Stornierung mit "
-"Begründung. Die ausgestellten Zahlen und die Historie bleiben erhalten, auch wenn Sie später "
-"einen anderen Tarif speichern."
-msgstr ""
-"Envoyez les factures approuvées depuis la vue de facturation. Passez à Lea ou Noah et ouvrez leur"
-" boîte de réception et leur facture PDF. Seul le membre concerné peut consulter son message de "
-"facturation et sa facture. En tant que Robin, essayez aussi une annulation motivée. Les chiffres "
-"émis et l’historique sont conservés, même si vous enregistrez ensuite un autre tarif."
 
 #: templates/gemeinde/vergleich.html:20
 msgid "Stellen Sie zwei Gemeinden nebeneinander. Wer nutzt mehr vom eigenen Dachpotenzial?"
@@ -11719,9 +11663,19 @@ msgstr "Raison de l'annulation"
 msgid "Strasse, PLZ Ort"
 msgstr "Rue, NPA, localité"
 
-#: templates/member_invoice_detail.html:193
+#: templates/member_invoice_detail.html:192
 msgid "Strom aus dem Quartierakku"
 msgstr "Alimentation par la batterie de quartier"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:16
+msgid "Strom erzeugen"
+msgstr "Produire de l'électricité"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:17
+msgid "Strom nutzen"
+msgstr "Utiliser l'électricité"
 
 #: templates/emails/day_14_formation.html:64
 msgid "Strom teilen und sparen"
@@ -11818,10 +11772,6 @@ msgstr "Moyenne horaire du rayonnement solaire global au point de prévision."
 msgid "Störungsmeldung"
 msgstr "Signalement de défaut"
 
-#: templates/sandbox/telemetry.html:22
-msgid "Störungsmeldung senden"
-msgstr "Envoyer un signal de défaut"
-
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."
 msgstr "Recherche actuellement indisponible."
@@ -11877,6 +11827,11 @@ msgstr "Données tarifaires"
 #: templates/api_docs.html:115
 msgid "Tariffs across municipalities"
 msgstr "Tarifs des différentes communes"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:57
+msgid "Technischen Betrieb vorbereiten"
+msgstr "Préparer l'exploitation technique"
 
 #: templates/index.html:469
 msgid "Teilen Sie Ihren Einladungslink"
@@ -12040,20 +11995,6 @@ msgstr ""
 "atteindre au moins 5 % de la puissance de raccordement de tous les consommateurs finaux "
 "participants. Le GRD compétent confirme si la topologie du réseau convient."
 
-#: templates/sandbox/billing.html:11
-msgid ""
-"Unabhängige Erwartungen für die Originalquelle: Verbrauch 2880 kWh, Produktion und LEG-Bezug je "
-"1440 kWh, Netzbezug 1440 kWh. Jeder der vier Haushalte bezieht 360 kWh aus der LEG und bezahlt "
-"dafür CHF 43.20. Noah erhält für 1440 kWh CHF 172.80 gutgeschrieben; sein Rechnungsbetrag ist CHF"
-" -129.60. Die Summe der vier Rechnungen ist CHF 0.00. Diese LEG-Rechnung ersetzt keine "
-"Netzrechnung."
-msgstr ""
-"Valeurs attendues définies indépendamment pour la source originale : consommation 2880 kWh, "
-"production et prélèvement dans la CEL 1440 kWh chacun, prélèvement sur le réseau 1440 kWh. Chacun"
-" des quatre ménages prélève 360 kWh dans la CEL pour CHF 43.20. Noah reçoit un crédit de CHF "
-"172.80 pour 1440 kWh ; sa facture s’élève à CHF -129.60. La somme des quatre factures est CHF "
-"0.00. Cette facture CEL ne remplace pas une facture de réseau."
-
 #: templates/sandbox/metering.html:12
 msgid ""
 "Unabhängige Monatssummen: Verbrauch 2880 kWh, Produktion 1440 kWh, LEG-Bezug 1440 kWh, Netzbezug "
@@ -12086,10 +12027,6 @@ msgstr "Rôle CEL inconnu : %(roles)s"
 #: billing_policy.py:461
 msgid "Unbekannte Netzebene."
 msgstr "Niveau de réseau inconnu."
-
-#: sandbox_payments.py:25
-msgid "Unbekannte Referenz, passender Betrag"
-msgstr "Référence inconnue, montant correspondant"
 
 #: templates/equipment_form.html:31
 msgid ""
@@ -12131,10 +12068,6 @@ msgstr "Potentiel inexploité"
 msgid "Ungenutztes Potenzial:"
 msgstr "Potentiel inexploité :"
 
-#: templates/sandbox/billing.html:39
-msgid "Ungleiche Summen herunterladen"
-msgstr "Télécharger les totaux inégaux"
-
 #: i18n.py:65
 msgid "Ungültige Anfrage"
 msgstr "Requête non valide"
@@ -12166,10 +12099,6 @@ msgstr "Jeton non valide"
 #: security_utils.py:219
 msgid "Ungültiges Token-Format"
 msgstr "Format du jeton non valide"
-
-#: billing_workspace.py:65 dashboard.py:213 dashboard.py:453
-msgid "Unlesbar"
-msgstr "Illisible"
 
 #: billing_policy.py:85 billing_workspace.py:265
 msgid "Unterschiedliche Netzebenen"
@@ -12206,10 +12135,6 @@ msgstr "Demander un accompagnement"
 #: templates/leg_dashboard.html:206
 msgid "Unterzeichnet"
 msgstr "Signé"
-
-#: templates/sandbox/archive.html:20
-msgid "Unveränderter Export"
-msgstr "Export inchangé"
 
 #: dashboard.py:266 dashboard.py:267
 msgid "Unvollständig"
@@ -12288,6 +12213,11 @@ msgstr "Responsable"
 msgid "Verantwortlich für den Inhalt"
 msgstr "Responsable du contenu"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/join.html:17
+msgid "Verantwortlich für die Antragsdaten"
+msgstr "Responsable des données relatives aux demandes"
+
 #: templates/index.html:189
 msgid "Verantwortlichkeiten im Detail"
 msgstr "Les responsabilités en détail"
@@ -12296,13 +12226,14 @@ msgstr "Les responsabilités en détail"
 msgid "Verantwortung wählen"
 msgstr "Choisir les responsabilités"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/application.html:9
+msgid "Verbindungen zum Energiesektor"
+msgstr "Liens avec le secteur de l'énergie"
+
 #: templates/sandbox/metering.html:41
 msgid "Verbrauch"
 msgstr "Consommation"
-
-#: templates/sandbox/billing.html:18
-msgid "Verbrauch (kWh)"
-msgstr "Consommation (kWh)"
 
 #: templates/emails/day_7_consumption.html:6
 msgid "Verbrauch ergänzen"
@@ -12312,7 +12243,7 @@ msgstr "Compléter la consommation"
 msgid "Verbrauch und Solaranlage ansehen"
 msgstr "Consulter la consommation et l'installation solaire"
 
-#: templates/member_invoice_detail.html:182
+#: templates/member_invoice_detail.html:181
 msgid "Verbrauch:"
 msgstr "Consommation:"
 
@@ -12325,13 +12256,77 @@ msgid "Verbrauchsdaten hinterlegt"
 msgstr "Données de consommation enregistrées"
 
 #: member_invoices.py:36 templates/documents/member_invoice.html:22
-#: templates/member_invoice_detail.html:58
+#: templates/member_invoice_detail.html:57
 msgid "Verbrauchskosten"
 msgstr "Coûts de consommation"
 
-#: templates/member_invoice_detail.html:62
+#: templates/member_invoice_detail.html:61
 msgid "Verbrauchskosten dieser Rechnung"
 msgstr "Coûts de consommation de cette facture"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/footer.html:8 templates/release/navigation.html:12
+msgid "Verein"
+msgstr "Association"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/index.html:3 templates/verein/index.html:6
+msgid "Verein openLEG Schweiz"
+msgstr "Verein openLEG Schweiz"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:50
+msgid ""
+"Verein openLEG Schweiz soll die Software, Dokumentation und den Austausch pflegen. Der Verein mit"
+" geplantem Sitz in Baden ist noch nicht gegründet. Der Betrieb des gehosteten Produkts gehört "
+"nicht zu seinem vorgesehenen Auftrag."
+msgstr ""
+"Verein openLEG Schweiz a pour projet d'entretenir le logiciel, la documentation et les échanges. "
+"L'association, dont le siège est prévu à Baden, n'est pas encore constituée. L'exploitation du "
+"produit hébergé ne fait pas partie de sa mission prévue."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:50
+msgid "Verein und Mitgliedschaft"
+msgstr "Association et adhésion"
+
+#. Draft translation; native language and domain review pending.
+#: verein_routes.py:261
+msgid "Verein: E-Mail bestätigen"
+msgstr "Association: Confirmer l'e-mail"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:374
+msgid "Verein: Entscheid zum Mitgliedsantrag"
+msgstr "Association : décision sur l'adhésion"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:68
+msgid "Verein: persönlicher Zugang"
+msgstr "Association : accès personnel"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:30
+msgid ""
+"Vereinbaren Sie Vertretung, Tarife, Abrechnung und den Umgang mit Fragen. Benennen Sie die "
+"verantwortlichen Personen."
+msgstr ""
+"Convenez de la représentation, des tarifs, de la facturation et du traitement des questions. "
+"Désignez les personnes responsables."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:40
+msgid ""
+"Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem Netzbetreiber. "
+"Ein Entwurf ist noch keine freigegebene Rechnung."
+msgstr ""
+"Parcours simplifié. Définissez les données disponibles et leur format avec votre gestionnaire de "
+"réseau. Un projet n'est pas encore une facture approuvée."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/login.html:2 templates/verein/login.html:5
+msgid "Vereinsvorstand anmelden"
+msgstr "Connexion du comité de l'association"
 
 #: templates/pricing.html:123 templates/pricing.html:131
 msgid "Verfügbar"
@@ -12406,7 +12401,7 @@ msgstr "Vérifié"
 msgid "Verkleinern"
 msgstr "Réduire"
 
-#: templates/leg_billing.html:176 templates/member_invoice_detail.html:208
+#: templates/leg_billing.html:176 templates/member_invoice_detail.html:207
 msgid "Verknüpft mit Korrektur:"
 msgstr "Lié à la correction :"
 
@@ -12419,7 +12414,7 @@ msgid "Versorgte Einwohner"
 msgstr "Population desservie"
 
 #: templates/leg_billing_policy.html:53 templates/leg_billing_policy.html:109
-#: templates/leg_community_create.html:20 templates/sandbox/billing.html:13
+#: templates/leg_community_create.html:20
 msgid "Verteilmodell"
 msgstr "Modèle de répartition"
 
@@ -12472,18 +12467,6 @@ msgstr "Remplissez l’accord communautaire et les contrats des participants dan
 msgid "Verwaltung"
 msgstr "Administration"
 
-#: templates/sandbox/billing.html:38
-msgid ""
-"Verwenden Sie dafür ein frisches Übungsdorf. Speichern Sie dieselbe Richtlinie und importieren "
-"Sie statt der gültigen Quelle die Datei mit ungleichen LEG-Summen: Bezug 1440 kWh, Produktion für"
-" die LEG 1152 kWh. Der gewöhnliche Abrechnungslauf muss sie ablehnen. Es gibt keinen Schalter zum"
-" Übergehen dieser Prüfung."
-msgstr ""
-"Utilisez un nouveau village d’essai. Enregistrez la même politique et importez, à la place de la "
-"source valide, le fichier dont les totaux CEL diffèrent : prélèvement 1440 kWh, production pour "
-"la CEL 1152 kWh. Le traitement habituel doit le refuser. Aucun bouton ne permet de contourner ce "
-"contrôle."
-
 #: templates/sandbox/formation.html:51
 #, python-format
 msgid ""
@@ -12496,31 +12479,6 @@ msgstr ""
 #: templates/api_docs.html:241
 msgid "Verzeichniseintrag nicht gefunden."
 msgstr "Entrée du répertoire introuvable."
-
-#: templates/sandbox/home.html:43
-msgid ""
-"Veröffentlichen Sie als Lea lokale Muster, prüfen Sie veraltete Werte und Störungsmeldungen und "
-"geben Sie Noah den Einblick vorübergehend frei."
-msgstr ""
-"En tant que Lea, publiez des échantillons locaux, vérifiez les mesures périmées et les défauts, "
-"puis partagez temporairement avec Noah."
-
-#: templates/sandbox/telemetry.html:16
-msgid ""
-"Veröffentlichen Sie ein Muster mit 2500 W und öffnen Sie die gewöhnlichen Messwerte. Wiederholen "
-"Sie dasselbe Muster: Es wird nicht doppelt gespeichert. Pausieren Sie die Quelle und warten Sie "
-"mindestens 61 Sekunden, ohne neue Muster zu senden. Die gespeicherten Zeitstempel werden dann als"
-" veraltet angezeigt. Die Uhr und Ihre Anmeldung bleiben unverändert. Setzen Sie die Quelle fort "
-"und veröffentlichen Sie ein neues Muster."
-msgstr ""
-"Publiez un échantillon de 2500 W et ouvrez les mesures habituelles. Renvoyez le même échantillon "
-": il n’est pas enregistré deux fois. Mettez la source en pause et attendez au moins 61 secondes "
-"sans nouvel envoi. Les horodatages enregistrés deviennent alors périmés. L’horloge et votre "
-"connexion restent inchangées. Reprenez la source et publiez un nouvel échantillon."
-
-#: sandbox_telemetry.py:32
-msgid "Veröffentlichen Sie zuerst ein Muster, bevor Sie es wiederholen."
-msgstr "Publiez d’abord un échantillon avant de le renvoyer."
 
 #: templates/advisories.html:8
 msgid "Veröffentlicht am"
@@ -12560,6 +12518,11 @@ msgstr "Entièrement rapproché"
 msgid "Vollständiger September"
 msgstr "Septembre complet"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:39
+msgid "Vollständigkeit prüfen"
+msgstr "Vérifier l'exhaustivité"
+
 #: templates/leg_dashboard.html:379 templates/leg_dashboard.html:435
 msgid "Vollzugriff im persönlichen Dashboard anfordern"
 msgstr "Demandez un accès complet dans votre tableau de bord personnel"
@@ -12590,6 +12553,11 @@ msgid "Von %(num)s Gemeinde mit Daten."
 msgid_plural "Von %(num)s Gemeinden mit Daten."
 msgstr[0] "Sur %(num)s commune disposant de données."
 msgstr[1] "Sur %(num)s communes disposant de données."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:38
+msgid "Von Messdaten zur geprüften Abrechnung."
+msgstr "Des données de mesure à la facturation contrôlée."
 
 #: templates/assets/brand/flow-how-it-works.svg:1 templates/how-it-works.html:72
 msgid "Von Solar über Zähler zur Stromgemeinschaft"
@@ -12666,13 +12634,25 @@ msgstr "ID d'opération"
 msgid "Vorgehen klären"
 msgstr "Clarifier la procédure"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/index.html:9 templates/verein/index.html:10
+msgid ""
+"Vorgesehen sind persönliche Mitgliedschaften ab 18 Jahren, eine Stimme pro Mitglied und ein "
+"Jahresbeitrag von CHF 50. Unternehmen sind keine Mitglieder. Energieversorger erhalten weder "
+"Mitgliedschaft noch Einfluss durch Finanzierung."
+msgstr ""
+"Le projet prévoit une adhésion individuelle dès 18 ans, une voix par membre et une cotisation "
+"annuelle de CHF 50. Les entreprises ne peuvent pas devenir membres. Les fournisseurs d'énergie "
+"n'obtiennent ni adhésion ni influence par un financement."
+
 #: templates/partials/install_console.html:10
 msgid "Vorher prüfen"
 msgstr "Vérifier d’abord"
 
-#: templates/sandbox/operator.html:19
-msgid "Vorherigen API-Schlüssel testen"
-msgstr "Tester l’ancienne clé API"
+#. Draft translation; native language and domain review pending.
+#: templates/verein/queue.html:15
+msgid "Vorherige Seite"
+msgstr "Page précédente"
 
 #: templates/pricing.html:140
 msgid ""
@@ -12685,10 +12665,6 @@ msgstr ""
 #: templates/sandbox/manage.html:13
 msgid "Vorlage"
 msgstr "Modèle"
-
-#: templates/sandbox/archive.html:28
-msgid "Vorprüfung erfolgreich. Das Ziel wurde noch nicht verändert."
-msgstr "Vérification réussie. La destination n’a pas encore été modifiée."
 
 #: templates/index.html:624
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
@@ -12786,6 +12762,11 @@ msgstr "Qu’est-il possible de faire dans votre commune ?"
 msgid "Was ist in meiner Gemeinde möglich?"
 msgstr "Qu’est-il possible de faire dans ma commune ?"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:46
+msgid "Was kann Ihre Gemeinde ermöglichen?"
+msgstr "Que peut faciliter votre commune ?"
+
 #: templates/pricing.html:96
 msgid "Was kostenlos bleibt"
 msgstr "Ce qui reste gratuit"
@@ -12793,6 +12774,11 @@ msgstr "Ce qui reste gratuit"
 #: templates/how-it-works.html:46 templates/how-it-works.html:123
 msgid "Was kostet die Gründung mit OpenLEG?"
 msgstr "Combien coûte la création avec OpenLEG ?"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:56
+msgid "Was kostet die Software?"
+msgstr "Combien coûte le logiciel ?"
 
 #: templates/how-it-works.html:56 templates/how-it-works.html:131
 msgid "Was macht OpenLEG, was der Netzbetreiber?"
@@ -12842,26 +12828,6 @@ msgstr "Site web (facultatif)"
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr "L’adresse du site doit commencer par http:// ou https://."
 
-#: templates/sandbox/payments.html:60
-msgid ""
-"Wechseln Sie danach zum betroffenen Mitglied und prüfen Sie den Status der eigenen Rechnung. Die "
-"ausgestellten Beträge bleiben unverändert."
-msgstr ""
-"Passez ensuite au membre concerné et vérifiez l’état de sa facture. Les montants émis restent "
-"inchangés."
-
-#: templates/sandbox/questions.html:13
-msgid ""
-"Wechseln Sie zu Sam. Bestätigen Sie den Eingang und beantworten Sie danach die Frage mit dem "
-"Status erledigt. Jede angenommene Änderung erhält eine eigene Ereigniskennung. Eine unveränderte "
-"Wiederholung mit demselben Schlüssel fügt keine zweite Antwort hinzu. Ein neuer Inhalt braucht "
-"einen neuen Schlüssel. Ein erledigter Fall kann nicht erneut bestätigt werden."
-msgstr ""
-"Passez à Sam. Accusez réception, puis répondez à la question avec l’état résolu. Chaque "
-"changement accepté reçoit son propre identifiant d’événement. Une répétition identique avec la "
-"même clé n’ajoute pas de réponse. Un nouveau contenu exige une nouvelle clé. Un dossier résolu ne"
-" peut plus recevoir d’accusé de réception."
-
 #: sandbox_formation.py:132
 msgid ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
@@ -12870,15 +12836,10 @@ msgstr ""
 "Passez au compte invité et confirmez la participation dans le tableau de bord de la CEL. Cette "
 "invitation est fictive."
 
-#: templates/sandbox/questions.html:15
-msgid ""
-"Wechseln Sie zurück zu Lea. Prüfen Sie Antworten, Status, Beleg und Historie hier und in der "
-"eigenen Rechnung. Andere Haushalte sehen diese Frage nicht. Es werden keine Nachrichten an "
-"externe Empfänger gesendet."
-msgstr ""
-"Revenez à Lea. Vérifiez les réponses, l’état, le justificatif et l’historique ici et dans votre "
-"facture. Les autres ménages ne voient pas cette question. Aucun message n’est envoyé à un "
-"destinataire externe."
+#. Draft translation; native language and domain review pending.
+#: templates/verein/join.html:11
+msgid "Weitere Verbindungen zum Energiesektor"
+msgstr "Autres liens avec le secteur de l'énergie"
 
 #: templates/sandbox/formation.html:58
 msgid "Weiteren Haushalt aufnehmen"
@@ -12931,6 +12892,11 @@ msgid ""
 "planen."
 msgstr "Savoir si vous disposez déjà d’un compteur intelligent nous permet de mieux préparer la suite."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:58
+msgid "Wer betreibt unsere Gemeinschaft?"
+msgstr "Qui exploite notre communauté ?"
+
 #: templates/open_source.html:65 templates/pricing.html:39
 msgid ""
 "Wer eine veränderte Version über ein Netzwerk anbietet, muss den Nutzenden den entsprechenden "
@@ -12959,7 +12925,7 @@ msgstr "Outils et fonctionnement"
 msgid "Wert"
 msgstr "Valeur"
 
-#: templates/member_invoice_detail.html:197
+#: templates/member_invoice_detail.html:196
 msgid "Wert zum internen Preis"
 msgstr "Valeur au prix interne"
 
@@ -13044,22 +13010,6 @@ msgstr ""
 #: templates/gemeinde/pilotgemeinde.html:33
 msgid "Wie wir diesen Wert herleiten"
 msgstr "Comment cette valeur est calculée"
-
-#: templates/sandbox/archive.html:34
-msgid "Wiederhergestellte LEG öffnen"
-msgstr "Ouvrir la CEL restaurée"
-
-#: templates/sandbox/archive.html:41
-msgid ""
-"Wiederholen Sie die Wiederherstellung unverändert: Es entstehen keine doppelten Datensätze. "
-"Öffnen Sie dann das Ziel und ändern Sie im eigenen Energieprofil den Jahresverbrauch. Kehren Sie "
-"über «Zum Quelldorf» zurück und stellen Sie denselben gespeicherten Stand erneut her. Die "
-"Vorprüfung zeigt den Konflikt, ohne ihn zu überschreiben. Die Quelle bleibt unverändert."
-msgstr ""
-"Répétez la restauration sans modification : aucun doublon n’est créé. Ouvrez ensuite la "
-"destination et modifiez la consommation annuelle de votre profil énergétique. Revenez par « "
-"Retour au village source » et restaurez à nouveau le même état enregistré. La vérification "
-"signale le conflit sans le remplacer. La source reste inchangée."
 
 #: templates/emails/day_0_welcome.html:6 templates/emails/day_0_welcome.html:33
 #, python-format
@@ -13261,9 +13211,24 @@ msgstr "Prise d’effet"
 msgid "Wirksamkeitsdatum"
 msgstr "Date d'entrée en vigueur"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:11
+msgid "Wissen"
+msgstr "Connaissances"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/footer.html:9
+msgid "Wissen und Daten"
+msgstr "Connaissances et données"
+
 #: templates/open_source.html:121
 msgid "Wo Sie im Code anfangen"
 msgstr "Par où commencer dans le code"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:57
+msgid "Woher kommen die Messdaten?"
+msgstr "D'où viennent les données de mesure ?"
 
 #: templates/gemeinde/profil.html:134
 #, python-format
@@ -13294,18 +13259,6 @@ msgstr ""
 "refusés et retirez la source originale avant de charger une correction. Essayez aussi un échec de"
 " récupération planifiée et sa relance."
 
-#: templates/sandbox/archive.html:42
-msgid ""
-"Wählen Sie anschliessend das beschädigte Manifest und nehmen Sie den Export erneut auf. Die "
-"Prüfung und Wiederherstellung lehnen den falschen Hash ab. Verwerfen Sie das Ziel und beginnen "
-"Sie mit einem unveränderten Export neu. Verwerfen, Zurücksetzen oder Ablaufen des Quelldorfs "
-"entfernt auch das Ziel und alle Archivdateien."
-msgstr ""
-"Choisissez ensuite le manifeste endommagé et reprenez l’export. La vérification et la "
-"restauration refusent l’empreinte incorrecte. Supprimez la destination et recommencez avec un "
-"export inchangé. La suppression, la réinitialisation ou l’expiration du village source supprime "
-"aussi la destination et tous les fichiers d’archive."
-
 #: templates/meter_upload.html:54
 msgid "Wählen Sie den gewünschten Zeitraum"
 msgstr "Sélectionnez la période souhaitée"
@@ -13313,20 +13266,6 @@ msgstr "Sélectionnez la période souhaitée"
 #: templates/role_access.html:20
 msgid "Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Mail-Link an."
 msgstr "Choisissez l'accès approprié. Connectez-vous ensuite en toute sécurité via un lien e-mail."
-
-#: templates/sandbox/payments.html:15
-msgid ""
-"Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, Belastung und "
-"Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge bleiben unverbucht. Laden "
-"Sie danach die unbekannte Referenz mit passendem Betrag und bestätigen Sie die geprüfte Zuordnung"
-" unten. Verwenden Sie für die automatische Verbuchung eine andere zugestellte Rechnung und deren "
-"exakte CHF-Gutschrift. Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen."
-msgstr ""
-"Choisissez une facture. Dans la vue habituelle de facturation, importez d’abord le montant "
-"erroné, la devise erronée, le débit et l’extourne. Ces écritures restent non comptabilisées. "
-"Chargez ensuite la référence inconnue avec le montant correspondant et confirmez ci-dessous la "
-"correspondance vérifiée. Pour la comptabilisation automatique, utilisez une autre facture envoyée"
-" et son crédit CHF exact. Répétez le même import : il ne doit pas créer un second paiement."
 
 #: sandbox_seed.py:105
 msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
@@ -13356,7 +13295,7 @@ msgstr "Choisit le mode d’exploitation."
 msgid "X-API-Key"
 msgstr "X-API-Key"
 
-#: templates/member_invoice_detail.html:224
+#: templates/member_invoice_detail.html:223
 msgid "Zahlung"
 msgstr "paiement"
 
@@ -13367,6 +13306,21 @@ msgstr "Enregistrer le paiement"
 #: templates/leg_billing.html:40
 msgid "Zahlungsabgleich prüfen"
 msgstr "Vérifier le rapprochement des paiements"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:20
+msgid "Zahlungseingang erfassen"
+msgstr "Enregistrer un paiement reçu"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:20
+msgid "Zahlungseingang speichern"
+msgstr "Enregistrer le paiement reçu"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/application.html:23
+msgid "Zahlungserinnerung vorbereiten"
+msgstr "Préparer le rappel de paiement"
 
 #: templates/leg_billing_policy.html:111
 msgid "Zahlungsfrist"
@@ -13381,8 +13335,7 @@ msgstr "Délai de paiement (jours)"
 msgid "Zahlungsfrist in ganzen Tagen, zwischen %(minimum)s und %(maximum)s."
 msgstr "Délai de paiement en jours entiers, entre %(minimum)s et %(maximum)s."
 
-#: templates/documents/member_invoice.html:20 templates/member_invoice_detail.html:52
-#: templates/sandbox/billing.html:13
+#: templates/documents/member_invoice.html:20 templates/member_invoice_detail.html:51
 msgid "Zahlungsfrist:"
 msgstr "Délai de paiement :"
 
@@ -13452,10 +13405,6 @@ msgid ""
 "Korrektur."
 msgstr "Retirez d'abord explicitement la source originale acceptée. Importez ensuite la correction."
 
-#: templates/sandbox/archive.html:36
-msgid "Ziel verwerfen"
-msgstr "Supprimer la destination"
-
 #: templates/gemeinde/profil.html:122
 msgid "Ziel:"
 msgstr "Objectif :"
@@ -13463,6 +13412,18 @@ msgstr "Objectif :"
 #: templates/index.html:57
 msgid "Zielgruppe"
 msgstr "Public cible"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:362
+#, python-format
+msgid ""
+"Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist "
+"und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter %(access_url)s. Kontakt: "
+"hallo@openleg.ch."
+msgstr ""
+"Une décision a été enregistrée sur votre demande : %(reason)s. Consultez votre statut actuel, "
+"l'échéance de cotisation et vos demandes dans votre espace personnel à l'adresse %(access_url)s. "
+"Contact : hallo@openleg.ch."
 
 #: templates/advisories_error.html:7
 msgid "Zu meinen Solargeräten"
@@ -13483,6 +13444,11 @@ msgstr "Zoug"
 #: equipment.py:69
 msgid "Zugang entfernt"
 msgstr "Accès supprimé"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/footer.html:10
+msgid "Zugang für Energieversorger"
+msgstr "Accès des fournisseurs d'énergie"
 
 #: equipment.py:68
 msgid "Zugang vorhanden"
@@ -13531,13 +13497,14 @@ msgstr "Aller au contenu"
 msgid "Zum LEG-Check"
 msgstr "Vérifier le potentiel CEL"
 
-#: templates/sandbox/archive_destination.html:7 templates/sandbox/banner.html:8
-msgid "Zum Quelldorf"
-msgstr "Retour au village source"
-
 #: templates/pricing.html:126
 msgid "Zum Schnellstart"
 msgstr "Vers le guide de démarrage"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/message.html:6
+msgid "Zum Verein"
+msgstr "Vers l'association"
 
 #: templates/sandbox/home.html:19
 #, python-format
@@ -13610,9 +13577,10 @@ msgstr "Retiré"
 msgid "Zurücksetzen"
 msgstr "Réinitialiser"
 
-#: templates/sandbox/billing.html:13
-msgid "Zustellart"
-msgstr "Mode d’envoi"
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:55
+msgid "Zusammenarbeit verstehen"
+msgstr "Comprendre la coopération"
 
 #: templates/leg_billing.html:113
 msgid "Zustellen"
@@ -13630,9 +13598,10 @@ msgstr "Confirmer la livraison comme effectuée"
 msgid "Zustellung bestätigen"
 msgstr "Confirmer la livraison"
 
-#: templates/sandbox/operator.html:32
-msgid "Zustellung mit Fehler simulieren"
-msgstr "Simuler un échec de livraison"
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/navigation.html:12
+msgid "Zweck und Mitgliedschaft"
+msgstr "But et adhésion"
 
 #: templates/gemeinde/rangliste.html:23
 msgid "Zwei Gemeinden vergleichen"
@@ -13806,7 +13775,7 @@ msgstr "n. d."
 msgid "kW"
 msgstr "kW"
 
-#: templates/member_invoice_detail.html:183
+#: templates/member_invoice_detail.html:182
 msgid "kWh ("
 msgstr "kWh ("
 
@@ -14137,7 +14106,7 @@ msgstr "· %(format_b_population_int_replace)s habitants"
 msgid "· Akteur:"
 msgstr "· Acteur:"
 
-#: templates/leg_billing.html:174 templates/member_invoice_detail.html:205
+#: templates/leg_billing.html:174 templates/member_invoice_detail.html:204
 msgid "· Antwort bis"
 msgstr "· Réponse avant le"
 
@@ -14206,7 +14175,7 @@ msgstr "» est toujours d'actualité."
 msgid "Ändern"
 msgstr "Modifier"
 
-#: sandbox_seed.py:44 sandbox_worker.py:107
+#: sandbox_seed.py:44 sandbox_worker.py:84
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Modifiez la consommation ou la puissance photovoltaïque dans le profil énergétique."
 
@@ -14234,9 +14203,23 @@ msgstr "Modifications apportées à cette version du catalogue"
 msgid "Änderungsdaten (nur bei Änderung; JSON mit status, role oder access_roles)"
 msgstr "Modifier les données (uniquement en cas de modification ; JSON avec statut, rôle ou access_roles)"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/navigation.html:9
+msgid "Öffentliche API"
+msgstr "API publique"
+
 #: equipment.py:41
 msgid "Öffentliche Dienste und Fernzugriff mit dem Betreiber klären."
 msgstr "Vérifier avec l’exploitant les services accessibles depuis Internet et les accès distants."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:46
+msgid ""
+"Öffentliche Energie- und Solardaten helfen, Fragen vor Ort einzuordnen. Vergleichen Sie Gemeinden"
+" und finden Sie den Einstieg für Ihre Verwaltung."
+msgstr ""
+"Les données publiques sur l'énergie et le solaire aident à comprendre la situation locale. "
+"Comparez les communes et découvrez le parcours destiné à votre administration."
 
 #: templates/datenschutz.html:45
 msgid "Öffentliche, anonymisierte Gemeindezählung; bei weniger als drei Personen zeigen wir nur «< 3»"
@@ -14294,6 +14277,22 @@ msgstr ""
 "\n"
 "Si vous n’avez pas demandé ce lien, vous pouvez ignorer cet e-mail."
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:71
+#, python-format
+msgid ""
+"Öffnen Sie Ihren persönlichen Vereinszugang:\n"
+"\n"
+"%(link)s\n"
+"\n"
+"Der Link ist eine Stunde gültig und einmal verwendbar."
+msgstr ""
+"Ouvrez votre accès personnel à l'association :\n"
+"\n"
+"%(link)s\n"
+"\n"
+"Le lien est valable une heure et utilisable une seule fois."
+
 #: templates/advisories_error.html:6
 msgid ""
 "Öffnen Sie das Gerät mit Ihrem bestätigten Eigentümerzugang. Laden Sie die Hinweise erneut, wenn "
@@ -14309,16 +14308,6 @@ msgid ""
 msgstr ""
 "Ouvrez l'entrée avec votre accès propriétaire confirmé. Si vous apportez des modifications, "
 "vérifiez le lien d'accès et rechargez le formulaire."
-
-#: templates/sandbox/telemetry.html:12
-msgid ""
-"Öffnen Sie die gewöhnliche Geräteliste. Erfassen Sie Hersteller SIMULATION und Modell SONNWIL, "
-"ohne echte Seriennummer oder Netzwerkangaben. Melden Sie danach hier eine getrennte Musterquelle "
-"an. Geräteangaben und Messwerte sind keine Installateurprüfung."
-msgstr ""
-"Ouvrez la liste habituelle des appareils. Saisissez SIMULATION comme fabricant et SONNWIL comme "
-"modèle, sans numéro de série ni réseau réel. Enregistrez ensuite ici une source d’essai "
-"distincte. Les données d’appareil et les mesures ne constituent pas un contrôle d’installateur."
 
 #: templates/equipment_form.html:104
 msgid "Übergabe an Ihren Installateur"
@@ -14633,78 +14622,3 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 #~ "Ouvrez votre tableau de bord, modifiez la "
 #~ "consommation annuelle et enregistrez. Rechargez la page"
 #~ " pour voir la nouvelle valeur."
-
-#: templates/gemeinde/dashboard.html:97
-msgid "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."
-msgstr "Les demandes de contrat à OpenLEG sont désactivées dans le village d'essai."
-
-msgid "Einladung zur LEG"
-msgstr "Invitation à la CEL"
-
-msgid "Ich bestätige die ausgewählte Datenschutzstufe."
-msgstr "Je confirme le niveau de protection des données sélectionné."
-
-#: templates/admin/login.html
-msgid "Admin-Zugang"
-msgstr "Accès administrateur"
-
-#: templates/admin/login.html
-msgid "Anmeldung fehlgeschlagen."
-msgstr "Échec de la connexion."
-
-msgid "Agent"
-msgstr "Agent"
-
-msgid "Agentenname (optional)"
-msgstr "Nom de l’agent (facultatif)"
-
-msgid "Ausgelöst durch"
-msgstr "Déclenché par"
-
-msgid "Dienst"
-msgstr "Service"
-
-msgid "Mensch"
-msgstr "Personne"
-
-msgid "Wer handelt mit diesem Schlüssel?"
-msgstr "Qui agit avec cette clé ?"
-
-msgid "Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese Bestätigung ist derzeit noch nicht verfügbar."
-msgstr "Pour les étapes de soumission, choisissez Personne (human) ou Service (service). Une clé d’agent est refusée sans confirmation humaine. Cette confirmation n’est pas encore disponible."
-
-#, python-format
-msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
-msgstr "- [Contrat OpenAPI](%(url)s) : Contrat de l’API publique lisible par machine (JSON)"
-
-#: templates/api_docs.html
-msgid "Anfragelimit erreicht."
-msgstr "Limite de requêtes atteinte."
-
-#: templates/api_docs.html
-msgid "Erfolgreiche Antwort"
-msgstr "Réponse réussie"
-
-#: templates/api_docs.html
-msgid "Kennzahlen der Startseite"
-msgstr "Indicateurs de la page d’accueil"
-
-#: templates/api_docs.html
-msgid "LEG-Verzeichniseintrag"
-msgstr "Fiche du répertoire des CEL"
-
-#: templates/api_docs.html
-msgid "OpenAPI-Vertrag"
-msgstr "Contrat OpenAPI"
-
-#: templates/api_docs.html
-msgid "Ungültige Anfrage oder keine Daten verfügbar."
-msgstr "Requête non valide ou aucune donnée disponible."
-
-#: templates/api_docs.html
-msgid "Veränderung der Solarnutzung"
-msgstr "Évolution de l’utilisation du potentiel solaire"
-
-#: templates/api_docs.html
-msgid "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert."
-msgstr "Données énergétiques publiques suisses et outils pour les CEL. Sans connexion ; le nombre de requêtes est limité."

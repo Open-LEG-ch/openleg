@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% if site_release_enabled and not config.SITE_TRANSLATIONS_APPROVED %}<meta name="robots" content="noindex, nofollow">{% endif %}
   {% block meta %}{% endblock %}
   {% include 'partials/tailwind_brand.html' %}
+  {% if site_release_enabled %}<script src="/static/js/language_choice.js" defer></script>{% endif %}
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{{ 'site-release' if site_release_enabled else '' }} {% block body_class %}bg-paper text-ink{% endblock %}">
@@ -12,6 +14,7 @@
   {% include 'partials/site_nav.html' %}
   <main id="main-content" tabindex="-1">
     {% block content %}{% endblock %}
+    {% if g.untranslated_media %}<p class="max-w-6xl mx-auto px-5 py-6 text-sm">{{ _('Eine Abbildung auf dieser Seite zeigt die Oberfläche auf Deutsch.') }}</p>{% endif %}
   </main>
   {% include 'partials/site_footer.html' %}
   {% block scripts %}{% endblock %}

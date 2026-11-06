@@ -38,6 +38,8 @@
 .release-login { border: 1px solid #243b85; border-radius: 999px; padding: 8px 16px; white-space: nowrap; }
 .release-language nav { gap: 0; }
 .release-language a { min-height: 44px; display: inline-flex; align-items: center; padding-inline: 6px; }
+.release-language-options { position: absolute; top: calc(100% + 8px); right: 0; width: 180px; padding: 12px; border: 1px solid #bcc3d0; border-radius: 12px; background: #fffdf8; }
+.release-language-options nav { display: grid; }
 .release-footer { background: #243b85; color: #fffdf8; padding-block: 56px; }
 .release-footer :where(a, summary):focus-visible { outline-color: #ffc8b8; }
 .release-footer-intro { display: grid; gap: 16px; max-width: 460px; margin-bottom: 40px; }
@@ -101,6 +103,7 @@
   .release-nav-group summary { justify-content: space-between; }
   .release-nav-group ul { position: static; width: auto; margin-top: 4px; box-shadow: none; }
   .release-language a { padding-inline: 12px; }
+  .release-language-options { position: static; width: auto; }
   .release-login { align-self: flex-start; }
 }
 @media (max-width: 767px) {

@@ -13,7 +13,11 @@
 ) -%}
   <title>{{ title }}</title>
   <meta name="description" content="{{ description }}">
-  <link rel="canonical" href="{{ site_url }}{{ path }}">
+  <link rel="canonical" href="{{ site_url }}{{ public_canonical_path(path) }}">
+  {% if site_release_enabled and config.SITE_TRANSLATIONS_APPROVED %}
+  {% for locale in supported_locales %}<link rel="alternate" hreflang="{{ locale|replace('_', '-') }}" href="{{ site_url }}{{ public_language_url(path, locale) }}">{% endfor %}
+  <link rel="alternate" hreflang="x-default" href="{{ site_url }}{{ public_language_url(path, 'de_CH') }}">
+  {% endif %}
   {%- if keywords %}
   <meta name="keywords" content="{{ keywords }}">
   {%- endif %}
@@ -28,6 +32,6 @@
   {%- if og_image %}
   <meta property="og:image" content="{{ site_url }}{{ og_image|localized_asset }}">
   {%- endif %}
-  <meta property="og:url" content="{{ site_url }}{{ path }}">
+  <meta property="og:url" content="{{ site_url }}{{ public_canonical_path(path) }}">
   <meta name="twitter:card" content="{{ twitter_card }}">
 {%- endmacro %}
