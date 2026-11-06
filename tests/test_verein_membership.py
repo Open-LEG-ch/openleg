@@ -215,6 +215,104 @@ def test_member_can_access_only_own_record_and_request_resignation(membership):
     assert "Austrittsantrag" in owner.get("/verein/mitglied").text
 
 
+def test_retry_confirmation_binds_corrected_identity_and_current_terms(membership):
+    _client, _mail, store = membership
+    old = store.apply(
+        email="owner@example.org",
+        name="False identity",
+        affiliation="Old",
+        locale="de_CH",
+        privacy_version="old",
+    )
+    current = store.apply(
+        email="owner@example.org",
+        name="Correct owner",
+        affiliation="Current",
+        locale="fr_CH",
+        privacy_version="current",
+    )
+    with pytest.raises(store.VereinDenied):
+        store.confirm(old)
+    store.confirm(current)
+    import database
+
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT name,affiliation,preferred_locale,privacy_version FROM verein_applications"
+        )
+        assert dict(cur.fetchone()) == {
+            "name": "Correct owner",
+            "affiliation": "Current",
+            "preferred_locale": "fr_CH",
+            "privacy_version": "current",
+        }
+
+
+def test_successful_refusal_appeal_supersedes_notice_and_admits_once(membership):
+    _client, _mail, store = membership
+    import database
+
+    token = store.apply(
+        email="owner@example.org",
+        name="Owner",
+        affiliation="",
+        locale="de_CH",
+        privacy_version="current",
+    )
+    store.confirm(token)
+    store.provision_reviewer(
+        "review@example.org", "Reviewer", "correct-horse-battery-staple"
+    )
+    board = store.login("review@example.org", "correct-horse-battery-staple")
+    identifier = str(store.list_applications(board)[0]["id"])
+    store.decide(board, identifier, "refused", "Affiliation misunderstood")
+    access = store.request_applicant_access("owner@example.org")
+    owner = store.consume_applicant_access(access["token"])
+    store.submit_member_request(owner, "appeal", "Please reconsider the affiliation")
+    request_id = str(store.list_member_requests(board)[0]["id"])
+    store.resolve_member_request(
+        board,
+        request_id,
+        "approved",
+        "Assembly approved admission",
+        "Minutes 2026-11-06 item 3",
+    )
+    notices = store.pending_notifications(board)
+    assert [notice["kind"] for notice in notices] == ["appeal_approved"]
+    assert notices[0]["due_on"] is not None
+    with pytest.raises(store.VereinDenied):
+        store.resolve_member_request(
+            board, request_id, "approved", "Repeat", "Same minutes"
+        )
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS count FROM verein_members")
+        assert cur.fetchone()["count"] == 1
+    assert (
+        store.applicant_profile(owner)["decision_reason"]
+        == "Assembly approved admission"
+    )
+
+
+def test_terminated_owner_sees_actual_reason_and_date(membership, monkeypatch):
+    client, _mail, store, _reviewer_id, path = _accepted(membership)
+    import database
+
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE verein_dues SET reminder_sent_at='2026-01-01'")
+    monkeypatch.setattr(store, "now_utc", lambda: datetime(2026, 4, 3, tzinfo=UTC))
+    with client.session_transaction() as session:
+        store.terminate(
+            session["verein_session"],
+            path.rsplit("/", 1)[1],
+            "Unpaid after actual reminder",
+        )
+    access = store.request_applicant_access("ada@example.org")
+    owner = store.consume_applicant_access(access["token"])
+    profile = store.applicant_profile(owner)
+    assert profile["decision_reason"] == "Unpaid after actual reminder"
+    assert profile["decision_at"] == datetime(2026, 4, 3, tzinfo=UTC)
+
+
 def test_application_is_confirmed_before_private_board_review(membership):
     client, mail, _store = membership
     csrf = _csrf(client, "/verein/beitreten")

@@ -13,6 +13,8 @@
     <label><input type="checkbox" name="independent" value="yes" required> {{ _("Ich arbeite nicht für einen Energieversorger, kontrolliere oder vertrete keinen Energieversorger und unterstütze den Vereinszweck.") }}</label>
     <label><input type="checkbox" name="terms" value="yes" required> {{ _("Ich habe die Aufnahmebedingungen und die Datenschutzhinweise gelesen.") }}</label>
     <a class="underline" href="/datenschutz">{{ _("Datenschutz") }}</a>
+    <a class="underline" href="{{ config.VEREIN_STATUTES_URL }}">{{ _("Beschlossene Statuten und Aufnahmebedingungen") }}</a>
+    <p>{{ _("Verantwortlich für die Antragsdaten") }}: {{ config.VEREIN_DATA_CONTROLLER }}. {{ config.VEREIN_CONTACT_ADDRESS }}</p>
     <button class="bg-brand text-white px-6 py-3 rounded-full" type="submit">{{ _("Antrag senden") }}</button>
   </form>
 </section>
