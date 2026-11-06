@@ -76,3 +76,42 @@ def test_missing_media_variant_uses_shipped_image_and_records_explicit_fallback(
             == "/static/images/product/resident-dashboard.gif"
         )
         assert g.untranslated_media is True
+
+
+@pytest.mark.parametrize(
+    "locale,expected", [("en", "Membership"), ("it_CH", "Iscrizione")]
+)
+def test_stored_mail_language_survives_closed_presentation(web, locale, expected):
+    import email_localization
+    from i18n import localized_url
+
+    web.config["SITE_RELEASE_ENABLED"] = False
+    with web.app_context():
+        assert (
+            email_localization.recipient_locale(
+                {"email": "member@example.org", "preferred_locale": locale},
+                "member@example.org",
+            )
+            == locale
+        )
+        assert email_localization.gettext("Mitgliedschaft", locale=locale) == expected
+        assert localized_url("/verein/mitglied/zugang", locale).endswith(
+            "lang=" + locale.replace("_", "-")
+        )
+
+
+@pytest.mark.parametrize(
+    "path,robots", [("/leg/community/create", None), ("/public", "noindex, follow")]
+)
+def test_private_metadata_never_advertises_language_alternates(web, path, robots):
+    from flask import render_template_string
+
+    web.config.update(SITE_RELEASE_ENABLED=True, SITE_TRANSLATIONS_APPROVED=True)
+    with web.test_request_context(path):
+        rendered = render_template_string(
+            "{% from 'partials/page_meta.html' import page_meta with context %}"
+            "{{ page_meta('Private', 'Private', path, robots=robots) }}",
+            path=path,
+            robots=robots,
+        )
+    assert "hreflang=" not in rendered

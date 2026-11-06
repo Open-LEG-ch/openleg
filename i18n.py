@@ -213,7 +213,7 @@ def localized_url(url, locale=None):
     An explicit recipient locale always travels with the URL. Keep historical
     German URLs only for implicit choices on German-default installations.
     """
-    selected = normalize_locale(locale)
+    selected = normalize_locale(locale, extended=True)
     if selected is None:
         selected = (
             str(get_locale())

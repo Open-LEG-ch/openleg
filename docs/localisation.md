@@ -3,7 +3,7 @@
 The complete-site preview extends Flask-Babel with English (`en`) and Swiss
 Italian (`it_CH`). Swiss German (`de_CH`) and Swiss French (`fr_CH`) remain in the
 existing default. `SITE_RELEASE_ENABLED` enables four-language presentation.
-Outside Flask, jobs use `OPENLEG_SITE_RELEASE_ENABLED`.
+The flag controls newly offered display choices, not stored mail preferences.
 
 Keep the existing paths and `?lang=` URLs. A second prefix router would duplicate
 public and capability routes. Stable equivalents use the same path with
@@ -26,7 +26,9 @@ Catalog completeness and passing builds do not establish native-speaker approval
 Storage keeps stable locale identifiers. The complete-site schema expands
 recipient constraints without changing existing choices. Turning off the flag
 does not narrow an expanded constraint. Mail renders with the recipient's stored
-choice, including outside requests. Keep the job environment setting consistent.
+choice, including outside requests and after presentation is disabled. Explicit
+recipient links retain that stored language. Unknown identifiers still fall back
+to German; new preference writes follow the enabled presentation choices.
 
 Run `python scripts/translations.py extract` after changing source text.
 Extraction includes the recipient-specific gettext alias used by Verein mail.
