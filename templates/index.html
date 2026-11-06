@@ -4,10 +4,10 @@
 {% block meta %}
 {{ page_meta(
   title=_("Lokale Elektrizitätsgemeinschaft gründen | OpenLEG"),
-  description=_("Seit dem 1. Januar 2026 können Sie in der Schweiz eine Lokale Elektrizitätsgemeinschaft (LEG) bilden. OpenLEG prüft Ihre Adresse, zeigt das bestätigte Interesse in Ihrer Gemeinde und führt durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."),
+  description=_("Mit OpenLEG eine lokale Elektrizitätsgemeinschaft vorbereiten, Beteiligte verwalten und Abrechnungen prüfen. Freie Software für den eigenen Betrieb.") if site_release_enabled else _("Seit dem 1. Januar 2026 können Sie in der Schweiz eine Lokale Elektrizitätsgemeinschaft (LEG) bilden. OpenLEG prüft Ihre Adresse, zeigt das bestätigte Interesse in Ihrer Gemeinde und führt durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."),
   path="/",
   og_title=_("Lokale Elektrizitätsgemeinschaft gründen | OpenLEG"),
-  og_description=_("Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. Bis 40% weniger Netznutzungsentgelt. Kostenlos, Open Source, Schweizer Hosting."),
+  og_description=_("Eine LEG gründen und betreiben. Lernen Sie die Aufgaben kennen, prüfen Sie Ihre Adresse und bereiten Sie den eigenen Softwarebetrieb vor.") if site_release_enabled else _("Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. Bis 40% weniger Netznutzungsentgelt. Kostenlos, Open Source, Schweizer Hosting."),
   og_image="/static/images/og-image.png",
   site_url=site_url
 ) }}
@@ -50,6 +50,9 @@
 {% endblock %}
 
 {% block content %}
+{% if site_release_enabled %}
+  {% include 'release/home.html' %}
+{% else %}
   <!-- Hero -->
   <section class="relative overflow-hidden bg-paper" data-home-hero>
     <div class="relative max-w-7xl mx-auto px-4 pt-10 pb-20 md:pt-14 md:pb-24 grid lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-center">
@@ -375,106 +378,7 @@
   </section>
   {% endif %}
 
-  <!-- Bewohner -->
-  <section id="bewohner" class="py-16 bg-[#f6f4ef]">
-    <div class="max-w-6xl mx-auto px-4">
-      <div class="mb-6">
-        <h2 class="text-3xl font-bold">{{ _("Adresse prüfen und Interessierte in Ihrer Gemeinde finden") }}</h2>
-        <p class="text-ink-muted mt-2">{{ _("Wir prüfen Adressen in der ganzen Schweiz und zählen bestätigte Interessierte pro Gemeinde. Sie erhalten eine Nachricht, sobald weitere bestätigte Interessierte aus Ihrer Gemeinde dazukommen.") }}</p>
-        {% if user_count > 0 %}
-        <p class="text-ink-muted mt-2">{% trans num=user_count %}Bereits <strong class="text-ink">{{ num }}</strong> Haushalt registriert{% pluralize %}Bereits <strong class="text-ink">{{ num }}</strong> Haushalte registriert{% endtrans %}</p>
-        {% endif %}
-      </div>
-
-      <div id="registrieren" class="grid md:grid-cols-2 gap-8">
-        <!-- Map -->
-        <div>
-          <div id="map" class="w-full h-96 rounded-xl shadow-md z-0"></div>
-        </div>
-        <!-- Form -->
-        <div class="bg-white rounded-xl border border-slate-200 p-6">
-          <ol class="grid grid-cols-3 gap-2 text-xs mb-4">
-            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
-              <div class="font-semibold">{{ _("1. Adresse prüfen") }}</div>
-            </li>
-            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
-              <div class="font-semibold">{{ _("2. Nachbarn finden") }}</div>
-            </li>
-            <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
-              <div class="font-semibold">{{ _("3. LEG starten") }}</div>
-            </li>
-          </ol>
-          <div id="step-address">
-            <label for="address-input" class="block text-sm font-medium mb-1">{{ _("Ihre Adresse") }}</label>
-            <input type="text" id="address-input" placeholder="{{ _("Strasse, PLZ Ort") }}" class="w-full border rounded-lg px-3 py-2 mb-1 focus:ring-2 focus:ring-brand focus:outline-hidden" autocomplete="off" aria-describedby="address-status address-privacy">
-            <p id="address-status" role="status" aria-live="polite" class="text-sm text-ink-muted mt-1">{{ _("Adresse eingeben. Wir zeigen Vorschläge und prüfen dann Nachbarschaft und Solarpotenzial.") }}</p>
-            <div id="suggestions" class="bg-white border rounded-lg max-h-48 overflow-y-auto hidden"></div>
-            <div class="mt-3 space-y-2 text-sm">
-              <div data-address-state="empty" class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-ink-muted">{{ _("Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert.") }}</div>
-              <div data-address-state="loading" class="hidden rounded-lg border border-blue-200 bg-blue-50 p-3 text-blue-900">{{ _("Wir prüfen Ihre Adresse und laden Solarpotenzial und Nachbarschaft.") }}</div>
-              <div data-address-state="found" class="hidden rounded-lg border border-green-200 bg-green-50 p-3 text-green-900">{{ _("Nachbarn gefunden. Sie können sich jetzt registrieren.") }}</div>
-              <div data-address-state="not-found" class="hidden rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-700">{{ _("Keine eindeutige Adresse gefunden. Sie können Ihr Interesse trotzdem für Ihre Gemeinde anmelden.") }}</div>
-            </div>
-            <div id="profile-summary" class="text-sm text-ink-muted mt-2 hidden"></div>
-            <p id="address-privacy" class="text-xs text-ink-muted mt-3">{{ _("Wir nutzen Ihre Adresse nur für die Prüfung. Ihre Smart-Meter-Daten bleiben in Ihrer LEG, wir verkaufen sie nicht.") }}</p>
-            <button id="btn-check" class="w-full bg-brand text-white py-2 rounded-lg mt-3 font-medium hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50" disabled>{{ _("Adresse prüfen") }}</button>
-          </div>
-          <div id="step-register" class="hidden">
-            <div id="match-info" class="bg-brand/10 p-3 rounded-lg mb-3 text-sm"></div>
-            <label for="email-input" class="block text-sm font-medium mb-1">{{ _("E-Mail") }}</label>
-            <input type="email" id="email-input" placeholder="{{ _("ihre@email.ch") }}" class="w-full border rounded-lg px-3 py-2 mb-2 focus:ring-2 focus:ring-brand focus:outline-hidden">
-            <label for="phone-input" class="block text-sm font-medium mb-1">{{ _("Telefon (optional)") }}</label>
-            <input type="tel" id="phone-input" placeholder="{{ _("+41 79 ...") }}" class="w-full border rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-brand focus:outline-hidden">
-            <fieldset class="mb-3">
-              <legend class="text-sm font-medium mb-1">{{ _("Was trifft auf Sie zu? Mehrfachauswahl möglich.") }}</legend>
-              <div class="grid sm:grid-cols-2 gap-2 text-sm">
-                <label><input type="checkbox" name="interest-role" value="owner" class="mr-2">{{ _("Eigentümer/in") }}</label>
-                <label><input type="checkbox" name="interest-role" value="tenant" class="mr-2">{{ _("Mieter/in") }}</label>
-                <label><input type="checkbox" name="interest-role" value="solar_producer" class="mr-2">{{ _("Solarstromproduzent/in") }}</label>
-                <label><input type="checkbox" name="interest-role" value="local_business" class="mr-2">{{ _("Lokales Unternehmen") }}</label>
-                <label><input type="checkbox" name="interest-role" value="municipality_organisation" class="mr-2">{{ _("Gemeinde/Organisation") }}</label>
-              </div>
-            </fieldset>
-            <label for="has-solar" class="block text-sm font-medium mb-1">{{ _("Eigene Solaranlage") }}</label>
-            <select id="has-solar" class="w-full border rounded-lg px-3 py-2 mb-3"><option value="">{{ _("Keine Angabe") }}</option><option value="true">{{ _("Ja") }}</option><option value="false">{{ _("Nein") }}</option></select>
-            <div class="space-y-2 mb-4 text-sm">
-              <div class="flex items-start gap-2"><input type="checkbox" id="consent-neighbors" class="mt-1 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-brand"><label for="consent-neighbors">{{ _("Meine Anmeldung darf als verschobener, anonymer Punkt auf der Karte erscheinen. (optional)") }}</label></div>
-              <div class="flex items-start gap-2"><input type="checkbox" id="consent-updates" class="mt-1 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-brand"><label for="consent-updates">{{ _("Ich möchte Updates per E-Mail erhalten. (optional)") }}</label></div>
-            </div>
-            <p class="text-xs text-ink-muted mb-3">{{ _("Wir geben Ihre Daten nicht an Gemeinden oder Netzbetreiber weiter. Netzbetreiber und Netzebene müssen vor einer LEG-Gründung separat geprüft werden. Ihre Daten") }} <a href="/unsubscribe" class="underline hover:text-ink">{{ _("löschen Sie jederzeit") }}</a>.</p>
-            <button id="btn-register" class="w-full bg-brand text-white py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _("Interesse anmelden") }}</button>
-          </div>
-          <div id="interest-fallback" class="hidden">
-            <h3 class="text-lg font-semibold">{{ _("Interesse für Ihre Gemeinde anmelden") }}</h3>
-            <p class="text-sm text-ink-muted mt-1 mb-3">{{ _("Auch ohne eindeutigen Adresstreffer können wir Nachfrage sammeln. Der Eintrag wird nicht als Gebäude behandelt.") }}</p>
-            <label for="interest-email" class="block text-sm font-medium mb-1">{{ _("E-Mail") }}</label>
-            <input type="email" id="interest-email" class="w-full border rounded-lg px-3 py-2 mb-2">
-            <label for="interest-address" class="block text-sm font-medium mb-1">{{ _("Adresse (optional)") }}</label>
-            <input type="text" id="interest-address" class="w-full border rounded-lg px-3 py-2 mb-2">
-            <div class="grid grid-cols-3 gap-2">
-              <div><label for="interest-plz" class="block text-sm font-medium mb-1">{{ _("PLZ") }}</label><input id="interest-plz" inputmode="numeric" maxlength="4" class="w-full border rounded-lg px-3 py-2"></div>
-              <div class="col-span-2"><label for="interest-municipality" class="block text-sm font-medium mb-1">{{ _("Gemeinde") }}</label><input id="interest-municipality" class="w-full border rounded-lg px-3 py-2"></div>
-            </div>
-            <fieldset class="mt-3"><legend class="text-sm font-medium mb-1">{{ _("Ihre Rolle") }}</legend><div class="grid sm:grid-cols-2 gap-2 text-sm">
-              <label><input type="checkbox" name="fallback-role" value="owner" class="mr-2">{{ _("Eigentümer/in") }}</label><label><input type="checkbox" name="fallback-role" value="tenant" class="mr-2">{{ _("Mieter/in") }}</label><label><input type="checkbox" name="fallback-role" value="solar_producer" class="mr-2">{{ _("Solarstromproduzent/in") }}</label><label><input type="checkbox" name="fallback-role" value="local_business" class="mr-2">{{ _("Lokales Unternehmen") }}</label><label><input type="checkbox" name="fallback-role" value="municipality_organisation" class="mr-2">{{ _("Gemeinde/Organisation") }}</label>
-            </div></fieldset>
-            <label for="fallback-has-solar" class="block text-sm font-medium mt-3 mb-1">{{ _("Eigene Solaranlage") }}</label><select id="fallback-has-solar" class="w-full border rounded-lg px-3 py-2"><option value="">{{ _("Keine Angabe") }}</option><option value="true">{{ _("Ja") }}</option><option value="false">{{ _("Nein") }}</option></select>
-            <button id="btn-interest" class="w-full bg-brand text-white py-2 rounded-lg mt-4 font-semibold hover:bg-brand-dark">{{ _("Interesse anmelden") }}</button>
-          </div>
-          <div id="step-success" class="hidden text-center py-6">
-            <div class="text-4xl mb-3">&#9889;</div>
-            <h3 class="text-lg font-semibold mb-2">{{ _("Bitte E-Mail bestätigen") }}</h3>
-            <p class="text-ink-muted mb-4">{{ _("Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt.") }}</p>
-            <div id="referral-link-box" class="bg-gray-50 p-3 rounded-lg text-sm hidden">
-              <label for="referral-link" class="font-medium mb-1 block">{{ _("Teilen Sie Ihren Einladungslink") }}</label>
-              <input type="text" id="referral-link" class="w-full border rounded-sm px-2 py-1 text-xs focus:ring-2 focus:ring-brand focus:outline-hidden" readonly>
-            </div>
-          </div>
-          <div id="form-error" role="alert" aria-live="assertive" class="text-red-600 text-sm mt-2 hidden"></div>
-        </div>
-      </div>
-    </div>
-  </section>
+  {% include 'partials/address_intake.html' %}
 
   <!-- Open Source / Mission -->
   <section class="py-16 bg-white">
@@ -518,6 +422,7 @@
       </div>
     </div>
   </section>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
