@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Membership contribution policy, independent of persistence and HTTP."""
 
-from datetime import timedelta
+from calendar import monthrange
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
@@ -23,6 +24,19 @@ def received_amount(value):
 def admission_dates(accepted_at):
     day = accepted_at.astimezone(ZoneInfo("Europe/Zurich")).date()
     return day, day + timedelta(days=30)
+
+
+def renewal_periods(accepted_at, now):
+    """Anchor every year to admission, including return to 29 February."""
+    day = accepted_at.astimezone(ZoneInfo("Europe/Zurich")).date()
+    today = now.astimezone(ZoneInfo("Europe/Zurich")).date()
+    periods = (
+        date(year, day.month, min(day.day, monthrange(year, day.month)[1]))
+        for year in range(day.year + 1, today.year + 1)
+    )
+    return [
+        (period, period + timedelta(days=30)) for period in periods if period <= today
+    ]
 
 
 def can_remind(*, now, due_on, paid_at):

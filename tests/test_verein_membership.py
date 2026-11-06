@@ -237,7 +237,8 @@ def test_member_can_access_only_own_record_and_request_resignation(membership):
         },
     )
     assert resignation.status_code == 303
-    assert "Austrittsantrag" in owner.get("/verein/mitglied").text
+    assert 'data-status="resigned"' in owner.get("/verein/mitglied").text
+    assert "sofort wirksam" in owner.get("/verein/mitglied").text
 
 
 def test_retry_confirmation_binds_corrected_identity_and_current_terms(membership):

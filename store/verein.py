@@ -131,11 +131,17 @@ def applicant_profile(token):
             (identifier,),
         )
         record["requests"] = [dict(row) for row in cur.fetchall()]
+        record["dues"] = _dues_history(cur, identifier)
         return record
 
 
 def submit_member_request(token, kind, reason):
-    if kind not in {"resignation", "appeal"} or not 3 <= len(reason.strip()) <= 2000:
+    if (
+        kind not in {"resignation", "appeal"}
+        or not isinstance(reason, str)
+        or len(reason.strip()) > 2000
+        or (kind == "appeal" and len(reason.strip()) < 3)
+    ):
         raise VereinDenied("Invalid member request")
     with transaction_cursor() as cur:
         identifier = _applicant(cur, token)
@@ -147,6 +153,32 @@ def submit_member_request(token, kind, reason):
         record = cur.fetchone()
         if kind == "resignation" and record["member_status"] != "active":
             raise VereinDenied("Active membership required")
+        if kind == "resignation":
+            now = now_utc()
+            cur.execute(
+                """UPDATE verein_members SET status='resigned',ended_at=%s,end_reason=%s,
+                end_reviewer=NULL WHERE application_id=%s AND status='active'""",
+                (now, reason.strip(), identifier),
+            )
+            cur.execute(
+                """INSERT INTO verein_member_requests(id,application_id,kind,reason,status,created_at,resolved_at)
+                VALUES (%s,%s,'resignation',%s,'received',%s,%s)""",
+                (str(uuid.uuid4()), identifier, reason.strip(), now, now),
+            )
+            cur.execute(
+                "INSERT INTO verein_events(application_id,action,reason) VALUES (%s,'resignation_received',%s) RETURNING id",
+                (identifier, reason.strip()),
+            )
+            event = cur.fetchone()["id"]
+            cur.execute(
+                "UPDATE verein_notifications SET superseded_at=%s WHERE application_id=%s AND sent_at IS NULL AND superseded_at IS NULL",
+                (now, identifier),
+            )
+            cur.execute(
+                "INSERT INTO verein_notifications(id,application_id,kind,event_id) VALUES (%s,%s,'resignation_received',%s)",
+                (str(uuid.uuid4()), identifier, event),
+            )
+            return
         if (
             kind == "appeal"
             and record["status"] != "refused"
@@ -208,14 +240,10 @@ def resolve_member_request(token, identifier, outcome, reason, evidence):
         record = cur.fetchone()
         if not record:
             raise VereinDenied("Pending request required")
-        if record["kind"] == "resignation" and outcome == "approved":
-            cur.execute(
-                """UPDATE verein_members SET status='resigned',ended_at=%s,end_reason=%s,
-                end_reviewer=%s WHERE application_id=%s AND status='active' """,
-                (now, reason, actor["id"], app_id),
+        if record["kind"] != "appeal":
+            raise VereinDenied(
+                "Resignation is effective on receipt, without board discretion"
             )
-            if cur.rowcount != 1:
-                raise VereinDenied("Active membership required")
         if record["kind"] == "appeal" and outcome == "approved":
             cur.execute(
                 "SELECT id,status FROM verein_members WHERE application_id=%s FOR UPDATE",
@@ -370,7 +398,7 @@ def create_tables(cur):
             application_id UUID NOT NULL REFERENCES verein_applications(id),
             kind TEXT NOT NULL CHECK (kind IN ('resignation','appeal')),
             reason TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','dismissed')),
+            status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','dismissed','received')),
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             resolved_at TIMESTAMPTZ,
             resolution TEXT,
@@ -379,6 +407,9 @@ def create_tables(cur):
         );
         CREATE UNIQUE INDEX IF NOT EXISTS verein_one_pending_request
             ON verein_member_requests(application_id,kind) WHERE status='pending';
+        ALTER TABLE verein_member_requests DROP CONSTRAINT IF EXISTS verein_member_requests_status_check;
+        ALTER TABLE verein_member_requests ADD CONSTRAINT verein_member_requests_status_check
+            CHECK(status IN ('pending','approved','dismissed','received'));
     """)
 
 
@@ -404,7 +435,7 @@ def apply(*, email, name, affiliation, locale, privacy_version):
                 name,
                 affiliation,
                 locale,
-                "2026-11-04",
+                "2026-11-06",
                 privacy_version,
                 token_digest(token),
                 now + timedelta(hours=24),
@@ -430,7 +461,7 @@ def apply(*, email, name, affiliation, locale, privacy_version):
                 affiliation,
                 locale,
                 privacy_version,
-                "2026-11-04",
+                "2026-11-06",
                 email,
             ),
         )
@@ -585,7 +616,34 @@ def application(token, identifier):
         row = cur.fetchone()
         if not row:
             raise VereinDenied("Invalid application")
-        return dict(row)
+        record = dict(row)
+        record["dues"] = _dues_history(cur, identifier)
+        return record
+
+
+def _dues_history(cur, identifier):
+    cur.execute(
+        """SELECT d.*,(SELECT COALESCE(SUM(r.amount_chf),0)
+        FROM verein_dues_receipts r WHERE r.dues_id=d.id) AS received_chf,
+        EXISTS(SELECT 1 FROM verein_notifications n WHERE n.dues_id=d.id
+            AND n.kind='reminder' AND n.superseded_at IS NULL) AS has_reminder
+        FROM verein_dues d JOIN verein_members m ON m.id=d.member_id
+        WHERE m.application_id=%s ORDER BY d.period_start DESC""",
+        (identifier,),
+    )
+    records = [dict(row) for row in cur.fetchall()]
+    now = now_utc()
+    for record in records:
+        record["outstanding_chf"] = record["amount_chf"] - record["received_chf"]
+        record["can_remind"] = not record["has_reminder"] and verein_policy.can_remind(
+            now=now, due_on=record["due_on"], paid_at=record["paid_at"]
+        )
+        record["can_terminate"] = verein_policy.can_terminate(
+            now=now,
+            reminder_sent_at=record["reminder_sent_at"],
+            paid_at=record["paid_at"],
+        )
+    return records
 
 
 def _admit(cur, identifier, now):
@@ -595,10 +653,47 @@ def _admit(cur, identifier, now):
         "INSERT INTO verein_members(id,application_id,accepted_at) VALUES (%s,%s,%s)",
         (member, identifier, now),
     )
+    dues = str(uuid.uuid4())
     cur.execute(
         "INSERT INTO verein_dues(id,member_id,period_start,amount_chf,due_on) VALUES (%s,%s,%s,%s,%s)",
-        (str(uuid.uuid4()), member, day, verein_policy.ANNUAL_DUES_CHF, due_on),
+        (dues, member, day, verein_policy.ANNUAL_DUES_CHF, due_on),
     )
+    return dues
+
+
+def renew_dues(token):
+    """Create each due anniversary once; stopped memberships never renew."""
+    now = now_utc()
+    created = 0
+    with transaction_cursor() as cur:
+        actor = require_reviewer(cur, token)
+        cur.execute("""SELECT a.id AS application_id,m.id,m.accepted_at
+            FROM verein_applications a JOIN verein_members m ON m.application_id=a.id
+            WHERE m.status='active' ORDER BY a.id FOR UPDATE OF a,m""")
+        members = cur.fetchall()
+        for member in members:
+            for period, due_on in verein_policy.renewal_periods(
+                member["accepted_at"], now
+            ):
+                dues = str(uuid.uuid4())
+                cur.execute(
+                    """INSERT INTO verein_dues(id,member_id,period_start,amount_chf,due_on)
+                    VALUES (%s,%s,%s,%s,%s) ON CONFLICT (member_id,period_start) DO NOTHING RETURNING id""",
+                    (dues, member["id"], period, verein_policy.ANNUAL_DUES_CHF, due_on),
+                )
+                if not cur.fetchone():
+                    continue
+                cur.execute(
+                    "INSERT INTO verein_events(application_id,actor_id,action) VALUES (%s,%s,'dues_renewed') RETURNING id",
+                    (member["application_id"], actor["id"]),
+                )
+                event = cur.fetchone()["id"]
+                cur.execute(
+                    "INSERT INTO verein_notifications(id,application_id,kind,event_id,dues_id) VALUES (%s,%s,'renewal',%s,%s)",
+                    (str(uuid.uuid4()), member["application_id"], event, dues),
+                )
+                created += 1
+    return created
 
 
 def decide(token, identifier, decision, reason):
@@ -623,8 +718,7 @@ def decide(token, identifier, decision, reason):
             decision_reason=%s,decision_reviewer=%s WHERE id=%s""",
             (decision, now, reason.strip(), actor["id"], identifier),
         )
-        if decision == "accepted":
-            _admit(cur, identifier, now)
+        dues = _admit(cur, identifier, now) if decision == "accepted" else None
         cur.execute(
             """INSERT INTO verein_events (application_id,actor_id,action,reason)
             VALUES (%s,%s,%s,%s) RETURNING id""",
@@ -632,8 +726,8 @@ def decide(token, identifier, decision, reason):
         )
         event = cur.fetchone()["id"]
         cur.execute(
-            "INSERT INTO verein_notifications (id,application_id,kind,event_id) VALUES (%s,%s,%s,%s)",
-            (str(uuid.uuid4()), identifier, decision, event),
+            "INSERT INTO verein_notifications (id,application_id,kind,event_id,dues_id) VALUES (%s,%s,%s,%s,%s)",
+            (str(uuid.uuid4()), identifier, decision, event, dues),
         )
 
 
@@ -641,11 +735,14 @@ def pending_notifications(token):
     with transaction_cursor() as cur:
         require_reviewer(cur, token)
         cur.execute("""SELECT n.id,n.kind,a.email,a.preferred_locale,e.reason AS decision_reason,
-            (SELECT d.due_on FROM verein_dues d JOIN verein_members m ON m.id=d.member_id
-             WHERE m.application_id=a.id ORDER BY d.period_start DESC LIMIT 1) AS due_on
+            d.period_start,d.amount_chf-(SELECT COALESCE(SUM(r.amount_chf),0)
+                FROM verein_dues_receipts r WHERE r.dues_id=d.id) AS outstanding_chf,
+            COALESCE(d.due_on,(SELECT first.due_on FROM verein_dues first JOIN verein_members m ON m.id=first.member_id
+             WHERE m.application_id=a.id ORDER BY first.period_start LIMIT 1)) AS due_on
             FROM verein_notifications n JOIN verein_applications a ON a.id=n.application_id
             JOIN verein_events e ON e.id=n.event_id
-            WHERE n.sent_at IS NULL AND n.superseded_at IS NULL ORDER BY n.created_at LIMIT 50""")
+            LEFT JOIN verein_dues d ON d.id=n.dues_id
+            WHERE n.sent_at IS NULL AND n.superseded_at IS NULL ORDER BY n.created_at,due_on,n.id LIMIT 50""")
         return [dict(row) for row in cur.fetchall()]
 
 
@@ -668,9 +765,11 @@ def record_delivery(token, identifier, sent):
             )
 
 
-def _dues(cur, identifier, *, require_active=True):
+def _dues(cur, identifier, *, require_active=True, dues_id=None):
     try:
         uuid.UUID(identifier)
+        if dues_id is not None:
+            uuid.UUID(dues_id)
     except (TypeError, ValueError):
         raise VereinDenied("Invalid application") from None
     cur.execute(
@@ -679,8 +778,11 @@ def _dues(cur, identifier, *, require_active=True):
     cur.execute(
         """SELECT d.*,m.status AS member_status,m.id AS membership_id
         FROM verein_dues d JOIN verein_members m ON d.member_id=m.id
-        WHERE m.application_id=%s ORDER BY d.period_start DESC LIMIT 1 FOR UPDATE OF d,m""",
-        (identifier,),
+        WHERE m.application_id=%s AND (%s::uuid IS NULL OR d.id=%s)
+        ORDER BY (d.paid_at IS NULL) DESC,
+            CASE WHEN d.paid_at IS NULL THEN d.period_start END ASC,
+            d.period_start DESC LIMIT 1 FOR UPDATE OF d,m""",
+        (identifier, dues_id, dues_id),
     )
     row = cur.fetchone()
     if not row or (require_active and row["member_status"] != "active"):
@@ -688,7 +790,9 @@ def _dues(cur, identifier, *, require_active=True):
     return row
 
 
-def record_payment(token, identifier, *, amount_chf, source, reference, evidence):
+def record_payment(
+    token, identifier, *, amount_chf, source, reference, evidence, dues_id=None
+):
     """Record an operator-verified incoming receipt; no redirect settles dues."""
     try:
         amount = verein_policy.received_amount(amount_chf)
@@ -704,9 +808,9 @@ def record_payment(token, identifier, *, amount_chf, source, reference, evidence
     now = now_utc()
     with transaction_cursor() as cur:
         actor = require_reviewer(cur, token)
-        dues = _dues(cur, identifier, require_active=False)
+        dues = _dues(cur, identifier, require_active=False, dues_id=dues_id)
         cur.execute(
-            """SELECT r.amount_chf,r.evidence_reference,m.application_id
+            """SELECT r.amount_chf,r.evidence_reference,r.dues_id,m.application_id
             FROM verein_dues_receipts r JOIN verein_dues d ON d.id=r.dues_id
             JOIN verein_members m ON m.id=d.member_id WHERE r.source=%s AND r.reference=%s""",
             (source, reference),
@@ -717,6 +821,7 @@ def record_payment(token, identifier, *, amount_chf, source, reference, evidence
                 str(existing["application_id"]) != identifier
                 or existing["amount_chf"] != amount
                 or existing["evidence_reference"] != evidence
+                or (dues_id is not None and str(existing["dues_id"]) != dues_id)
             ):
                 raise VereinDenied("Receipt reference conflicts with existing evidence")
             return
@@ -757,11 +862,11 @@ def record_payment(token, identifier, *, amount_chf, source, reference, evidence
         )
 
 
-def request_reminder(token, identifier):
+def request_reminder(token, identifier, *, dues_id=None):
     now = now_utc()
     with transaction_cursor() as cur:
         actor = require_reviewer(cur, token)
-        dues = _dues(cur, identifier)
+        dues = _dues(cur, identifier, dues_id=dues_id)
         if not verein_policy.can_remind(
             now=now, due_on=dues["due_on"], paid_at=dues["paid_at"]
         ):
@@ -785,13 +890,13 @@ def request_reminder(token, identifier):
         )
 
 
-def terminate(token, identifier, reason):
+def terminate(token, identifier, reason, *, dues_id=None):
     if not 3 <= len(reason.strip()) <= 2000:
         raise VereinDenied("Reason required")
     now = now_utc()
     with transaction_cursor() as cur:
         actor = require_reviewer(cur, token)
-        dues = _dues(cur, identifier)
+        dues = _dues(cur, identifier, dues_id=dues_id)
         if not verein_policy.can_terminate(
             now=now, reminder_sent_at=dues["reminder_sent_at"], paid_at=dues["paid_at"]
         ):

@@ -2,10 +2,11 @@
 """Request-local presentation languages; domain values remain language-neutral."""
 
 import re
-from datetime import date
+from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from zoneinfo import ZoneInfo
 
 from babel.dates import format_date
 from babel.numbers import format_decimal
@@ -150,6 +151,19 @@ def format_number_label(value):
         else "de_CH"
     )
     return format_decimal(value, locale=locale, decimal_quantization=False)
+
+
+def format_date_label(value):
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        value = value.astimezone(ZoneInfo("Europe/Zurich")).date()
+    locale = (
+        str(get_locale())
+        if has_app_context() and "babel" in current_app.extensions
+        else "de_CH"
+    )
+    return format_date(value, format="long", locale=locale)
 
 
 def gettext(message, **variables):
@@ -313,6 +327,7 @@ def init_app(app):
         "periodlabel": format_period_label,
         "ratelabel": format_rate_label,
         "numberlabel": format_number_label,
+        "datelabel": format_date_label,
         "localized_url": localized_url,
         "localized_asset": localized_asset,
     }.items():

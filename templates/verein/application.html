@@ -5,10 +5,10 @@
 <a class="underline" href="/verein/vorstand/antraege">{{ _("Alle Anträge") }}</a>
 <h1 class="text-3xl font-bold mt-6">{{ record.name }}</h1>
 <dl class="mt-6 grid gap-3"><dt>{{ _("E-Mail") }}</dt><dd>{{ record.email }}</dd>
-<dt>{{ _("Status") }}</dt><dd>{{ record.status }}</dd>
+<dt>{{ _("Status") }}</dt><dd><span data-status="{{ record.status }}">{{ verein_state_label(record.status) }}</span></dd>
 <dt>{{ _("Verbindungen zum Energiesektor") }}</dt><dd>{{ record.affiliation or _("Keine angegeben") }}</dd>
-{% if record.member_id %}<dt>{{ _("Mitgliedschaft") }}</dt><dd>{{ record.member_status }}</dd><dt>{{ _("Jahresbeitrag") }}</dt><dd>CHF 50 · {{ _("Fällig am") }} {{ record.due_on }} · {{ _("Bezahlt") if record.paid_at else _("Offen") }}</dd><dt>{{ _('Erfasste Zahlungseingänge') }}</dt><dd>CHF {{ record.received_chf }}</dd>{% endif %}
-{% if record.end_reason %}<dt>{{ _('Beendigung') }}</dt><dd>{{ record.end_reason }} · {{ record.ended_at.strftime('%Y-%m-%d') }}</dd>{% endif %}
+{% if record.member_id %}<dt>{{ _("Mitgliedschaft") }}</dt><dd><span data-status="{{ record.member_status }}">{{ verein_state_label(record.member_status) }}</span></dd>{% endif %}
+{% if record.ended_at %}<dt>{{ _('Beendigung') }}</dt><dd>{{ record.end_reason or _("Austritt mit Eingang wirksam") }} · {{ record.ended_at|datelabel }}</dd>{% endif %}
 {% if record.decision_reason %}<dt>{{ _("Begründung") }}</dt><dd>{{ record.decision_reason }}</dd>{% endif %}</dl>
 {% if record.status=='pending' %}
 <form method="post" class="mt-8 grid gap-5"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -16,13 +16,6 @@
 <div class="flex flex-wrap gap-4"><button class="bg-brand text-white px-6 py-3 rounded-full" name="decision" value="accepted">{{ _("Aufnehmen") }}</button>
 <button class="border px-6 py-3 rounded-full" name="decision" value="refused">{{ _("Ablehnen") }}</button></div></form>
 {% endif %}
-{% if record.member_id and not record.paid_at %}
-<form method="post" action="/verein/vorstand/antraege/{{ record.id }}/payment" class="mt-8 grid gap-4"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><h2 class="text-2xl font-bold">{{ _('Zahlungseingang erfassen') }}</h2><p>{{ _('Prüfen Sie den tatsächlichen Eingang im Bank- oder Anbieterbeleg. Spenden und Zahlungsrückleitungen gleichen den Beitrag nicht automatisch aus.') }}</p><label>{{ _('Erhaltener Betrag in CHF') }}<input class="block border p-3 w-full" name="amount_chf" type="number" min="0.01" max="50" step="0.01" required></label><label>{{ _('Konto- oder Anbieterkennung') }}<input class="block border p-3 w-full" name="source" minlength="3" maxlength="120" required></label><label>{{ _('Eindeutige Buchungsreferenz') }}<input class="block border p-3 w-full" name="reference" minlength="3" maxlength="200" required></label><label>{{ _('Private Belegreferenz') }}<input class="block border p-3 w-full" name="evidence" minlength="3" maxlength="500" required></label><label><input type="checkbox" name="verified" value="yes" required> {{ _('Ich habe den tatsächlichen Zahlungseingang und die Zuordnung geprüft.') }}</label><button class="bg-brand text-white rounded-full px-6 py-3">{{ _('Zahlungseingang speichern') }}</button></form>
-{% endif %}
-{% if record.member_status=='active' and not record.paid_at %}
-<form method="post" action="/verein/vorstand/antraege/{{ record.id }}/reminder" class="mt-8"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="border p-3 rounded-lg">{{ _("Zahlungserinnerung vorbereiten") }}</button></form>
-<p class="mt-3">{{ _("Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der Erinnerung.") }}</p>
-<form method="post" action="/verein/vorstand/antraege/{{ record.id }}/terminate" class="mt-6 grid gap-3"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>{{ _("Begründung") }}<textarea class="block w-full border p-3" name="reason" minlength="3" maxlength="2000" required></textarea></label><button class="border p-3 rounded-lg">{{ _("Nach Ablauf der Frist beenden") }}</button></form>
-{% endif %}
+{% if record.member_id %}{% with board_mode=true %}{% include 'verein/dues.html' %}{% endwith %}{% endif %}
 </section>
 {% endblock %}
