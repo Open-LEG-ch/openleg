@@ -44,8 +44,6 @@ def association_unavailable(_error):
 @verein_bp.route("/mitglied/zugang", methods=["GET", "POST"])
 @rate_limit("10 per hour")
 def member_access():
-    if not accepting_applications():
-        abort(503)
     if request.method == "GET":
         return render_template("verein/member_access.html", csrf_token=csrf_token())
     require_csrf()

@@ -533,6 +533,21 @@ def test_private_membership_pages_never_cache_or_load_analytics(membership):
         assert "https:" not in response.headers["Content-Security-Policy"]
 
 
+def test_existing_member_keeps_access_when_new_admissions_close(membership):
+    client, mail, _store, _reviewer_id, _path = _accepted(membership)
+    client.application.config["VEREIN_ACCEPTING_APPLICATIONS"] = False
+    assert client.get("/verein/beitreten").status_code == 503
+    response = client.post(
+        "/verein/mitglied/zugang",
+        data={
+            "csrf_token": _csrf(client, "/verein/mitglied/zugang"),
+            "email": "ada@example.org",
+        },
+    )
+    assert response.status_code == 202
+    assert "/verein/mitglied/zugang/" in mail[-1][2]
+
+
 def test_membership_credentials_are_not_stored_in_plaintext(membership):
     _client, _mail, store = membership
     import database
