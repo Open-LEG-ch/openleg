@@ -361,7 +361,11 @@ def leg_check():
 
 @main_bp.route("/pricing")
 def pricing():
-    return render_city_template("pricing.html")
+    return render_city_template(
+        "release/pricing.html"
+        if current_app.config.get("SITE_RELEASE_ENABLED") is True
+        else "pricing.html"
+    )
 
 
 @main_bp.route("/impressum")
@@ -454,6 +458,27 @@ def sitemap_xml():
         ("/impressum", "0.3", "yearly", "2026-01-01"),
         ("/datenschutz", "0.3", "yearly", "2026-01-01"),
     ]
+    if current_app.config.get("SITE_RELEASE_ENABLED") is True:
+        if current_app.config.get("SITE_TRANSLATIONS_APPROVED") is not True:
+            pages = []
+        else:
+            paths = (
+                "/software",
+                "/wissen",
+                "/wissen/strommodelle",
+                "/wissen/glossar",
+                "/dokumente",
+                "/community",
+                "/mitmachen",
+                "/kontakt",
+                "/verein",
+            )
+            pages.extend((path, "0.7", "monthly", current_date) for path in paths)
+            pages = [
+                (i18n.public_language_url(path, locale), priority, freq, lastmod)
+                for path, priority, freq, lastmod in pages
+                for locale in i18n.supported_locales()
+            ]
     xml = render_template(
         "sitemap.xml", site_url=current_app.config["SITE_URL"], pages=pages
     )

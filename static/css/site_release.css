@@ -91,6 +91,26 @@
 .release-faq a { display: inline-block; margin-top: 12px; color: #243b85; text-decoration: underline; text-underline-offset: 4px; }
 .site-release #bewohner { background: #f6f2ea; }
 .site-release #registrieren { scroll-margin-top: 110px; }
+.release-document { padding-block: 64px 80px; }
+.release-document-header { max-width: 900px; }
+.release-document h1 { font-size: clamp(36px, 5vw, 64px); }
+.release-document h2 { font-size: clamp(28px, 3vw, 40px); }
+.release-document-header .release-lead { margin-top: 24px; max-width: 760px; }
+.release-document-section { padding-block: 40px; border-bottom: 1px solid #bcc3d0; }
+.release-document-section h2 { margin-bottom: 24px; }
+.release-document-section p { max-width: 76ch; margin-block: 16px; }
+.release-document-section h3 { font-size: 22px; }
+.release-document a:not(.release-button) { color: #243b85; text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
+.release-source { color: #505869; font-size: 14px; }
+.release-table-scroll { overflow-x: auto; margin-block: 24px; }
+.release-table { width: 100%; min-width: 580px; border-collapse: collapse; text-align: left; }
+.release-table caption { text-align: left; font-weight: 600; padding-bottom: 16px; }
+.release-table th, .release-table td { padding: 16px; vertical-align: top; border-bottom: 1px solid #bcc3d0; }
+.release-table thead { background: #edf1f9; }
+.release-definition-list > div { display: grid; grid-template-columns: minmax(120px, 1fr) 3fr; gap: 24px; padding-block: 24px; border-top: 1px solid #bcc3d0; }
+.release-definition-list dt { font-weight: 600; }
+.release-resource-list > li { padding-block: 20px; border-top: 1px solid #bcc3d0; }
+.release-resource-list a { font-size: 22px; }
 @media (max-width: 1199px) { .release-container { padding-inline: 32px; } .release-menu { gap: 12px; } .release-nav-row { gap: 20px; } }
 @media (max-width: 1099px) {
   .release-hero-intro { gap: 32px; }
@@ -107,6 +127,8 @@
   .release-login { align-self: flex-start; }
 }
 @media (max-width: 767px) {
+  .release-document { padding-block: 36px 48px; }
+  .release-definition-list > div { grid-template-columns: 1fr; gap: 12px; }
   .release-hero-intro, .release-two-column { grid-template-columns: 1fr; gap: 24px; }
   .release-hero-definition { margin-top: 28px; }
   .release-scene-roles, .release-workflow { grid-template-columns: 1fr; }
