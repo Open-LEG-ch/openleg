@@ -14517,3 +14517,7 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 #~ "Öffnen Sie Ihr Dashboard, ändern Sie den "
 #~ "Jahresverbrauch und speichern Sie. Nach dem Neuladen "
 #~ "sehen Sie den neuen Wert."
+
+#: templates/gemeinde/dashboard.html:97
+msgid "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."
+msgstr "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."

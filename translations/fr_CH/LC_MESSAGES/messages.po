@@ -14629,3 +14629,7 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 #~ "Ouvrez votre tableau de bord, modifiez la "
 #~ "consommation annuelle et enregistrez. Rechargez la page"
 #~ " pour voir la nouvelle valeur."
+
+#: templates/gemeinde/dashboard.html:97
+msgid "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."
+msgstr "Les demandes de contrat à OpenLEG sont désactivées dans le village d'essai."

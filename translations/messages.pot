@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 11:59+0000\n"
+"POT-Creation-Date: 2026-11-06 20:27+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -128,7 +128,7 @@ msgid_plural "%(num)s Gemeinden in dieser Liga"
 msgstr[0] ""
 msgstr[1] ""
 
-#: municipality.py:379
+#: municipality.py:381
 #, python-format
 msgid "%(num)s Interessierte"
 msgid_plural "%(num)s Interessierte"
@@ -160,7 +160,7 @@ msgid_plural "%(num)s Tage"
 msgstr[0] ""
 msgstr[1] ""
 
-#: municipality.py:375
+#: municipality.py:377
 #, python-format
 msgid "%(num)s bestätigte Interessierte"
 msgid_plural "%(num)s bestätigte Interessierte"
@@ -565,11 +565,11 @@ msgstr ""
 msgid "9. Kontakt"
 msgstr ""
 
-#: municipality.py:371
+#: municipality.py:373
 msgid "< 3 Interessierte"
 msgstr ""
 
-#: municipality.py:371
+#: municipality.py:373
 msgid "< 3 bestätigte Interessierte"
 msgstr ""
 
@@ -944,7 +944,7 @@ msgstr ""
 msgid "Aktion derzeit nicht möglich"
 msgstr ""
 
-#: formation_wizard.py:57 municipality.py:102 municipality.py:291
+#: formation_wizard.py:57 municipality.py:102 municipality.py:293
 msgid "Aktiv"
 msgstr ""
 
@@ -1016,7 +1016,7 @@ msgstr ""
 msgid "Alle Grössen"
 msgstr ""
 
-#: municipality.py:441 rangliste.py:52
+#: municipality.py:443 rangliste.py:52
 msgid "Alle Kantone"
 msgstr ""
 
@@ -1961,7 +1961,7 @@ msgstr ""
 msgid "Bewohner"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:125
+#: templates/gemeinde/dashboard.html:132
 msgid "Bewohner einladen"
 msgstr ""
 
@@ -1975,7 +1975,7 @@ msgstr ""
 msgid "Bewohner und Gründer"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:106
+#: templates/gemeinde/dashboard.html:113
 msgid "Bewohner zur Registrierung einladen"
 msgstr ""
 
@@ -1983,7 +1983,7 @@ msgstr ""
 msgid "Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner"
 msgstr ""
 
-#: billing_lifecycle.py:17 templates/sandbox/payments.html:59
+#: billing_lifecycle.py:17 templates/sandbox/payments.html:52 templates/sandbox/payments.html:60
 msgid "Bezahlt"
 msgstr ""
 
@@ -2112,7 +2112,7 @@ msgid ""
 " Datum darf nicht in der Zukunft liegen."
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:159
+#: templates/gemeinde/dashboard.html:166
 msgid "Bitte registrieren Sie zuerst Ihre Gemeinde."
 msgstr ""
 
@@ -2518,12 +2518,12 @@ msgstr ""
 msgid "Datenstand"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:94
+#: templates/gemeinde/dashboard.html:100
 #, python-format
 msgid "Datenverarbeitungsvertrag %(name)s"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:97
+#: templates/gemeinde/dashboard.html:97 templates/gemeinde/dashboard.html:103
 msgid "Datenverarbeitungsvertrag unterzeichnen"
 msgstr ""
 
@@ -2796,7 +2796,7 @@ msgstr ""
 msgid "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgstr ""
 
-#: municipality.py:167
+#: municipality.py:169
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr ""
 
@@ -3437,7 +3437,7 @@ msgid ""
 "starten Sie dieselbe App danach lokal."
 msgstr ""
 
-#: sandbox_payments.py:143
+#: sandbox_payments.py:150
 msgid ""
 "Diese Auswahl ist nicht zulässig. Nur eine passende CHF-Gutschrift für eine zugestellte Rechnung "
 "kann verbucht werden."
@@ -3523,7 +3523,7 @@ msgid ""
 "versuchen Sie es erneut."
 msgstr ""
 
-#: sandbox_payments.py:152
+#: sandbox_payments.py:159
 msgid "Dieser Eintrag fehlt oder kann nicht bestätigt werden. Prüfen Sie Rechnung, Status und Auszug."
 msgstr ""
 
@@ -3675,7 +3675,7 @@ msgid "E-Mail unterwegs"
 msgstr ""
 
 #: templates/contact_requests.html:40 templates/dashboard.html:20 templates/dashboard.html:60
-#: templates/dashboard.html:257 templates/gemeinde/dashboard.html:151 templates/leg_dashboard.html:392
+#: templates/dashboard.html:257 templates/gemeinde/dashboard.html:158 templates/leg_dashboard.html:392
 #: templates/sandbox/onboarding.html:15 templates/unsubscribe.html:48
 msgid "E-Mail-Adresse"
 msgstr ""
@@ -3826,7 +3826,7 @@ msgstr ""
 msgid "Eigentümer-Dashboard"
 msgstr ""
 
-#: municipality.py:131 municipality.py:303 templates/index.html:431 templates/index.html:459
+#: municipality.py:131 municipality.py:305 templates/index.html:431 templates/index.html:459
 msgid "Eigentümer/in"
 msgstr ""
 
@@ -4057,11 +4057,11 @@ msgstr ""
 msgid "Einladungen"
 msgstr ""
 
-#: templates/dashboard.html:134 templates/gemeinde/dashboard.html:128
+#: templates/dashboard.html:134 templates/gemeinde/dashboard.html:135
 msgid "Einladungslink"
 msgstr ""
 
-#: templates/dashboard.html:292 templates/gemeinde/dashboard.html:181
+#: templates/dashboard.html:292 templates/gemeinde/dashboard.html:188
 msgid "Einladungslink kopiert"
 msgstr ""
 
@@ -4404,7 +4404,7 @@ msgstr ""
 msgid "Erst ein vZEV oder gleich eine LEG?"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:115
+#: templates/gemeinde/dashboard.html:122
 msgid "Erste LEG gründen"
 msgstr ""
 
@@ -4513,7 +4513,7 @@ msgstr ""
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
-#: municipality.py:191
+#: municipality.py:193
 msgid ""
 "Falls eine Gemeinde zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink "
 "gesendet."
@@ -5096,7 +5096,7 @@ msgstr ""
 msgid "Gemeinde auswählen"
 msgstr ""
 
-#: municipality.py:180 templates/api_docs.html:242
+#: municipality.py:182 templates/api_docs.html:242
 msgid "Gemeinde nicht gefunden."
 msgstr ""
 
@@ -5114,7 +5114,7 @@ msgstr ""
 msgid "Gemeinde prüfen"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:161
+#: templates/gemeinde/dashboard.html:168
 msgid "Gemeinde registrieren"
 msgstr ""
 
@@ -5151,7 +5151,7 @@ msgstr ""
 msgid "Gemeinde-Dashboard mit Anmeldungen, Solarnutzung und nächsten Schritten"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:146
+#: templates/gemeinde/dashboard.html:153
 msgid "Gemeinde-Dashboard öffnen"
 msgstr ""
 
@@ -5444,7 +5444,7 @@ msgstr ""
 msgid "Gespeicherte Quellen"
 msgstr ""
 
-#: templates/sandbox/payments.html:57
+#: templates/sandbox/payments.html:58
 msgid "Gespeicherte Zahlungsereignisse"
 msgstr ""
 
@@ -5822,7 +5822,7 @@ msgid ""
 "der Periode."
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:160
+#: templates/gemeinde/dashboard.html:167
 msgid "Hier sehen Sie künftig Registrierungen, Solarnutzung und den Stand Ihrer Gemeinde."
 msgstr ""
 
@@ -5930,7 +5930,7 @@ msgstr ""
 msgid "Ihr Dashboard-Zugangslink"
 msgstr ""
 
-#: municipality.py:216
+#: municipality.py:218
 msgid "Ihr Gemeinde-Dashboard-Zugangslink"
 msgstr ""
 
@@ -6201,7 +6201,7 @@ msgid ""
 "die mögliche Ersparnis."
 msgstr ""
 
-#: municipality.py:101 municipality.py:144
+#: municipality.py:101 municipality.py:146
 msgid "In Prüfung"
 msgstr ""
 
@@ -6543,7 +6543,7 @@ msgstr ""
 msgid "Kategorie"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:158
+#: templates/gemeinde/dashboard.html:165
 msgid "Kein Dashboard verfügbar"
 msgstr ""
 
@@ -6885,7 +6885,7 @@ msgid "Konto nicht verfügbar"
 msgstr ""
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/billing.html:34 templates/sandbox/home.html:56 templates/sandbox/payments.html:61
+#: templates/sandbox/billing.html:34 templates/sandbox/home.html:56 templates/sandbox/payments.html:62
 #: templates/sandbox/questions.html:11 templates/sandbox/telemetry.html:20
 msgid "Konto wechseln"
 msgstr ""
@@ -6902,8 +6902,8 @@ msgstr ""
 msgid "Kontoinformationen"
 msgstr ""
 
-#: templates/dashboard.html:136 templates/dashboard.html:293 templates/gemeinde/dashboard.html:130
-#: templates/gemeinde/dashboard.html:182
+#: templates/dashboard.html:136 templates/dashboard.html:293 templates/gemeinde/dashboard.html:137
+#: templates/gemeinde/dashboard.html:189
 msgid "Kopieren"
 msgstr ""
 
@@ -6911,7 +6911,7 @@ msgstr ""
 msgid "Kopieren Sie zuerst den aktuellen Schlüssel und erneuern Sie ihn."
 msgstr ""
 
-#: templates/dashboard.html:291 templates/gemeinde/dashboard.html:180
+#: templates/dashboard.html:291 templates/gemeinde/dashboard.html:187
 msgid "Kopiert"
 msgstr ""
 
@@ -7433,7 +7433,7 @@ msgstr ""
 msgid "Link im Übungsdorf öffnen"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:106
+#: templates/gemeinde/dashboard.html:113
 msgid "Link teilen, Interessierte sammeln"
 msgstr ""
 
@@ -7844,7 +7844,7 @@ msgstr ""
 msgid "Methodik und Datenquellen"
 msgstr ""
 
-#: municipality.py:132 municipality.py:304 templates/index.html:432 templates/index.html:459
+#: municipality.py:132 municipality.py:306 templates/index.html:432 templates/index.html:459
 msgid "Mieter/in"
 msgstr ""
 
@@ -8394,7 +8394,7 @@ msgstr ""
 msgid "Nicht unterstützte Genauigkeit"
 msgstr ""
 
-#: municipality.py:366 templates/admin/ops.html:44 templates/admin/ops.html:48
+#: municipality.py:368 templates/admin/ops.html:44 templates/admin/ops.html:48
 msgid "Nicht verfügbar"
 msgstr ""
 
@@ -8466,7 +8466,7 @@ msgstr ""
 msgid "Noch keine Interessenmeldungen"
 msgstr ""
 
-#: templates/sandbox/payments.html:54
+#: templates/sandbox/payments.html:55
 msgid "Noch keine Kontoauszüge importiert."
 msgstr ""
 
@@ -8495,7 +8495,7 @@ msgstr ""
 msgid "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 msgstr ""
 
-#: templates/sandbox/payments.html:58
+#: templates/sandbox/payments.html:59
 msgid "Noch keine Zahlung verbucht."
 msgstr ""
 
@@ -9305,7 +9305,7 @@ msgstr ""
 msgid "Professionell"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:139
+#: templates/gemeinde/dashboard.html:146
 msgid "Profil ansehen"
 msgstr ""
 
@@ -9542,16 +9542,16 @@ msgstr ""
 msgid "Quelle Ihrer Angabe"
 msgstr ""
 
-#: templates/sandbox/telemetry.html:23
-msgid "Quelle nicht pausiert"
-msgstr ""
-
 #: templates/equipment_form.html:19
 msgid "Quelle der Angabe"
 msgstr ""
 
 #: templates/sandbox/telemetry.html:22
 msgid "Quelle fortsetzen"
+msgstr ""
+
+#: templates/sandbox/telemetry.html:23
+msgid "Quelle nicht pausiert"
 msgstr ""
 
 #: templates/sandbox/telemetry.html:22
@@ -9718,7 +9718,7 @@ msgid "Recent Ops Snapshots"
 msgstr ""
 
 #: templates/documents/member_invoice.html:14 templates/member_invoice_detail.html:4
-#: templates/member_invoice_detail.html:43 templates/sandbox/payments.html:59
+#: templates/member_invoice_detail.html:43 templates/sandbox/payments.html:60
 #: templates/sandbox/questions.html:20
 msgid "Rechnung"
 msgstr ""
@@ -10053,7 +10053,7 @@ msgstr ""
 msgid "Schnellstart, manuelle Installation und privates Netzwerk"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:115
+#: templates/gemeinde/dashboard.html:122
 msgid "Schritt für Schritt zur Stromgemeinschaft"
 msgstr ""
 
@@ -10422,7 +10422,7 @@ msgstr ""
 msgid "So prüfen Sie es:"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:137
+#: templates/gemeinde/dashboard.html:144
 msgid "So sehen Bewohner Ihre Gemeinde: Stromtarife, Solarnutzung und Sparpotenzial aus offenen Daten."
 msgstr ""
 
@@ -10894,7 +10894,7 @@ msgstr ""
 msgid "Teilen Sie Ihren Einladungslink"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:126
+#: templates/gemeinde/dashboard.html:133
 msgid ""
 "Teilen Sie diesen Link auf Ihrer Website, im Mitteilungsblatt oder per E-Mail. Interessierte "
 "Haushalte melden sich direkt an."
@@ -11421,6 +11421,10 @@ msgstr ""
 msgid "Vertrag unterzeichnen"
 msgstr ""
 
+#: templates/gemeinde/dashboard.html:97
+msgid "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."
+msgstr ""
+
 #: templates/leg_dashboard.html:229
 msgid "Vertragsentwürfe erstellen"
 msgstr ""
@@ -11795,7 +11799,7 @@ msgstr ""
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr ""
 
-#: templates/sandbox/payments.html:60
+#: templates/sandbox/payments.html:61
 msgid ""
 "Wechseln Sie danach zum betroffenen Mitglied und prüfen Sie den Status der eigenen Rechnung. Die "
 "ausgestellten Beträge bleiben unverändert."
@@ -12095,7 +12099,7 @@ msgstr ""
 msgid "Wir senden Ihnen bei Bedarf einen neuen Zugangslink per E-Mail."
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:97
+#: templates/gemeinde/dashboard.html:103
 msgid "Wir senden Ihnen die Vorlage per E-Mail"
 msgstr ""
 
@@ -12103,7 +12107,7 @@ msgstr ""
 msgid "Wir senden Ihnen einen sicheren Login-Link per E-Mail."
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:147
+#: templates/gemeinde/dashboard.html:154
 msgid "Wir senden den Zugangslink an die hinterlegte E-Mail-Adresse Ihrer Gemeinde."
 msgstr ""
 
@@ -12358,7 +12362,7 @@ msgid "Zugang vorhanden"
 msgstr ""
 
 #: templates/dashboard.html:17 templates/dashboard.html:56 templates/dashboard.html:251
-#: templates/gemeinde/dashboard.html:153 templates/sandbox/inbox.html:18
+#: templates/gemeinde/dashboard.html:160 templates/sandbox/inbox.html:18
 msgid "Zugangslink anfordern"
 msgstr ""
 
@@ -13110,7 +13114,7 @@ msgstr ""
 msgid "Öffentliches App-Repo"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:136
+#: templates/gemeinde/dashboard.html:143
 msgid "Öffentliches Energieprofil"
 msgstr ""
 
@@ -13132,7 +13136,7 @@ msgid ""
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 
-#: municipality.py:218
+#: municipality.py:220
 #, python-format
 msgid ""
 "Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n"
@@ -13221,11 +13225,11 @@ msgstr ""
 msgid "← Zurück zum Verzeichnis"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:99 templates/gemeinde/dashboard.html:117
+#: templates/gemeinde/dashboard.html:105 templates/gemeinde/dashboard.html:124
 msgid "→"
 msgstr ""
 
-#: templates/gemeinde/dashboard.html:108
+#: templates/gemeinde/dashboard.html:115
 msgid "↓"
 msgstr ""
 
