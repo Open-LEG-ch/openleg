@@ -124,6 +124,7 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
                 Decimal(720),
                 Decimal(360),
             ),
+            ("sonnwil-neighbour", "producer_credit", Decimal(0), None, None),
             (
                 "sonnwil-operator",
                 "consumer_charge",
@@ -131,6 +132,7 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
                 Decimal(720),
                 Decimal(360),
             ),
+            ("sonnwil-operator", "producer_credit", Decimal(0), None, None),
             (
                 "sonnwil-producer",
                 "consumer_charge",
@@ -146,6 +148,7 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
                 Decimal(720),
                 Decimal(360),
             ),
+            ("sonnwil-resident", "producer_credit", Decimal(0), None, None),
         ]
         cur.execute(
             "SELECT id, participant_id, invoice_number, policy_snapshot, line_items_snapshot, provenance_snapshot, gross_chf FROM invoices ORDER BY id"

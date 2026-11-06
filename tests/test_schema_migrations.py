@@ -403,8 +403,8 @@ def test_issued_invoice_snapshots_are_unique_per_participant_and_immutable():
         with database.get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO buildings (building_id, email, address, lat, lon)
-                VALUES ('building-a', 'a@example.ch', 'Musterweg 1', 47, 8);
+                INSERT INTO buildings (building_id, email, address, lat, lon, referral_code)
+                VALUES ('building-a', 'a@example.ch', 'Musterweg 1', 47, 8, 'registration-building-a');
                 INSERT INTO communities (community_id, name, status)
                 VALUES ('LEG-A', 'LEG A', 'active');
                 INSERT INTO billing_periods (
@@ -433,7 +433,8 @@ def test_issued_invoice_snapshots_are_unique_per_participant_and_immutable():
                     gross_chf, issue_date, due_date, status, issued_at
                 ) VALUES (
                     %s, 'LEG-A', 'building-a', 'LEGA-2026-000001',
-                    '{"delivery_method":"download"}'::jsonb, '{}'::jsonb, '[]'::jsonb,
+                    '{"delivery_method":"download"}'::jsonb,
+                    '{"participant_registration_id":"registration-building-a"}'::jsonb, '[]'::jsonb,
                     10.01, 8.1, 0.81, 10.82,
                     DATE '2026-02-05', DATE '2026-03-07', 'issued', NOW()
                 ) RETURNING id
