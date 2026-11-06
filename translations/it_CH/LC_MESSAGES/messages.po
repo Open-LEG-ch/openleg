@@ -772,6 +772,11 @@ msgstr "Tasse"
 msgid "Abgaben & Gebühren"
 msgstr "Tasse e oneri"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:5 templates/release/finance.html:6
+msgid "Abgeglichen und durch eine zweite berechtigte Person freigegeben am"
+msgstr "Riconciliato e approvato da una seconda persona autorizzata il"
+
 #. Draft translation; native language and domain review pending.
 #: templates/contact_requests.html:32
 msgid "Abgelaufen"
@@ -1231,6 +1236,11 @@ msgstr "Tutte le densità"
 msgid "Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung"
 msgstr "Tutti i documenti: accordo, contratti, registrazione dell'operatore di rete"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:13 templates/release/finance.html:14 templates/verein/index.html:13
+msgid "Alle Finanzberichte"
+msgstr "Tutti i rapporti finanziari"
+
 #. Draft translation; native language and domain review pending.
 #: templates/fuer_bewohner.html:112
 msgid "Alle Funktionen sind kostenlos. Die"
@@ -1304,6 +1314,15 @@ msgstr "Tutte le domande confermate"
 msgid "Alle drei Modelle vergleichen"
 msgstr "Confronta tutti e tre i modelli"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:9
+msgid ""
+"Alle kontrollierten Konten und Anbieter sind vollständig erfasst; es fehlen keine "
+"Fremdwährungsbestände."
+msgstr ""
+"Tutti i conti e i fornitori controllati sono inclusi integralmente; nessun saldo in valuta estera"
+" è omesso."
+
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/entry.html:9
 msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
@@ -1365,6 +1384,11 @@ msgstr "Indicato come disabilitato"
 msgid "Als erledigt angegeben"
 msgstr "Indicato come fatto"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:11
+msgid "Als zweite prüfende Person freigeben und veröffentlichen"
+msgstr "Approvare e pubblicare come seconda persona incaricata del controllo"
+
 #. Draft translation; native language and domain review pending.
 #: templates/telemetry_dashboard.html:109 templates/telemetry_shared.html:59
 msgid "Alter beim Laden"
@@ -1398,10 +1422,20 @@ msgstr "Escalation a VNB"
 msgid "An:"
 msgstr "A:"
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:75
+msgid "Anbietergebühr"
+msgstr "Commissione del fornitore"
+
 #. Draft translation; native language and domain review pending.
 #: templates/member_invoice_detail.html:223
 msgid "Anderes"
 msgstr "Altro"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:69
+msgid "Anfangseinlage"
+msgstr "Contributo iniziale"
 
 #. Draft translation; native language and domain review pending.
 #: templates/api_docs.html:233
@@ -1888,6 +1922,16 @@ msgstr ""
 msgid "Ausblick: zentrales LEG-Register"
 msgstr "Prospettive: registro centrale LEG"
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:64
+msgid "Ausgabe"
+msgstr "Spesa"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Ausgaben"
+msgstr "Spese"
+
 #. Draft translation; native language and domain review pending.
 #: templates/leg_dashboard.html:344 templates/leg_dashboard.html:363
 msgid "Ausgang"
@@ -2122,6 +2166,26 @@ msgstr "BKW"
 #: templates/gemeinde/profil.html:129
 msgid "Badge einbetten"
 msgstr "Incorpora bagni"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:76
+msgid "Bankgebühr"
+msgstr "Commissione bancaria"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:9 templates/release/finance.html:10
+msgid "Bankguthaben"
+msgstr "Saldo bancario"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bankguthaben am Ende"
+msgstr "Saldo bancario finale"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bankguthaben zu Beginn"
+msgstr "Saldo bancario iniziale"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:28
@@ -2401,6 +2465,11 @@ msgid "Bereich laut Quelle"
 msgstr "Area secondo la fonte"
 
 #. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:11 templates/release/finance.html:12
+msgid "Bereinigte Belegkennung"
+msgstr "Codice del giustificativo anonimizzato"
+
+#. Draft checked against source; native language and domain review pending.
 #: templates/partials/address_intake.html:8
 #, python-format
 msgid "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalt registriert"
@@ -2432,6 +2501,11 @@ msgstr "Pronto, lista di controllo e risparmio."
 #: templates/documents/participant_contract.html:24
 msgid "Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft"
 msgstr "Fornitura dei dati di misurazione di 15 minuti alla Comunità"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:12
+msgid "Bericht zur Prüfung vorbereiten"
+msgstr "Preparare il rapporto per il controllo"
 
 #. Draft translation; native language and domain review pending.
 #: templates/utility/register.html:45
@@ -2550,7 +2624,7 @@ msgstr ""
 "registrata. Il consiglio di amministrazione esamina la domanda."
 
 #. Draft checked against source; native language and domain review pending.
-#: app.py:238 app.py:239
+#: app.py:238 app.py:239 app.py:240
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre Interessenmeldung für eine Lokale Elektrizitätsgemeinschaft (LEG) in "
@@ -2652,6 +2726,21 @@ msgstr "Visualizza gli incontri confermati"
 #, python-format
 msgid "Bestätigter Start: %(date)s. Referenz: %(reference)s."
 msgstr "Avvio confermato: %(date)s. Riferimento: %(reference)s."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:9 templates/release/finance.html:10
+msgid "Bestätigtes Anbieterguthaben"
+msgstr "Saldo confermato presso il fornitore"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bestätigtes Anbieterguthaben am Ende"
+msgstr "Saldo finale confermato presso il fornitore"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bestätigtes Anbieterguthaben zu Beginn"
+msgstr "Saldo iniziale confermato presso il fornitore"
 
 #. Draft translation; native language and domain review pending.
 #: templates/admin/ops.html:43
@@ -2775,6 +2864,11 @@ msgstr ""
 #: templates/release/pricing.html:14
 msgid "Betriebsfrage stellen"
 msgstr "Domanda di lavoro"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:77
+msgid "Betriebskosten"
+msgstr "Costi operativi"
 
 #. Draft translation; native language and domain review pending.
 #: templates/fuer_gemeinden.html:82
@@ -3089,6 +3183,21 @@ msgstr "Latitudine al di fuori della zona valida"
 msgid "Brief"
 msgstr "Lettera"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bruttoeingänge"
+msgstr "Entrate lorde"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:10 templates/release/finance.html:11
+msgid "Buchungen"
+msgstr "Registrazioni contabili"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:11
+msgid "Buchungen mit privaten Quellen und bereinigten öffentlichen Angaben"
+msgstr "Registrazioni con fonti private e informazioni pubbliche anonimizzate"
+
 #. Draft translation; native language and domain review pending.
 #: templates/meter_upload.html:23
 msgid "Building ID"
@@ -3142,10 +3251,29 @@ msgstr "Formato CKW: data o riferimento colonna mancante"
 msgid "CSV Seeds in"
 msgstr "CSV Seeds in"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:10
+msgid ""
+"CSV mit Komma als Trennzeichen, Punkt als Dezimalzeichen und ohne Tausendertrennzeichen. Beträge "
+"sind positiv; die Buchungsart bestimmt die Richtung. Jede Quellkennung muss vereinsweit eindeutig"
+" sein. Öffentliche Zwecke in allen vier Sprachen müssen persönliche Daten ausschliessen. "
+"Ausführliche Regeln stehen in der Dokumentation zur Vereinsverwaltung."
+msgstr ""
+"CSV con virgole come separatori, punti decimali e senza separatori delle migliaia. Gli importi "
+"sono positivi; il tipo di registrazione determina la direzione. Ogni identificativo di fonte deve"
+" essere univoco nell'associazione. Le descrizioni pubbliche nelle quattro lingue devono escludere"
+" i dati personali. Le regole dettagliate sono nella documentazione di amministrazione "
+"dell'associazione."
+
 #. Draft translation; native language and domain review pending.
 #: templates/meter_upload.html:27
 msgid "CSV-Datei"
 msgstr "File CSV"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:11
+msgid "CSV-Spaltenvorlage herunterladen"
+msgstr "Scaricare il modello delle colonne CSV"
 
 #. Draft translation; native language and domain review pending.
 #: templates/open_source.html:109
@@ -3725,6 +3853,19 @@ msgstr "Lo scambio sfrutta l'infrastruttura di rete esistente."
 msgid "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
 msgstr "La ricevuta non corrisponde più alla conferma di avvio."
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:107
+msgid ""
+"Der Bericht wurde nicht gespeichert. Prüfen Sie CSV-Spalten, Quellen, Beträge und Datum, alle "
+"Konten und Fonds sowie die Übereinstimmung der Anfangs- und Schlussbestände. Für eine neue "
+"Version ist eine öffentliche Begründung erforderlich. Bereits veröffentlichte Belege dürfen nicht"
+" verschwinden. Ihre Eingaben bleiben erhalten."
+msgstr ""
+"Il rapporto non è stato salvato. Verificare le colonne CSV, le fonti, gli importi e le date, "
+"tutti i conti e i fondi e la riconciliazione dei saldi iniziali e finali. Una nuova versione "
+"richiede una motivazione pubblica. I giustificativi già pubblicati non possono scomparire. I dati"
+" inseriti sono conservati."
+
 #. Draft translation; native language and domain review pending.
 #: templates/release/pricing.html:6
 msgid ""
@@ -4066,7 +4207,7 @@ msgstr ""
 "dell'esercizio."
 
 #. Draft checked against source; native language and domain review pending.
-#: app.py:107 app.py:108 formation_guide.py:35
+#: app.py:107 app.py:108 app.py:109 formation_guide.py:35
 msgid ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der "
 "Grundversorgung auch den übrigen Strombezug. Die LEG oder ihr Dienstleister rechnet den innerhalb"
@@ -4350,6 +4491,18 @@ msgstr ""
 #: templates/dashboard.html:325
 msgid "Die Berechnung ist gerade nicht möglich. Bitte versuchen Sie es in einer Minute erneut."
 msgstr "Il calcolo non è possibile al momento. Prova di nuovo tra un minuto."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:3 templates/release/finance.html:4
+msgid ""
+"Die Berichte zeigen Bankguthaben, bestätigte Anbieterguthaben und noch unbestätigte Zahlungen "
+"getrennt. Reserve, Zweckbindung und unbezahlte Verpflichtungen begrenzen das verfügbare Budget. "
+"Die zweite Prüfung ist keine gesetzliche Revision. Eine Buchung belegt keine Ausgabenfreigabe."
+msgstr ""
+"I rapporti distinguono saldi bancari, saldi confermati presso i fornitori e pagamenti non "
+"confermati. Riserve, vincoli di destinazione e impegni non pagati limitano il budget disponibile."
+" Il secondo controllo non è una revisione legale. Una registrazione non dimostra l'approvazione "
+"di una spesa."
 
 #. Draft translation; native language and domain review pending.
 #: templates/unsubscribe.html:27
@@ -5097,6 +5250,15 @@ msgstr "Il firmware rilevato è al di fuori dell'ambito di questo messaggio."
 msgid "Die erfasste Firmware liegt im veröffentlichten Bereich."
 msgstr "Il firmware rilevato è nell'area pubblicata."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:8 templates/release/finance.html:9
+msgid ""
+"Die freien Bankmittel decken die offenen Verpflichtungen nicht. Der negative Betrag zeigt die "
+"Finanzierungslücke."
+msgstr ""
+"I fondi bancari liberi non coprono gli impegni in sospeso. L'importo negativo indica il "
+"fabbisogno di finanziamento."
+
 #. Draft translation; native language and domain review pending.
 #: member_savings.py:348
 msgid "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
@@ -5154,6 +5316,17 @@ msgstr "L' ultimo controllo della fonte non è riuscito. Le fonti precedenti son
 #: sandbox_seed.py:60
 msgid "Die neue LEG erscheint in Ihrem LEG-Dashboard."
 msgstr "La nuova LEG appare nella tua dashboard LEG."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:5
+msgid ""
+"Die private Freigabe des Umfangs muss die Konten, Bereinigung persönlicher Daten, "
+"vierteljährliche Berichterstattung, Belegzugang und zweite Prüfung abdecken. Ein Zahlungseingang "
+"ist keine Ausgabenfreigabe. Dieses Formular führt keine Bankzahlung aus."
+msgstr ""
+"L'approvazione privata del perimetro deve coprire i conti, la rimozione dei dati personali, i "
+"rapporti trimestrali, l'accesso ai giustificativi e il secondo controllo. Ricevere un pagamento "
+"non autorizza una spesa. Questo modulo non esegue pagamenti bancari."
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/formation.html:43
@@ -5356,6 +5529,16 @@ msgstr ""
 "Questa panoramica descrive l'estensione delle funzioni pubblicate. Una funzione esistente non "
 "sostituisce il test con le connessioni, i contratti e i dati."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:11
+msgid "Diesen Bericht als Vorlage für eine neue Version verwenden"
+msgstr "Usare questo rapporto come modello per una nuova versione"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:12 templates/release/finance.html:13
+msgid "Diesen veröffentlichten Stand als JSON herunterladen"
+msgstr "Scaricare questa versione pubblicata in formato JSON"
+
 #. Draft translation; native language and domain review pending.
 #: billing_workspace.py:233
 msgid ""
@@ -5413,6 +5596,15 @@ msgid ""
 msgstr ""
 "Questo passaggio elimina definitivamente la voce collegata al link: un profilo di indirizzo o una"
 " richiesta di area aperta."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:8
+msgid ""
+"Dieser Stand wurde veröffentlicht und bleibt unverändert erhalten. Bereiten Sie eine begründete "
+"neue Version vor, falls eine Korrektur nötig ist."
+msgstr ""
+"Questa versione è stata pubblicata e rimane invariata. Preparare una nuova versione motivata se "
+"occorre una correzione."
 
 #. Draft translation; native language and domain review pending.
 #: billing_lifecycle.py:43
@@ -6572,6 +6764,11 @@ msgstr "Decisione"
 msgid "Entwickler und Self-Hosting"
 msgstr "Sviluppatore e self hosting"
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:80
+msgid "Entwicklung"
+msgstr "Sviluppo"
+
 #. Draft translation; native language and domain review pending.
 #: billing_workspace.py:139
 msgid "Entwurf"
@@ -7048,6 +7245,16 @@ msgstr ""
 msgid "Financial projections"
 msgstr "Projections finanziarie"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:2 templates/verein/finance_review.html:3
+msgid "Finanzbericht prüfen"
+msgstr "Controllare il rapporto finanziario"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:2 templates/verein/finance_edit.html:3
+msgid "Finanzbericht vorbereiten"
+msgstr "Preparare il rapporto finanziario"
+
 #. Draft translation; native language and domain review pending.
 #: templates/admin/abrechnungen.html:97
 msgid "Fingerabdruck:"
@@ -7105,6 +7312,11 @@ msgstr "Versione del firmware"
 #: templates/open_source.html:78
 msgid "Flask-App und öffentliche API"
 msgstr "App flask e pubblico API"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:9 templates/release/finance.html:10
+msgid "Fonds und Verpflichtungen"
+msgstr "Fondi e impegni"
 
 #. Draft translation; native language and domain review pending.
 #: templates/unsubscribe.html:7
@@ -7222,6 +7434,11 @@ msgstr "Infrastrutture energetiche libere che si possono verificare e gestire da
 msgid "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
 msgstr "Infrastrutture libere per comunità elettriche svizzere. Open Source, ospitato in Svizzera."
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:85
+msgid "Freie Mittel"
+msgstr "Fondi liberi"
+
 #. Draft translation; native language and domain review pending.
 #: templates/release/footer.html:5
 msgid "Freie Software für lokale Elektrizitätsgemeinschaften in der Schweiz."
@@ -7311,6 +7528,11 @@ msgstr "Data di scadenza:"
 #: templates/verein/queue.html:8
 msgid "Fällige Beitragsjahre einmalig erfassen"
 msgstr "Registrare una sola volta gli anni contributivi dovuti"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:72
+msgid "Förderbeitrag"
+msgstr "Sovvenzione"
 
 #. Draft translation; native language and domain review pending.
 #: templates/datenschutz.html:78
@@ -7447,6 +7669,15 @@ msgstr ""
 "Per l'anno contributivo dal %(period)s restano da pagare CHF %(amount)s. Versate l'importo entro "
 "altri 60 giorni da questo sollecito. Dopo tale termine il comitato può decidere una cessazione "
 "motivata. Potete presentare ricorso. Contatto: hallo@openleg.ch."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:15 templates/release/finance.html:16
+msgid ""
+"Für das zuletzt abgeschlossene Quartal liegt noch kein freigegebener Bericht vor. Der neueste "
+"veröffentlichte Bericht zeigt einen früheren Zeitraum."
+msgstr ""
+"Non è disponibile un rapporto approvato per l'ultimo trimestre concluso. L'ultimo rapporto "
+"pubblicato riguarda un periodo precedente."
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:203
@@ -7683,6 +7914,16 @@ msgstr "ID dell'edificio è richiesto"
 msgid "Gebäude-ID ist zu lang"
 msgstr "L'ID dell'edificio è troppo lungo"
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:63
+msgid "Gebühr"
+msgstr "Commissione"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Gebühren"
+msgstr "Commissioni"
+
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/pilotgemeinde.html:24 templates/gemeinde/profil.html:53
 msgid "Geeignete Dachfläche"
@@ -7708,6 +7949,11 @@ msgstr "Ospitato su openleg.ch"
 #: templates/admin/abrechnungen.html:104
 msgid "Geladen"
 msgstr "Caricato"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:61
+msgid "Geldeingang"
+msgstr "Entrata"
 
 #. Draft translation; native language and domain review pending.
 #: templates/admin/ops.html:87 templates/fuer_gemeinden.html:54 templates/gemeinde/rangliste.html:83
@@ -8793,6 +9039,24 @@ msgstr ""
 "Ho esaminato la tariffa, la corrispondenza e i documenti di origine e ho presentato questo "
 "progetto per essere condiviso."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:10
+msgid ""
+"Ich habe Zwecke, Belegcodes und Korrekturbegründung geprüft. Öffentliche Angaben enthalten keine "
+"privaten Personen-, Konto- oder Quelldaten."
+msgstr ""
+"Ho verificato le descrizioni, i codici dei giustificativi e la motivazione della correzione. Le "
+"informazioni pubbliche non contengono dati privati su persone, conti o fonti."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:10
+msgid ""
+"Ich habe alle kontrollierten Konten, Anbieter, Fonds und Verpflichtungen sowie die tatsächliche "
+"Berichtsfreigabe geprüft."
+msgstr ""
+"Ho verificato tutti i conti, fornitori, fondi e impegni controllati e l'effettiva approvazione "
+"delle regole di rendicontazione."
+
 #. Draft translation; native language and domain review pending.
 #: templates/verein/application.html:20
 msgid "Ich habe den tatsächlichen Zahlungseingang und die Zuordnung geprüft."
@@ -8807,6 +9071,11 @@ msgstr "Ho letto le condizioni di accoglienza e le informazioni sulla privacy."
 #: templates/sandbox/formation.html:22
 msgid "Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts."
 msgstr "Ho esaminato i progetti e simulato la firma del mio attuale bilancio."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:10
+msgid "Ich habe die Originalquellen und die vollständige Abstimmung tatsächlich geprüft."
+msgstr "Ho effettivamente verificato le fonti originali e la riconciliazione completa."
 
 #. Draft translation; native language and domain review pending.
 #: templates/advisories.html:57
@@ -9300,6 +9569,11 @@ msgstr "In prova"
 msgid "In Vorbereitung"
 msgstr "In preparazione"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:11 templates/release/finance.html:12
+msgid "In diesem Quartal gab es keine Buchungen."
+msgstr "In questo trimestre non vi sono state registrazioni contabili."
+
 #. Draft translation; native language and domain review pending.
 #: templates/member_invoice_detail.html:193
 msgid "In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs."
@@ -9460,9 +9734,25 @@ msgid "Interessierte"
 msgstr "Interesse"
 
 #. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:82
+msgid "Interne Bewegung"
+msgstr "Movimento interno"
+
+#. Draft checked against source; native language and domain review pending.
 #: templates/release/how_it_works.html:53
 msgid "Interne LEG-Abrechnung"
 msgstr "Fatturazione interna della LEG"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:10 templates/release/finance.html:11
+msgid ""
+"Interne Transfers und Umbuchungen sind keine zusätzlichen Eingänge oder Ausgaben. Die öffentliche"
+" Belegkennung verweist auf bereinigte Nachweise; Originalquellen bleiben für die berechtigte "
+"Prüfung privat zugänglich."
+msgstr ""
+"I trasferimenti interni e le riallocazioni tra fondi non sono entrate o spese aggiuntive. I "
+"codici pubblici rimandano a giustificativi anonimizzati; le fonti originali rimangono accessibili"
+" in modo privato per il controllo autorizzato."
 
 #. Draft translation; native language and domain review pending.
 #: i18n.py:88
@@ -9493,6 +9783,11 @@ msgstr "Prezzo interno:"
 #: templates/release/knowledge.html:15
 msgid "Interner Strompreis"
 msgstr "Prezzo interno dell'energia elettrica"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:65
+msgid "Interner Transfer"
+msgstr "Trasferimento interno"
 
 #. Draft translation; native language and domain review pending.
 #: equipment.py:40
@@ -9698,6 +9993,11 @@ msgstr "Consumo annuo:"
 #: templates/release/event.html:7
 msgid "Kalendereintrag herunterladen"
 msgstr "Scarica la voce del calendario"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:8
+msgid "Kalenderquartal, z. B. 2026-Q3"
+msgstr "Trimestre civile, ad esempio 2026-Q3"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_dashboard.html:335 templates/leg_dashboard.html:366
@@ -9926,6 +10226,17 @@ msgstr "Nessuna vendita di dati"
 #: templates/leg_verzeichnis/leg_check.html:38
 msgid "Keine ElCom-Daten hinterlegt."
 msgstr "Nessun dato ElCom depositato."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:184
+msgid ""
+"Keine Freigabe. Eine andere aktive berechtigte Person muss den aktuellen Stand anhand der "
+"Originalquellen, des vollständigen Umfangs und der bereinigten öffentlichen Angaben prüfen und "
+"die tatsächliche Freigabe belegen."
+msgstr ""
+"Approvazione negata. Un'altra persona autorizzata e attiva deve verificare la versione attuale "
+"sulla base delle fonti originali, del perimetro completo e delle informazioni pubbliche "
+"anonimizzate e documentare l'approvazione effettiva."
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/leg_check.html:89
@@ -10205,6 +10516,11 @@ msgstr "Richiesta di contatto"
 msgid "Kontaktperson"
 msgstr "Persona di contatto"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:11
+msgid "Konten und Fonds: Anfang, Schluss und unbestätigte Anbieterzahlungen"
+msgstr "Conti e fondi: saldi iniziali, finali e pagamenti non confermati presso i fornitori"
+
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/account_unavailable.html:2 templates/sandbox/account_unavailable.html:5
 msgid "Konto nicht verfügbar"
@@ -10256,6 +10572,11 @@ msgstr "Collega correzione"
 #: templates/member_invoice_detail.html:53
 msgid "Korrektur zu:"
 msgstr "Traduzione:"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:6 templates/release/finance.html:7
+msgid "Korrekturbegründung"
+msgstr "Motivo della correzione"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:147
@@ -11647,6 +11968,11 @@ msgstr "Verifica domanda di iscrizione"
 msgid "Mitgliedsanträge"
 msgstr "Domande di adesione"
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:70
+msgid "Mitgliedsbeitrag"
+msgstr "Quota associativa"
+
 #. Draft translation; native language and domain review pending.
 #: templates/verein/application.html:10 verein_routes.py:219
 msgid "Mitgliedschaft"
@@ -12189,6 +12515,11 @@ msgstr ""
 "mesi a fine trimestre."
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/finance_review.html:11
+msgid "Neue Version aus diesem Prüfstand vorbereiten"
+msgstr "Preparare una nuova versione di questo banco di prova"
+
+#. Draft translation; native language and domain review pending.
 #: templates/leg_billing_policy.html:17
 msgid "Neue Version erfassen"
 msgstr "Raccogliere la nuova versione"
@@ -12364,6 +12695,11 @@ msgstr ""
 msgid "Noch keine Beitragsforderung erfasst."
 msgstr "Non è ancora stata registrata alcuna quota dovuta."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:13
+msgid "Noch keine Berichte vorbereitet."
+msgstr "Nessun rapporto ancora preparato."
+
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/dashboard.html:48 templates/gemeinde/dashboard.html:58
 msgid "Noch keine Daten"
@@ -12415,6 +12751,17 @@ msgstr "Non ci sono ancora riunioni."
 msgid "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 msgstr "La procedura di fatturazione inizia solo con una direttiva salvata."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:16 templates/release/finance.html:17
+msgid ""
+"Noch keine abgeglichenen und unabhängig geprüften Berichte veröffentlicht. Daraus lässt sich kein"
+" Kontostand ableiten. Die geplante Anfangseinlage ist kein Nachweis einer tatsächlichen "
+"Einzahlung."
+msgstr ""
+"Non è stato ancora pubblicato alcun rapporto riconciliato e controllato in modo indipendente. Non"
+" se ne può dedurre alcun saldo. Il contributo iniziale previsto non prova un versamento "
+"effettivo."
+
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/metering.html:60
 msgid "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
@@ -12450,6 +12797,11 @@ msgstr ""
 msgid "Noch mehr Nachbarn einladen?"
 msgstr "Invitare altri vicini?"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:13
+msgid "Noch nicht freigegeben"
+msgstr "Non ancora approvato"
+
 #. Draft translation; native language and domain review pending.
 #: equipment.py:74
 msgid "Noch nicht geprüft"
@@ -12464,6 +12816,11 @@ msgstr "Non ancora controllato pubblicamente o sbloccato."
 #: templates/partials/registry_trust.html:11 templates/partials/registry_trust.html:17
 msgid "Noch nie erneut bestätigt."
 msgstr "Mai più confermato."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:11
+msgid "Noch unbezahlte Verpflichtungen"
+msgstr "Impegni ancora non pagati"
 
 #. Draft translation; native language and domain review pending.
 #: templates/api_docs.html:74
@@ -12512,6 +12869,17 @@ msgstr "Solo partecipazione LEG, condividere i dati con i vicini e la comunità"
 #: templates/dashboard.html:50
 msgid "Nur Lesezugriff"
 msgstr "Solo accesso alla lettura"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:4
+msgid ""
+"Nur abgeschlossene Kalenderquartale und CHF. Erfassen Sie alle kontrollierten Bankkonten und "
+"Zahlungsanbieter. Fremdwährungen, fehlende Quellen oder unbestätigte Konten verhindern eine "
+"vollständige Berichterstattung. Fiktive Testwerte sind keine Vereinsfinanzen."
+msgstr ""
+"Solo trimestri civili conclusi e CHF. Includere tutti i conti bancari e i fornitori di pagamento "
+"controllati. Valute estere, fonti mancanti o conti non confermati impediscono un rapporto "
+"completo. I valori di prova fittizi non sono le finanze dell'associazione."
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/queue.html:10
@@ -13600,6 +13968,26 @@ msgstr "Note private"
 msgid "Private Prüfung durch den Vorstand"
 msgstr "Esame privato da parte del consiglio di amministrazione"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:7
+msgid "Private Quellen und Umfang prüfen"
+msgstr "Verificare le fonti private e il perimetro"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:8
+msgid "Private Quellenreferenz zu den Anfangsbeständen"
+msgstr "Riferimento privato alle fonti dei saldi iniziali"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:8
+msgid "Private Referenz zur tatsächlich beschlossenen Berichtsordnung und zum vollständigen Kontenumfang"
+msgstr "Riferimento privato alle regole di rendicontazione adottate e al perimetro completo dei conti"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:11
+msgid "Private Referenz zur tatsächlichen zweiten Prüfung und Freigabe"
+msgstr "Riferimento privato al secondo controllo e all'approvazione effettivamente eseguiti"
+
 #. Draft translation; native language and domain review pending.
 #: templates/admin/ops.html:14
 msgid "Private operator view"
@@ -13788,6 +14176,17 @@ msgstr ""
 #: templates/leg_dashboard.html:24
 msgid "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
 msgstr "Controllare il link di accesso o aprire la"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:5
+msgid ""
+"Prüfen Sie Originalauszüge, Anbieterabrechnungen und Belege ausserhalb dieser Zusammenstellung. "
+"Erst die tatsächliche zweite Prüfung erlaubt die Veröffentlichung. Diese Prüfung ist keine "
+"gesetzliche Revision und keine Zahlungsfreigabe."
+msgstr ""
+"Verificare estratti originali, rendiconti dei fornitori e giustificativi al di fuori di questa "
+"raccolta. Solo un secondo controllo effettivo consente la pubblicazione. Questo controllo non è "
+"una revisione legale né un'autorizzazione al pagamento."
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/formation.html:17
@@ -14411,6 +14810,11 @@ msgstr "Registrazione non riuscita. Prova di nuovo."
 msgid "Repository öffnen"
 msgstr "Apri repository"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8 verein_finance_routes.py:86
+msgid "Reserve"
+msgstr "Riserva"
+
 #. Draft translation; native language and domain review pending.
 #: formation_wizard.py:377
 msgid "Richten Sie die Abrechnung ein."
@@ -14515,6 +14919,16 @@ msgstr "Compensazione dell'arrotondamento"
 #: payment_reconciliation.py:24
 msgid "Rückbuchung"
 msgstr "Prenotazione di ritorno"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:62 verein_finance_routes.py:74
+msgid "Rückzahlung"
+msgstr "Rimborso"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Rückzahlungen"
+msgstr "Rimborsi"
 
 #. Draft translation; native language and domain review pending.
 #: meter_data.py:312
@@ -15484,6 +15898,11 @@ msgstr "Capacità di stoccaggio:"
 msgid "Speichern"
 msgstr "Salva"
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:71
+msgid "Spende"
+msgstr "Donazione"
+
 #. Draft translation; native language and domain review pending.
 #: templates/http_error.html:10 templates/partials/language_switcher.html:1
 msgid "Sprache"
@@ -15513,6 +15932,11 @@ msgstr ""
 #: templates/utility/register.html:48
 msgid "St. Gallen"
 msgstr "San Gallo"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:11 templates/release/finance.html:12
+msgid "Stabile Buchungskennung"
+msgstr "Identificativo stabile della registrazione"
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/events.html:6
@@ -16103,6 +16527,11 @@ msgstr "UTC"
 msgid "Umbau erforderlich"
 msgstr "Rimodellamento necessario"
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:66
+msgid "Umbuchung zwischen Fonds"
+msgstr "Riallocazione tra fondi"
+
 #. Draft translation; native language and domain review pending.
 #: templates/fuer_gemeinden.html:66
 msgid ""
@@ -16199,6 +16628,22 @@ msgstr "Modello di distribuzione sconosciuto."
 #: templates/admin/ops.html:39
 msgid "Unbestätigt (LEG-Verzeichnis)"
 msgstr "Non confermato (directoryLEG)"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Unbestätigte Anbieterzahlungen, nicht als Eingang oder verfügbares Geld gezählt"
+msgstr "Pagamenti non confermati presso i fornitori, esclusi dalle entrate e dai fondi disponibili"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:9 templates/release/finance.html:10
+msgid "Unbestätigte Zahlungen"
+msgstr "Pagamenti non confermati"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8 templates/release/finance.html:9
+#: templates/release/finance.html:10
+msgid "Unbezahlte Verpflichtungen"
+msgstr "Impegni non pagati"
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/rangliste.html:86
@@ -16314,6 +16759,11 @@ msgstr "Richiedi assistenza"
 #: templates/leg_dashboard.html:206
 msgid "Unterzeichnet"
 msgstr "Firmato"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/finance_edit.html:12
+msgid "Unveränderlichen Prüfstand vorbereiten"
+msgstr "Preparazione del banco di prova inalterabile"
 
 #. Draft translation; native language and domain review pending.
 #: dashboard.py:266 dashboard.py:267
@@ -16574,6 +17024,11 @@ msgstr ""
 "Procedura semplificata. Definisca i dati disponibili e il loro formato con il gestore di rete. "
 "Una bozza non è ancora una fattura approvata."
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:223
+msgid "Vereinsfinanzen"
+msgstr "Finanze dell'associazione"
+
 #. Draft translation; native language and domain review pending.
 #: templates/verein/login.html:2 templates/verein/login.html:5
 msgid "Vereinsvorstand anmelden"
@@ -16588,6 +17043,11 @@ msgstr "Disponibile"
 #: templates/leg_gruenden.html:200
 msgid "Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf."
 msgstr "Dati di misurazione disponibili e una procedura di fatturazione documentata."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Verfügbares freies Bankguthaben nach Verpflichtungen"
+msgstr "Fondi bancari liberi disponibili dopo gli impegni"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/events.html:6
@@ -16808,6 +17268,11 @@ msgstr "Utilizzi al massimo 200 caratteri per la ricerca."
 msgid "Verzeichniseintrag nicht gefunden."
 msgstr "Voce della directory non trovata."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:13
+msgid "Veröffentlicht"
+msgstr "Pubblicato"
+
 #. Draft translation; native language and domain review pending.
 #: templates/advisories.html:8
 msgid "Veröffentlicht am"
@@ -16822,6 +17287,11 @@ msgstr "Fonte pubblicata e intervallo di versione"
 #: templates/equipment_form.html:29
 msgid "Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen"
 msgstr "Controlla le istruzioni di sicurezza pubblicate per questo dispositivo"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:13 templates/release/finance.html:14
+msgid "Veröffentlichte Versionen"
+msgstr "Versioni pubblicate"
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/events.html:8
@@ -16848,6 +17318,15 @@ msgstr "Quattro punti determinano se l'accesso può iniziare."
 #: templates/leg_dashboard.html:399
 msgid "Vier-Augen-Prinzip"
 msgstr "Principio a quattro occhi"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:225
+msgid ""
+"Vierteljährliche Berichte über alle kontrollierten Mittel des Vereins, mit Quellenabgleich und "
+"unabhängiger zweiter Prüfung."
+msgstr ""
+"Rapporti trimestrali su tutti i fondi controllati dall'associazione, riconciliati con le fonti e "
+"verificati in modo indipendente da una seconda persona."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/software.html:16
@@ -16984,6 +17463,11 @@ msgstr "Requisiti"
 msgid "Vorbereitet durch:"
 msgstr "Preparato da:"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:13
+msgid "Vorbereitete Berichte"
+msgstr "Rapporti preparati"
+
 #. Draft translation; native language and domain review pending.
 #: dashboard.py:687
 msgid "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
@@ -17065,6 +17549,11 @@ msgstr ""
 #: templates/sandbox/manage.html:13
 msgid "Vorlage"
 msgstr "Modello"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:6
+msgid "Vorschau der öffentlichen Angaben"
+msgstr "Anteprima delle informazioni pubbliche"
 
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:529
@@ -17293,6 +17782,11 @@ msgid ""
 msgstr ""
 "Passa all'account invitato e conferma la partecipazione alla dashboard LEG. Questo invito è "
 "inventato."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance_routes.py:81
+msgid "Weitere Kosten"
+msgstr "Altri costi"
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/join.html:11
@@ -18143,10 +18637,21 @@ msgstr "Assegnazione non completamente confermata. Verificare la partecipazione 
 msgid "Zur Aufgabenteilung und zu den Anschlussbedingungen:"
 msgstr "Per la ripartizione dei compiti e le condizioni di allacciamento:"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:11 templates/verein/queue.html:3
+msgid "Zur Finanzverwaltung"
+msgstr "Tornare all'amministrazione finanziaria"
+
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:83
 msgid "Zur Freigabe vorbereiten"
 msgstr "Prepararsi per la condivisione"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8 verein_finance_routes.py:73
+#: verein_finance_routes.py:88
+msgid "Zur Prüfung zurückgehalten"
+msgstr "Trattenuto per verifica"
 
 #. Draft translation; native language and domain review pending.
 #: templates/dashboard.html:29 templates/http_error.html:20
@@ -18277,6 +18782,11 @@ msgstr "Finalità e adesione"
 msgid "Zweck, Unabhängigkeit und Mitgliedschaft"
 msgstr "Finalità, indipendenza e adesione"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:7 templates/release/finance.html:8 verein_finance_routes.py:87
+msgid "Zweckgebundene Mittel"
+msgstr "Fondi vincolati"
+
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/rangliste.html:23
 msgid "Zwei Gemeinden vergleichen"
@@ -18291,6 +18801,11 @@ msgstr "Confrontare due Comuni | OpenLEG"
 #: templates/open_source.html:66 templates/pricing.html:41
 msgid "Zwei Modelle"
 msgstr "Due modelli"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/finance.html:16 templates/release/finance.html:17
+msgid "Zweite Prüfung"
+msgstr "Secondo controllo"
 
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:297
@@ -19028,6 +19543,11 @@ msgstr "Pubblico API"
 msgid "Öffentliche API-Dokumentation"
 msgstr "Documentazione pubblica API"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_edit.html:8
+msgid "Öffentliche Begründung einer neuen Version"
+msgstr "Motivazione pubblica di una nuova versione"
+
 #. Draft translation; native language and domain review pending.
 #: templates/release/community.html:8
 msgid "Öffentliche Beitragshistorie ansehen"
@@ -19057,10 +19577,20 @@ msgstr "Pubblico"
 msgid "Öffentliche, anonymisierte Gemeindezählung; bei weniger als drei Personen zeigen wir nur «< 3»"
 msgstr "Conteggio pubblico e anonimo della comunità; in meno di tre persone, mostriamo solo '3'"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/finance_review.html:8
+msgid "Öffentlichen Stand ansehen"
+msgstr "Visualizzare la versione pubblicata"
+
 #. Draft translation; native language and domain review pending.
 #: templates/verein/events.html:9
 msgid "Öffentlicher HTTPS-Anmeldelink"
 msgstr "Collegamento pubblico alla registrazione HTTPS"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/finance_review.html:6
+msgid "Öffentlicher Prüfstand"
+msgstr "Prova pubblica"
 
 #. Draft translation; native language and domain review pending.
 #: templates/advisories.html:65 templates/equipment_form.html:21

@@ -10,6 +10,7 @@ from store import (
     equipment,
     telemetry,
     verein,
+    verein_finance,
     verein_meetups,
 )
 
@@ -98,6 +99,7 @@ def create_tables():
             contact_request.create_tables(cur)
             verein.create_tables(cur)
             verein_meetups.create_tables(cur)
+            verein_finance.create_tables(cur)
             equipment.create_tables(cur)
             advisories.create_tables(cur)
 

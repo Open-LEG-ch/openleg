@@ -70,3 +70,91 @@ approval references or notes. Text escaping and UTF-8 line folding follow
 
 Native-language review and real dates/people remain release prerequisites.
 Fixtures must never be imported as actual public events.
+
+## Quarterly financial reports
+
+`/verein/vorstand/finanzen` prepares immutable CHF reporting snapshots. This is
+association reporting, separate from electricity billing, dues receipt matching,
+payment authorisation and bank execution. Actual board approval of the complete
+account/provider scope, sanitisation, quarterly cadence, evidence access and
+independent review process must be referenced. Include all controlled accounts,
+including dormant and provider accounts. Foreign-currency holdings or missing
+sources prevent a claim of complete CHF coverage. No actual financial records
+or balances are seeded by the application.
+
+Paste the three CSV tables using the downloadable column templates. Use commas,
+ISO dates and positive CHF amounts with a decimal point and at most two decimal
+places, without grouping separators. Only completed calendar quarters are
+accepted. Empty bookings and commitments use their header without data rows.
+Each table is limited to 3,000 rows and 800,000 characters. Quoted CSV cells may
+contain commas or line breaks. An invalid preparation retains the pasted input.
+
+- `balances`: one row per `(account_id, fund)`. Account kinds are `bank` or
+  `clearing`; funds are `general`, `reserve`, `restricted` or `held`. Include
+  private statement references. `opening_chf` and `closing_chf` contain confirmed
+  balances; unconfirmed provider payments go only in `pending_chf` on a clearing
+  row. They never increase receipts or spendable funds.
+- `bookings`: source IDs must be unique across the association, namespaced by
+  actual source when providers reuse local IDs. Keep private statement/receipt
+  references in `private_evidence`. Every booking has a date, positive amount,
+  category, four public purposes and a redacted evidence code consisting of
+  3–40 uppercase letters, digits or hyphens. These codes identify separately
+  redacted evidence, never a raw statement, donor or account reference.
+- `commitments`: record each outstanding unpaid commitment once, with its fund,
+  positive amount, unique source reference and private evidence. Commitments
+  remain separate from already paid expenses. Reconcile outstanding invoices
+  against actual payments before preparing this table.
+
+Receipt categories are `starting_contribution`, `membership`, `donation`,
+`grant` and `held`. Accepted receipts require an actual private independence
+assessment reference in `funding_check`; unknown or prohibited incoming money
+remains in the held fund pending review or refund. Holding money does not mean
+accepting its funding. Releasing held money through an allocation also requires
+that review. Refunds use `refund`. Fees use `provider_fee` or `bank_fee`.
+Expenses use `hosting`, `administration`, `community`, `development` or `other`.
+Actual expenses remain reportable even if an approval failure needs investigation.
+A source reference does not establish two-person spending approval.
+
+A `transfer` uses category `internal`, a destination account and the same fund;
+a provider's net payout is a transfer, never a second receipt. An `allocation`
+also uses `internal` and changes fund within the same account. Its private
+source must include the actual decision, for example a reserve release. Other
+bookings leave the destination columns empty. External receipts add to the
+source account/fund; refunds, fees, expenses and internal movements subtract.
+Each closing account/fund balance must reconcile exactly. Internal movements
+cancel from consolidated income and expenditure. Negative statement balances
+are not supported by this first workflow; an overdraft needs a reviewed
+accounting extension, rather than omission from the scope.
+
+The public snapshot contains only dates, random stable booking IDs, CHF amounts,
+kind/category, four reviewed purposes, redacted evidence codes, totals and fund
+summaries. It contains no private account keys, source IDs, original evidence,
+reviewer IDs or donor/member details. Free text, including a correction reason,
+requires actual redaction review; field selection alone cannot anonymise prose.
+Donor recognition is a separate opt-in process.
+
+The preparer cannot publish their own report. A different currently authorised
+person checks original sources, all-funds coverage, reconciliation and every
+public field, then records actual review evidence. This publishes a fixed
+version; it is not a statutory audit or annual review. Preparation alone is
+never public. Public empty reports do not imply a zero balance, unavailable
+storage returns 503, and a missing latest completed quarter is explicit.
+
+Use the copy action to prepare a correction without editing an earlier snapshot.
+Every new version needs a public reason. Source IDs keep stable public booking
+IDs in the same quarter and cannot reappear in another quarter. Published source
+rows cannot silently disappear. Prior published versions remain downloadable.
+Publish consecutive quarters from the declared opening period. Opening balances
+must match the preceding published closing balances. An earlier correction
+cannot invalidate the next published quarter; such a balance restatement needs
+a separately reviewed process covering every affected period.
+
+Available budget means confirmed general bank funds minus general unpaid
+commitments. It excludes provider clearing, pending payments, reserve,
+restricted and held funds. A negative value explicitly shows a shortfall.
+The native worked fixture has CHF 4,000 opening bank cash, CHF 300 gross receipts,
+CHF 20 refunded, CHF 2 fees and CHF 30 expenses, leaving CHF 4,248 cash. The
+provider's CHF 98 payout and a CHF 100 bank transfer do not increase income.
+CHF 50 pending is separate. With CHF 3,000 reserve, CHF 200 restricted and
+CHF 120 general commitments, spendable bank funds are CHF 928. These values are
+fictional test evidence, not actual association balances.
