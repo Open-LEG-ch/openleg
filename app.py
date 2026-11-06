@@ -343,12 +343,21 @@ def leg_check():
         profile = matches[0]
     operators = []
     entries = []
+    registry_unavailable = False
     if profile:
         tariffs = db.get_elcom_tariffs(profile["bfs_number"])
         operators = sorted(
             {t["operator_name"] for t in tariffs if t.get("operator_name")}
         )
-        entries = db.list_registry_entries(bfs_number=profile["bfs_number"])
+        if current_app.config.get("SITE_RELEASE_ENABLED") is True:
+            try:
+                entries = db.read_public_registry(
+                    filters={"bfs_number": profile["bfs_number"]}
+                )["entries"]
+            except db.PublicRegistryUnavailable:
+                registry_unavailable = True
+        else:
+            entries = db.list_registry_entries(bfs_number=profile["bfs_number"])
     return render_city_template(
         "leg_verzeichnis/leg_check.html",
         canonical_path="/leg-check",
@@ -357,7 +366,8 @@ def leg_check():
         matches=matches,
         operators=operators,
         entries=entries,
-    )
+        registry_unavailable=registry_unavailable,
+    ), 503 if registry_unavailable else 200
 
 
 @main_bp.route("/pricing")
@@ -474,6 +484,8 @@ def sitemap_xml():
                 "/kontakt",
                 "/verein",
                 "/veranstaltungen",
+                "/leg-verzeichnis",
+                "/leg-check",
             )
             pages.extend((path, "0.7", "monthly", current_date) for path in paths)
             pages = [

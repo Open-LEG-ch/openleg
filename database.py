@@ -355,6 +355,7 @@ from store.referral import (  # noqa: F401
     get_referral_stats,
 )
 from store.registry import (  # noqa: F401
+    PublicRegistryUnavailable,
     get_registry_entries_needing_verification,
     get_registry_entry,
     get_registry_entry_by_claim_token,
@@ -364,6 +365,7 @@ from store.registry import (  # noqa: F401
     list_registry_entries,
     mark_registry_entry_claimed,
     mark_registry_entry_verified,
+    read_public_registry,
     save_registry_entry,
     set_registry_claim_token,
     set_registry_verification_token,

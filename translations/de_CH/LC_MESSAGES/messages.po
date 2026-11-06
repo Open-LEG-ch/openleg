@@ -76,7 +76,7 @@ msgstr[1] "%(count)s Tage"
 msgid "%(count)s interessierte Person in derselben Gemeinde."
 msgstr "%(count)s interessierte Person in derselben Gemeinde."
 
-#: verein_routes.py:420
+#: verein_routes.py:419 verein_routes.py:420
 #, python-format
 msgid "%(count)s neue Beitragsjahre erfasst. Benachrichtigungen werden erst über den Versand ausgelöst."
 msgstr "%(count)s neue Beitragsjahre erfasst. Benachrichtigungen werden erst über den Versand ausgelöst."
@@ -413,7 +413,7 @@ msgstr ". Neue Logik beginnt mit einem fehlschlagenden Test. Vor einem Pull Requ
 msgid ". Nächste Prüfung fällig:"
 msgstr ". Nächste Prüfung fällig:"
 
-#: templates/leg_verzeichnis/leg_check.html:72
+#: templates/leg_verzeichnis/leg_check.html:72 templates/leg_verzeichnis/leg_check.html:74
 msgid ". Ob ein vZEV möglich ist, bestätigt Ihr Netzbetreiber."
 msgstr ". Ob ein vZEV möglich ist, bestätigt Ihr Netzbetreiber."
 
@@ -872,11 +872,11 @@ msgstr "Adresse ist erforderlich"
 msgid "Adresse ist zu kurz"
 msgstr "Adresse ist zu kurz"
 
-#: app.py:518 app.py:521 app.py:546 app.py:548
+#: app.py:518 app.py:521 app.py:546 app.py:548 app.py:558 app.py:560
 msgid "Adresse konnte nicht analysiert werden."
 msgstr "Adresse konnte nicht analysiert werden."
 
-#: app.py:510 app.py:513 app.py:538 app.py:540
+#: app.py:510 app.py:513 app.py:538 app.py:540 app.py:550 app.py:552
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr "Adresse konnte nicht eindeutig geprüft werden."
 
@@ -1026,13 +1026,17 @@ msgstr "Alle Gemeindedaten sind frei über unsere REST API verfügbar. Kein API-
 msgid "Alle Grössen"
 msgstr "Alle Grössen"
 
-#: municipality.py:441 rangliste.py:52
+#: municipality.py:441 rangliste.py:52 templates/leg_verzeichnis/liste.html:12
 msgid "Alle Kantone"
 msgstr "Alle Kantone"
 
 #: templates/leg_dashboard.html:216
 msgid "Alle Mitglieder"
 msgstr "Alle Mitglieder"
+
+#: templates/leg_verzeichnis/liste.html:13
+msgid "Alle Status"
+msgstr "Alle Status"
 
 #: templates/how-it-works.html:128
 msgid ""
@@ -1666,7 +1670,7 @@ msgstr ""
 #: templates/gemeinde/pilotgemeinde.html:45 templates/gemeinde/profil.html:136
 #: templates/gemeinde/rangliste.html:32 templates/gemeinde/rangliste_fortschritte.html:36
 #: templates/gemeinde/vergleich.html:30 templates/gemeinde/verzeichnis.html:23
-#: templates/leg_verzeichnis/leg_check.html:65
+#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/leg_check.html:67
 msgid "BFE Sonnendach"
 msgstr "BFE Sonnendach"
 
@@ -1971,6 +1975,7 @@ msgstr "Berücksichtigt der Rechner Investitionskosten?"
 msgid "Beschlossene Statuten und Aufnahmebedingungen"
 msgstr "Beschlossene Statuten und Aufnahmebedingungen"
 
+#: templates/release/community.html:5
 msgid ""
 "Beschreiben Sie auf GitHub das erwartete Verhalten, die verwendete Version und die Schritte zum "
 "Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und echte Messdaten aus "
@@ -2105,7 +2110,7 @@ msgstr ""
 "Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren"
 " Sie diese E-Mail."
 
-#: app.py:740 app.py:743 app.py:768 app.py:770
+#: app.py:740 app.py:743 app.py:768 app.py:770 app.py:780 app.py:782
 #, python-format
 msgid ""
 "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen Gebietsanfrage bei OpenLEG "
@@ -2423,6 +2428,7 @@ msgstr "Bitte geben Sie höchstens %(value)s Zeichen ein."
 msgid "Bitte geben Sie mindestens %(value)s Zeichen ein."
 msgstr "Bitte geben Sie mindestens %(value)s Zeichen ein."
 
+#: templates/leg_verzeichnis/leg_check.html:54 templates/leg_verzeichnis/liste.html:17
 #: templates/telemetry_dashboard.html:46 templates/telemetry_shared.html:19
 msgid "Bitte laden Sie die Seite später erneut."
 msgstr "Bitte laden Sie die Seite später erneut."
@@ -2458,6 +2464,10 @@ msgid ""
 msgstr ""
 "Bitte prüfen Sie die Angaben. Für «Als erledigt angegeben» brauchen Sie eine datierte Quelle. Das"
 " Datum darf nicht in der Zukunft liegen."
+
+#: site_release.py:87
+msgid "Bitte prüfen Sie die Suchangaben."
+msgstr "Bitte prüfen Sie die Suchangaben."
 
 #: templates/gemeinde/dashboard.html:159
 msgid "Bitte registrieren Sie zuerst Ihre Gemeinde."
@@ -2760,6 +2770,14 @@ msgstr "Das Treffen wird nicht aufgezeichnet. Veröffentlicht werden nur ausdrü
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr "Das Verteilmodell der Richtlinie ist ungültig."
 
+#: templates/leg_verzeichnis/liste.html:21
+msgid ""
+"Das Verzeichnis enthält nur freigeschaltete Selbstauskünfte. Ein fehlender Eintrag sagt nichts "
+"über die Eignung einer Adresse aus."
+msgstr ""
+"Das Verzeichnis enthält nur freigeschaltete Selbstauskünfte. Ein fehlender Eintrag sagt nichts "
+"über die Eignung einer Adresse aus."
+
 #: dashboard.py:1046
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr "Das Vier-Augen-Prinzip konnte nicht geändert werden."
@@ -2933,7 +2951,8 @@ msgstr "Datenschutzstufen:"
 
 #: templates/gemeinde/pilotgemeinde.html:45 templates/gemeinde/profil.html:136
 #: templates/leg_kalkulator.html:279 templates/leg_verzeichnis/detail.html:56
-#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/liste.html:80
+#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/leg_check.html:67
+#: templates/leg_verzeichnis/liste.html:80
 msgid "Datenstand"
 msgstr "Datenstand"
 
@@ -3319,7 +3338,8 @@ msgstr ""
 msgid "Der Vorstand bestätigt den Austritt und das wirksame Datum gemäss den beschlossenen Statuten."
 msgstr "Der Vorstand bestätigt den Austritt und das wirksame Datum gemäss den beschlossenen Statuten."
 
-#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:375
+#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:362
+#: verein_routes.py:375
 #, python-format
 msgid ""
 "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
@@ -3411,7 +3431,7 @@ msgstr ""
 " keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung "
 "anschliessend."
 
-#: app.py:814 app.py:817 app.py:842 app.py:844
+#: app.py:814 app.py:817 app.py:842 app.py:844 app.py:854 app.py:856
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -4156,7 +4176,8 @@ msgstr ""
 msgid "Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der Erinnerung."
 msgstr "Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der Erinnerung."
 
-#: i18n.py:80 i18n.py:91 i18n.py:98 i18n.py:99 verein_event_routes.py:34 verein_routes.py:37
+#: i18n.py:80 i18n.py:91 i18n.py:98 i18n.py:99 templates/leg_verzeichnis/leg_check.html:54
+#: templates/leg_verzeichnis/liste.html:17 verein_event_routes.py:34 verein_routes.py:37
 #: verein_routes.py:39 verein_routes.py:63
 msgid "Dienst vorübergehend nicht verfügbar"
 msgstr "Dienst vorübergehend nicht verfügbar"
@@ -4194,7 +4215,7 @@ msgstr ""
 "Diese Angaben bleiben bei Ihrem Eigentümerzugang. OpenLEG prüft den Nachweis nicht. Eine "
 "Bestätigung ändert weder die Firmwarezuordnung noch den Quellenstatus."
 
-#: templates/leg_verzeichnis/leg_check.html:69
+#: templates/leg_verzeichnis/leg_check.html:69 templates/leg_verzeichnis/leg_check.html:71
 msgid ""
 "Diese Angaben stammen aus offenen Daten (ElCom, BFE Sonnendach) und dem offenen Verzeichnis. "
 "OpenLEG prüft keine Netz-Topologie. Die abschliessende Bestätigung, welche Adressen zusammen eine"
@@ -5378,6 +5399,10 @@ msgstr "Ergebnis simulieren"
 msgid "Ergebnis zum Fernzugriff"
 msgstr "Ergebnis zum Fernzugriff"
 
+#: templates/leg_verzeichnis/liste.html:20
+msgid "Ergebnisseiten"
+msgstr "Ergebnisseiten"
+
 #: templates/emails/day_7_consumption.html:31
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Ergänzen Sie Ihren Stromverbrauch"
@@ -5411,6 +5436,10 @@ msgstr "Erledigt"
 #: templates/datenschutz.html:43
 msgid "Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeinde"
 msgstr "Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeinde"
+
+#: templates/leg_verzeichnis/liste.html:17
+msgid "Erneut versuchen"
+msgstr "Erneut versuchen"
 
 #: templates/leg_billing.html:144
 msgid "Ersatzrechnung wählen"
@@ -5537,7 +5566,7 @@ msgstr ""
 "Falls die Adresse zu einem bestätigten Antrag gehört, wird ein Zugangslink versendet. Bei einem "
 "Versandproblem können Sie es erneut versuchen."
 
-#: app.py:757 app.py:760 app.py:785 app.py:787
+#: app.py:757 app.py:760 app.py:785 app.py:787 app.py:797 app.py:799
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 
@@ -5762,6 +5791,10 @@ msgstr "Fragen zu dieser Rechnung"
 msgid "Fragen zum Betrieb?"
 msgstr "Fragen zum Betrieb?"
 
+#: templates/leg_verzeichnis/detail.html:63 templates/leg_verzeichnis/liste.html:22
+msgid "Fragen zum Verzeichnis"
+msgstr "Fragen zum Verzeichnis"
+
 #: templates/emails/day_14_formation.html:82
 msgid "Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns:"
 msgstr "Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns:"
@@ -5922,7 +5955,7 @@ msgstr "Für Gemeinden:"
 msgid "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 msgstr "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 
-#: verein_routes.py:361
+#: verein_routes.py:350 verein_routes.py:361
 #, python-format
 msgid ""
 "Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am %(due_on)s fällig."
@@ -5964,7 +5997,7 @@ msgstr ""
 "Für alle Teilnehmenden sind Smart Meter der BKW nötig. Fehlende Geräte baut die BKW im Rahmen der"
 " Anmeldung ein."
 
-#: verein_routes.py:350
+#: verein_routes.py:341 verein_routes.py:350
 #, python-format
 msgid ""
 "Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von "
@@ -6039,7 +6072,7 @@ msgstr ""
 "Für dieses Zeitfenster liegt bereits eine Quelle vor. Prüfen Sie das Original und ziehen Sie es "
 "vor einer Korrektur zurück."
 
-#: templates/leg_verzeichnis/leg_check.html:72
+#: templates/leg_verzeichnis/leg_check.html:72 templates/leg_verzeichnis/leg_check.html:74
 msgid "Für direkt benachbarte Häuser kommt je nach Anschluss auch ein vZEV infrage."
 msgstr "Für direkt benachbarte Häuser kommt je nach Anschluss auch ein vZEV infrage."
 
@@ -6148,7 +6181,7 @@ msgstr "Gebiet und Messung:"
 msgid "Gebiet und Voraussetzungen prüfen"
 msgstr "Gebiet und Voraussetzungen prüfen"
 
-#: app.py:676 app.py:679 app.py:704 app.py:706
+#: app.py:676 app.py:679 app.py:704 app.py:706 app.py:716 app.py:718
 msgid "Gebäude nicht gefunden."
 msgstr "Gebäude nicht gefunden."
 
@@ -6317,7 +6350,7 @@ msgid "Gemeindeverwaltung"
 msgstr "Gemeindeverwaltung"
 
 #: municipality_profile.py:244 templates/gemeinde/profil.html:24 templates/gemeinde/verzeichnis.html:17
-#: templates/leg_verzeichnis/leg_check.html:90
+#: templates/leg_verzeichnis/leg_check.html:90 templates/leg_verzeichnis/leg_check.html:92
 msgid "Gemeindeverzeichnis"
 msgstr "Gemeindeverzeichnis"
 
@@ -6731,6 +6764,7 @@ msgstr ""
 "des Netzbetreibers noch die Verantwortung Ihrer LEG."
 
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
+#: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:13
 msgid "Gründung"
 msgstr "Gründung"
 
@@ -7164,7 +7198,8 @@ msgstr "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 
-#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:340 verein_routes.py:344
+#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:335 verein_routes.py:340
+#: verein_routes.py:344
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
@@ -7175,7 +7210,8 @@ msgstr ""
 "\n"
 "Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch."
 
-#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:334 verein_routes.py:338
+#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:329 verein_routes.py:334
+#: verein_routes.py:338
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
@@ -7252,7 +7288,7 @@ msgstr "Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt."
 msgid "Ihre Aufgabe"
 msgstr "Ihre Aufgabe"
 
-#: verein_routes.py:370
+#: verein_routes.py:357 verein_routes.py:370
 msgid ""
 "Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine "
 "Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über Ihren persönlichen "
@@ -7843,7 +7879,8 @@ msgstr "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 
 #: templates/gemeinde/rangliste.html:45 templates/gemeinde/rangliste.html:85
 #: templates/gemeinde/rangliste_fortschritte.html:49 templates/leg_verzeichnis/eintragen.html:58
-#: templates/leg_verzeichnis/liste.html:52 templates/utility/register.html:41
+#: templates/leg_verzeichnis/liste.html:12 templates/leg_verzeichnis/liste.html:52
+#: templates/utility/register.html:41
 msgid "Kanton"
 msgstr "Kanton"
 
@@ -8004,8 +8041,8 @@ msgstr "Keine Cloud-Abhängigkeit angegeben"
 msgid "Keine Datei ausgewählt"
 msgstr "Keine Datei ausgewählt"
 
-#: app.py:495 app.py:498 app.py:523 app.py:525 app.py:547 app.py:550 app.py:575 app.py:577 app.py:600
-#: app.py:603 app.py:628 app.py:630
+#: app.py:495 app.py:498 app.py:523 app.py:525 app.py:535 app.py:537 app.py:547 app.py:550 app.py:575
+#: app.py:577 app.py:587 app.py:589 app.py:600 app.py:603 app.py:628 app.py:630 app.py:640 app.py:642
 msgid "Keine Daten empfangen."
 msgstr "Keine Daten empfangen."
 
@@ -8017,7 +8054,7 @@ msgstr "Keine Datenverkäufe"
 msgid "Keine ElCom-Daten hinterlegt."
 msgstr "Keine ElCom-Daten hinterlegt."
 
-#: templates/leg_verzeichnis/leg_check.html:89
+#: templates/leg_verzeichnis/leg_check.html:89 templates/leg_verzeichnis/leg_check.html:91
 #, python-format
 msgid "Keine Gemeinde für \"%(q)s\" gefunden."
 msgstr "Keine Gemeinde für \"%(q)s\" gefunden."
@@ -8042,7 +8079,7 @@ msgstr "Keine Gutschriften"
 msgid "Keine Gutschriften."
 msgstr "Keine Gutschriften."
 
-#: templates/leg_verzeichnis/liste.html:84
+#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:84
 msgid "Keine LEGs gefunden"
 msgstr "Keine LEGs gefunden"
 
@@ -8110,7 +8147,7 @@ msgstr "Keine angegeben"
 msgid "Keine ausstehenden Einträge"
 msgstr "Keine ausstehenden Einträge"
 
-#: app.py:525 app.py:528 app.py:553 app.py:555
+#: app.py:525 app.py:528 app.py:553 app.py:555 app.py:565 app.py:567
 msgid "Keine direkten Partner gefunden."
 msgstr "Keine direkten Partner gefunden."
 
@@ -8490,7 +8527,7 @@ msgstr "LEG gründen: Anleitung für die Schweiz | OpenLEG"
 msgid "LEG gründen: der nächste Schritt ist klar | OpenLEG"
 msgstr "LEG gründen: der nächste Schritt ist klar | OpenLEG"
 
-#: templates/leg_verzeichnis/leg_check.html:75
+#: templates/leg_verzeichnis/leg_check.html:75 templates/leg_verzeichnis/leg_check.html:77
 msgid "LEG gründen: so geht es"
 msgstr "LEG gründen: so geht es"
 
@@ -8599,16 +8636,17 @@ msgstr "LEG-Preis"
 msgid "LEG-Rabatt:"
 msgstr "LEG-Rabatt:"
 
-#: templates/leg_verzeichnis/liste.html:57
+#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:57
 msgid "LEG-Status"
 msgstr "LEG-Status"
 
 #: templates/admin/ops.html:35 templates/fuer_gemeinden.html:107
-#: templates/leg_verzeichnis/detail.html:56 templates/leg_verzeichnis/liste.html:40
+#: templates/leg_verzeichnis/detail.html:56 templates/leg_verzeichnis/leg_check.html:66
+#: templates/leg_verzeichnis/liste.html:40 templates/release/navigation.html:8
 msgid "LEG-Verzeichnis"
 msgstr "LEG-Verzeichnis"
 
-#: templates/leg_verzeichnis/liste.html:7
+#: templates/leg_verzeichnis/liste.html:3 templates/leg_verzeichnis/liste.html:7
 msgid "LEG-Verzeichnis: Lokale Elektrizitätsgemeinschaften in der Schweiz | OpenLEG"
 msgstr "LEG-Verzeichnis: Lokale Elektrizitätsgemeinschaften in der Schweiz | OpenLEG"
 
@@ -8927,7 +8965,7 @@ msgstr ""
 msgid "Lokale Elektrizitätsgemeinschaften in %(profile_name)s"
 msgstr "Lokale Elektrizitätsgemeinschaften in %(profile_name)s"
 
-#: templates/leg_verzeichnis/liste.html:41
+#: templates/leg_verzeichnis/liste.html:7 templates/leg_verzeichnis/liste.html:41
 msgid "Lokale Elektrizitätsgemeinschaften in der Schweiz"
 msgstr "Lokale Elektrizitätsgemeinschaften in der Schweiz"
 
@@ -9024,7 +9062,7 @@ msgstr "Höchstzahl der Ergebnisse"
 msgid "Mehr zur Abrechnungsrichtlinie"
 msgstr "Mehr zur Abrechnungsrichtlinie"
 
-#: templates/leg_verzeichnis/leg_check.html:80
+#: templates/leg_verzeichnis/leg_check.html:80 templates/leg_verzeichnis/leg_check.html:82
 msgid "Mehrere Gemeinden gefunden"
 msgstr "Mehrere Gemeinden gefunden"
 
@@ -9617,7 +9655,7 @@ msgstr "Name der LEG *"
 msgid "Name des Netzbetreibers"
 msgstr "Name des Netzbetreibers"
 
-#: templates/leg_verzeichnis/liste.html:50
+#: templates/leg_verzeichnis/liste.html:10 templates/leg_verzeichnis/liste.html:50
 msgid "Name oder Ort"
 msgstr "Name oder Ort"
 
@@ -9997,7 +10035,7 @@ msgstr "Noch keine Gemeinden in dieser Liga. Filter zurücksetzen oder später e
 msgid "Noch keine Interessenmeldungen"
 msgstr "Noch keine Interessenmeldungen"
 
-#: templates/leg_verzeichnis/leg_check.html:61
+#: templates/leg_verzeichnis/leg_check.html:61 templates/leg_verzeichnis/leg_check.html:62
 #, python-format
 msgid "Noch keine LEG aus %(profile_name)s eingetragen. Vielleicht gründen Sie die erste?"
 msgstr "Noch keine LEG aus %(profile_name)s eingetragen. Vielleicht gründen Sie die erste?"
@@ -10156,7 +10194,8 @@ msgstr "Nächste Aktion"
 msgid "Nächste Schritte"
 msgstr "Nächste Schritte"
 
-#: templates/verein/queue.html:15 templates/verein/queue.html:17
+#: templates/leg_verzeichnis/liste.html:20 templates/verein/queue.html:15
+#: templates/verein/queue.html:17
 msgid "Nächste Seite"
 msgstr "Nächste Seite"
 
@@ -10200,7 +10239,7 @@ msgstr "Oder manuell aus dem Quellcode:"
 msgid "Offen"
 msgstr "Offen"
 
-#: templates/leg_verzeichnis/liste.html:42
+#: templates/leg_verzeichnis/liste.html:7 templates/leg_verzeichnis/liste.html:42
 msgid ""
 "Offen für jede LEG, unabhängig davon, welche Plattform bei der Gründung half. Einträge sind "
 "moderierte Selbstauskünfte: OpenLEG prüft keine Netz-Topologie und keine Eignung einzelner "
@@ -10263,6 +10302,14 @@ msgstr "Offene Software und praktisches Wissen für unabhängige Stromgemeinscha
 #: templates/leg_verzeichnis/liste.html:21
 msgid "Offenes LEG-Verzeichnis Schweiz"
 msgstr "Offenes LEG-Verzeichnis Schweiz"
+
+#: templates/leg_verzeichnis/liste.html:3
+msgid ""
+"Offenes Verzeichnis Schweizer Lokaler Elektrizitätsgemeinschaften (LEG), unabhängig davon, welche"
+" Plattform bei der Gründung half."
+msgstr ""
+"Offenes Verzeichnis Schweizer Lokaler Elektrizitätsgemeinschaften (LEG), unabhängig davon, welche"
+" Plattform bei der Gründung half."
 
 #: templates/leg_verzeichnis/liste.html:8
 msgid ""
@@ -10405,7 +10452,8 @@ msgstr "OpenLEG Modellrechnung"
 msgid "OpenLEG Public API"
 msgstr "Öffentliche OpenLEG-API"
 
-#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/liste.html:80
+#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/leg_check.html:67
+#: templates/leg_verzeichnis/liste.html:80
 msgid "OpenLEG Registereinträge"
 msgstr "OpenLEG Registereinträge"
 
@@ -10750,7 +10798,7 @@ msgstr "OpenLEG: Ihr Login-Link"
 msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr "OpenLEG: Interessenmeldung bestätigen"
 
-#: app.py:738 app.py:741 app.py:766 app.py:768
+#: app.py:738 app.py:741 app.py:766 app.py:768 app.py:778 app.py:780
 msgid "OpenLEG: Löschung bestätigen"
 msgstr "OpenLEG: Löschung bestätigen"
 
@@ -10796,7 +10844,8 @@ msgid "PDF-Download"
 msgstr "PDF-Download"
 
 #: templates/admin/ops.html:88 templates/index.html:455 templates/leg_verzeichnis/eintragen.html:47
-#: templates/leg_verzeichnis/liste.html:51 templates/partials/address_intake.html:78
+#: templates/leg_verzeichnis/liste.html:11 templates/leg_verzeichnis/liste.html:51
+#: templates/partials/address_intake.html:78
 msgid "PLZ"
 msgstr "PLZ"
 
@@ -10851,7 +10900,7 @@ msgstr "Parameter"
 msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr "Parse-Fehler mit Delimiter '%(delimiter)s'."
 
-#: app.py:532 app.py:535 app.py:560 app.py:562
+#: app.py:532 app.py:535 app.py:560 app.py:562 app.py:572 app.py:574
 msgid "Partner gefunden!"
 msgstr "Partner gefunden!"
 
@@ -10859,7 +10908,7 @@ msgstr "Partner gefunden!"
 msgid "Passwort"
 msgstr "Passwort"
 
-#: app.py:1001 app.py:1004 app.py:1029 app.py:1031
+#: app.py:1001 app.py:1004 app.py:1029 app.py:1031 app.py:1041 app.py:1043
 msgid "Period not found"
 msgstr "Period not found"
 
@@ -10914,6 +10963,10 @@ msgstr "Pflichten"
 #: templates/gemeinde/pilotgemeinde.html:12
 msgid "Pilotgemeinde"
 msgstr "Pilotgemeinde"
+
+#: templates/leg_verzeichnis/liste.html:13
+msgid "Planung"
+msgstr "Planung"
 
 #: templates/index.html:217 templates/index.html:220
 msgid "Plattform"
@@ -11218,7 +11271,7 @@ msgstr "Prüfen Sie die Gemeinschaftsvereinbarung."
 msgid "Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."
 msgstr "Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."
 
-#: templates/leg_verzeichnis/leg_check.html:90
+#: templates/leg_verzeichnis/leg_check.html:90 templates/leg_verzeichnis/leg_check.html:92
 msgid "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
 msgstr "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
 
@@ -11972,6 +12025,11 @@ msgstr ""
 "bilden. OpenLEG prüft Ihre Adresse, zeigt das bestätigte Interesse in Ihrer Gemeinde und führt "
 "durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."
 
+#: templates/leg_verzeichnis/liste.html:20
+#, python-format
+msgid "Seite %(page)s"
+msgstr "Seite %(page)s"
+
 #: i18n.py:68 i18n.py:79 i18n.py:86 i18n.py:87
 msgid "Seite nicht gefunden"
 msgstr "Seite nicht gefunden"
@@ -12005,11 +12063,11 @@ msgstr ""
 "Server, Domain, E-Mail-Versand, Sicherungen und Monitoring benötigen einen Betreiber und können "
 "laufende Kosten verursachen."
 
-#: app.py:691 app.py:694 app.py:719 app.py:721
+#: app.py:691 app.py:694 app.py:719 app.py:721 app.py:731 app.py:733
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr "Server-Fehler beim Verarbeiten der Messdaten."
 
-#: app.py:540 app.py:543 app.py:568 app.py:570
+#: app.py:540 app.py:543 app.py:568 app.py:570 app.py:580 app.py:582
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr "Server-Fehler. Bitte später erneut versuchen."
 
@@ -12746,7 +12804,12 @@ msgstr "Störungsmeldung"
 msgid "Suche aktuell nicht verfügbar."
 msgstr "Suche aktuell nicht verfügbar."
 
-#: templates/gemeinde/verzeichnis.html:35 templates/leg_verzeichnis/liste.html:62
+#: templates/leg_verzeichnis/liste.html:16 templates/leg_verzeichnis/liste.html:21
+msgid "Suche zurücksetzen"
+msgstr "Suche zurücksetzen"
+
+#: templates/gemeinde/verzeichnis.html:35 templates/leg_verzeichnis/liste.html:14
+#: templates/leg_verzeichnis/liste.html:62
 msgid "Suchen"
 msgstr "Suchen"
 
@@ -13337,7 +13400,7 @@ msgstr "Verein: E-Mail bestätigen"
 msgid "Verein: Entscheid zum Mitgliedsantrag"
 msgstr "Verein: Entscheid zum Mitgliedsantrag"
 
-#: verein_routes.py:398
+#: verein_routes.py:385 verein_routes.py:398
 msgid "Verein: Mitgliedschaft und Jahresbeitrag"
 msgstr "Verein: Mitgliedschaft und Jahresbeitrag"
 
@@ -13740,7 +13803,8 @@ msgstr ""
 msgid "Vorher prüfen"
 msgstr "Vorher prüfen"
 
-#: templates/verein/queue.html:15 templates/verein/queue.html:17
+#: templates/leg_verzeichnis/liste.html:20 templates/verein/queue.html:15
+#: templates/verein/queue.html:17
 msgid "Vorherige Seite"
 msgstr "Vorherige Seite"
 
@@ -13824,7 +13888,7 @@ msgstr "Was bringt eine LEG konkret?"
 msgid "Was das Skript ausführt"
 msgstr "Was das Skript ausführt"
 
-#: templates/leg_verzeichnis/leg_check.html:68
+#: templates/leg_verzeichnis/leg_check.html:68 templates/leg_verzeichnis/leg_check.html:70
 msgid "Was dieser Check bedeutet"
 msgstr "Was dieser Check bedeutet"
 
@@ -13860,7 +13924,7 @@ msgstr "Was ist eine Lokale Elektrizitätsgemeinschaft?"
 msgid "Was ist in Ihrer Gemeinde möglich?"
 msgstr "Was ist in Ihrer Gemeinde möglich?"
 
-#: templates/leg_verzeichnis/liste.html:45
+#: templates/leg_verzeichnis/liste.html:7 templates/leg_verzeichnis/liste.html:45
 msgid "Was ist in meiner Gemeinde möglich?"
 msgstr "Was ist in meiner Gemeinde möglich?"
 
@@ -14176,7 +14240,7 @@ msgstr ""
 "Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine passende Gruppe entsteht, "
 "erhalten Sie die nächsten Schritte."
 
-#: app.py:802 app.py:805 app.py:830 app.py:832
+#: app.py:802 app.py:805 app.py:830 app.py:832 app.py:842 app.py:844
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -14527,7 +14591,8 @@ msgstr "Ziel:"
 msgid "Zielgruppe"
 msgstr "Zielgruppe"
 
-#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:386
+#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:373
+#: verein_routes.py:386
 #, python-format
 msgid ""
 "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist "
@@ -14775,6 +14840,7 @@ msgid "acknowledged"
 msgstr "acknowledged"
 
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
+#: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:13
 msgid "aktiv"
 msgstr "aktiv"
 
@@ -14824,11 +14890,11 @@ msgstr "bis 14 Tage"
 msgid "bis 40"
 msgstr "bis 40"
 
-#: app.py:948 app.py:951 app.py:976 app.py:978
+#: app.py:948 app.py:951 app.py:976 app.py:978 app.py:988 app.py:990
 msgid "building_id required"
 msgstr "building_id required"
 
-#: app.py:670 app.py:673 app.py:698 app.py:700
+#: app.py:670 app.py:673 app.py:698 app.py:700 app.py:710 app.py:712
 msgid "building_id und csv_content erforderlich."
 msgstr "building_id und csv_content erforderlich."
 
@@ -14928,7 +14994,8 @@ msgstr "kWp"
 msgid "kompatibel erreichbar."
 msgstr "kompatibel erreichbar."
 
-#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/liste.html:80
+#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/leg_check.html:67
+#: templates/leg_verzeichnis/liste.html:80
 msgid "laufend aktualisiert"
 msgstr "laufend aktualisiert"
 
@@ -15039,6 +15106,7 @@ msgid "other"
 msgstr "other"
 
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
+#: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:13
 msgid "pausiert"
 msgstr "pausiert"
 
@@ -15047,6 +15115,7 @@ msgid "payment"
 msgstr "payment"
 
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
+#: templates/leg_verzeichnis/leg_check.html:58
 msgid "planung"
 msgstr "planung"
 
@@ -15078,7 +15147,7 @@ msgstr ""
 "speichert Periode, Preise und Positionen. Messdatenimport, Mitgliederzuordnung, CLI-Befehl für "
 "einen Abrechnungslauf und definitive Rechnungsdokumente sind noch kein durchgängiger Ablauf."
 
-#: app.py:667 app.py:670 app.py:695 app.py:697
+#: app.py:667 app.py:670 app.py:695 app.py:697 app.py:707 app.py:709
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr "tier muss 1, 2 oder 3 sein."
 
@@ -15094,7 +15163,7 @@ msgstr "und bleiben über"
 msgid "ungeprüft"
 msgstr "ungeprüft"
 
-#: templates/leg_verzeichnis/leg_check.html:72
+#: templates/leg_verzeichnis/leg_check.html:72 templates/leg_verzeichnis/leg_check.html:74
 msgid "vZEV und LEG vergleichen"
 msgstr "vZEV und LEG vergleichen"
 
