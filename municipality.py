@@ -134,7 +134,11 @@ def _dashboard_context(muni):
         "local_business": gettext_noop("Lokales Unternehmen"),
         "municipality_organisation": gettext_noop("Gemeinde/Organisation"),
     }
-    if subdomain:
+    if current_app.config.get("SANDBOX_SIMULATION"):
+        invite_url = (
+            current_app.config["APP_BASE_URL"].rstrip("/") + "/sandbox/onboarding"
+        )
+    elif subdomain:
         invite_url = f"https://{subdomain}.openleg.ch"
     else:
         invite_url = current_app.config["APP_BASE_URL"].rstrip("/")
