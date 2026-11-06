@@ -45,6 +45,7 @@ import release_mode
 import security_utils
 import site_release
 import tenant as tenant_module
+import verein_commands
 from admin import admin_bp, require_admin
 from advisory_routes import advisory_bp
 from api_public import public_api_bp
@@ -68,6 +69,7 @@ from self_host import self_host_bp
 from telemetry_routes import telemetry_bp
 from translation_markers import gettext_noop
 from utility_portal import utility_bp
+from verein_routes import verein_bp
 
 logger = logging.getLogger(__name__)
 
@@ -1073,6 +1075,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     i18n.init_app(application)
     application.context_processor(private_http.template_context)
     application.context_processor(site_release.template_context)
+    verein_commands.init_app(application)
 
     public_site_base = app_config.validated_public_site_url(
         application.config["PUBLIC_SITE_URL"]
@@ -1110,6 +1113,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         equipment_bp,
         advisory_bp,
         site_release.site_bp,
+        verein_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)

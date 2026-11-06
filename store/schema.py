@@ -3,7 +3,7 @@
 
 import logging
 
-from store import advisories, contact_request, equipment, telemetry
+from store import advisories, contact_request, equipment, telemetry, verein
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +88,7 @@ def create_tables():
             """)
 
             contact_request.create_tables(cur)
+            verein.create_tables(cur)
             equipment.create_tables(cur)
             advisories.create_tables(cur)
 
