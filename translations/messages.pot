@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-06 17:41+0000\n"
+"POT-Creation-Date: 2026-11-06 18:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -72,7 +72,7 @@ msgstr[1] ""
 msgid "%(count)s interessierte Person in derselben Gemeinde."
 msgstr ""
 
-#: verein_routes.py:420
+#: verein_routes.py:419
 #, python-format
 msgid "%(count)s neue Beitragsjahre erfasst. Benachrichtigungen werden erst über den Versand ausgelöst."
 msgstr ""
@@ -1866,9 +1866,9 @@ msgstr ""
 
 #: templates/release/community.html:5
 msgid ""
-"Beschreiben Sie in einem GitHub-Issue das erwartete Verhalten, die verwendete Version und die "
-"Schritte zum Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und echte "
-"Messdaten aus öffentlichen Berichten."
+"Beschreiben Sie auf GitHub das erwartete Verhalten, die verwendete Version und die Schritte zum "
+"Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und echte Messdaten aus "
+"öffentlichen Berichten."
 msgstr ""
 
 #: sandbox_seed.py:79
@@ -3046,7 +3046,7 @@ msgid ""
 " der Gemeinschaft ausgetauschten Strom ab."
 msgstr ""
 
-#: verein_routes.py:375
+#: verein_routes.py:362
 #, python-format
 msgid ""
 "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
@@ -5350,7 +5350,7 @@ msgstr ""
 msgid "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 msgstr ""
 
-#: verein_routes.py:361
+#: verein_routes.py:350
 #, python-format
 msgid ""
 "Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am %(due_on)s fällig."
@@ -5385,7 +5385,7 @@ msgid ""
 " Anmeldung ein."
 msgstr ""
 
-#: verein_routes.py:350
+#: verein_routes.py:341
 #, python-format
 msgid ""
 "Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von "
@@ -6486,7 +6486,7 @@ msgstr ""
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr ""
 
-#: verein_routes.py:344
+#: verein_routes.py:335
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
@@ -6494,7 +6494,7 @@ msgid ""
 "Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch."
 msgstr ""
 
-#: verein_routes.py:338
+#: verein_routes.py:329
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
@@ -6564,7 +6564,7 @@ msgstr ""
 msgid "Ihre Aufgabe"
 msgstr ""
 
-#: verein_routes.py:370
+#: verein_routes.py:357
 msgid ""
 "Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine "
 "Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über Ihren persönlichen "
@@ -12231,7 +12231,7 @@ msgstr ""
 msgid "Verein: E-Mail bestätigen"
 msgstr ""
 
-#: verein_routes.py:398
+#: verein_routes.py:385
 msgid "Verein: Mitgliedschaft und Jahresbeitrag"
 msgstr ""
 
@@ -13310,7 +13310,7 @@ msgstr ""
 msgid "Zielgruppe"
 msgstr ""
 
-#: verein_routes.py:386
+#: verein_routes.py:373
 #, python-format
 msgid ""
 "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist "

@@ -2397,6 +2397,15 @@ msgstr "Il calcolatore tiene conto dei costi d'investimento?"
 msgid "Beschlossene Statuten und Aufnahmebedingungen"
 msgstr "Statuti e condizioni di accoglienza decisi"
 
+msgid ""
+"Beschreiben Sie auf GitHub das erwartete Verhalten, die verwendete Version und die Schritte zum "
+"Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und echte Messdaten aus "
+"öffentlichen Berichten."
+msgstr ""
+"In un GitHub-Issue, descrivere il comportamento previsto, la versione utilizzata e i passaggi da "
+"seguire. Rimuovi i dati personali, le chiavi di accesso e i dati di misura reali dai report "
+"pubblici."
+
 #. Draft translation; native language and domain review pending.
 #: templates/release/community.html:5
 msgid ""

@@ -1971,6 +1971,15 @@ msgstr "Berücksichtigt der Rechner Investitionskosten?"
 msgid "Beschlossene Statuten und Aufnahmebedingungen"
 msgstr "Beschlossene Statuten und Aufnahmebedingungen"
 
+msgid ""
+"Beschreiben Sie auf GitHub das erwartete Verhalten, die verwendete Version und die Schritte zum "
+"Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und echte Messdaten aus "
+"öffentlichen Berichten."
+msgstr ""
+"Beschreiben Sie auf GitHub das erwartete Verhalten, die verwendete Version und die Schritte zum "
+"Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und echte Messdaten aus "
+"öffentlichen Berichten."
+
 #: templates/release/community.html:5
 msgid ""
 "Beschreiben Sie in einem GitHub-Issue das erwartete Verhalten, die verwendete Version und die "

@@ -62,6 +62,14 @@ without code changes.
 | `telemetry_bp` | `telemetry_routes.py` | `/api/telemetry/v1/communities/{community}/installations` |
 | `equipment_bp` | `equipment_routes.py` | `/dashboard/equipment`, `/api/equipment/v1/records` |
 | `advisory_bp` | `advisory_routes.py` | `/api/admin/advisories/v1`, `/dashboard/equipment/{id}/advisories` |
+| `site_bp` | `site_release.py` | Public association, software, knowledge and participation destinations |
+| `verein_bp` | `verein_routes.py` | `/verein` membership and private board administration |
+| `events_bp` | `verein_event_routes.py` | `/veranstaltungen`, `/verein/vorstand/treffen` |
+
+The three association/site blueprints require `SITE_RELEASE_ENABLED`. They remain
+registered when disabled so the public route contract is stable; requests return
+404 until that switch is enabled. Actual intake has further formation, contact
+and privacy prerequisites described in [association administration](verein-administration.md).
 
 ## Route map
 
