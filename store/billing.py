@@ -895,14 +895,14 @@ def prepare_invoice_delivery(invoice_id, community_id, actor_id):
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             invoice = _locked_invoice(cur, invoice_id, community_id)
-            state = _current_invoice_state(cur, invoice_id)
-            if state == "delivered":
-                return {"already_delivered": True, "lifecycle_state": state}
-            billing_lifecycle.next_state(state, "deliver")
             if invoice.get("matched_building_id") is None:
                 raise billing_lifecycle.InvoiceLifecycleError(
                     "Die ursprüngliche Teilnehmerregistrierung fehlt oder hat sich geändert."
                 )
+            state = _current_invoice_state(cur, invoice_id)
+            if state == "delivered":
+                return {"already_delivered": True, "lifecycle_state": state}
+            billing_lifecycle.next_state(state, "deliver")
             policy = _policy_dict(invoice.get("policy_snapshot"))
             method = policy.get("delivery_method")
             if method not in {"email", "download"}:

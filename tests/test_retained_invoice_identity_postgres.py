@@ -226,11 +226,14 @@ def test_changed_draft_registration_cannot_be_approved(village):
 
 
 @pytest.mark.parametrize("delivery_method", ["email", "download"])
-def test_delivery_never_uses_a_replacement_registration_email(village, delivery_method):
+@pytest.mark.parametrize("delivered", [False, True])
+def test_delivery_never_uses_a_replacement_registration_email(
+    village, delivery_method, delivered
+):
     """Both delivery methods refuse a replacement registration with an explicit conflict."""
     client = village.test_client()
     prefix, invoices = _issued(
-        village, client, deliver=False, delivery_method=delivery_method
+        village, client, deliver=delivered, delivery_method=delivery_method
     )
     invoice = invoices["sonnwil-resident"]
     with (
@@ -253,7 +256,7 @@ def test_delivery_never_uses_a_replacement_registration_email(village, delivery_
         cursor.execute(
             "SELECT COUNT(*) FROM invoice_delivery_jobs WHERE invoice_id=%s", (invoice,)
         )
-        assert cursor.fetchone()[0] == 0
+        assert cursor.fetchone()[0] == int(delivered)
 
 
 @pytest.mark.parametrize("reconciliation", [None, "malformed"])
