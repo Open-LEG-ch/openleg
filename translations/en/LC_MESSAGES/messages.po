@@ -2367,6 +2367,14 @@ msgstr "Does the computer take into account investment costs?"
 msgid "Beschlossene Statuten und Aufnahmebedingungen"
 msgstr "Statutes and conditions of admission adopted"
 
+msgid ""
+"Beschreiben Sie auf GitHub das erwartete Verhalten, die verwendete Version und die Schritte zum "
+"Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und echte Messdaten aus "
+"öffentlichen Berichten."
+msgstr ""
+"In a GitHub-issue, describe the expected behavior, version and steps to understand. Remove "
+"personal data, access keys, and real measurement data from public reports."
+
 #. Draft translation; native language and domain review pending.
 #: templates/release/community.html:5
 msgid ""
