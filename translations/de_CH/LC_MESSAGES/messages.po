@@ -76,6 +76,11 @@ msgstr[1] "%(count)s Tage"
 msgid "%(count)s interessierte Person in derselben Gemeinde."
 msgstr "%(count)s interessierte Person in derselben Gemeinde."
 
+#: verein_routes.py:420
+#, python-format
+msgid "%(count)s neue Beitragsjahre erfasst. Benachrichtigungen werden erst über den Versand ausgelöst."
+msgstr "%(count)s neue Beitragsjahre erfasst. Benachrichtigungen werden erst über den Versand ausgelöst."
+
 #: templates/gemeinde/verzeichnis.html:94
 #, python-format
 msgid "%(format_p_population_int_replace)s Einw."
@@ -641,7 +646,7 @@ msgstr "Abgelaufen"
 #: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:187
 #: templates/contact_requests.html:32 templates/leg_dashboard.html:245 templates/leg_dashboard.html:274
 #: templates/sandbox/formation.html:37 templates/sandbox/formation.html:85
-#: templates/sandbox/metering.html:4
+#: templates/sandbox/metering.html:4 verein_routes.py:44
 msgid "Abgelehnt"
 msgstr "Abgelehnt"
 
@@ -653,9 +658,13 @@ msgstr "Abgelehnte Anträge"
 msgid "Abgemeldet"
 msgstr "Abgemeldet"
 
-#: templates/release/events.html:7 templates/verein/events.html:8
+#: templates/release/events.html:7 templates/verein/events.html:8 verein_routes.py:53
 msgid "Abgesagt"
 msgstr "Abgesagt"
+
+#: verein_routes.py:49
+msgid "Abgewiesen"
+msgstr "Abgewiesen"
 
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: Abweichung prüfen."
@@ -694,7 +703,7 @@ msgid "Ablehnung prüfen"
 msgstr "Ablehnung prüfen"
 
 #: templates/dashboard.html:37 templates/gemeinde/dashboard.html:29 templates/utility/dashboard.html:30
-#: templates/verein/member.html:11 templates/verein/queue.html:16
+#: templates/verein/member.html:11 templates/verein/queue.html:16 templates/verein/queue.html:18
 msgid "Abmelden"
 msgstr "Abmelden"
 
@@ -794,7 +803,7 @@ msgstr "Abweichung prüfen"
 msgid "Abweichung von ElCom"
 msgstr "Abweichung von ElCom"
 
-#: templates/verein/queue.html:9
+#: templates/verein/queue.html:9 templates/verein/queue.html:11
 msgid "Abweisung erfassen"
 msgstr "Abweisung erfassen"
 
@@ -925,11 +934,11 @@ msgstr "Aggregierte Auswertung für Energieversorger freigeben"
 msgid "Aktion"
 msgstr "Aktion"
 
-#: i18n.py:72 i18n.py:83 i18n.py:90
+#: i18n.py:72 i18n.py:83 i18n.py:90 i18n.py:91
 msgid "Aktion derzeit nicht möglich"
 msgstr "Aktion derzeit nicht möglich"
 
-#: formation_wizard.py:57 municipality.py:102 municipality.py:291
+#: formation_wizard.py:57 municipality.py:102 municipality.py:291 verein_routes.py:45
 msgid "Aktiv"
 msgstr "Aktiv"
 
@@ -1121,7 +1130,7 @@ msgstr "Anfrage fehlgeschlagen. Prüfen Sie die Angaben und versuchen Sie es ern
 msgid "Anfrage ist zu gross"
 msgstr "Anfrage ist zu gross"
 
-#: i18n.py:265 i18n.py:321 i18n.py:328
+#: i18n.py:265 i18n.py:321 i18n.py:328 i18n.py:343
 msgid "Anfrage nicht möglich"
 msgstr "Anfrage nicht möglich"
 
@@ -1129,7 +1138,7 @@ msgstr "Anfrage nicht möglich"
 msgid "Anfrage wird ausgeführt…"
 msgstr "Anfrage wird ausgeführt…"
 
-#: i18n.py:74 i18n.py:85 i18n.py:92
+#: i18n.py:74 i18n.py:85 i18n.py:92 i18n.py:93
 msgid "Anfrage zu gross"
 msgstr "Anfrage zu gross"
 
@@ -1145,7 +1154,7 @@ msgstr "Anfrageinhalt (JSON)"
 msgid "Angaben der eintragenden Organisation"
 msgstr "Angaben der eintragenden Organisation"
 
-#: i18n.py:76 i18n.py:87 i18n.py:94
+#: i18n.py:76 i18n.py:87 i18n.py:94 i18n.py:95
 msgid "Angaben können nicht verarbeitet werden"
 msgstr "Angaben können nicht verarbeitet werden"
 
@@ -1213,7 +1222,7 @@ msgstr "Anmeldung beim Netzbetreiber"
 msgid "Anmeldung beim Netzbetreiber:"
 msgstr "Anmeldung beim Netzbetreiber:"
 
-#: i18n.py:66 i18n.py:77 i18n.py:84
+#: i18n.py:66 i18n.py:77 i18n.py:84 i18n.py:85
 msgid "Anmeldung erforderlich"
 msgstr "Anmeldung erforderlich"
 
@@ -1465,6 +1474,10 @@ msgstr "Aufgaben und Zusammenarbeit verstehen"
 msgid "Aufgabenstatus"
 msgstr "Aufgabenstatus"
 
+#: verein_routes.py:43
+msgid "Aufgenommen"
+msgstr "Aufgenommen"
+
 #: templates/index.html:231 templates/index.html:234
 msgid "Aufnahmen aus dem laufenden Produkt, keine Mockups. Klicken Sie sich durch die Demo."
 msgstr "Aufnahmen aus dem laufenden Produkt, keine Mockups. Klicken Sie sich durch die Demo."
@@ -1530,6 +1543,10 @@ msgstr ""
 "Ausgeschlossene Profile: %(overlap)s mit überlappenden Quellen, %(unavailable)s ohne aktuellen "
 "Messwert, %(estimated)s mit Schätzwerten, %(unsynchronized)s mit abweichenden Messzeiten."
 
+#: verein_routes.py:46
+msgid "Ausgetreten"
+msgstr "Ausgetreten"
+
 #: templates/verein/queue.html:6
 msgid "Ausgetretene Mitglieder"
 msgstr "Ausgetretene Mitglieder"
@@ -1575,6 +1592,10 @@ msgstr "Austritt"
 msgid "Austritt beantragen"
 msgstr "Austritt beantragen"
 
+#: templates/verein/member.html:9
+msgid "Austritt jetzt erklären"
+msgstr "Austritt jetzt erklären"
+
 #: templates/documents/participant_contract.html:29
 msgid ""
 "Austritt mit 3 Monaten Frist auf Quartalsende. Alle offenen Abrechnungen\n"
@@ -1582,6 +1603,10 @@ msgid ""
 msgstr ""
 "Austritt mit 3 Monaten Frist auf Quartalsende. Alle offenen Abrechnungen\n"
 "werden vor Austritt abgeschlossen."
+
+#: templates/verein/application.html:11
+msgid "Austritt mit Eingang wirksam"
+msgstr "Austritt mit Eingang wirksam"
 
 #: templates/verein/index.html:11
 msgid ""
@@ -1593,11 +1618,12 @@ msgstr ""
 "verbindlichen Fristen und die Datenaufbewahrung stehen in den verabschiedeten Statuten und der "
 "geprüften Datenschutzerklärung."
 
-#: templates/verein/queue.html:7
+#: templates/verein/queue.html:7 templates/verein/queue.html:9
 msgid "Austritte und Beschwerden"
 msgstr "Austritte und Beschwerden"
 
 #: templates/verein/member.html:8 templates/verein/member.html:9 templates/verein/queue.html:8
+#: templates/verein/queue.html:10
 msgid "Austrittsantrag"
 msgstr "Austrittsantrag"
 
@@ -1734,6 +1760,10 @@ msgstr ""
 msgid "Beantragt die LEG ein intelligentes Messsystem, installiert er es innert drei Monaten."
 msgstr "Beantragt die LEG ein intelligentes Messsystem, installiert er es innert drei Monaten."
 
+#: verein_routes.py:47
+msgid "Beendet"
+msgstr "Beendet"
+
 #: templates/verein/queue.html:6
 msgid "Beendete Mitgliedschaften"
 msgstr "Beendete Mitgliedschaften"
@@ -1788,11 +1818,15 @@ msgid "Begriffe rund um Ihre LEG"
 msgstr "Begriffe rund um Ihre LEG"
 
 #: templates/verein/application.html:12 templates/verein/application.html:15
-#: templates/verein/application.html:25 templates/verein/member.html:7
+#: templates/verein/application.html:25 templates/verein/dues.html:6 templates/verein/member.html:7
 msgid "Begründung"
 msgstr "Begründung"
 
-#: templates/verein/queue.html:9
+#: templates/verein/member.html:9
+msgid "Begründung (freiwillig)"
+msgstr "Begründung (freiwillig)"
+
+#: templates/verein/queue.html:9 templates/verein/queue.html:11
 msgid "Begründung des Entscheids"
 msgstr "Begründung des Entscheids"
 
@@ -1831,6 +1865,14 @@ msgstr "Beispiel-Dashboard öffnen"
 #: templates/release/community.html:8
 msgid "Beitrag ansehen"
 msgstr "Beitrag ansehen"
+
+#: templates/verein/dues.html:2
+msgid "Beitragsjahr ab"
+msgstr "Beitragsjahr ab"
+
+#: templates/verein/dues.html:1
+msgid "Beitragsjahre"
+msgstr "Beitragsjahre"
 
 #: templates/release/community.html:5
 msgid "Beitragsleitfaden lesen"
@@ -1943,7 +1985,7 @@ msgstr ""
 msgid "Beschränkter LEG-Betrieb"
 msgstr "Beschränkter LEG-Betrieb"
 
-#: templates/verein/member.html:8 templates/verein/queue.html:8
+#: templates/verein/member.html:8 templates/verein/queue.html:8 templates/verein/queue.html:10
 msgid "Beschwerde"
 msgstr "Beschwerde"
 
@@ -1955,7 +1997,7 @@ msgstr "Beschwerde an die Mitgliederversammlung"
 msgid "Beschwerde einreichen"
 msgstr "Beschwerde einreichen"
 
-#: templates/verein/queue.html:9
+#: templates/verein/queue.html:9 templates/verein/queue.html:11
 msgid ""
 "Beschwerden entscheidet die Mitgliederversammlung. Erfassen Sie hier nur den tatsächlichen "
 "Beschluss."
@@ -1995,7 +2037,7 @@ msgstr "Bestimmt eine Ansprechperson."
 msgid "Bestätigen"
 msgstr "Bestätigen"
 
-#: verein_routes.py:240 verein_routes.py:257 verein_routes.py:263
+#: verein_routes.py:240 verein_routes.py:257 verein_routes.py:263 verein_routes.py:266
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre E-Mail für den Mitgliedsantrag:\n"
@@ -2082,7 +2124,7 @@ msgid "Bestätigen Sie, dass der Eintrag «"
 msgstr "Bestätigen Sie, dass der Eintrag «"
 
 #: formation_wizard.py:51 formation_wizard.py:74 templates/leg_dashboard.html:245
-#: templates/leg_dashboard.html:274
+#: templates/leg_dashboard.html:274 verein_routes.py:52
 msgid "Bestätigt"
 msgstr "Bestätigt"
 
@@ -2255,7 +2297,8 @@ msgstr "Bewohner zur Registrierung einladen"
 msgid "Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner"
 msgstr "Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner"
 
-#: billing_lifecycle.py:17 templates/verein/application.html:10 templates/verein/member.html:6
+#: billing_lifecycle.py:17 templates/verein/application.html:10 templates/verein/dues.html:2
+#: templates/verein/member.html:6
 msgid "Bezahlt"
 msgstr "Bezahlt"
 
@@ -2385,7 +2428,7 @@ msgstr ""
 "eine datierte Quelle. Quellenlinks müssen öffentliche HTTPS-Adressen ohne Zugangsdaten, "
 "Suchparameter oder Fragmente sein."
 
-#: verein_routes.py:217 verein_routes.py:234 verein_routes.py:240
+#: verein_routes.py:217 verein_routes.py:234 verein_routes.py:240 verein_routes.py:243
 msgid "Bitte prüfen Sie Name, E-Mail und die Aufnahmebedingungen."
 msgstr "Bitte prüfen Sie Name, E-Mail und die Aufnahmebedingungen."
 
@@ -2419,7 +2462,7 @@ msgstr "Bitte senden Sie ein JSON-Objekt."
 msgid "Bitte sicher speichern, wird nur einmal angezeigt:"
 msgstr "Bitte sicher speichern, wird nur einmal angezeigt:"
 
-#: verein_event_routes.py:35 verein_routes.py:38 verein_routes.py:40
+#: verein_event_routes.py:35 verein_routes.py:38 verein_routes.py:40 verein_routes.py:64
 msgid "Bitte versuchen Sie es später erneut."
 msgstr "Bitte versuchen Sie es später erneut."
 
@@ -2623,6 +2666,28 @@ msgstr "Das Abrechnungsentgelt der Richtlinie liegt ausserhalb des zulässigen B
 msgid "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
 msgstr "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
 
+#: templates/verein/dues.html:1
+msgid ""
+"Das Beitragsjahr beginnt am Aufnahmejahrestag. Bei Aufnahme am 29. Februar gilt in "
+"Nichtschaltjahren der 28. Februar. Jede Forderung und jeder Zahlungseingang bleiben ihrem "
+"Beitragsjahr zugeordnet."
+msgstr ""
+"Das Beitragsjahr beginnt am Aufnahmejahrestag. Bei Aufnahme am 29. Februar gilt in "
+"Nichtschaltjahren der 28. Februar. Jede Forderung und jeder Zahlungseingang bleiben ihrem "
+"Beitragsjahr zugeordnet."
+
+#: templates/verein/index.html:11
+msgid ""
+"Das Beitragsjahr erneuert sich am Aufnahmejahrestag. Ein persönlich erklärter Austritt wird "
+"sofort mit Eingang wirksam und benötigt keine Bewilligung des Vorstands. Beschwerden können über "
+"den persönlichen Vereinszugang eingereicht werden. Verbindliche Regeln zu Beitragskorrekturen und"
+" Datenaufbewahrung werden vor der Aufnahme geprüft."
+msgstr ""
+"Das Beitragsjahr erneuert sich am Aufnahmejahrestag. Ein persönlich erklärter Austritt wird "
+"sofort mit Eingang wirksam und benötigt keine Bewilligung des Vorstands. Beschwerden können über "
+"den persönlichen Vereinszugang eingereicht werden. Verbindliche Regeln zu Beitragskorrekturen und"
+" Datenaufbewahrung werden vor der Aufnahme geprüft."
+
 #: templates/fuer_gemeinden.html:37
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
@@ -2750,7 +2815,7 @@ msgstr "Datei hierher ziehen oder"
 msgid "Dateien"
 msgstr "Dateien"
 
-#: i18n.py:75 i18n.py:86 i18n.py:93
+#: i18n.py:75 i18n.py:86 i18n.py:93 i18n.py:94
 msgid "Dateiformat nicht unterstützt"
 msgstr "Dateiformat nicht unterstützt"
 
@@ -2939,7 +3004,7 @@ msgstr "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr "Der Anhang ist keine gültige PDF-Datei."
 
-#: verein_routes.py:248 verein_routes.py:265 verein_routes.py:271
+#: verein_routes.py:248 verein_routes.py:265 verein_routes.py:271 verein_routes.py:274
 msgid "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
 msgstr "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
 
@@ -2955,7 +3020,7 @@ msgstr ""
 "Der Code steht unter AGPL-3.0-or-later. Beachten Sie die Lizenzpflichten, wenn Sie eine "
 "veränderte Version über ein Netzwerk anbieten."
 
-#: verein_routes.py:221 verein_routes.py:238 verein_routes.py:244
+#: verein_routes.py:221 verein_routes.py:238 verein_routes.py:244 verein_routes.py:247
 msgid "Der E-Mail-Versand ist derzeit nicht verfügbar."
 msgstr "Der E-Mail-Versand ist derzeit nicht verfügbar."
 
@@ -3245,7 +3310,7 @@ msgstr ""
 msgid "Der Vorstand bestätigt den Austritt und das wirksame Datum gemäss den beschlossenen Statuten."
 msgstr "Der Vorstand bestätigt den Austritt und das wirksame Datum gemäss den beschlossenen Statuten."
 
-#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351
+#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:375
 #, python-format
 msgid ""
 "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
@@ -3448,6 +3513,7 @@ msgid "Die Anteile müssen zusammen 100 Prozent ergeben."
 msgstr "Die Anteile müssen zusammen 100 Prozent ergeben."
 
 #: templates/verein/index.html:11 verein_routes.py:198 verein_routes.py:215 verein_routes.py:221
+#: verein_routes.py:224
 msgid "Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der Datenschutzangaben."
 msgstr "Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der Datenschutzangaben."
 
@@ -3560,6 +3626,10 @@ msgstr "Die Ersparnis dieser Periode ist nicht berechenbar."
 #: advisories.py:37
 msgid "Die Firmware fehlt. Die Betroffenheit bleibt offen."
 msgstr "Die Firmware fehlt. Die Betroffenheit bleibt offen."
+
+#: templates/verein/dues.html:6
+msgid "Die Forderung ist noch nicht fällig."
+msgstr "Die Forderung ist noch nicht fällig."
 
 #: templates/gemeinde/verzeichnis.html:65
 msgid "Die Gemeinden sind nach Namen sortiert."
@@ -4073,11 +4143,12 @@ msgstr ""
 "Die verantwortlichen Personen pflegen die Beteiligten, prüfen Messdaten und geben Abrechnungen "
 "frei. OpenLEG unterstützt diese Arbeit."
 
-#: templates/verein/application.html:24
+#: templates/verein/application.html:24 templates/verein/dues.html:6
 msgid "Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der Erinnerung."
 msgstr "Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der Erinnerung."
 
-#: i18n.py:80 i18n.py:91 i18n.py:98 verein_event_routes.py:34 verein_routes.py:37 verein_routes.py:39
+#: i18n.py:80 i18n.py:91 i18n.py:98 i18n.py:99 verein_event_routes.py:34 verein_routes.py:37
+#: verein_routes.py:39 verein_routes.py:63
 msgid "Dienst vorübergehend nicht verfügbar"
 msgstr "Dienst vorübergehend nicht verfügbar"
 
@@ -4410,9 +4481,13 @@ msgid "E-Mail"
 msgstr "E-Mail"
 
 #: dashboard.py:116 dashboard.py:118 dashboard.py:1376 verein_routes.py:271 verein_routes.py:288
-#: verein_routes.py:294
+#: verein_routes.py:294 verein_routes.py:297
 msgid "E-Mail bestätigt"
 msgstr "E-Mail bestätigt"
+
+#: verein_routes.py:41
+msgid "E-Mail noch nicht bestätigt"
+msgstr "E-Mail noch nicht bestätigt"
 
 #: templates/leg_verzeichnis/beanspruchen.html:19
 msgid "E-Mail unterwegs"
@@ -4748,13 +4823,21 @@ msgstr ""
 "Ein zukünftiges Startdatum verhindert die Aktivierung bis zu diesem Datum. Eine "
 "Empfangsbestätigung oder ein fehlender Anhang genügt nicht."
 
-#: templates/verein/application.html:20
+#: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid "Eindeutige Buchungsreferenz"
 msgstr "Eindeutige Buchungsreferenz"
 
 #: templates/base.html:17 templates/product_base.html:26
 msgid "Eine Abbildung auf dieser Seite zeigt die Oberfläche auf Deutsch."
 msgstr "Eine Abbildung auf dieser Seite zeigt die Oberfläche auf Deutsch."
+
+#: templates/verein/dues.html:6
+msgid ""
+"Eine Beendigung wegen offener Beiträge ist erst nach der tatsächlich versendeten Erinnerung und "
+"weiteren 60 Tagen möglich."
+msgstr ""
+"Eine Beendigung wegen offener Beiträge ist erst nach der tatsächlich versendeten Erinnerung und "
+"weiteren 60 Tagen möglich."
 
 #: templates/telemetry_dashboard.html:56
 msgid "Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt sichtbar."
@@ -4771,6 +4854,14 @@ msgid ""
 msgstr ""
 "Eine Empfangsbestätigung bestätigt nur den Empfang. Sie erlaubt keinen Betriebsstart. Für die "
 "Aktivierung braucht es einen separaten Startbeleg, ein gültiges Datum und die Administration."
+
+#: templates/verein/dues.html:6
+msgid "Eine Erinnerung ist bereits vorbereitet."
+msgstr "Eine Erinnerung ist bereits vorbereitet."
+
+#: templates/verein/dues.html:6
+msgid "Eine Erinnerung ist erst nach Fälligkeit möglich und wird pro Beitragsjahr einmal vorbereitet."
+msgstr "Eine Erinnerung ist erst nach Fälligkeit möglich und wird pro Beitragsjahr einmal vorbereitet."
 
 #: templates/release/knowledge.html:6
 msgid "Eine Gründung vorbereiten"
@@ -4903,6 +4994,10 @@ msgstr "Einfach"
 #: templates/leg_dashboard.html:344 templates/leg_dashboard.html:364
 msgid "Eingang"
 msgstr "Eingang"
+
+#: verein_routes.py:50
+msgid "Eingegangen, sofort wirksam"
+msgstr "Eingegangen, sofort wirksam"
 
 #: templates/contact_requests.html:35
 #, python-format
@@ -5186,7 +5281,7 @@ msgstr "Entscheidung"
 msgid "Entwickler und Self-Hosting"
 msgstr "Entwickler und Self-Hosting"
 
-#: billing_workspace.py:139 templates/verein/events.html:8
+#: billing_workspace.py:139 templates/verein/events.html:8 verein_routes.py:51
 msgid "Entwurf"
 msgstr "Entwurf"
 
@@ -5242,7 +5337,7 @@ msgstr ""
 msgid "Erfasste Treffen"
 msgstr "Erfasste Treffen"
 
-#: templates/verein/application.html:10 templates/verein/member.html:5
+#: templates/verein/application.html:10 templates/verein/dues.html:2 templates/verein/member.html:5
 msgid "Erfasste Zahlungseingänge"
 msgstr "Erfasste Zahlungseingänge"
 
@@ -5278,9 +5373,13 @@ msgstr "Ergebnis zum Fernzugriff"
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Ergänzen Sie Ihren Stromverbrauch"
 
-#: templates/verein/application.html:20
+#: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid "Erhaltener Betrag in CHF"
 msgstr "Erhaltener Betrag in CHF"
+
+#: templates/verein/dues.html:3
+msgid "Erinnerung tatsächlich versendet am"
+msgstr "Erinnerung tatsächlich versendet am"
 
 #: templates/sandbox/home.html:30
 msgid ""
@@ -5421,7 +5520,7 @@ msgstr "Fairer Vergleich nach Kanton, Grösse und Dichte"
 msgid "Falls Sie keinen gültigen Link mehr haben, senden wir Ihnen einen neuen Zugang per E-Mail."
 msgstr "Falls Sie keinen gültigen Link mehr haben, senden wir Ihnen einen neuen Zugang per E-Mail."
 
-#: verein_routes.py:79 verein_routes.py:81
+#: verein_routes.py:79 verein_routes.py:81 verein_routes.py:105
 msgid ""
 "Falls die Adresse zu einem bestätigten Antrag gehört, wird ein Zugangslink versendet. Bei einem "
 "Versandproblem können Sie es erneut versuchen."
@@ -5496,7 +5595,7 @@ msgstr "Fehler beim Erstellen des Schlüssels."
 msgid "Fehler beim Login."
 msgstr "Fehler beim Login."
 
-#: i18n.py:79 i18n.py:90 i18n.py:97
+#: i18n.py:79 i18n.py:90 i18n.py:97 i18n.py:98
 msgid "Fehler beim vorgelagerten Dienst"
 msgstr "Fehler beim vorgelagerten Dienst"
 
@@ -5600,7 +5699,7 @@ msgstr ""
 "Fordern Sie Bestätigungslinks an, um Ihr Adressprofil oder Ihre offenen Gebietsanfragen bei "
 "%(platform)s zu löschen."
 
-#: i18n.py:70 i18n.py:81 i18n.py:88
+#: i18n.py:70 i18n.py:81 i18n.py:88 i18n.py:89
 msgid "Format nicht verfügbar"
 msgstr "Format nicht verfügbar"
 
@@ -5730,7 +5829,7 @@ msgstr "Frist für den Netzbetreiber, das Messsystem zu installieren."
 msgid "Frühere Bestätigungen und Geräteangaben"
 msgstr "Frühere Bestätigungen und Geräteangaben"
 
-#: i18n.py:78 i18n.py:89 i18n.py:96
+#: i18n.py:78 i18n.py:89 i18n.py:96 i18n.py:97
 msgid "Funktion nicht verfügbar"
 msgstr "Funktion nicht verfügbar"
 
@@ -5742,7 +5841,7 @@ msgstr "Funktionen und Ablauf"
 msgid "Funktionsumfang und Voraussetzungen"
 msgstr "Funktionsumfang und Voraussetzungen"
 
-#: templates/member_invoices.html:24 templates/verein/application.html:10
+#: templates/member_invoices.html:24 templates/verein/application.html:10 templates/verein/dues.html:2
 #: templates/verein/member.html:6
 msgid "Fällig am"
 msgstr "Fällig am"
@@ -5750,6 +5849,10 @@ msgstr "Fällig am"
 #: templates/documents/member_invoice.html:18 templates/member_invoice_detail.html:47
 msgid "Fällig am:"
 msgstr "Fällig am:"
+
+#: templates/verein/queue.html:8
+msgid "Fällige Beitragsjahre einmalig erfassen"
+msgstr "Fällige Beitragsjahre einmalig erfassen"
 
 #: templates/datenschutz.html:78
 msgid "Für Anfragen wenden Sie sich bitte an:"
@@ -5810,6 +5913,15 @@ msgstr "Für Gemeinden:"
 msgid "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 msgstr "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 
+#: verein_routes.py:361
+#, python-format
+msgid ""
+"Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am %(due_on)s fällig."
+" Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am %(due_on)s fällig."
+" Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang. Kontakt: hallo@openleg.ch."
+
 #: templates/leg_gruenden.html:46
 msgid "Für LEG-Gründerinnen und LEG-Gründer"
 msgstr "Für LEG-Gründerinnen und LEG-Gründer"
@@ -5842,6 +5954,17 @@ msgid ""
 msgstr ""
 "Für alle Teilnehmenden sind Smart Meter der BKW nötig. Fehlende Geräte baut die BKW im Rahmen der"
 " Anmeldung ein."
+
+#: verein_routes.py:350
+#, python-format
+msgid ""
+"Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von "
+"weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur "
+"Beendigung treffen. Sie können Beschwerde einlegen. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von "
+"weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur "
+"Beendigung treffen. Sie können Beschwerde einlegen. Kontakt: hallo@openleg.ch."
 
 #: templates/leg_gruenden.html:203
 msgid ""
@@ -6683,7 +6806,11 @@ msgstr ""
 "\n"
 "Ihr OpenLEG-Team"
 
-#: templates/verein/queue.html:9
+#: verein_routes.py:48
+msgid "Gutgeheissen"
+msgstr "Gutgeheissen"
+
+#: templates/verein/queue.html:9 templates/verein/queue.html:11
 msgid "Gutheissung erfassen"
 msgstr "Gutheissung erfassen"
 
@@ -6942,7 +7069,7 @@ msgstr ""
 msgid "Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor."
 msgstr "Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor."
 
-#: templates/verein/application.html:20
+#: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid "Ich habe den tatsächlichen Zahlungseingang und die Zuordnung geprüft."
 msgstr "Ich habe den tatsächlichen Zahlungseingang und die Zuordnung geprüft."
 
@@ -6982,9 +7109,21 @@ msgstr "Ich ziehe diese Quelle ausdrücklich zurück, bevor ich die Korrektur im
 msgid "Identische Wiederholung"
 msgstr "Identische Wiederholung"
 
-#: verein_routes.py:273 verein_routes.py:290 verein_routes.py:296
+#: verein_routes.py:273 verein_routes.py:290 verein_routes.py:296 verein_routes.py:299
 msgid "Ihr Antrag wartet auf die Prüfung durch den Vorstand. Sie sind noch kein Mitglied."
 msgstr "Ihr Antrag wartet auf die Prüfung durch den Vorstand. Sie sind noch kein Mitglied."
+
+#: templates/verein/member.html:5
+msgid "Ihr Austritt ist mit Eingang wirksam."
+msgstr "Ihr Austritt ist mit Eingang wirksam."
+
+#: templates/verein/member.html:9
+msgid ""
+"Ihr Austritt wird sofort mit Eingang dieser Erklärung wirksam. Eine Begründung ist freiwillig; "
+"der Vorstand muss den Austritt nicht bewilligen."
+msgstr ""
+"Ihr Austritt wird sofort mit Eingang dieser Erklärung wirksam. Eine Begründung ist freiwillig; "
+"der Vorstand muss den Austritt nicht bewilligen."
 
 #: dashboard_routes.py:398
 msgid "Ihr Dashboard-Zugangslink"
@@ -7016,7 +7155,7 @@ msgstr "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 
-#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:340
+#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:340 verein_routes.py:344
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
@@ -7027,7 +7166,7 @@ msgstr ""
 "\n"
 "Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch."
 
-#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:334
+#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:334 verein_routes.py:338
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
@@ -7103,6 +7242,18 @@ msgstr "Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt."
 #: templates/leg_gruenden.html:173 templates/leg_gruenden.html:186 templates/leg_gruenden.html:199
 msgid "Ihre Aufgabe"
 msgstr "Ihre Aufgabe"
+
+#: verein_routes.py:370
+msgid ""
+"Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine "
+"Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über Ihren persönlichen "
+"Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- und Entscheidnachweise. Kontakt: "
+"hallo@openleg.ch."
+msgstr ""
+"Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine "
+"Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über Ihren persönlichen "
+"Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- und Entscheidnachweise. Kontakt: "
+"hallo@openleg.ch."
 
 #: templates/meter_upload.html:24
 msgid "Ihre Building ID"
@@ -7379,7 +7530,7 @@ msgstr "Informiert lokale Beteiligte und begleitet die Anmeldung."
 msgid "Infrastruktur"
 msgstr "Infrastruktur"
 
-#: i18n.py:73 i18n.py:84 i18n.py:91
+#: i18n.py:73 i18n.py:84 i18n.py:91 i18n.py:92
 msgid "Inhalt nicht mehr verfügbar"
 msgstr "Inhalt nicht mehr verfügbar"
 
@@ -7471,7 +7622,7 @@ msgstr "Interessiert"
 msgid "Interessierte"
 msgstr "Interessierte"
 
-#: i18n.py:77 i18n.py:88 i18n.py:95
+#: i18n.py:77 i18n.py:88 i18n.py:95 i18n.py:96
 msgid "Interner Fehler"
 msgstr "Interner Fehler"
 
@@ -7978,11 +8129,11 @@ msgstr "Keine neue Kollektor-Lieferung"
 msgid "Keine offene Einladung gefunden."
 msgstr "Keine offene Einladung gefunden."
 
-#: templates/verein/queue.html:14
+#: templates/verein/queue.html:14 templates/verein/queue.html:16
 msgid "Keine offenen Anträge."
 msgstr "Keine offenen Anträge."
 
-#: templates/verein/member.html:8 templates/verein/queue.html:9
+#: templates/verein/member.html:8 templates/verein/queue.html:9 templates/verein/queue.html:11
 msgid "Keine offenen Gesuche."
 msgstr "Keine offenen Gesuche."
 
@@ -8092,7 +8243,7 @@ msgstr "Konto nicht verfügbar"
 msgid "Konto wechseln"
 msgstr "Konto wechseln"
 
-#: templates/verein/application.html:20
+#: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid "Konto- oder Anbieterkennung"
 msgstr "Konto- oder Anbieterkennung"
 
@@ -9106,7 +9257,7 @@ msgstr "Messzeit unbekannt"
 msgid "Messzeiten der geeigneten Werte"
 msgstr "Messzeiten der geeigneten Werte"
 
-#: i18n.py:69 i18n.py:80 i18n.py:87
+#: i18n.py:69 i18n.py:80 i18n.py:87 i18n.py:88
 msgid "Methode nicht erlaubt"
 msgstr "Methode nicht erlaubt"
 
@@ -9253,6 +9404,7 @@ msgid "Mitgliedsanträge"
 msgstr "Mitgliedsanträge"
 
 #: templates/verein/application.html:10 verein_routes.py:196 verein_routes.py:213 verein_routes.py:219
+#: verein_routes.py:222
 msgid "Mitgliedschaft"
 msgstr "Mitgliedschaft"
 
@@ -9356,7 +9508,7 @@ msgstr "Möglicherweise betroffen / unbekannt"
 msgid "N/A"
 msgstr "Keine Angabe"
 
-#: templates/verein/application.html:25
+#: templates/verein/application.html:25 templates/verein/dues.html:6
 msgid "Nach Ablauf der Frist beenden"
 msgstr "Nach Ablauf der Frist beenden"
 
@@ -9816,6 +9968,10 @@ msgstr ""
 "Noch keine Abrechnungsperioden vorhanden. Der Abrechnungslauf erstellt Entwürfe, sobald eine "
 "Richtlinie gespeichert ist und Messdaten vorliegen."
 
+#: templates/verein/dues.html:7
+msgid "Noch keine Beitragsforderung erfasst."
+msgstr "Noch keine Beitragsforderung erfasst."
+
 #: templates/gemeinde/dashboard.html:48 templates/gemeinde/dashboard.html:58
 msgid "Noch keine Daten"
 msgstr "Noch keine Daten"
@@ -9937,7 +10093,7 @@ msgstr "Nur LEG-Teilnahme, Daten mit Nachbarn und Gemeinde teilen"
 msgid "Nur Lesezugriff"
 msgstr "Nur Lesezugriff"
 
-#: templates/verein/queue.html:10
+#: templates/verein/queue.html:10 templates/verein/queue.html:12
 msgid ""
 "Nur bestätigte Anträge warten hier auf einen Entscheid. Eine E-Mail-Bestätigung ist noch keine "
 "Mitgliedschaft."
@@ -9991,7 +10147,7 @@ msgstr "Nächste Aktion"
 msgid "Nächste Schritte"
 msgstr "Nächste Schritte"
 
-#: templates/verein/queue.html:15
+#: templates/verein/queue.html:15 templates/verein/queue.html:17
 msgid "Nächste Seite"
 msgstr "Nächste Seite"
 
@@ -10030,7 +10186,8 @@ msgid "Oder manuell aus dem Quellcode:"
 msgstr "Oder manuell aus dem Quellcode:"
 
 #: equipment.py:56 templates/contact_requests.html:32 templates/dashboard.html:118
-#: templates/verein/application.html:10 templates/verein/events.html:9 templates/verein/member.html:6
+#: templates/verein/application.html:10 templates/verein/dues.html:2 templates/verein/events.html:9
+#: templates/verein/member.html:6
 msgid "Offen"
 msgstr "Offen"
 
@@ -10062,7 +10219,7 @@ msgstr ""
 msgid "Offene Anträge"
 msgstr "Offene Anträge"
 
-#: templates/verein/queue.html:11
+#: templates/verein/queue.html:11 templates/verein/queue.html:13
 msgid "Offene Benachrichtigungen senden"
 msgstr "Offene Benachrichtigungen senden"
 
@@ -10804,7 +10961,7 @@ msgstr "Preisübersicht ansehen"
 msgid "Primeo Energie"
 msgstr "Primeo Energie"
 
-#: templates/verein/application.html:20
+#: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid "Private Belegreferenz"
 msgstr "Private Belegreferenz"
 
@@ -10972,7 +11129,7 @@ msgstr "Prüfen"
 msgid "Prüfen Sie Entwürfe gegen Tarif, VNB-Abgleich und Quelldokumente."
 msgstr "Prüfen Sie Entwürfe gegen Tarif, VNB-Abgleich und Quelldokumente."
 
-#: verein_routes.py:254 verein_routes.py:271 verein_routes.py:277
+#: verein_routes.py:254 verein_routes.py:271 verein_routes.py:277 verein_routes.py:280
 msgid "Prüfen Sie Ihr E-Mail-Postfach."
 msgstr "Prüfen Sie Ihr E-Mail-Postfach."
 
@@ -11020,7 +11177,7 @@ msgstr ""
 msgid "Prüfen Sie den Kollektor und seine Verbindung."
 msgstr "Prüfen Sie den Kollektor und seine Verbindung."
 
-#: templates/verein/application.html:20
+#: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid ""
 "Prüfen Sie den tatsächlichen Eingang im Bank- oder Anbieterbeleg. Spenden und "
 "Zahlungsrückleitungen gleichen den Beitrag nicht automatisch aus."
@@ -11103,6 +11260,7 @@ msgid "Prüfung"
 msgstr "Prüfung"
 
 #: templates/leg_verzeichnis/eintragen.html:24 templates/partials/registry_trust.html:4
+#: verein_routes.py:42
 msgid "Prüfung ausstehend"
 msgstr "Prüfung ausstehend"
 
@@ -11430,7 +11588,7 @@ msgstr "Referenz"
 msgid "Referenz des Netzbetreibers"
 msgstr "Referenz des Netzbetreibers"
 
-#: templates/verein/queue.html:9
+#: templates/verein/queue.html:9 templates/verein/queue.html:11
 msgid "Referenz zum tatsächlichen Beschluss"
 msgstr "Referenz zum tatsächlichen Beschluss"
 
@@ -11557,9 +11715,10 @@ msgstr "Rollen und Zusammenarbeit verstehen"
 msgid "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 msgstr "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 
-#: i18n.py:123 i18n.py:134 i18n.py:141 member_invoices.py:742 templates/admin/abrechnungen.html:135
-#: templates/admin/abrechnungen.html:138 templates/documents/member_invoice.html:19
-#: templates/member_invoice_detail.html:49 templates/member_invoice_detail.html:50
+#: i18n.py:123 i18n.py:134 i18n.py:141 i18n.py:142 member_invoices.py:742
+#: templates/admin/abrechnungen.html:135 templates/admin/abrechnungen.html:138
+#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:49
+#: templates/member_invoice_detail.html:50
 msgid "Rp./kWh"
 msgstr "Rp./kWh"
 
@@ -11804,11 +11963,11 @@ msgstr ""
 "bilden. OpenLEG prüft Ihre Adresse, zeigt das bestätigte Interesse in Ihrer Gemeinde und führt "
 "durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."
 
-#: i18n.py:68 i18n.py:79 i18n.py:86
+#: i18n.py:68 i18n.py:79 i18n.py:86 i18n.py:87
 msgid "Seite nicht gefunden"
 msgstr "Seite nicht gefunden"
 
-#: templates/verein/queue.html:15
+#: templates/verein/queue.html:15 templates/verein/queue.html:17
 msgid "Seiten der Antragsliste"
 msgstr "Seiten der Antragsliste"
 
@@ -12855,7 +13014,7 @@ msgstr ""
 #: advisories.py:43 advisories.py:48 equipment.py:15 equipment.py:49 equipment.py:55 equipment.py:61
 #: equipment.py:67 equipment.py:73 equipment.py:78 equipment.py:84 templates/advisories.html:23
 #: templates/advisories.html:84 templates/equipment_form.html:19 templates/equipment_form.html:54
-#: templates/equipment_index.html:14
+#: templates/equipment_index.html:14 verein_routes.py:54
 msgid "Unbekannt"
 msgstr "Unbekannt"
 
@@ -12916,7 +13075,7 @@ msgstr "Ungenutztes Potenzial"
 msgid "Ungenutztes Potenzial:"
 msgstr "Ungenutztes Potenzial:"
 
-#: i18n.py:65 i18n.py:76 i18n.py:83
+#: i18n.py:65 i18n.py:76 i18n.py:83 i18n.py:84
 msgid "Ungültige Anfrage"
 msgstr "Ungültige Anfrage"
 
@@ -13161,7 +13320,7 @@ msgstr ""
 msgid "Verein und Mitgliedschaft"
 msgstr "Verein und Mitgliedschaft"
 
-#: verein_routes.py:238 verein_routes.py:255 verein_routes.py:261
+#: verein_routes.py:238 verein_routes.py:255 verein_routes.py:261 verein_routes.py:264
 msgid "Verein: E-Mail bestätigen"
 msgstr "Verein: E-Mail bestätigen"
 
@@ -13169,7 +13328,11 @@ msgstr "Verein: E-Mail bestätigen"
 msgid "Verein: Entscheid zum Mitgliedsantrag"
 msgstr "Verein: Entscheid zum Mitgliedsantrag"
 
-#: verein_routes.py:66 verein_routes.py:68
+#: verein_routes.py:398
+msgid "Verein: Mitgliedschaft und Jahresbeitrag"
+msgstr "Verein: Mitgliedschaft und Jahresbeitrag"
+
+#: verein_routes.py:66 verein_routes.py:68 verein_routes.py:92
 msgid "Verein: persönlicher Zugang"
 msgstr "Verein: persönlicher Zugang"
 
@@ -13568,7 +13731,7 @@ msgstr ""
 msgid "Vorher prüfen"
 msgstr "Vorher prüfen"
 
-#: templates/verein/queue.html:15
+#: templates/verein/queue.html:15 templates/verein/queue.html:17
 msgid "Vorherige Seite"
 msgstr "Vorherige Seite"
 
@@ -14252,15 +14415,15 @@ msgstr "Zahlung erfassen"
 msgid "Zahlungsabgleich prüfen"
 msgstr "Zahlungsabgleich prüfen"
 
-#: templates/verein/application.html:20
+#: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid "Zahlungseingang erfassen"
 msgstr "Zahlungseingang erfassen"
 
-#: templates/verein/application.html:20
+#: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid "Zahlungseingang speichern"
 msgstr "Zahlungseingang speichern"
 
-#: templates/verein/application.html:23
+#: templates/verein/application.html:23 templates/verein/dues.html:6
 msgid "Zahlungserinnerung vorbereiten"
 msgstr "Zahlungserinnerung vorbereiten"
 
@@ -14331,11 +14494,11 @@ msgstr ""
 "2880 Viertelstunden. Die XML-Zeitstempel bezeichnen den Intervallanfang in UTC: 31. August 22:00 "
 "bis 30. September 22:00."
 
-#: i18n.py:81 i18n.py:92 i18n.py:99
+#: i18n.py:81 i18n.py:92 i18n.py:99 i18n.py:100
 msgid "Zeitüberschreitung beim vorgelagerten Dienst"
 msgstr "Zeitüberschreitung beim vorgelagerten Dienst"
 
-#: i18n.py:71 i18n.py:82 i18n.py:89
+#: i18n.py:71 i18n.py:82 i18n.py:89 i18n.py:90
 msgid "Zeitüberschreitung der Anfrage"
 msgstr "Zeitüberschreitung der Anfrage"
 
@@ -14355,7 +14518,7 @@ msgstr "Ziel:"
 msgid "Zielgruppe"
 msgstr "Zielgruppe"
 
-#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362
+#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:386
 #, python-format
 msgid ""
 "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist "
@@ -14409,7 +14572,7 @@ msgstr "Zugangslink anfordern"
 msgid "Zugestellt"
 msgstr "Zugestellt"
 
-#: i18n.py:67 i18n.py:78 i18n.py:85
+#: i18n.py:67 i18n.py:78 i18n.py:85 i18n.py:86
 msgid "Zugriff verweigert"
 msgstr "Zugriff verweigert"
 
@@ -15249,7 +15412,7 @@ msgstr ""
 "\n"
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 
-#: verein_routes.py:69 verein_routes.py:71
+#: verein_routes.py:69 verein_routes.py:71 verein_routes.py:95
 #, python-format
 msgid ""
 "Öffnen Sie Ihren persönlichen Vereinszugang:\n"

@@ -500,6 +500,7 @@ from store.verein import pending_notifications as get_verein_notifications  # no
 from store.verein import provision_reviewer as provision_verein_reviewer  # noqa: F401
 from store.verein import record_delivery as record_verein_delivery  # noqa: F401
 from store.verein import record_payment as record_verein_payment  # noqa: F401
+from store.verein import renew_dues as renew_verein_dues  # noqa: F401
 from store.verein import request_applicant_access as request_verein_applicant_access  # noqa: F401
 from store.verein import request_reminder as request_verein_reminder  # noqa: F401
 from store.verein import resolve_member_request as resolve_verein_member_request  # noqa: F401

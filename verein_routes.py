@@ -5,10 +5,13 @@ import hmac
 import secrets
 from urllib.parse import urljoin
 
+from babel.dates import format_date
+from babel.numbers import format_decimal
 from flask import (
     Blueprint,
     abort,
     current_app,
+    flash,
     jsonify,
     redirect,
     render_template,
@@ -22,12 +25,35 @@ import email_utils
 from email_localization import gettext as recipient_gettext
 from i18n import gettext as _
 from i18n import localized_url
+from locale_policy import resolve_locale
 from security_extensions import rate_limit
 from security_utils import validate_email_address
 from site_release import accepting_applications, require_complete_site
 
 verein_bp = Blueprint("verein", __name__, url_prefix="/verein")
 verein_bp.before_request(require_complete_site)
+
+
+@verein_bp.app_context_processor
+def association_labels():
+    def state_label(value):
+        return {
+            "unconfirmed": _("E-Mail noch nicht bestätigt"),
+            "pending": _("Prüfung ausstehend"),
+            "accepted": _("Aufgenommen"),
+            "refused": _("Abgelehnt"),
+            "active": _("Aktiv"),
+            "resigned": _("Ausgetreten"),
+            "terminated": _("Beendet"),
+            "approved": _("Gutgeheissen"),
+            "dismissed": _("Abgewiesen"),
+            "received": _("Eingegangen, sofort wirksam"),
+            "draft": _("Entwurf"),
+            "scheduled": _("Bestätigt"),
+            "cancelled": _("Abgesagt"),
+        }.get(value, _("Unbekannt"))
+
+    return {"verein_state_label": state_label}
 
 
 @verein_bp.errorhandler(db.VereinUnavailable)
@@ -306,10 +332,11 @@ def deliver_notifications():
     failed = False
     try:
         for notice in db.get_verein_notifications(token):
+            locale = resolve_locale(notice["preferred_locale"], extended=True)
             if notice["kind"] == "accepted":
                 message = recipient_gettext(
                     "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und Rückfragen: hallo@openleg.ch.",
-                    due_on=notice["due_on"].isoformat(),
+                    due_on=format_date(notice["due_on"], format="long", locale=locale),
                     locale=notice["preferred_locale"],
                 )
             elif notice["kind"] == "refused":
@@ -320,7 +347,27 @@ def deliver_notifications():
                 )
             elif notice["kind"] == "reminder":
                 message = recipient_gettext(
-                    "Ihr Jahresbeitrag von CHF 50 ist offen. Bitte zahlen Sie innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
+                    "Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
+                    period=format_date(
+                        notice["period_start"], format="long", locale=locale
+                    ),
+                    amount=format_decimal(
+                        notice["outstanding_chf"], format="#,##0.00", locale=locale
+                    ),
+                    locale=notice["preferred_locale"],
+                )
+            elif notice["kind"] == "renewal":
+                message = recipient_gettext(
+                    "Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am %(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang. Kontakt: hallo@openleg.ch.",
+                    period=format_date(
+                        notice["period_start"], format="long", locale=locale
+                    ),
+                    due_on=format_date(notice["due_on"], format="long", locale=locale),
+                    locale=notice["preferred_locale"],
+                )
+            elif notice["kind"] == "resignation_received":
+                message = recipient_gettext(
+                    "Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- und Entscheidnachweise. Kontakt: hallo@openleg.ch.",
                     locale=notice["preferred_locale"],
                 )
             elif notice["kind"] == "terminated":
@@ -348,7 +395,7 @@ def deliver_notifications():
             sent = email_utils.send_email(
                 notice["email"],
                 recipient_gettext(
-                    "Verein: Entscheid zum Mitgliedsantrag",
+                    "Verein: Mitgliedschaft und Jahresbeitrag",
                     locale=notice["preferred_locale"],
                 ),
                 message,
@@ -360,6 +407,20 @@ def deliver_notifications():
         abort(503)
     if failed:
         abort(503)
+    return redirect("/verein/vorstand/antraege", code=303)
+
+
+@verein_bp.post("/vorstand/beitraege/erneuern")
+def renew_contributions():
+    require_reviewer()
+    require_csrf()
+    count = db.renew_verein_dues(session["verein_session"])
+    flash(
+        _(
+            "%(count)s neue Beitragsjahre erfasst. Benachrichtigungen werden erst über den Versand ausgelöst.",
+            count=count,
+        )
+    )
     return redirect("/verein/vorstand/antraege", code=303)
 
 
@@ -434,7 +495,11 @@ def remind_member(identifier):
     require_reviewer()
     require_csrf()
     try:
-        db.request_verein_reminder(session["verein_session"], identifier)
+        db.request_verein_reminder(
+            session["verein_session"],
+            identifier,
+            dues_id=request.form.get("dues_id") or None,
+        )
     except db.VereinDenied:
         abort(409)
     except db.VereinUnavailable:
@@ -456,6 +521,7 @@ def record_received_payment(identifier):
             source=request.form.get("source", ""),
             reference=request.form.get("reference", ""),
             evidence=request.form.get("evidence", ""),
+            dues_id=request.form.get("dues_id") or None,
         )
     except db.VereinDenied:
         abort(409)
@@ -468,7 +534,10 @@ def terminate_member(identifier):
     require_csrf()
     try:
         db.terminate_verein_membership(
-            session["verein_session"], identifier, request.form.get("reason", "")
+            session["verein_session"],
+            identifier,
+            request.form.get("reason", ""),
+            dues_id=request.form.get("dues_id") or None,
         )
     except db.VereinDenied:
         abort(409)
