@@ -2,9 +2,22 @@
 """Membership contribution policy, independent of persistence and HTTP."""
 
 from datetime import timedelta
+from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
 ANNUAL_DUES_CHF = 50
+
+
+def received_amount(value):
+    try:
+        amount = Decimal(value)
+        if not amount.is_finite() or amount <= 0 or amount > ANNUAL_DUES_CHF:
+            raise ValueError("Invalid received amount")
+        if amount != amount.quantize(Decimal("0.01")):
+            raise ValueError("Use CHF cents")
+        return amount
+    except (InvalidOperation, TypeError):
+        raise ValueError("Invalid received amount") from None
 
 
 def admission_dates(accepted_at):
