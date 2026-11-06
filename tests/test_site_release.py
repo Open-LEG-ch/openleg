@@ -35,3 +35,35 @@ def test_release_shell_has_static_identity_and_task_navigation(web):
     assert 'src="/static/js/site_navigation.js"' in response.text
     for label in ("LEG gründen", "Software", "Für Gemeinden", "Wissen", "Verein"):
         assert label in response.text
+
+
+def test_release_home_explains_tasks_and_keeps_real_address_intake(web, monkeypatch):
+    import database
+    import homepage_view_model
+
+    web.config["SITE_RELEASE_ENABLED"] = True
+    monkeypatch.setattr(
+        database, "get_stats", lambda city_id=None: {"total_buildings": 0}
+    )
+    monkeypatch.setattr(homepage_view_model, "ranking_extremes", lambda: ([], [], 0))
+    client = web.test_client()
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.text.count("<h1") == 1
+    assert "Eine LEG gründen und betreiben." in response.text
+    assert 'href="/leg-gruenden"' in response.text
+    assert 'href="#registrieren"' in response.text
+    assert 'width="1706" height="922"' in response.text
+    for identifier in (
+        "registrieren",
+        "address-input",
+        "address-status",
+        "map",
+        "step-address",
+    ):
+        assert response.text.count('id="' + identifier + '"') == 1
+    assert "Fiktives Quartier" in response.text
+    assert "noch nicht gegründet" in response.text
+    with client.session_transaction() as session:
+        session["dashboard_building_id"] = "existing-resident"
+    assert client.get("/").headers["Location"] == "/dashboard"
