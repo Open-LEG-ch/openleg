@@ -373,6 +373,27 @@ def reconcile(data):
 def validate_continuity(private, quarters):
     """Compare complete report inputs without database access."""
     quarter = private["quarter"]
+    paid_sources = set()
+    for period, report in sorted({**quarters, quarter: private}.items()):
+        paid_sources.update(row["source_id"] for row in report["bookings"])
+        for row_number, row in enumerate(report["commitments"], start=2):
+            if row["source_id"] not in paid_sources:
+                continue
+            if period == quarter:
+                raise FinanceInputError(
+                    _(
+                        "Prüfen Sie Quellkennung, Fonds und Quellenreferenz der Verpflichtung. Ein bereits gebuchter oder doppelt erfasster Beleg darf nicht als unbezahlte Verpflichtung erscheinen."
+                    ),
+                    field="commitments",
+                    row=row_number,
+                )
+            raise FinanceInputError(
+                _(
+                    "Der Quellbeleg wäre in %(quarter)s bereits gebucht und zugleich als unbezahlte Verpflichtung veröffentlicht. Prüfen Sie alle betroffenen Quartale gemeinsam.",
+                    quarter=period,
+                ),
+                field="bookings",
+            )
     ordinal = int(quarter[:4]) * 4 + int(quarter[-1]) - 1
     previous = f"{(ordinal - 1) // 4}-Q{(ordinal - 1) % 4 + 1}"
     following = f"{(ordinal + 1) // 4}-Q{(ordinal + 1) % 4 + 1}"

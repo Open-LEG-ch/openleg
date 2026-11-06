@@ -104,7 +104,8 @@ field and CSV row with a linked summary and inline error.
 - `commitments`: record each outstanding unpaid commitment once, with its fund,
   positive amount, unique source reference and private evidence. Commitments
   remain separate from already paid expenses; the same source ID cannot appear
-  in both bookings and unpaid commitments. Reconcile outstanding invoices
+  in both bookings and unpaid commitments, including an already paid source
+  from an earlier quarter. Publication rechecks this against the current history. Reconcile outstanding invoices
   against actual payments before preparing this table.
 
 Receipt categories are `starting_contribution`, `membership`, `donation`,
@@ -149,7 +150,9 @@ rows cannot silently disappear. Prior published versions remain downloadable.
 Publish consecutive quarters from the declared opening period. Opening balances
 must match the preceding published closing balances. An earlier correction
 cannot invalidate the next published quarter; such a balance restatement needs
-a separately reviewed process covering every affected period.
+a separately reviewed process covering every affected period. A correction
+also cannot make a commitment in a later published report already paid. Genuine
+unpaid commitments may carry forward until settled.
 
 Available budget means confirmed general bank funds minus general unpaid
 commitments. It excludes provider clearing, pending payments, reserve,
