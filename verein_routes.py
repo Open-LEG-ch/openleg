@@ -112,6 +112,15 @@ def member_profile():
     return render_template("verein/member.html", record=record, csrf_token=csrf_token())
 
 
+@verein_bp.post("/mitglied/logout")
+def applicant_logout():
+    require_csrf()
+    db.logout_verein_applicant(session.get("verein_applicant_session"))
+    session.pop("verein_applicant_session", None)
+    session.pop("verein_csrf", None)
+    return redirect("/verein/mitglied/zugang", code=303)
+
+
 @verein_bp.post("/mitglied/austritt")
 def resign():
     require_applicant()
@@ -294,9 +303,19 @@ def confirm(token):
 @verein_bp.get("/vorstand/antraege")
 def applications():
     require_reviewer()
+    status = request.args.get("status", "pending")
+    page = request.args.get("page", 1, type=int)
+    try:
+        records = db.list_verein_applications(
+            session["verein_session"], status=status, page=page
+        )
+    except db.VereinDenied:
+        abort(400)
     return render_template(
         "verein/queue.html",
-        applications=db.list_verein_applications(session["verein_session"]),
+        applications=records,
+        filter_status=status,
+        page=page,
         member_requests=db.list_verein_member_requests(session["verein_session"]),
         csrf_token=csrf_token(),
     )
@@ -445,6 +464,26 @@ def remind_member(identifier):
         abort(409)
     except db.VereinUnavailable:
         abort(503)
+    return redirect("/verein/vorstand/antraege/" + identifier, code=303)
+
+
+@verein_bp.post("/vorstand/antraege/<identifier>/payment")
+def record_received_payment(identifier):
+    require_reviewer()
+    require_csrf()
+    if request.form.get("verified") != "yes":
+        abort(400)
+    try:
+        db.record_verein_payment(
+            session["verein_session"],
+            identifier,
+            amount_chf=request.form.get("amount_chf", ""),
+            source=request.form.get("source", ""),
+            reference=request.form.get("reference", ""),
+            evidence=request.form.get("evidence", ""),
+        )
+    except db.VereinDenied:
+        abort(409)
     return redirect("/verein/vorstand/antraege/" + identifier, code=303)
 
 

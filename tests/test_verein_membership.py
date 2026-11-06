@@ -313,6 +313,167 @@ def test_terminated_owner_sees_actual_reason_and_date(membership, monkeypatch):
     assert profile["decision_at"] == datetime(2026, 4, 3, tzinfo=UTC)
 
 
+def test_verified_dues_receipt_is_repeat_safe_and_blocks_termination(
+    membership, monkeypatch
+):
+    client, _mail, store, _reviewer_id, path = _accepted(membership)
+    import database
+
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE verein_dues SET reminder_sent_at='2026-01-01'")
+    monkeypatch.setattr(store, "now_utc", lambda: datetime(2026, 4, 3, tzinfo=UTC))
+    data = {
+        "csrf_token": _csrf(client, path),
+        "amount_chf": "50.00",
+        "source": "bank-test-account",
+        "reference": "statement-entry-123",
+        "evidence": "Private statement 2026-04 item 123",
+        "verified": "yes",
+    }
+    assert client.post(path + "/payment", data=data).status_code == 303
+    assert client.post(path + "/payment", data=data).status_code == 303
+    assert (
+        client.post(path + "/payment", data={**data, "amount_chf": "49"}).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            path + "/terminate",
+            data={"csrf_token": data["csrf_token"], "reason": "Still unpaid"},
+        ).status_code
+        == 409
+    )
+    assert "Bezahlt" in client.get(path).text
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS count FROM verein_dues_receipts")
+        assert cur.fetchone()["count"] == 1
+
+
+def test_concurrent_board_decisions_create_one_membership(membership):
+    from concurrent.futures import ThreadPoolExecutor
+
+    _client, _mail, store = membership
+    import database
+
+    confirmation = store.apply(
+        email="race@example.org",
+        name="Race",
+        affiliation="",
+        locale="de_CH",
+        privacy_version="current",
+    )
+    store.confirm(confirmation)
+    store.provision_reviewer(
+        "review@example.org", "Reviewer", "correct-horse-battery-staple"
+    )
+    token = store.login("review@example.org", "correct-horse-battery-staple")
+    identifier = str(store.list_applications(token)[0]["id"])
+
+    def decide(_):
+        try:
+            store.decide(token, identifier, "accepted", "Checked eligibility")
+            return "accepted"
+        except store.VereinDenied:
+            return "stale"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert sorted(pool.map(decide, range(2))) == ["accepted", "stale"]
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS count FROM verein_members")
+        assert cur.fetchone()["count"] == 1
+
+
+def test_owner_session_cannot_read_second_applicant_and_logout_revokes_access(
+    membership,
+):
+    client, _mail, store, _reviewer_id, _path = _accepted(membership)
+    token = store.apply(
+        email="other@example.org",
+        name="Other private person",
+        affiliation="Other private affiliation",
+        locale="de_CH",
+        privacy_version="current",
+    )
+    store.confirm(token)
+    access = store.request_applicant_access("ada@example.org")
+    owner = client.application.test_client()
+    owner.get("/verein/mitglied/zugang/" + access["token"])
+    profile = owner.get("/verein/mitglied?application_id=other@example.org")
+    assert "Ada Muster" in profile.text
+    assert "Other private" not in profile.text
+    assert (
+        owner.post(
+            "/verein/mitglied/logout",
+            data={"csrf_token": _csrf(owner, "/verein/mitglied")},
+        ).status_code
+        == 303
+    )
+    assert owner.get("/verein/mitglied").status_code == 401
+
+
+def test_expired_confirmation_and_owner_access_cannot_be_consumed(membership):
+    client, _mail, store = membership
+    import database
+
+    token = store.apply(
+        email="expired@example.org",
+        name="Expired applicant",
+        affiliation="",
+        locale="de_CH",
+        privacy_version="current",
+    )
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE verein_applications SET confirmation_expires_at=CURRENT_TIMESTAMP-INTERVAL '1 second'"
+        )
+    assert client.get("/verein/bestaetigen/" + token).status_code == 410
+    current = store.apply(
+        email="expired@example.org",
+        name="Applicant",
+        affiliation="",
+        locale="de_CH",
+        privacy_version="current",
+    )
+    store.confirm(current)
+    access = store.request_applicant_access("expired@example.org")
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE verein_applicant_access SET expires_at=CURRENT_TIMESTAMP-INTERVAL '1 second'"
+        )
+    assert client.get("/verein/mitglied/zugang/" + access["token"]).status_code == 410
+    assert client.get("/verein/mitglied").status_code == 401
+
+
+def test_partial_receipts_do_not_settle_dues_and_members_are_reachable(membership):
+    client, _mail, _store, _reviewer_id, path = _accepted(membership)
+    csrf = _csrf(client, path)
+    data = {
+        "csrf_token": csrf,
+        "amount_chf": "20",
+        "source": "test-bank",
+        "reference": "entry-1",
+        "evidence": "Private bank statement 1",
+        "verified": "yes",
+    }
+    assert client.post(path + "/payment", data=data).status_code == 303
+    assert "Offen" in client.get(path).text
+    assert (
+        client.post(
+            path + "/payment", data={**data, "reference": "entry-2", "amount_chf": "31"}
+        ).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            path + "/payment", data={**data, "reference": "entry-2", "amount_chf": "30"}
+        ).status_code
+        == 303
+    )
+    assert "Bezahlt" in client.get(path).text
+    assert path in client.get("/verein/vorstand/antraege?status=active").text
+    assert client.get("/verein/vorstand/antraege?status=unsupported").status_code == 400
+
+
 def test_application_is_confirmed_before_private_board_review(membership):
     client, mail, _store = membership
     csrf = _csrf(client, "/verein/beitreten")
@@ -338,6 +499,66 @@ def test_application_is_confirmed_before_private_board_review(membership):
     assert confirmed.headers["Cache-Control"] == "no-store"
     assert "Prüfung" in confirmed.text
     assert client.get("/verein/vorstand/antraege").status_code == 401
+
+
+@pytest.mark.parametrize("state", ["inactive", "expired"])
+def test_inactive_or_expired_reviewer_session_cannot_read_records(membership, state):
+    client, _mail, _store, _reviewer_id, path = _accepted(membership)
+    import database
+
+    with database.get_connection() as conn, conn.cursor() as cur:
+        if state == "inactive":
+            cur.execute("UPDATE verein_reviewers SET active=FALSE")
+        else:
+            cur.execute(
+                "UPDATE verein_sessions SET expires_at=CURRENT_TIMESTAMP-INTERVAL '1 second'"
+            )
+    assert client.get(path).status_code == 401
+    assert client.get("/verein/vorstand/antraege").status_code == 401
+
+
+def test_private_membership_pages_never_cache_or_load_analytics(membership):
+    client, _mail, _store = membership
+    client.application.config["MATOMO_SITE_ID"] = "42"
+    for path in (
+        "/verein/beitreten",
+        "/verein/bestaetigen/invalid",
+        "/verein/mitglied/zugang",
+        "/verein/vorstand/login",
+    ):
+        response = client.get(path)
+        assert response.headers["Cache-Control"] == "no-store"
+        assert response.headers["Referrer-Policy"] == "no-referrer"
+        assert "stats.openleg.ch/matomo.js" not in response.text
+        assert "https:" not in response.headers["Content-Security-Policy"]
+
+
+def test_membership_credentials_are_not_stored_in_plaintext(membership):
+    _client, _mail, store = membership
+    import database
+
+    confirmation = store.apply(
+        email="tokens@example.org",
+        name="Token owner",
+        affiliation="",
+        locale="de_CH",
+        privacy_version="current",
+    )
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT confirmation_hash FROM verein_applications")
+        assert cur.fetchone()["confirmation_hash"] != confirmation
+    store.confirm(confirmation)
+    password = "correct-horse-battery-staple"
+    store.provision_reviewer("review@example.org", "Reviewer", password)
+    board = store.login("review@example.org", password)
+    access = store.request_applicant_access("tokens@example.org")
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT token_hash FROM verein_sessions")
+        assert cur.fetchone()["token_hash"] != board
+        cur.execute("SELECT token_hash FROM verein_applicant_access")
+        assert cur.fetchone()["token_hash"] != access["token"]
+        cur.execute("SELECT password_hash FROM verein_reviewers")
+        assert cur.fetchone()["password_hash"].startswith("scrypt:")
 
 
 def test_board_admission_creates_one_membership_and_one_fee(membership):
