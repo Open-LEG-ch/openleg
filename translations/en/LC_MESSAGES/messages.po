@@ -4457,6 +4457,18 @@ msgstr "The model calculation"
 msgid "Die Netzebene der Richtlinie ist ungültig."
 msgstr "The network level of the policy is invalid."
 
+#. Draft checked against source; native language and domain review pending.
+#: verein_event_routes.py:203
+msgid ""
+"Die Notizen konnten nicht gespeichert werden. Prüfen Sie den aktuellen Stand, die "
+"Freigabereferenz und alle vier Sprachfassungen. Veröffentlicht werden können nur Notizen zu einem"
+" vergangenen, veröffentlichten Treffen. Ihr Entwurf bleibt unten erhalten; vergleichen Sie ihn "
+"vor dem erneuten Speichern mit der öffentlichen Seite."
+msgstr ""
+"The notes could not be saved. Check the current version, the approval reference and all four "
+"language versions. Notes can only be published for a past, published meetup. Your draft is kept "
+"below; compare it with the public page before saving again."
+
 #. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:14
 msgid ""

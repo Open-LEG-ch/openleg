@@ -3779,6 +3779,18 @@ msgstr "Die Modellrechnung"
 msgid "Die Netzebene der Richtlinie ist ungültig."
 msgstr "Die Netzebene der Richtlinie ist ungültig."
 
+#: verein_event_routes.py:203
+msgid ""
+"Die Notizen konnten nicht gespeichert werden. Prüfen Sie den aktuellen Stand, die "
+"Freigabereferenz und alle vier Sprachfassungen. Veröffentlicht werden können nur Notizen zu einem"
+" vergangenen, veröffentlichten Treffen. Ihr Entwurf bleibt unten erhalten; vergleichen Sie ihn "
+"vor dem erneuten Speichern mit der öffentlichen Seite."
+msgstr ""
+"Die Notizen konnten nicht gespeichert werden. Prüfen Sie den aktuellen Stand, die "
+"Freigabereferenz und alle vier Sprachfassungen. Veröffentlicht werden können nur Notizen zu einem"
+" vergangenen, veröffentlichten Treffen. Ihr Entwurf bleibt unten erhalten; vergleichen Sie ihn "
+"vor dem erneuten Speichern mit der öffentlichen Seite."
+
 #: templates/release/knowledge.html:14
 msgid ""
 "Die Nutzung des öffentlichen Stromnetzes. Das Entgelt ist vom internen Energiepreis und von "
@@ -12313,7 +12325,7 @@ msgid "Speichern"
 msgstr "Speichern"
 
 #: templates/http_error.html:10 templates/partials/language_switcher.html:1
-#: templates/release/navigation.html:21
+#: templates/product_base.html:20 templates/release/navigation.html:21
 msgid "Sprache"
 msgstr "Sprache"
 

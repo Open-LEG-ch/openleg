@@ -152,6 +152,30 @@ def test_published_occurrence_cannot_be_hidden_by_changing_back_to_draft(members
     assert events.published(data["slug"]) is not None
 
 
+def test_rejected_note_publication_preserves_draft_and_explains_recovery(membership):
+    client, _store, token, data, events = _event(membership)
+    data.update(status="scheduled", start="2026-01-10T10:00", end="2026-01-10T11:00")
+    identifier = events.save(token, data)
+    form = {
+        "csrf_token": test_verein_membership._csrf(client, "/verein/vorstand/treffen"),
+        "version": "0",
+        "evidence": "Actual board approval reference",
+        **{
+            "notes_" + locale: "Keep this draft " + locale
+            for locale in data["translations"]
+        },
+    }
+    response = client.post(
+        "/verein/vorstand/treffen/" + identifier + "/notizen", data=form
+    )
+    assert response.status_code == 409
+    assert 'role="alert"' in response.text
+    for locale in data["translations"]:
+        assert "Keep this draft " + locale in response.text
+    assert "Actual board approval reference" in response.text
+    assert "Keep this draft" not in client.get("/veranstaltungen/" + data["slug"]).text
+
+
 @pytest.mark.parametrize(
     "start,end",
     [

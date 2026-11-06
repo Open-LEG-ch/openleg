@@ -31,7 +31,10 @@ def create_tables(cur):
 
 
 def save(token, data, *, identifier=None, version=None):
-    content = verein_events.validated(data)
+    try:
+        content = verein_events.validated(data)
+    except verein_events.EventInputError as exc:
+        raise verein.VereinDenied(str(exc)) from None
     now = datetime.now(UTC)
     with verein.transaction_cursor() as cur:
         actor = verein.require_reviewer(cur, token)
