@@ -297,6 +297,8 @@ def login():
 
 @main_bp.route("/how-it-works")
 def how_it_works():
+    if current_app.config.get("SITE_RELEASE_ENABLED") is True:
+        return render_city_template("release/how_it_works.html")
     return render_city_template("how-it-works.html")
 
 
