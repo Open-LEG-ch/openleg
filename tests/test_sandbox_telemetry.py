@@ -329,3 +329,38 @@ def test_enrollment_redirect_consumes_private_key_once_without_refresh_replay(vi
     ):
         cur.execute("SELECT COUNT(*) FROM telemetry_installations")
         assert cur.fetchone()[0] == 1
+
+
+@pytest.mark.parametrize(
+    ("language", "paused_label", "unpaused_label", "old_ready_label"),
+    [
+        (
+            "de-CH",
+            "Quelle pausiert",
+            "Quelle nicht pausiert",
+            "Quelle bereit für einzelne Muster",
+        ),
+        (
+            "fr-CH",
+            "Source en pause",
+            "Source non mise en pause",
+            "Source prête pour des échantillons manuels",
+        ),
+    ],
+)
+def test_revoked_source_status_describes_pause_without_promising_delivery(
+    village, language, paused_label, unpaused_label, old_ready_label
+):
+    """A revoked source remains unpaused without claiming it can publish samples."""
+    client = village.test_client()
+    prefix, _ = _start(client, "resident")
+    installation, _ = _enroll(client, prefix)
+    assert _control(client, prefix, installation, "pause").status_code == 200
+    path = prefix + "/sandbox/telemetry?lang=" + language
+    assert paused_label in client.get(path).text
+    assert _control(client, prefix, installation, "resume").status_code == 200
+    assert _control(client, prefix, installation, "revoke").status_code == 200
+    page = client.get(path)
+    assert unpaused_label in page.text
+    assert old_ready_label not in page.text
+    assert _control(client, prefix, installation, "publish").status_code == 401

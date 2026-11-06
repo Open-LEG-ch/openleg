@@ -9299,7 +9299,7 @@ msgid "Quelle Ihrer Angabe"
 msgstr ""
 
 #: templates/sandbox/telemetry.html:23
-msgid "Quelle bereit für einzelne Muster"
+msgid "Quelle nicht pausiert"
 msgstr ""
 
 #: templates/equipment_form.html:19

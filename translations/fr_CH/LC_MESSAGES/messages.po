@@ -10140,8 +10140,8 @@ msgid "Quelle Ihrer Angabe"
 msgstr "Source de vos informations"
 
 #: templates/sandbox/telemetry.html:23
-msgid "Quelle bereit für einzelne Muster"
-msgstr "Source prête pour des échantillons manuels"
+msgid "Quelle nicht pausiert"
+msgstr "Source non mise en pause"
 
 #: templates/equipment_form.html:19
 msgid "Quelle der Angabe"
