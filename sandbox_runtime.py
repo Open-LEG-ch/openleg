@@ -27,7 +27,7 @@ from psycopg2 import sql
 from psycopg2.extensions import make_dsn
 
 import i18n
-from app_config import MAX_UPLOAD_BYTES, validated_public_site_url
+from app_config import MAX_UPLOAD_BYTES, TRUTHY, validated_public_site_url
 from sandbox_lifecycle import POSTGRES_CONTROL_TIMEOUT_SECONDS, ScratchOwner
 from sandbox_seed import ACCOUNTS, SEED_VERSION
 from sandbox_urls import scope_page, scope_url
@@ -194,7 +194,9 @@ class Villages:
         lifetime_seconds,
         inactivity_seconds=900,
         max_upload_bytes=2 * 1024 * 1024,
+        site_release_enabled=False,
     ):
+        self.site_release_enabled = site_release_enabled is True
         self.max_upload_bytes = int(max_upload_bytes)
         if not 65536 <= self.max_upload_bytes <= MAX_UPLOAD_BYTES:
             raise ValueError("sandbox upload bound must be between 64 KiB and 10 MiB")
@@ -387,10 +389,16 @@ class Villages:
                 "OPENLEG_SANDBOX_WORKSPACE": identifier,
                 "OPENLEG_SANDBOX_PREFIX": "/v/" + identifier,
                 "OPENLEG_SANDBOX_MAX_UPLOAD_BYTES": str(self.max_upload_bytes),
+                "OPENLEG_SITE_RELEASE_ENABLED": "1"
+                if self.site_release_enabled
+                else "0",
                 "SECRET_KEY": secrets.token_urlsafe(48),
                 "APP_BASE_URL": origin + "/v/" + identifier,
                 "PUBLIC_SITE_URL": origin,
-                "BABEL_DEFAULT_LOCALE": i18n.normalize_locale(locale) or "de_CH",
+                "BABEL_DEFAULT_LOCALE": i18n.normalize_locale(
+                    locale, extended=self.site_release_enabled
+                )
+                or "de_CH",
                 "REDIS_URL": "memory://",
                 "DB_POOL_MIN": "1",
                 "DB_POOL_MAX": "4",
@@ -710,9 +718,14 @@ def create_gateway(
     inactivity_seconds=900,
     max_upload_bytes=2 * 1024 * 1024,
     origin="http://localhost",
+    site_release_enabled=None,
 ):
     """Create the standalone sandbox entry point, never a production app mode."""
     origin = validated_public_site_url(origin)
+    if site_release_enabled is None:
+        site_release_enabled = (
+            os.environ.get("OPENLEG_SITE_RELEASE_ENABLED", "").lower() in TRUTHY
+        )
     expected_host = urlsplit(origin).netloc
     villages = Villages(
         directory,
@@ -722,6 +735,7 @@ def create_gateway(
         lifetime_seconds=lifetime_seconds,
         inactivity_seconds=inactivity_seconds,
         max_upload_bytes=max_upload_bytes,
+        site_release_enabled=site_release_enabled,
     )
     web = Flask(__name__)
     web.config.update(
@@ -731,6 +745,7 @@ def create_gateway(
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_SECURE=origin.startswith("https://"),
         MAX_CONTENT_LENGTH=villages.max_upload_bytes,
+        SITE_RELEASE_ENABLED=site_release_enabled is True,
     )
     web.extensions["villages"] = villages
     i18n.init_app(web)

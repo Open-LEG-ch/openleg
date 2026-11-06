@@ -5,6 +5,12 @@ Italian (`it_CH`). Swiss German (`de_CH`) and Swiss French (`fr_CH`) remain in t
 existing default. `SITE_RELEASE_ENABLED` enables four-language presentation.
 The flag controls newly offered display choices, not stored mail preferences.
 
+The standalone sandbox gateway reads the same `OPENLEG_SITE_RELEASE_ENABLED`
+switch. It passes only that presentation setting into its isolated workers,
+alongside their existing allowlisted scratch settings. Four-language choices
+survive entry, the management page and reset. Service credentials and the actual
+association intake configuration are never inherited by a worker.
+
 Keep the existing paths and `?lang=` URLs. A second prefix router would duplicate
 public and capability routes. Stable equivalents use the same path with
 `lang=en`, `lang=fr-CH` or `lang=it-CH`. German keeps the bare canonical path on a

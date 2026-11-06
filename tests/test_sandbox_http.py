@@ -357,6 +357,40 @@ def test_french_entry_keeps_the_selected_language_when_entering_the_village(vill
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("village", [{"site_release_enabled": True}], indirect=True)
+@pytest.mark.parametrize("language", ["en", "it-CH"])
+def test_release_languages_survive_entry_management_and_reset(village, language):
+    client = village.test_client()
+    page = client.get("/sandbox?lang=" + language)
+    assert f'<html lang="{language}"' in page.text
+    response = client.post(
+        "/sandbox/start", data={"csrf_token": _csrf(page), "persona": "resident"}
+    )
+    prefix = response.location.removesuffix("/sandbox/enter")
+    entered = client.get(response.location, follow_redirects=True)
+    assert entered.status_code == 200 and f'<html lang="{language}"' in entered.text
+    assert client.get(prefix + "/dashboard").headers["Content-Language"] == language
+    selected = "it-CH" if language == "en" else "en"
+    management = client.get(prefix + "/sandbox/manage?lang=" + selected)
+    assert f'<html lang="{selected}"' in management.text
+    home = client.get(prefix + "/sandbox/home?lang=" + selected)
+    assert home.headers["Content-Language"] == selected
+    reset = client.post(
+        prefix + "/sandbox/reset",
+        data={
+            "csrf_token": _csrf(management),
+            "confirm": "reset",
+            "seed_version": "sonnwil/1",
+        },
+    )
+    replacement = client.get(reset.location, follow_redirects=True)
+    assert (
+        replacement.status_code == 200
+        and f'<html lang="{selected}"' in replacement.text
+    )
+
+
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "village", [{"origin": "https://sandbox.example.org"}], indirect=True
 )
