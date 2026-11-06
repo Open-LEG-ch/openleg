@@ -94,6 +94,30 @@ def test_deepsign_webhook_rejects_unsigned_when_secret_set(app_with_deepsign_sec
     assert response.status_code == 403
 
 
+@pytest.fixture
+def app_without_deepsign_secret():
+    import deepsign_integration
+
+    with patch.dict(os.environ, {"DEEPSIGN_WEBHOOK_SECRET": ""}):
+        importlib.reload(deepsign_integration)
+        module = _load_app({"DEEPSIGN_WEBHOOK_SECRET": ""})
+        yield module
+    importlib.reload(deepsign_integration)
+
+
+def test_deepsign_webhook_fails_closed_without_secret(app_without_deepsign_secret):
+    import deepsign_integration
+
+    with patch.object(deepsign_integration, "handle_webhook") as handler:
+        response = app_without_deepsign_secret.app.test_client().post(
+            "/webhook/deepsign",
+            json={"event": "document.signed", "document_id": "doc-1"},
+            headers={"X-DeepSign-Signature": "anything"},
+        )
+    assert response.status_code == 403
+    handler.assert_not_called()
+
+
 def test_deepsign_webhook_accepts_valid_signature(app_with_deepsign_secret):
     import json as _json
 
@@ -127,8 +151,9 @@ def test_deepsign_signature_verification_helper():
         assert not deepsign_integration.verify_webhook_signature(body, "")
 
     with patch.object(deepsign_integration, "WEBHOOK_SECRET", ""):
-        # Without a configured secret the check is a no-op (dev mode).
-        assert deepsign_integration.verify_webhook_signature(b"x", "")
+        # Without a configured secret nothing can be verified, so nothing passes.
+        assert not deepsign_integration.verify_webhook_signature(b"x", "")
+        assert not deepsign_integration.verify_webhook_signature(b"x", "anything")
 
 
 def test_env_example_documents_all_required_vars():
