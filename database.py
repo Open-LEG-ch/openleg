@@ -506,6 +506,7 @@ from store.verein import request_reminder as request_verein_reminder  # noqa: F4
 from store.verein import resolve_member_request as resolve_verein_member_request  # noqa: F401
 from store.verein import reviewer as get_verein_reviewer  # noqa: F401
 from store.verein import revoke_reviewer as revoke_verein_reviewer  # noqa: F401
+from store.verein import send_notification as send_verein_notification  # noqa: F401
 from store.verein import submit_member_request as submit_verein_member_request  # noqa: F401
 from store.verein import terminate as terminate_verein_membership  # noqa: F401
 
