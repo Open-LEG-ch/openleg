@@ -71,9 +71,14 @@ def save_billing_period(
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
+                reconciliation = summary.get("reconciliation")
+                if not isinstance(reconciliation, dict):
+                    raise InvoiceRegistrationMismatch(
+                        "Die ursprünglichen Teilnehmerregistrierungen sind nicht belegt."
+                    )
                 lock_original_registrations(
                     cur,
-                    summary.get("reconciliation", {}).get("participant_registrations"),
+                    reconciliation.get("participant_registrations"),
                     (
                         {item["participant_id"] for item in summary["line_items"]}
                         if summary.get("line_items")
@@ -486,9 +491,14 @@ def approve_billing_period(
                 (period_id,),
             )
             period["line_items"] = [dict(item) for item in cur.fetchall()]
+            reconciliation = period.get("reconciliation")
+            if not isinstance(reconciliation, dict):
+                raise billing_approval.BillingApprovalError(
+                    "Billing reconciliation must be an object"
+                )
             lock_original_registrations(
                 cur,
-                period["reconciliation"].get("participant_registrations"),
+                reconciliation.get("participant_registrations"),
                 {item["participant_id"] for item in period["line_items"]},
             )
             snapshots = billing_approval.prepare_invoice_snapshots(
@@ -751,7 +761,8 @@ def _locked_invoice(cur, invoice_id, community_id):
     """Lock a community-scoped invoice and resolve its original registration's recipient."""
     cur.execute(
         f"""
-        SELECT i.*, b.email AS recipient_email, b.preferred_locale AS recipient_locale
+        SELECT i.*, b.building_id AS matched_building_id,
+               b.email AS recipient_email, b.preferred_locale AS recipient_locale
         FROM invoices i
         LEFT JOIN buildings b ON b.building_id = i.participant_id
           AND {REGISTRATION_MATCH_SQL}
@@ -888,6 +899,10 @@ def prepare_invoice_delivery(invoice_id, community_id, actor_id):
             if state == "delivered":
                 return {"already_delivered": True, "lifecycle_state": state}
             billing_lifecycle.next_state(state, "deliver")
+            if invoice.get("matched_building_id") is None:
+                raise billing_lifecycle.InvoiceLifecycleError(
+                    "Die ursprüngliche Teilnehmerregistrierung fehlt oder hat sich geändert."
+                )
             policy = _policy_dict(invoice.get("policy_snapshot"))
             method = policy.get("delivery_method")
             if method not in {"email", "download"}:

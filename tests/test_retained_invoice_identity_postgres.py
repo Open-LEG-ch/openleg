@@ -14,10 +14,10 @@ pytestmark = pytest.mark.integration
 _csrf = test_sandbox_http._csrf
 
 
-def _prepared(village, client):
+def _prepared(village, client, *, delivery_method="email"):
     """Prepare a real September draft and switch to its administrator."""
     prefix, _ = _start(client, "operator")
-    _policy(client, prefix)
+    _policy(client, prefix, delivery_method=delivery_method)
     _import(client, prefix)
     assert _prepare(client, prefix).status_code == 200
     with (
@@ -30,9 +30,9 @@ def _prepared(village, client):
     return prefix, period
 
 
-def _issued(village, client, *, deliver=True):
+def _issued(village, client, *, deliver=True, delivery_method="email"):
     """Issue the fictional invoices and optionally deliver them normally."""
-    prefix, period = _prepared(village, client)
+    prefix, period = _prepared(village, client, delivery_method=delivery_method)
     page = client.get(prefix + COMMUNITY + "/billing")
     assert (
         client.post(
@@ -225,10 +225,13 @@ def test_changed_draft_registration_cannot_be_approved(village):
         assert cursor.fetchone()[0] == 0
 
 
-def test_delivery_never_uses_a_replacement_registration_email(village):
-    """Delivery refuses an email belonging to a replacement registration."""
+@pytest.mark.parametrize("delivery_method", ["email", "download"])
+def test_delivery_never_uses_a_replacement_registration_email(village, delivery_method):
+    """Both delivery methods refuse a replacement registration with an explicit conflict."""
     client = village.test_client()
-    prefix, invoices = _issued(village, client, deliver=False)
+    prefix, invoices = _issued(
+        village, client, deliver=False, delivery_method=delivery_method
+    )
     invoice = invoices["sonnwil-resident"]
     with (
         _workspace_connection(village, prefix) as connection,
@@ -251,3 +254,99 @@ def test_delivery_never_uses_a_replacement_registration_email(village):
             "SELECT COUNT(*) FROM invoice_delivery_jobs WHERE invoice_id=%s", (invoice,)
         )
         assert cursor.fetchone()[0] == 0
+
+
+@pytest.mark.parametrize("reconciliation", [None, "malformed"])
+def test_malformed_draft_reconciliation_is_a_domain_conflict(village, reconciliation):
+    """Malformed legacy evidence returns a conflict without issuing invoices."""
+    import psycopg2.extras
+
+    client = village.test_client()
+    prefix, period = _prepared(village, client)
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "UPDATE billing_periods SET reconciliation=%s WHERE id=%s",
+            (psycopg2.extras.Json(reconciliation), period),
+        )
+    page = client.get(prefix + COMMUNITY + "/billing")
+    refused = client.post(
+        prefix + COMMUNITY + f"/billing/period/{period}/approve",
+        data={"csrf_token": _csrf(page), "confirm_approval": "yes"},
+    )
+    assert refused.status_code == 409
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute("SELECT COUNT(*) FROM invoices")
+        assert cursor.fetchone()[0] == 0
+
+
+def test_legacy_draft_can_be_prepared_again_without_withdrawing_source(
+    village, monkeypatch
+):
+    """Initialization retains unbound drafts but frees their window for fresh preparation."""
+    from store import schema
+
+    client = village.test_client()
+    prefix, period = _prepared(village, client)
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "UPDATE billing_periods SET reconciliation=reconciliation-'participant_registrations' WHERE id=%s",
+            (period,),
+        )
+        cursor.execute(
+            "SELECT row_to_json(p) FROM billing_periods p WHERE id=%s", (period,)
+        )
+        frozen = cursor.fetchone()[0]
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            schema, "_get_connection", lambda: _workspace_connection(village, prefix)
+        )
+        schema.create_tables()
+        schema.create_tables()
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT row_to_json(p) FROM billing_periods p WHERE id=%s", (period,)
+        )
+        retained = cursor.fetchone()[0]
+        assert retained == {**frozen, "status": "invalidated"}
+        cursor.execute("SELECT COUNT(*) FROM vnb_calculated_values_events")
+        assert cursor.fetchone()[0] == 0
+        cursor.execute(
+            "SELECT COUNT(*) FROM vnb_calculated_values_deliveries WHERE status='accepted'"
+        )
+        assert cursor.fetchone()[0] == 1
+    _switch(client, prefix, "operator")
+    prepared = _prepare(client, prefix)
+    assert prepared.status_code == 200
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute("SELECT id FROM billing_periods WHERE status='draft'")
+        replacement = cursor.fetchone()[0]
+        assert replacement != period
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            schema, "_get_connection", lambda: _workspace_connection(village, prefix)
+        )
+        schema.create_tables()
+    _switch(client, prefix, "administrator")
+    page = client.get(prefix + COMMUNITY + "/billing")
+    assert (
+        client.post(
+            prefix + COMMUNITY + f"/billing/period/{replacement}/approve",
+            data={"csrf_token": _csrf(page), "confirm_approval": "yes"},
+        ).status_code
+        == 302
+    )

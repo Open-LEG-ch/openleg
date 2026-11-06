@@ -110,6 +110,43 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
             ("sonnwil-producer", Decimal("-129.60")),
             ("sonnwil-resident", Decimal("43.20")),
         ]
+        # Independent fixture quantities: each consumer uses 720 kWh, of
+        # which 360 kWh is local; the producer supplies 1440 local kWh.
+        cur.execute(
+            "SELECT participant_id, item_type, quantity_kwh, consumption_kwh, allocated_kwh "
+            "FROM billing_line_items ORDER BY participant_id, item_type"
+        )
+        assert cur.fetchall() == [
+            (
+                "sonnwil-neighbour",
+                "consumer_charge",
+                Decimal(360),
+                Decimal(720),
+                Decimal(360),
+            ),
+            (
+                "sonnwil-operator",
+                "consumer_charge",
+                Decimal(360),
+                Decimal(720),
+                Decimal(360),
+            ),
+            (
+                "sonnwil-producer",
+                "consumer_charge",
+                Decimal(360),
+                Decimal(720),
+                Decimal(360),
+            ),
+            ("sonnwil-producer", "producer_credit", Decimal(1440), None, None),
+            (
+                "sonnwil-resident",
+                "consumer_charge",
+                Decimal(360),
+                Decimal(720),
+                Decimal(360),
+            ),
+        ]
         cur.execute(
             "SELECT id, participant_id, invoice_number, policy_snapshot, line_items_snapshot, provenance_snapshot, gross_chf FROM invoices ORDER BY id"
         )

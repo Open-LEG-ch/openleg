@@ -116,3 +116,72 @@ def test_member_invoice_list_returns_own_issued_invoice(billing_database):
     assert row["lifecycle_state"] == "issued"
     assert row["corrects_invoice_number"] is None
     assert row["corrected_by_invoice_number"] is None
+
+
+@pytest.mark.parametrize("reconciliation", [None, "malformed"])
+def test_save_rejects_malformed_registration_evidence(billing_database, reconciliation):
+    """Bad save inputs fail through the registration-domain contract."""
+    from store.invoice_identity import InvoiceRegistrationMismatch
+
+    with pytest.raises(InvoiceRegistrationMismatch):
+        billing.save_billing_period(
+            COMMUNITY, "2026-09-01", "2026-10-01", {"reconciliation": reconciliation}
+        )
+
+
+@pytest.mark.parametrize("missing_code", [None, ""])
+def test_schema_repairs_missing_registration_tokens_without_rebinding_invoices(
+    billing_database, missing_code
+):
+    """Legacy profiles gain stable future identities without inheriting old invoices."""
+    invoice = _insert_issued_invoice("LEGACY-2026-000001")
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE buildings SET referral_code=%s WHERE building_id=%s",
+            (missing_code, MEMBER),
+        )
+        cursor.execute(
+            "SELECT row_to_json(i) AS snapshot FROM invoices i WHERE id=%s", (invoice,)
+        )
+        frozen = cursor.fetchone()["snapshot"]
+    db.create_tables()
+    token = db.get_building(MEMBER)["referral_code"]
+    assert isinstance(token, str) and token
+    assert billing.get_invoices_for_participant(MEMBER) == []
+    db.create_tables()
+    assert db.get_building(MEMBER)["referral_code"] == token
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT row_to_json(i) AS snapshot FROM invoices i WHERE id=%s", (invoice,)
+        )
+        assert cursor.fetchone()["snapshot"] == frozen
+
+
+@pytest.mark.parametrize("status", ["draft", "issued"])
+def test_schema_preserves_invoice_bearing_periods_without_registration_proofs(
+    billing_database, status
+):
+    """Recovery never invalidates a period that already has an invoice."""
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "INSERT INTO billing_periods(community_id,period_start,period_end,status) "
+            "VALUES (%s,'2026-09-01','2026-10-01',%s) RETURNING id",
+            (COMMUNITY, status),
+        )
+        period = cursor.fetchone()["id"]
+        cursor.execute(
+            "INSERT INTO invoices(billing_period_id,community_id,status) VALUES (%s,%s,'issued')",
+            (period, COMMUNITY),
+        )
+        cursor.execute(
+            "SELECT row_to_json(p) AS snapshot FROM billing_periods p WHERE id=%s",
+            (period,),
+        )
+        frozen = cursor.fetchone()["snapshot"]
+    db.create_tables()
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT row_to_json(p) AS snapshot FROM billing_periods p WHERE id=%s",
+            (period,),
+        )
+        assert cursor.fetchone()["snapshot"] == frozen
