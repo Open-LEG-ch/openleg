@@ -6,8 +6,12 @@ import csv
 import io
 import re
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import date, datetime
+from decimal import Decimal
 from zoneinfo import ZoneInfo
+
+from i18n import gettext as _
 
 LOCALES = ("de_CH", "en", "fr_CH", "it_CH")
 FUNDS = ("general", "reserve", "restricted", "held")
@@ -37,13 +41,30 @@ CATEGORIES = {
 class FinanceInputError(ValueError):
     """An incomplete, malformed or unreconciled report cannot be prepared."""
 
+    def __init__(self, message, *, field=None, row=None):
+        super().__init__(message)
+        self.field = field
+        self.row = row
+
+
+@contextmanager
+def _location(field, row=None):
+    try:
+        yield
+    except FinanceInputError as exc:
+        if exc.field is None:
+            exc.field, exc.row = field, row
+        raise
+
 
 def text(value, *, required=True, limit=500):
     if not isinstance(value, str) or len(value) > limit or "\x00" in value:
-        raise FinanceInputError("Invalid text")
+        raise FinanceInputError(
+            _("Der Text ist zu lang oder enthält ungültige Zeichen.")
+        )
     value = value.strip()
     if required and not value:
-        raise FinanceInputError("Required text missing")
+        raise FinanceInputError(_("Diese Angabe ist erforderlich."))
     return value
 
 
@@ -52,52 +73,86 @@ def _rows(value, name):
     try:
         reader = csv.DictReader(io.StringIO(value), strict=True)
         if reader.fieldnames != COLUMNS[name].split(","):
-            raise FinanceInputError("Use the provided CSV column order")
+            raise FinanceInputError(
+                _(
+                    "Verwenden Sie die Spaltenüberschriften der CSV-Vorlage in derselben Reihenfolge."
+                )
+            )
         rows = []
         for row in reader:
             if len(rows) >= 3000 or None in row or any(v is None for v in row.values()):
-                raise FinanceInputError("Invalid or oversized CSV")
-            rows.append(
-                {key: text(val, required=False, limit=1000) for key, val in row.items()}
-            )
+                raise FinanceInputError(
+                    _(
+                        "Die CSV-Zeile ist unvollständig oder die Tabelle überschreitet 3’000 Zeilen."
+                    ),
+                    field=name,
+                    row=reader.line_num,
+                )
+            with _location(name, reader.line_num):
+                rows.append(
+                    {
+                        key: text(val, required=False, limit=1000)
+                        for key, val in row.items()
+                    }
+                )
         return rows
     except csv.Error as exc:
-        raise FinanceInputError("Invalid CSV") from exc
+        raise FinanceInputError(
+            _(
+                "Die CSV-Schreibweise ist ungültig. Prüfen Sie Anführungszeichen und Trennzeichen."
+            ),
+            field=name,
+            row=reader.line_num,
+        ) from exc
 
 
 def _cents(value, *, positive=False):
     if not re.fullmatch(r"(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?", value):
-        raise FinanceInputError("Use nonnegative CHF with at most two decimal places")
-    whole, _, fraction = value.partition(".")
+        raise FinanceInputError(
+            _(
+                "Verwenden Sie nichtnegative CHF-Beträge mit Punkt und höchstens zwei Nachkommastellen."
+            )
+        )
+    whole, _separator, fraction = value.partition(".")
     amount = int(whole) * 100 + int(fraction.ljust(2, "0"))
     if positive and not amount:
-        raise FinanceInputError("A booking must be positive")
+        raise FinanceInputError(_("Der Buchungsbetrag muss grösser als null sein."))
     return amount
 
 
 def reconcile(data):
-    quarter = text(data.get("quarter", ""))
-    if not re.fullmatch(r"20[0-9]{2}-Q[1-4]", quarter):
-        raise FinanceInputError("Select a calendar quarter")
-    year, number = int(quarter[:4]), int(quarter[-1])
-    month = number * 3
-    start = f"{year}-{month - 2:02d}-01"
-    end = f"{year}-{month:02d}-{calendar.monthrange(year, month)[1]}"
-    if end >= datetime.now(ZoneInfo("Europe/Zurich")).date().isoformat():
-        raise FinanceInputError("Only completed calendar quarters can be reported")
-    private = {
-        name: text(data.get(name, ""))
-        for name in ("scope_evidence", "opening_evidence")
-    }
-    if data.get("all_funds") != "yes":
-        raise FinanceInputError(
-            "Confirm complete account/provider and currency coverage"
-        )
-    private["balances"] = _rows(data.get("balances", ""), "balances")
-    private["bookings"] = _rows(data.get("bookings", ""), "bookings")
-    private["commitments"] = _rows(data.get("commitments", ""), "commitments")
+    with _location("quarter"):
+        quarter = text(data.get("quarter", ""))
+        if not re.fullmatch(r"20[0-9]{2}-Q[1-4]", quarter):
+            raise FinanceInputError(
+                _("Geben Sie ein Kalenderquartal im Format 2026-Q3 an.")
+            )
+        year, number = int(quarter[:4]), int(quarter[-1])
+        month = number * 3
+        start = f"{year}-{month - 2:02d}-01"
+        end = f"{year}-{month:02d}-{calendar.monthrange(year, month)[1]}"
+        if end >= datetime.now(ZoneInfo("Europe/Zurich")).date().isoformat():
+            raise FinanceInputError(
+                _("Nur abgeschlossene Kalenderquartale sind zulässig.")
+            )
+    private = {}
+    for name in ("scope_evidence", "opening_evidence"):
+        with _location(name):
+            private[name] = text(data.get(name, ""))
+    with _location("all_funds"):
+        if data.get("all_funds") != "yes":
+            raise FinanceInputError(
+                _(
+                    "Bestätigen Sie den vollständigen Konten- und Anbieterumfang ohne fehlende Fremdwährungsbestände."
+                )
+            )
+    for name in COLUMNS:
+        with _location(name):
+            private[name] = _rows(data.get(name, ""), name)
     if not private["balances"]:
-        raise FinanceInputError("All controlled accounts must be included")
+        raise FinanceInputError(
+            _("Erfassen Sie alle kontrollierten Konten und Anbieter."), field="balances"
+        )
     accounts, balances, changes = {}, {}, defaultdict(int)
     totals = dict.fromkeys(
         (
@@ -127,131 +182,178 @@ def reconcile(data):
         }
         for fund in FUNDS
     }
-    for row in private["balances"]:
-        account, fund, kind = row["account_id"], row["fund"], row["kind"]
-        key = (account, fund)
-        if (
-            not account
-            or fund not in FUNDS
-            or kind not in ("bank", "clearing")
-            or key in balances
-            or accounts.get(account, kind) != kind
-            or not row["private_evidence"]
-        ):
-            raise FinanceInputError(
-                "Invalid account/fund balance or missing source evidence"
-            )
-        accounts[account] = kind
-        opening, closing, pending = (
-            _cents(row[name]) for name in ("opening_chf", "closing_chf", "pending_chf")
-        )
-        if pending and kind != "clearing":
-            raise FinanceInputError(
-                "Pending provider payments are separate from bank cash"
-            )
-        balances[key] = (opening, closing)
-        totals[f"opening_{kind}_cents"] += opening
-        totals[f"closing_{kind}_cents"] += closing
-        totals["pending_cents"] += pending
-        funds[fund][f"{kind}_cents"] += closing
-        funds[fund]["pending_cents"] += pending
-        if fund != "general":
-            totals[f"{fund}_cents"] += closing
-    public_bookings, sources = [], set()
-    for row in private["bookings"]:
-        source, kind = row["source_id"], row["kind"]
-        key = (row["account_id"], row["fund"])
-        amount = _cents(row["amount_chf"], positive=True)
-        if (
-            not source
-            or source in sources
-            or kind not in KINDS
-            or key not in balances
-            or not row["private_evidence"]
-        ):
-            raise FinanceInputError("Invalid or duplicate booking/source")
-        sources.add(source)
-        try:
-            parsed_date = date.fromisoformat(row["date"]).isoformat()
-        except ValueError as exc:
-            raise FinanceInputError("Invalid booking date") from exc
-        if parsed_date != row["date"] or not start <= parsed_date <= end:
-            raise FinanceInputError("Booking is outside the quarter")
-        if row["category"] not in CATEGORIES[kind] or not re.fullmatch(
-            r"[A-Z0-9][A-Z0-9-]{2,39}", row["evidence_code"]
-        ):
-            raise FinanceInputError(
-                "Choose the correct category and a redacted evidence code"
-            )
-        if kind == "receipt":
-            if row["fund"] == "held":
-                if row["category"] != "held":
-                    raise FinanceInputError("Unaccepted funding must be labelled held")
-            elif not row["funding_check"] or row["category"] == "held":
-                raise FinanceInputError("Actual funding independence review required")
-        if kind in ("transfer", "allocation"):
-            destination = (row["to_account_id"], row["to_fund"])
-            if destination not in balances or destination == key:
-                raise FinanceInputError(
-                    "Internal movement needs two distinct recorded balances"
-                )
-            if kind == "transfer" and (
-                destination[0] == key[0] or destination[1] != key[1]
-            ):
-                raise FinanceInputError(
-                    "Transfers change accounts, not fund designation"
-                )
-            if kind == "allocation" and (
-                destination[0] != key[0] or destination[1] == key[1]
-            ):
-                raise FinanceInputError("Allocations change funds within an account")
+    for row_number, row in enumerate(private["balances"], start=2):
+        with _location("balances", row_number):
+            account, fund, kind = row["account_id"], row["fund"], row["kind"]
+            key = (account, fund)
             if (
-                kind == "allocation"
-                and key[1] == "held"
-                and destination[1] != "held"
-                and not row["funding_check"]
+                not account
+                or fund not in FUNDS
+                or kind not in ("bank", "clearing")
+                or key in balances
+                or accounts.get(account, kind) != kind
+                or not row["private_evidence"]
             ):
                 raise FinanceInputError(
-                    "Held funding requires actual independence review before release"
+                    _(
+                        "Prüfen Sie Kontoart, Fonds und private Quellenreferenz. Jede Konto-Fonds-Kombination darf nur einmal vorkommen."
+                    )
                 )
-            changes[destination] += amount
-        elif row["to_account_id"] or row["to_fund"]:
-            raise FinanceInputError("External bookings have no internal destination")
-        changes[key] += amount if kind == "receipt" else -amount
-        if KINDS[kind]:
-            totals[KINDS[kind]] += amount
-        public_bookings.append(
-            {
-                "date": row["date"],
-                "kind": kind,
-                "amount_cents": amount,
-                "currency": "CHF",
-                "category": row["category"],
-                "purpose": {
-                    locale: text(row["purpose_" + locale], limit=1000)
-                    for locale in LOCALES
-                },
-                "evidence_code": row["evidence_code"],
-            }
-        )
-    for key, (opening, closing) in balances.items():
+            accounts[account] = kind
+            opening, closing, pending = (
+                _cents(row[name])
+                for name in ("opening_chf", "closing_chf", "pending_chf")
+            )
+            if pending and kind != "clearing":
+                raise FinanceInputError(
+                    _(
+                        "Unbestätigte Zahlungen gehören ausschliesslich in pending_chf eines Anbieterkontos vom Typ clearing."
+                    )
+                )
+            balances[key] = (opening, closing, row_number)
+            totals[f"opening_{kind}_cents"] += opening
+            totals[f"closing_{kind}_cents"] += closing
+            totals["pending_cents"] += pending
+            funds[fund][f"{kind}_cents"] += closing
+            funds[fund]["pending_cents"] += pending
+            if fund != "general":
+                totals[f"{fund}_cents"] += closing
+    public_bookings, sources = [], set()
+    for row_number, row in enumerate(private["bookings"], start=2):
+        with _location("bookings", row_number):
+            source, kind = row["source_id"], row["kind"]
+            key = (row["account_id"], row["fund"])
+            amount = _cents(row["amount_chf"], positive=True)
+            if (
+                not source
+                or source in sources
+                or kind not in KINDS
+                or key not in balances
+                or not row["private_evidence"]
+            ):
+                raise FinanceInputError(
+                    _(
+                        "Prüfen Sie Quellkennung, Buchungsart, Konto, Fonds und Quellenreferenz. Quellkennungen dürfen nicht doppelt vorkommen."
+                    )
+                )
+            sources.add(source)
+            try:
+                parsed_date = date.fromisoformat(row["date"]).isoformat()
+            except ValueError as exc:
+                raise FinanceInputError(
+                    _("Geben Sie ein gültiges Buchungsdatum im Format 2026-07-02 an.")
+                ) from exc
+            if parsed_date != row["date"] or not start <= parsed_date <= end:
+                raise FinanceInputError(
+                    _("Das Buchungsdatum liegt ausserhalb des Quartals.")
+                )
+            if row["category"] not in CATEGORIES[kind] or not re.fullmatch(
+                r"[A-Z0-9][A-Z0-9-]{2,39}", row["evidence_code"]
+            ):
+                raise FinanceInputError(
+                    _(
+                        "Prüfen Sie die Kategorie für diese Buchungsart und die bereinigte Belegkennung mit 3 bis 40 Grossbuchstaben, Ziffern oder Bindestrichen."
+                    )
+                )
+            if kind == "receipt":
+                if row["fund"] == "held":
+                    if row["category"] != "held":
+                        raise FinanceInputError(
+                            _(
+                                "Noch nicht angenommene Finanzierung muss im Fonds held mit Kategorie held stehen."
+                            )
+                        )
+                elif not row["funding_check"] or row["category"] == "held":
+                    raise FinanceInputError(
+                        _(
+                            "Die private Referenz zur tatsächlichen Prüfung der Finanzierungsunabhängigkeit fehlt."
+                        )
+                    )
+            if kind in ("transfer", "allocation"):
+                destination = (row["to_account_id"], row["to_fund"])
+                if destination not in balances or destination == key:
+                    raise FinanceInputError(
+                        _(
+                            "Eine interne Bewegung braucht zwei unterschiedliche erfasste Konto-Fonds-Kombinationen."
+                        )
+                    )
+                if kind == "transfer" and (
+                    destination[0] == key[0] or destination[1] != key[1]
+                ):
+                    raise FinanceInputError(
+                        _("Ein Transfer wechselt das Konto und behält denselben Fonds.")
+                    )
+                if kind == "allocation" and (
+                    destination[0] != key[0] or destination[1] == key[1]
+                ):
+                    raise FinanceInputError(
+                        _(
+                            "Eine Fondsumbuchung wechselt den Fonds innerhalb desselben Kontos."
+                        )
+                    )
+                if (
+                    kind == "allocation"
+                    and key[1] == "held"
+                    and destination[1] != "held"
+                    and not row["funding_check"]
+                ):
+                    raise FinanceInputError(
+                        _(
+                            "Die Freigabe zurückgehaltener Mittel braucht die tatsächliche Unabhängigkeitsprüfung in funding_check."
+                        )
+                    )
+                changes[destination] += amount
+            elif row["to_account_id"] or row["to_fund"]:
+                raise FinanceInputError(
+                    _(
+                        "Lassen Sie bei externen Buchungen to_account_id und to_fund leer."
+                    )
+                )
+            changes[key] += amount if kind == "receipt" else -amount
+            if KINDS[kind]:
+                totals[KINDS[kind]] += amount
+            public_bookings.append(
+                {
+                    "date": row["date"],
+                    "kind": kind,
+                    "amount_cents": amount,
+                    "currency": "CHF",
+                    "category": row["category"],
+                    "purpose": {
+                        locale: text(row["purpose_" + locale], limit=1000)
+                        for locale in LOCALES
+                    },
+                    "evidence_code": row["evidence_code"],
+                }
+            )
+    for key, (opening, closing, row_number) in balances.items():
         if opening + changes[key] != closing:
             raise FinanceInputError(
-                "Account/fund does not reconcile to its closing statement"
+                _(
+                    "Anfangsbestand plus Buchungen stimmt für dieses Konto und diesen Fonds nicht mit dem Schlussbestand überein."
+                ),
+                field="balances",
+                row=row_number,
             )
     seen_commitments = set()
-    for row in private["commitments"]:
-        if (
-            not row["source_id"]
-            or row["source_id"] in seen_commitments
-            or row["fund"] not in FUNDS
-            or not row["private_evidence"]
-        ):
-            raise FinanceInputError("Invalid or duplicate unpaid commitment")
-        seen_commitments.add(row["source_id"])
-        amount = _cents(row["amount_chf"], positive=True)
-        totals["commitments_cents"] += amount
-        funds[row["fund"]]["commitments_cents"] += amount
+    for row_number, row in enumerate(private["commitments"], start=2):
+        with _location("commitments", row_number):
+            if (
+                not row["source_id"]
+                or row["source_id"] in seen_commitments
+                or row["source_id"] in sources
+                or row["fund"] not in FUNDS
+                or not row["private_evidence"]
+            ):
+                raise FinanceInputError(
+                    _(
+                        "Prüfen Sie Quellkennung, Fonds und Quellenreferenz der Verpflichtung. Ein bereits gebuchter oder doppelt erfasster Beleg darf nicht als unbezahlte Verpflichtung erscheinen."
+                    )
+                )
+            seen_commitments.add(row["source_id"])
+            amount = _cents(row["amount_chf"], positive=True)
+            totals["commitments_cents"] += amount
+            funds[row["fund"]]["commitments_cents"] += amount
     totals["spendable_bank_cents"] = (
         funds["general"]["bank_cents"] - funds["general"]["commitments_cents"]
     )
@@ -266,3 +368,49 @@ def reconcile(data):
     }
     private["quarter"] = quarter
     return private, public
+
+
+def validate_continuity(private, quarters):
+    """Compare complete report inputs without database access."""
+    quarter = private["quarter"]
+    ordinal = int(quarter[:4]) * 4 + int(quarter[-1]) - 1
+    previous = f"{(ordinal - 1) // 4}-Q{(ordinal - 1) % 4 + 1}"
+    following = f"{(ordinal + 1) // 4}-Q{(ordinal + 1) % 4 + 1}"
+    if quarters and quarter not in quarters and previous not in quarters:
+        raise FinanceInputError(
+            _(
+                "Veröffentlichen Sie aufeinanderfolgende Quartale ab dem festgelegten Anfangszeitraum."
+            ),
+            field="quarter",
+        )
+
+    def amounts(report, column):
+        return {
+            (row["account_id"], row["kind"], row["fund"]): row[column]
+            for row in report["balances"]
+        }
+
+    def matches(left, right):
+        return all(
+            Decimal(left.get(key, "0")) == Decimal(right.get(key, "0"))
+            for key in left.keys() | right.keys()
+        )
+
+    if previous in quarters and not matches(
+        amounts(quarters[previous], "closing_chf"), amounts(private, "opening_chf")
+    ):
+        raise FinanceInputError(
+            _(
+                "Die Anfangsbestände müssen den zuletzt veröffentlichten Schlussbeständen des Vorquartals entsprechen."
+            ),
+            field="balances",
+        )
+    if following in quarters and not matches(
+        amounts(private, "closing_chf"), amounts(quarters[following], "opening_chf")
+    ):
+        raise FinanceInputError(
+            _(
+                "Diese Korrektur würde die Anfangsbestände des folgenden veröffentlichten Quartals ungültig machen."
+            ),
+            field="balances",
+        )

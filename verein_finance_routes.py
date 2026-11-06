@@ -94,6 +94,7 @@ def finance_labels():
 def prepare():
     require_reviewer()
     error = None
+    errors = {}
     form = request.form
     if request.method == "POST":
         require_csrf()
@@ -102,6 +103,16 @@ def prepare():
                 session["verein_session"], request.form
             )
             return redirect("/verein/vorstand/finanzen/" + identifier, code=303)
+        except verein_finance.FinanceInputError as exc:
+            message = (
+                _("Zeile %(row)s: %(detail)s", row=exc.row, detail=str(exc))
+                if exc.row
+                else str(exc)
+            )
+            errors[exc.field or "quarter"] = message
+            error = _(
+                "Der Bericht wurde nicht gespeichert. Korrigieren Sie die markierten Angaben. Ihre Eingaben bleiben erhalten."
+            )
         except db.VereinDenied:
             error = _(
                 "Der Bericht wurde nicht gespeichert. Prüfen Sie CSV-Spalten, Quellen, Beträge und Datum, alle Konten und Fonds sowie die Übereinstimmung der Anfangs- und Schlussbestände. Für eine neue Version ist eine öffentliche Begründung erforderlich. Bereits veröffentlichte Belege dürfen nicht verschwinden. Ihre Eingaben bleiben erhalten."
@@ -127,6 +138,7 @@ def prepare():
         "verein/finance_edit.html",
         reports=reports,
         form=form,
+        errors=errors,
         columns=verein_finance.COLUMNS,
         error=error,
         csrf_token=csrf_token(),
@@ -172,7 +184,7 @@ def publish(identifier):
             request.form.get("review_evidence", ""),
         )
         return redirect("/verein/finanzen/" + quarter, code=303)
-    except db.VereinDenied:
+    except (db.VereinDenied, verein_finance.FinanceInputError):
         report = db.get_verein_finance_review(session["verein_session"], identifier)
         if report is None:
             abort(404)

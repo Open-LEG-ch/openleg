@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from psycopg2.extras import Json
 
 import verein_finance
+from i18n import gettext as _
 from store import verein
 
 
@@ -40,54 +41,24 @@ def _continuity(cur, private):
         FROM verein_finance_reports WHERE published_at IS NOT NULL
         ORDER BY quarter,version DESC"""
     )
-    quarters = {row["quarter"]: row["private_input"] for row in cur.fetchall()}
-    quarter = private["quarter"]
-    ordinal = int(quarter[:4]) * 4 + int(quarter[-1]) - 1
-    previous = f"{(ordinal - 1) // 4}-Q{(ordinal - 1) % 4 + 1}"
-    following = f"{(ordinal + 1) // 4}-Q{(ordinal + 1) % 4 + 1}"
-    if quarters and quarter not in quarters and previous not in quarters:
-        raise verein.VereinDenied(
-            "Publish consecutive quarters from the declared opening period"
-        )
-
-    def amounts(report, column):
-        return {
-            (row["account_id"], row["kind"], row["fund"]): row[column]
-            for row in report["balances"]
-        }
-
-    def matches(left, right):
-        from decimal import Decimal
-
-        return all(
-            Decimal(left.get(key, "0")) == Decimal(right.get(key, "0"))
-            for key in left.keys() | right.keys()
-        )
-
-    if previous in quarters and not matches(
-        amounts(quarters[previous], "closing_chf"), amounts(private, "opening_chf")
-    ):
-        raise verein.VereinDenied(
-            "Opening balances must match the preceding published closing balances"
-        )
-    if following in quarters and not matches(
-        amounts(private, "closing_chf"), amounts(quarters[following], "opening_chf")
-    ):
-        raise verein.VereinDenied(
-            "This correction would invalidate the following published quarter"
-        )
+    verein_finance.validate_continuity(
+        private, {row["quarter"]: row["private_input"] for row in cur.fetchall()}
+    )
 
 
 def prepare(token, data):
+    private, public = verein_finance.reconcile(data)
     try:
-        private, public = verein_finance.reconcile(data)
         reason = verein_finance.text(data.get("correction_reason", ""), required=False)
     except verein_finance.FinanceInputError as exc:
-        raise verein.VereinDenied(str(exc)) from None
+        exc.field = "correction_reason"
+        raise
     digest = hashlib.sha256(
         json.dumps([private, reason], sort_keys=True).encode()
     ).hexdigest()
-    with verein.transaction_cursor() as cur:
+    with verein.transaction_cursor(
+        policy_errors=(verein_finance.FinanceInputError,)
+    ) as cur:
         actor = verein.require_reviewer(cur, token)
         cur.execute("SELECT pg_advisory_xact_lock(hashtext('verein-finance-reports'))")
         _continuity(cur, private)
@@ -104,8 +75,9 @@ def prepare(token, data):
         )
         last = cur.fetchone()
         if last and not reason:
-            raise verein.VereinDenied(
-                "A new version requires a public correction reason"
+            raise verein_finance.FinanceInputError(
+                _("Eine neue Version braucht eine öffentliche Korrekturbegründung."),
+                field="correction_reason",
             )
         cur.execute(
             "SELECT private_input FROM verein_finance_reports WHERE quarter=%s AND published_at IS NOT NULL ORDER BY version DESC LIMIT 1",
@@ -115,8 +87,11 @@ def prepare(token, data):
         if published and not {
             row["source_id"] for row in published["private_input"]["bookings"]
         }.issubset({row["source_id"] for row in private["bookings"]}):
-            raise verein.VereinDenied(
-                "Published source records cannot disappear; record explicit corrections"
+            raise verein_finance.FinanceInputError(
+                _(
+                    "Bereits veröffentlichte Quellbelege dürfen nicht verschwinden. Erfassen Sie eine nachvollziehbare Korrektur."
+                ),
+                field="bookings",
             )
         for source, booking in zip(
             private["bookings"], public["bookings"], strict=True
@@ -131,8 +106,11 @@ def prepare(token, data):
             )
             identity = cur.fetchone()
             if identity["quarter"] != public["quarter"]:
-                raise verein.VereinDenied(
-                    "A source record already belongs to another quarter"
+                raise verein_finance.FinanceInputError(
+                    _(
+                        "Ein Quellbeleg gehört bereits zu einem anderen Quartal. Importieren Sie denselben Beleg nicht nochmals."
+                    ),
+                    field="bookings",
                 )
             booking["id"] = str(identity["public_id"])
         identifier = str(uuid.uuid4())
@@ -162,7 +140,9 @@ def prepare(token, data):
 
 
 def for_review(token, identifier=None):
-    with verein.transaction_cursor() as cur:
+    with verein.transaction_cursor(
+        policy_errors=(verein_finance.FinanceInputError,)
+    ) as cur:
         verein.require_reviewer(cur, token)
         if identifier:
             cur.execute(
@@ -181,7 +161,9 @@ def publish(token, identifier, evidence):
         evidence = verein_finance.text(evidence)
     except verein_finance.FinanceInputError as exc:
         raise verein.VereinDenied(str(exc)) from None
-    with verein.transaction_cursor() as cur:
+    with verein.transaction_cursor(
+        policy_errors=(verein_finance.FinanceInputError,)
+    ) as cur:
         actor = verein.require_reviewer(cur, token)
         cur.execute("SELECT pg_advisory_xact_lock(hashtext('verein-finance-reports'))")
         cur.execute(
@@ -211,7 +193,9 @@ def publish(token, identifier, evidence):
 
 def published(quarter=None, version=None):
     """Select only the explicitly redacted snapshot; never private source records."""
-    with verein.transaction_cursor() as cur:
+    with verein.transaction_cursor(
+        policy_errors=(verein_finance.FinanceInputError,)
+    ) as cur:
         if quarter:
             cur.execute(
                 """SELECT public_snapshot FROM verein_finance_reports
@@ -227,7 +211,9 @@ def published(quarter=None, version=None):
 
 
 def history(quarter):
-    with verein.transaction_cursor() as cur:
+    with verein.transaction_cursor(
+        policy_errors=(verein_finance.FinanceInputError,)
+    ) as cur:
         cur.execute(
             """SELECT version,correction_reason,published_at FROM verein_finance_reports
             WHERE quarter=%s AND published_at IS NOT NULL ORDER BY version DESC""",

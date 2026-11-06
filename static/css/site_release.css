@@ -188,3 +188,5 @@
 .release-finance h3{font:600 1.375rem/1.4 system-ui,sans-serif;margin-bottom:.5rem}
 .release-finance-bookings article>p{margin-block:.5rem}
 .release-finance a{color:var(--color-brand);text-decoration:underline;text-underline-offset:3px}
+
+.release-finance-edit [aria-invalid="true"]{border:2px solid #982f40}

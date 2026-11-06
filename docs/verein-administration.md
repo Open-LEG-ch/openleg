@@ -87,7 +87,8 @@ ISO dates and positive CHF amounts with a decimal point and at most two decimal
 places, without grouping separators. Only completed calendar quarters are
 accepted. Empty bookings and commitments use their header without data rows.
 Each table is limited to 3,000 rows and 800,000 characters. Quoted CSV cells may
-contain commas or line breaks. An invalid preparation retains the pasted input.
+contain commas or line breaks. An invalid preparation retains the pasted input and identifies the affected
+field and CSV row with a linked summary and inline error.
 
 - `balances`: one row per `(account_id, fund)`. Account kinds are `bank` or
   `clearing`; funds are `general`, `reserve`, `restricted` or `held`. Include
@@ -102,7 +103,8 @@ contain commas or line breaks. An invalid preparation retains the pasted input.
   redacted evidence, never a raw statement, donor or account reference.
 - `commitments`: record each outstanding unpaid commitment once, with its fund,
   positive amount, unique source reference and private evidence. Commitments
-  remain separate from already paid expenses. Reconcile outstanding invoices
+  remain separate from already paid expenses; the same source ID cannot appear
+  in both bookings and unpaid commitments. Reconcile outstanding invoices
   against actual payments before preparing this table.
 
 Receipt categories are `starting_contribution`, `membership`, `donation`,
