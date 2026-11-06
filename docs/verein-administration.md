@@ -27,9 +27,16 @@ retaining its sent history. A fresh successful reminder starts a new period.
 Record receipts against actual source references. Partial payments remain
 outstanding. Duplicate references cannot inflate receipts. A receipt does not
 approve spending, prove provider settlement or reactivate ended membership.
-Annual renewal, resignation effect and retention require reviewed adopted rules
-before intake is activated. No automatic deletion or unsupported waiver is
-implemented.
+Contribution years renew on the original admission anniversary, with 28 February
+used in non-leap years for a 29 February admission. The next leap year returns
+to 29 February. The board's renewal action creates each due year once and queues
+its own dated notice. The 30-day payment deadline belongs to that period.
+
+A personally authenticated resignation is effective immediately on receipt;
+no board approval or reason is required. Ended members do not renew. Their
+accounting and decision records remain available. Mandatory fee corrections and
+retention still need reviewed rules before actual intake. No automatic erasure
+or unsupported waiver is implemented.
 
 ## Meetups
 
