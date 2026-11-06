@@ -532,3 +532,31 @@ def test_correction_form_copies_private_source_without_editing_immutable_snapsho
     assert "private-donor@example.invalid" in unescape(values)
     assert "2026-Q3" in copy.text
     assert client.get(PATH + "?copy=missing").status_code == 404
+
+
+def test_paid_source_cannot_also_be_an_unpaid_commitment(membership):
+    client, _store = _setup(membership)
+    data = _data()
+    _change(
+        data, "commitments", lambda rows: rows[1].__setitem__(0, "private-hosting-1")
+    )
+    result = client.post(
+        PATH, data={**data, "csrf_token": test_verein_membership._csrf(client, PATH)}
+    )
+    assert result.status_code == 409
+    assert 'href="#commitments"' in result.text
+    assert 'name="commitments"' in result.text and 'aria-invalid="true"' in result.text
+    assert "Zeile 2" in result.text
+
+
+def test_balance_error_locates_csv_row_and_keeps_the_draft(membership):
+    client, _store = _setup(membership)
+    data = _change(_data(), "balances", lambda rows: rows[1].__setitem__(4, "949.00"))
+    result = client.post(
+        PATH, data={**data, "csrf_token": test_verein_membership._csrf(client, PATH)}
+    )
+    assert result.status_code == 409
+    assert 'href="#balances"' in result.text
+    assert 'id="balances-error"' in result.text
+    assert 'aria-describedby="balances-error"' in result.text
+    assert "Zeile 2" in result.text
