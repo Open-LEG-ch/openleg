@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-06 18:31+0000\n"
+"POT-Creation-Date: 2026-11-06 18:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2282,7 +2282,7 @@ msgid ""
 " Datum darf nicht in der Zukunft liegen."
 msgstr ""
 
-#: site_release.py:105
+#: site_release.py:113
 msgid "Bitte prüfen Sie die Suchangaben."
 msgstr ""
 
@@ -3300,7 +3300,7 @@ msgid ""
 "Rangliste."
 msgstr ""
 
-#: site_release.py:78
+#: site_release.py:86
 msgid "Die Ergebnisseite ist ungültig. Starten Sie die Suche erneut."
 msgstr ""
 
@@ -5533,11 +5533,11 @@ msgstr ""
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
 msgstr ""
 
-#: site_release.py:98
+#: site_release.py:106
 msgid "Geben Sie eine gültige BFS-Gemeindenummer ein."
 msgstr ""
 
-#: site_release.py:89
+#: site_release.py:97
 msgid "Geben Sie eine vierstellige PLZ ein."
 msgstr ""
 
@@ -12439,7 +12439,7 @@ msgid ""
 "ausdrücklich. Erst danach können Sie die LEG aktivieren."
 msgstr ""
 
-#: site_release.py:81
+#: site_release.py:89
 msgid "Verwenden Sie höchstens 200 Zeichen für die Suche."
 msgstr ""
 
@@ -13203,11 +13203,11 @@ msgstr ""
 msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
 msgstr ""
 
-#: site_release.py:83
+#: site_release.py:91
 msgid "Wählen Sie einen Kanton aus der Liste."
 msgstr ""
 
-#: site_release.py:91
+#: site_release.py:99
 msgid "Wählen Sie einen Status aus der Liste."
 msgstr ""
 
@@ -13496,6 +13496,10 @@ msgstr ""
 
 #: templates/advisories.html:21
 msgid "Zurück zum Gerät"
+msgstr ""
+
+#: templates/leg_verzeichnis/liste.html:7
+msgid "Zurück zum LEG-Check"
 msgstr ""
 
 #: templates/leg_billing.html:8 templates/leg_billing_policy.html:4
