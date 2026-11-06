@@ -24,7 +24,7 @@ from i18n import gettext as _
 from i18n import localized_url
 from security_extensions import rate_limit
 from security_utils import validate_email_address
-from site_release import formation_date, require_complete_site
+from site_release import accepting_applications, require_complete_site
 
 verein_bp = Blueprint("verein", __name__, url_prefix="/verein")
 verein_bp.before_request(require_complete_site)
@@ -185,23 +185,6 @@ def require_csrf():
         or not hmac.compare_digest(supplied, expected)
     ):
         abort(403)
-
-
-def accepting_applications():
-    config = current_app.config
-    return (
-        config.get("VEREIN_ACCEPTING_APPLICATIONS") is True
-        and formation_date() is not None
-        and all(
-            config.get(key)
-            for key in (
-                "VEREIN_CONTACT_ADDRESS",
-                "VEREIN_PRIVACY_VERSION",
-                "VEREIN_STATUTES_URL",
-                "VEREIN_DATA_CONTROLLER",
-            )
-        )
-    )
 
 
 @verein_bp.route("/beitreten", methods=["GET", "POST"])
