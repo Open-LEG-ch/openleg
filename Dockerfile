@@ -36,7 +36,16 @@ RUN test -f /app/app.py \
     && test -f /app/templates/dashboard.html \
     && test -f /app/static/css/openleg.css
 
-RUN mkdir -p /data
+# Run the server unprivileged (trivy DS-0002). The app writes nothing under
+# /app at runtime; /data stays owned by the service user for fresh volumes, and
+# the home directory gives gunicorn's control server somewhere to write.
+RUN groupadd --system --gid 10001 openleg \
+    && useradd --system --uid 10001 --gid openleg --create-home --home-dir /var/lib/openleg \
+       --shell /usr/sbin/nologin openleg \
+    && mkdir -p /data \
+    && chown openleg:openleg /data
+
+USER openleg
 
 EXPOSE 5000
 
