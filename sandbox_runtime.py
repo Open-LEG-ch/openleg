@@ -761,6 +761,7 @@ def create_gateway(
 
         return {
             "private_page": True,
+            "site_release_enabled": web.config["SITE_RELEASE_ENABLED"],
             "accounts": ACCOUNTS,
             "inactivity_timeout": duration(villages.inactivity_seconds),
             "maximum_lifetime": duration(villages.lifetime_seconds),
