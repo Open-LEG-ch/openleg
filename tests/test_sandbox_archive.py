@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 
 import pytest
+from psycopg2 import sql
 
 from tests import test_sandbox_http
 from tests.test_sandbox_metering import _workspace_connection
@@ -157,6 +158,10 @@ def test_real_archive_round_trip_rollback_replay_conflict_and_private_discard(vi
             "CREATE TRIGGER sandbox_fail_invoice BEFORE INSERT ON invoices FOR EACH ROW EXECUTE FUNCTION sandbox_fail_invoice()"
         )
     assert _command(client, prefix, "restore", confirm="restore").status_code == 503
+    failed_guide = client.get(prefix + "/sandbox/archive")
+    assert failed_guide.status_code == 200
+    assert 'id="archive-result"' not in failed_guide.text
+    assert "Vorprüfung erfolgreich" not in failed_guide.text
     with (
         _workspace_connection(village, destination) as connection,
         connection.cursor() as cur,
@@ -254,6 +259,42 @@ def test_real_archive_round_trip_rollback_replay_conflict_and_private_discard(vi
     assert client.get(destination + "/dashboard").status_code == 410
     assert client.get(prefix + "/dashboard/export").status_code == 200
     assert other.get(other_prefix + "/dashboard/export").status_code == 200
+
+
+def test_failed_preflight_hides_old_result_and_preserves_restored_destination(village):
+    """An unavailable destination hides stale results without losing restored access."""
+    client = village.test_client()
+    prefix, _ = _start(client, "administrator")
+    assert _command(client, prefix, "prepare").status_code == 303
+    assert _command(client, prefix, "restore", confirm="restore").status_code == 303
+    assert _result(client, prefix)["restored"] is True
+    destination = _destination(village, prefix)
+    target = village.extensions["villages"].workspaces[destination.rsplit("/", 1)[1]]
+    with _workspace_connection(village, prefix) as connection:
+        with connection.cursor() as cur:
+            name = sql.Identifier(target["name"])
+            cur.execute(
+                sql.SQL("ALTER DATABASE {} ALLOW_CONNECTIONS false").format(name)
+            )
+            connection.commit()
+            try:
+                assert _command(client, prefix, "prepare").status_code == 503
+                guide = client.get(prefix + "/sandbox/archive")
+                assert guide.status_code == 200
+                assert 'id="archive-result"' not in guide.text
+                assert (
+                    "Der gespeicherte Stand ist im privaten Ziel wiederhergestellt."
+                    not in guide.text
+                )
+                assert prefix + "/sandbox/archive/open" in guide.text
+            finally:
+                cur.execute(
+                    sql.SQL("ALTER DATABASE {} ALLOW_CONNECTIONS true").format(name)
+                )
+                connection.commit()
+    opened = _command(client, prefix, "open")
+    assert opened.status_code == 303 and opened.location.startswith(destination)
+    assert client.get(opened.location, follow_redirects=True).status_code == 200
 
 
 def test_archive_commands_recheck_role_csrf_and_do_not_grant_platform_authority(

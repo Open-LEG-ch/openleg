@@ -108,6 +108,7 @@ def install(web, villages, origin, proxy, expired):
 
     def run(workspace, destination, *, dry_run):
         """Validate or restore the saved archive through the ordinary transaction."""
+        workspace["archive"].pop("result", None)
         payload = (workspace["directory"] / "archive-candidate.json").read_bytes()
         if len(payload) > MAX_ARCHIVE_BYTES:
             abort(413)
