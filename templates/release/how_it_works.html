@@ -1,0 +1,65 @@
+{% extends 'release/page.html' %}
+{% set page_title = _('Wer übernimmt welche Aufgabe?') %}
+{% set page_description = _('Eine Lokale Elektrizitätsgemeinschaft (LEG) organisiert den Austausch lokal erzeugter Elektrizität. Ihre Gruppe vereinbart die Teilnahme, bestellt ihre Vertretung und wählt, wer die Verwaltung und den Softwarebetrieb übernimmt.') %}
+{% macro role_icon(kind) %}<svg class="release-role-icon" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+{% if kind in ['producer','consumer'] %}<path d="M16 42 55 12 94 42M26 36v42h58V36"/><path fill="#f5d4ca" d="M43 78V54h22v24"/>{% if kind == 'producer' %}<path fill="#edf1f9" d="m38 26 18-14 19 15-18 14z"/><path d="m47 20 19 15m-20-2 18-14"/>{% else %}<path d="M94 55v9m10-9v9m-14 0h18v5a9 9 0 0 1-18 0zm9 14v8"/>{% endif %}
+{% elif kind == 'representation' %}<circle cx="38" cy="27" r="11"/><circle cx="82" cy="27" r="11"/><path d="M20 65V53a18 18 0 0 1 36 0m8 0a18 18 0 0 1 36 0v12M14 65h92M30 65v17m60-17v17"/><path stroke="#ee8d7c" d="M50 57h20"/>
+{% elif kind == 'network' %}<path d="M31 10 18 81m13-71 13 71M20 25h24M16 40h32M90 10 77 81m13-71 13 71M79 25h24M75 40h32M44 25q23 15 35 0M48 40q15 15 27 0"/><path stroke="#ee8d7c" d="m25 58 13 15m-15 0 13-15m49 0 13 15m-15 0 13-15"/>
+{% elif kind == 'operator' %}<rect x="23" y="10" width="74" height="71" rx="5"/><path d="M23 30h74M47 30v51M60 45h24M60 59h24M60 72h15"/><path stroke="#ee8d7c" d="m31 45 4 4 6-8m-10 20 4 4 6-8"/>
+{% else %}<rect x="15" y="13" width="90" height="58" rx="5"/><path d="M8 79h104M27 27h25v27H27zm38 0h27M65 40h27M65 53h15"/><path stroke="#ee8d7c" d="M38 61h45"/>{% endif %}
+</svg>{% endmacro %}
+{% set roles = [
+('producer', _('Erzeugende Teilnehmende'), _('Sie bringen lokale Erzeugung ein und vereinbaren, zu welchen Bedingungen ihre Strommengen in der LEG abgerechnet werden.'), [
+_('Sie stellen die Angaben zu Anlage und Anschluss bereit. Eine Solaranlage allein begründet keine Teilnahme an einer LEG.'),
+_('Sie vereinbaren mit der Gemeinschaft die Teilnahme und den internen Preis. Die Vertretung koordiniert die nötigen Meldungen und Unterlagen.'),
+_('Als Nächstes klären Sie mit der Vertretung, welche Anschlüsse geprüft werden und welche Daten für die Abrechnung vorliegen müssen.')]),
+('consumer', _('Verbrauchende Teilnehmende'), _('Sie vereinbaren ihre Teilnahme und beziehen den in der LEG zugeordneten Anteil zu den vereinbarten Bedingungen.'), [
+_('Sie bringen die Angaben zur Verbrauchsstätte und die nötigen Zustimmungserklärungen ein. Auch ohne eigene Solaranlage können Sie eine Teilnahme prüfen.'),
+_('Sie prüfen die Vereinbarung und die Kosten. Der übrige Strombezug und die Netznutzung bleiben eigene Abrechnungsbestandteile.'),
+_('Als Nächstes lassen Sie die Anschlussbedingungen prüfen und klären, wer Ihre Fragen zu Vertrag und Abrechnung beantwortet.')]),
+('representation', _('LEG-Vertretung'), _('Sie koordiniert die Teilnehmenden, die Vereinbarungen und den Kontakt zum Verteilnetzbetreiber.'), [
+_('Sie führt die vereinbarten Teilnehmer- und Anschlussangaben zusammen und hält Zuständigkeiten und Änderungen fest.'),
+_('Die LEG legt ihre internen Regeln fest und beauftragt die Vertretung ausdrücklich. Verwaltung oder Abrechnung können an einen gewählten Dienstleister delegiert werden.'),
+_('Als Nächstes vereinbaren Sie Anmeldung, Datenzugang und Lieferung mit dem Netzbetreiber und legen die Prüfung der internen Abrechnung fest.')]),
+('network', _('Verteilnetzbetreiber (VNB)'), _('Er bleibt für seine gesetzlichen Netz-, Mess- und Abrechnungsaufgaben zuständig.'), [
+_('Der Netzbetreiber prüft die massgeblichen Anschluss- und Netzbedingungen. Eine Karte oder ein Verzeichniseintrag ersetzt diese Prüfung nicht.'),
+_('Er übernimmt die ihm zugewiesene Messung, Netznutzungsabrechnung und Datenlieferung. Bei Grundversorgung liefert er auch den übrigen Strom.'),
+_('Die LEG klärt mit ihm die tatsächlichen Anmelde- und Datenprozesse. Die interne Organisation und die Abrechnung des LEG-Stroms bleiben Aufgaben der Gemeinschaft.')]),
+('operator', _('Gewählter Betriebsdienst'), _('Er erledigt die ausdrücklich beauftragte Verwaltung, Abrechnung oder den Softwarebetrieb.'), [
+_('Die LEG übergibt ihm die vereinbarten Unterlagen, Berechtigungen und Aufgaben. Der Auftrag bestimmt Umfang, Kosten und Verantwortlichkeiten.'),
+_('Die Gemeinschaft entscheidet, wen sie beauftragt und wer Ergebnisse freigibt. Der gewählte Dienst ist nicht automatisch der Netzbetreiber oder die Gemeinde.'),
+_('Als Nächstes klären Sie Einrichtung, Datenübernahme, laufende Arbeit, Sicherungen und die Übergabe bei einem späteren Wechsel.')]),
+('software', _('OpenLEG Software'), _('Sie unterstützt die Verwaltung, den Datenimport und die prüfbare Vorbereitung von Abrechnungen.'), [
+_('Die Software verarbeitet die eingerichteten Datenquellen und die von Ihrer LEG gewählten Einstellungen. Fehlende Messwerte werden nicht durch erfundene Werte ersetzt.'),
+_('Verantwortliche Personen prüfen Entwürfe und geben Rechnungen frei. Der Code ist unter AGPL-3.0-or-later einsehbar und kann selbst betrieben werden.'),
+_('Nicht jede VNB-Anbindung ist umgesetzt. Prüfen Sie die tatsächlichen Schnittstellen und den Betriebsaufwand. Ein vollständiger Betriebswechsel ist nicht mit einem einzelnen Export erledigt.')])
+] %}
+{% block document %}
+<section class="release-document-section"><p>{{ _('Diese Rollen beschreiben Aufgaben. Eine Person oder Organisation kann mehrere übernehmen. Ihre LEG legt ihre Vertretung und den Betrieb fest; eine Vereinsmitgliedschaft ist davon unabhängig.') }}</p>
+<div class="release-role-grid">{% for key,title,lead,paragraphs in roles %}<article id="rolle-{{ key }}">{{ role_icon(key) }}<h2>{{ title }}</h2><p>{{ lead }}</p><details><summary>{{ _('Aufgaben im Detail') }}</summary><div>{% for paragraph in paragraphs %}<p>{{ paragraph }}</p>{% endfor %}</div></details></article>{% endfor %}</div>
+<p class="release-source">{{ _('Zur Aufgabenteilung und zu den Anschlussbedingungen:') }} <a href="https://www.elcom.admin.ch/dam/en/sd-web/weRgj22ICsTE/FAQ%20ES2050%20ab%20Mantelerlass_Update%20vom%2010.02.2026.pdf">{{ _('ElCom, Fragen und Antworten, Stand 16. Juni 2026, Kapitel 9 (PDF, Deutsch)') }}</a>.</p></section>
+<section class="release-document-section" aria-labelledby="beziehungen"><h2 id="beziehungen">{{ _('Strom, Daten und Zahlungen getrennt verstehen') }}</h2><p>{{ _('Die drei Ansichten zeigen Aufgaben und Übergaben schematisch. Sie bilden keine konkrete Netztopologie ab. Eine Berechtigung zum Datenzugang ist keine neue Stromleitung.') }}</p>
+<div class="release-flow-view release-flow-electricity"><h3>{{ _('Elektrizität') }}</h3><ol>
+<li><strong>{{ _('Erzeugende Teilnehmende') }}</strong><p>{{ _('Lokale Anlagen speisen Strom ein.') }}</p></li>
+<li><strong>{{ _('Öffentliches Verteilnetz') }}</strong><p>{{ _('Der Austausch nutzt die bestehende Netzinfrastruktur.') }}</p></li>
+<li><strong>{{ _('Verbrauchende Teilnehmende') }}</strong><p>{{ _('Die LEG ordnet gemessene Strommengen zu. Übriger Strom kommt vom jeweiligen Lieferanten.') }}</p></li>
+</ol><p>{{ _('OpenLEG betreibt keine Stromleitungen und schaltet den physikalischen Stromfluss nicht.') }}</p></div>
+<div class="release-flow-view release-flow-data"><h3>{{ _('Messdaten') }}</h3><ol>
+<li><strong>{{ _('Verteilnetzbetreiber (VNB)') }}</strong><p>{{ _('Die tatsächliche Datenlieferung wird vereinbart.') }}</p></li>
+<li><strong>{{ _('LEG-Vertretung und gewählter Betriebsdienst') }}</strong><p>{{ _('Berechtigte Personen übernehmen und prüfen die bereitgestellten Daten.') }}</p></li>
+<li><strong>{{ _('OpenLEG Software') }}</strong><p>{{ _('Der eingerichtete Import bereitet Daten und Abrechnungsentwürfe auf. Verantwortliche prüfen das Ergebnis.') }}</p></li>
+</ol><p>{{ _('Datenzugang, Format und Einrichtung müssen für Ihre LEG geklärt sein. Die Zeichnung verspricht keine fertige Anbindung an jeden Netzbetreiber.') }}</p></div>
+<div class="release-flow-view release-flow-payments"><h3>{{ _('Zahlungen') }}</h3><p>{{ _('Die drei Felder zeigen getrennte Abrechnungsbeziehungen.') }}</p><ol>
+<li><strong>{{ _('Interne LEG-Abrechnung') }}</strong><p>{{ _('Die LEG regelt mit den verbrauchenden und erzeugenden Teilnehmenden die interne Verrechnung und die vorgesehenen Zahlungen.') }}</p></li>
+<li><strong>{{ _('Netznutzung und übriger Strom') }}</strong><p>{{ _('Netzbetreiber und übriger Lieferant rechnen ihre Leistungen entsprechend den geltenden Regeln und Vereinbarungen ab.') }}</p></li>
+<li><strong>{{ _('LEG und beauftragter Betriebsdienst') }}</strong><p>{{ _('Die LEG bezahlt die ausdrücklich vereinbarten Verwaltungs- oder Betriebskosten an den gewählten Dienst.') }}</p></li>
+</ol><p>{{ _('Eine Rechnungsvorbereitung in der Software ist noch keine ausgeführte Bankzahlung.') }}</p></div>
+</section>
+<section class="release-document-section" id="faq"><h2 id="faq-title">{{ _('Häufige Fragen') }}</h2>
+<details><summary>{{ _('Prüft OpenLEG, ob unsere Anschlüsse eine LEG bilden dürfen?') }}</summary><p>{{ _('Der LEG-Check zeigt öffentliche Gemeindedaten und gemeldete Gemeinschaften. Die massgeblichen Anschluss- und Netzbedingungen klären Sie mit dem Netzbetreiber.') }}</p><a href="{{ '/leg-check'|localized_url }}">{{ _('LEG prüfen') }}</a></details>
+<details><summary>{{ _('Was kostet der Einsatz?') }}</summary><p>{{ _('Die Software steht unter AGPL-3.0-or-later. Einrichtung, Infrastruktur und laufende Arbeit verursachen eigenen Aufwand. Ein Vereinsbeitrag ist kein Hosting- oder Betriebsvertrag.') }}</p><a href="{{ '/pricing'|localized_url }}">{{ _('Kosten und Betrieb') }}</a></details>
+<section id="interner-strompreis"><h3>{{ _('Wie legt eine LEG den internen Strompreis fest?') }}</h3><p>{{ _('Die Gemeinschaft vereinbart ihren internen Preis und die Aufteilung der Verwaltungskosten. Prüfen Sie tatsächliche Tarife, Gebühren und Vertragsbedingungen; eine Modellrechnung ist keine zugesicherte Ersparnis.') }}</p><a href="{{ '/leg-kalkulator'|localized_url }}">{{ _('Kosten abschätzen') }}</a></section>
+<p><a href="{{ '/wissen/strommodelle'|localized_url }}">{{ _('LEG, ZEV und vZEV einordnen') }}</a></p>
+</section>
+<section class="release-document-section"><h2>{{ _('Ihre nächste Aufgabe') }}</h2><div class="release-actions"><a class="release-button release-button-primary" href="{{ '/leg-gruenden'|localized_url }}">{{ _('Gründung vorbereiten') }}</a><a class="release-button" href="{{ '/software'|localized_url }}">{{ _('Funktionen und Ablauf') }}</a><a class="release-button" href="{{ '/self-host'|localized_url }}">{{ _('Selbst betreiben') }}</a></div></section>
+{% endblock %}

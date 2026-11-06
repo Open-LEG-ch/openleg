@@ -157,3 +157,19 @@
 .release-field-error, .release-search-errors { color: #982f40; }
 .release-search-errors { margin-top: 32px; padding: 16px; border-left: 3px solid #982f40; }
 .release-search-errors ul { padding-left: 24px; list-style: disc; }
+
+.release-role-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-block: 32px; }
+.release-role-grid article { padding: 24px; border: 1px solid #bcc3d0; border-radius: 12px; background: #fffdf8; }
+.release-role-icon { width: 120px; height: 90px; color: #243b85; margin-bottom: 24px; }
+.release-role-grid h2 { font: 600 24px/1.3 system-ui, sans-serif; }
+.release-document details { margin-block: 20px; }
+.release-document summary { cursor: pointer; padding-block: 12px; min-height: 48px; font-weight: 600; }
+.release-flow-view { padding-block: 24px; }
+.release-flow-view ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; list-style: decimal; padding-left: 24px; margin-block: 24px; }
+.release-flow-view li { padding: 16px; border-top: 4px solid #243b85; background: #fffdf8; }
+.release-flow-data li { border-top-style: dashed; }
+.release-flow-payments li { border-top-style: double; border-top-width: 6px; }
+.release-flow-view strong { font-size: 18px; }
+@media (max-width: 1000px) { .release-role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 650px) { .release-role-grid, .release-flow-view ol { grid-template-columns: minmax(0, 1fr); } }
+@media print { .release-role-grid details::details-content { content-visibility: visible !important; display: block !important; } .release-role-grid, .release-flow-view ol { grid-template-columns: minmax(0, 1fr); } .release-role-grid article, .release-flow-view li { break-inside: avoid; } }

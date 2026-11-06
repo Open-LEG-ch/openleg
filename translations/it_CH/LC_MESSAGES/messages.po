@@ -1314,6 +1314,42 @@ msgstr "Tutti i villaggi di allenamento sono occupati, riprova più tardi."
 msgid "Als Netzbetreiber erhalten Sie:"
 msgstr "In qualità di gestore di rete, è possibile ottenere:"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:31
+msgid ""
+"Als Nächstes klären Sie Einrichtung, Datenübernahme, laufende Arbeit, Sicherungen und die "
+"Übergabe bei einem späteren Wechsel."
+msgstr ""
+"Il passo successivo è chiarire configurazione, trasferimento dei dati, lavoro corrente, backup e "
+"consegna in caso di un futuro cambio di gestione."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:15
+msgid ""
+"Als Nächstes klären Sie mit der Vertretung, welche Anschlüsse geprüft werden und welche Daten für"
+" die Abrechnung vorliegen müssen."
+msgstr ""
+"Il passo successivo è chiarire con la rappresentanza quali allacciamenti verificare e quali dati "
+"servono per la fatturazione."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:19
+msgid ""
+"Als Nächstes lassen Sie die Anschlussbedingungen prüfen und klären, wer Ihre Fragen zu Vertrag "
+"und Abrechnung beantwortet."
+msgstr ""
+"Il passo successivo è far verificare le condizioni di allacciamento e chiarire chi risponderà "
+"alle domande su contratto e fatturazione."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:23
+msgid ""
+"Als Nächstes vereinbaren Sie Anmeldung, Datenzugang und Lieferung mit dem Netzbetreiber und legen"
+" die Prüfung der internen Abrechnung fest."
+msgstr ""
+"Il passo successivo è concordare iscrizione, accesso ai dati e trasmissione con il gestore di "
+"rete, e stabilire come verificare la fatturazione interna."
+
 #. Draft translation; native language and domain review pending.
 #: templates/member_invoice_detail.html:36
 msgid "Als PDF herunterladen"
@@ -1783,6 +1819,11 @@ msgstr "Finestra di misurazione appariscente:"
 #: templates/release/software.html:13
 msgid "Aufgabe"
 msgstr "Funzione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:39
+msgid "Aufgaben im Detail"
+msgstr "Compiti in dettaglio"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/home.html:15
@@ -2348,6 +2389,11 @@ msgstr "Calcolata da BFE Registri degli impianti e tettuccio solare"
 #: templates/gemeinde/profil.html:100
 msgid "Berechnet aus der OpenLEG Rangliste"
 msgstr "Calcola dalla classifica OpenLEG"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:49
+msgid "Berechtigte Personen übernehmen und prüfen die bereitgestellten Daten."
+msgstr "Le persone autorizzate ricevono e verificano i dati forniti."
 
 #. Draft translation; native language and domain review pending.
 #: templates/advisories.html:13
@@ -3577,6 +3623,15 @@ msgstr "Firma del contratto di trattamento dei dati"
 msgid "Datenzugang, Berechtigung, Format und konkrete VNB-Anbindung vereinbaren und testen."
 msgstr "Fissare e testare l'accesso ai dati, l'autorizzazione, il formato e la connessione specifica VNB."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:51
+msgid ""
+"Datenzugang, Format und Einrichtung müssen für Ihre LEG geklärt sein. Die Zeichnung verspricht "
+"keine fertige Anbindung an jeden Netzbetreiber."
+msgstr ""
+"Accesso ai dati, formato e configurazione devono essere chiariti per la vostra LEG. Il disegno "
+"non promette un'integrazione funzionante con ogni gestore di rete."
+
 #. Draft translation; native language and domain review pending.
 #: templates/open_source.html:130
 msgid "Datenzugriff"
@@ -3659,6 +3714,11 @@ msgstr "L'allegato non è un file PDF valido."
 #: verein_routes.py:271
 msgid "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
 msgstr "La richiesta è salvata. Riprova la spedizione di posta elettronica."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:44
+msgid "Der Austausch nutzt die bestehende Netzinfrastruktur."
+msgstr "Lo scambio sfrutta l'infrastruttura di rete esistente."
 
 #. Draft translation; native language and domain review pending.
 #: store/formation_activation.py:154
@@ -3756,6 +3816,15 @@ msgstr "L'estratto conto è stato importato e confrontato."
 msgid "Der Koordinator sieht Verbindungsdaten, nie Ihre Messdaten."
 msgstr "Il coordinatore vede i dati di connessione, mai i dati delle sue misurazioni."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:59
+msgid ""
+"Der LEG-Check zeigt öffentliche Gemeindedaten und gemeldete Gemeinschaften. Die massgeblichen "
+"Anschluss- und Netzbedingungen klären Sie mit dem Netzbetreiber."
+msgstr ""
+"La verifica LEG mostra i dati pubblici dei Comuni e le comunità segnalate. Le condizioni di "
+"allacciamento e di rete applicabili vanno chiarite con il gestore di rete."
+
 #. Draft translation; native language and domain review pending.
 #: billing_policy.py:237 billing_policy.py:243
 msgid "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
@@ -3818,6 +3887,15 @@ msgstr ""
 "organizzazione interna, la sua rappresentanza, i contratti, il prezzo interno dell'energia "
 "elettrica, l'amministrazione e la fatturazione. OpenLEG fornisce software aperto che lei stesso o"
 " un fornitore di servizi scelto può utilizzare."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:25
+msgid ""
+"Der Netzbetreiber prüft die massgeblichen Anschluss- und Netzbedingungen. Eine Karte oder ein "
+"Verzeichniseintrag ersetzt diese Prüfung nicht."
+msgstr ""
+"Il gestore di rete verifica le condizioni di allacciamento e di rete applicabili. Una mappa o una"
+" voce nel registro non sostituiscono questa verifica."
 
 #. Draft translation; native language and domain review pending.
 #: dashboard.py:1264
@@ -4091,6 +4169,15 @@ msgstr "Il deposito di pagamento non contiene alcun importo valido."
 #: municipality.py:167
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Il link di accesso non è valido o già utilizzato."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:50
+msgid ""
+"Der eingerichtete Import bereitet Daten und Abrechnungsentwürfe auf. Verantwortliche prüfen das "
+"Ergebnis."
+msgstr ""
+"L'importazione configurata elabora i dati e prepara le bozze di fatturazione. Le persone "
+"responsabili verificano il risultato."
 
 #. Draft translation; native language and domain review pending.
 #: templates/documents/community_agreement.html:28
@@ -4391,6 +4478,26 @@ msgstr "Le comunità sono ordinate per nome."
 msgid "Die Gemeinschaft beim Verteilnetzbetreiber anmelden."
 msgstr "La Comunità deve notificare all'operatore della rete di distribuzione."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:30
+msgid ""
+"Die Gemeinschaft entscheidet, wen sie beauftragt und wer Ergebnisse freigibt. Der gewählte Dienst"
+" ist nicht automatisch der Netzbetreiber oder die Gemeinde."
+msgstr ""
+"La comunità sceglie chi incaricare e chi approva i risultati. Il servizio scelto non coincide "
+"automaticamente con il gestore di rete o il Comune."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:61
+msgid ""
+"Die Gemeinschaft vereinbart ihren internen Preis und die Aufteilung der Verwaltungskosten. Prüfen"
+" Sie tatsächliche Tarife, Gebühren und Vertragsbedingungen; eine Modellrechnung ist keine "
+"zugesicherte Ersparnis."
+msgstr ""
+"La comunità concorda il prezzo interno e la ripartizione dei costi amministrativi. Occorre "
+"verificare tariffe, oneri e condizioni contrattuali effettivi. Un calcolo indicativo non "
+"garantisce risparmi."
+
 #. Draft translation; native language and domain review pending.
 #: templates/documents/community_agreement.html:34
 msgid ""
@@ -4492,6 +4599,23 @@ msgstr ""
 "dalla legge. Non tutte le integrazioni VNB sono implementate; la registrazione e la fornitura dei"
 " dati devono essere configurate per ciascun gestore di rete."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:55
+msgid ""
+"Die LEG bezahlt die ausdrücklich vereinbarten Verwaltungs- oder Betriebskosten an den gewählten "
+"Dienst."
+msgstr "La LEG paga al servizio scelto i costi amministrativi o di esercizio espressamente concordati."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:27
+msgid ""
+"Die LEG klärt mit ihm die tatsächlichen Anmelde- und Datenprozesse. Die interne Organisation und "
+"die Abrechnung des LEG-Stroms bleiben Aufgaben der Gemeinschaft."
+msgstr ""
+"La LEG chiarisce con il gestore di rete le procedure effettive di iscrizione e trasmissione dei "
+"dati. L'organizzazione interna e la fatturazione dell'elettricità LEG restano compiti della "
+"comunità."
+
 #. Draft translation; native language and domain review pending.
 #: templates/how-it-works.html:62 templates/how-it-works.html:137
 msgid ""
@@ -4504,6 +4628,40 @@ msgstr ""
 "remunerazione di entrata al prezzo totale dell'energia elettrica del comune meno la tariffa di "
 "fatturazione del gestore della rete. OpenLEG mostra le fonti e memorizza il prezzo e la tassa in "
 "versione. La LEG può differire dall'area proposta."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:22
+msgid ""
+"Die LEG legt ihre internen Regeln fest und beauftragt die Vertretung ausdrücklich. Verwaltung "
+"oder Abrechnung können an einen gewählten Dienstleister delegiert werden."
+msgstr ""
+"La LEG definisce le proprie regole interne e incarica espressamente la rappresentanza. "
+"Amministrazione o fatturazione possono essere delegate a un fornitore scelto."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:45
+msgid "Die LEG ordnet gemessene Strommengen zu. Übriger Strom kommt vom jeweiligen Lieferanten."
+msgstr ""
+"La LEG attribuisce le quantità di elettricità misurate. L'elettricità restante proviene dal "
+"rispettivo fornitore."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:53
+msgid ""
+"Die LEG regelt mit den verbrauchenden und erzeugenden Teilnehmenden die interne Verrechnung und "
+"die vorgesehenen Zahlungen."
+msgstr ""
+"La LEG disciplina con i partecipanti consumatori e produttori la fatturazione interna e i "
+"pagamenti previsti."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:29
+msgid ""
+"Die LEG übergibt ihm die vereinbarten Unterlagen, Berechtigungen und Aufgaben. Der Auftrag "
+"bestimmt Umfang, Kosten und Verantwortlichkeiten."
+msgstr ""
+"La LEG consegna i documenti, le autorizzazioni e i compiti concordati. L'incarico definisce "
+"portata, costi e responsabilità."
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:92
@@ -4789,6 +4947,25 @@ msgstr ""
 msgid "Die Software einsetzen"
 msgstr "Usare il software"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:60
+msgid ""
+"Die Software steht unter AGPL-3.0-or-later. Einrichtung, Infrastruktur und laufende Arbeit "
+"verursachen eigenen Aufwand. Ein Vereinsbeitrag ist kein Hosting- oder Betriebsvertrag."
+msgstr ""
+"Il software è disponibile con licenza AGPL-3.0-or-later. Configurazione, infrastruttura e lavoro "
+"corrente richiedono risorse proprie. La quota associativa non è un contratto di hosting o di "
+"gestione."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:33
+msgid ""
+"Die Software verarbeitet die eingerichteten Datenquellen und die von Ihrer LEG gewählten "
+"Einstellungen. Fehlende Messwerte werden nicht durch erfundene Werte ersetzt."
+msgstr ""
+"Il software elabora le fonti di dati configurate e le impostazioni scelte dalla vostra LEG. I "
+"valori di misura mancanti non vengono sostituiti da valori inventati."
+
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/profil.html:118
 msgid "Die Solarnutzung beruht auf"
@@ -4871,6 +5048,20 @@ msgstr ""
 #: billing_policy.py:211
 msgid "Die Zustellmethode der Richtlinie ist ungültig."
 msgstr "Il metodo di consegna della direttiva non è valido."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:41
+msgid ""
+"Die drei Ansichten zeigen Aufgaben und Übergaben schematisch. Sie bilden keine konkrete "
+"Netztopologie ab. Eine Berechtigung zum Datenzugang ist keine neue Stromleitung."
+msgstr ""
+"Le tre viste mostrano in modo schematico i compiti e i passaggi. Non rappresentano una topologia "
+"reale della rete. Un'autorizzazione di accesso ai dati non è una nuova linea elettrica."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:52
+msgid "Die drei Felder zeigen getrennte Abrechnungsbeziehungen."
+msgstr "I tre riquadri mostrano rapporti di fatturazione distinti."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:12
@@ -4972,6 +5163,11 @@ msgid ""
 msgstr ""
 "L' accesso simulato è stato rifiutato. Rimarrà con la sua ricevuta. Inizia con un nuovo LEG o "
 "reimposta il villaggio per provare una procedura riuscita."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:48
+msgid "Die tatsächliche Datenlieferung wird vereinbart."
+msgstr "La consegna effettiva dei dati è concordata."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/home.html:18
@@ -5109,6 +5305,15 @@ msgid ""
 msgstr ""
 "Questa fonte non è inclusa nella sezione di controllo corrente. Le ultime informazioni e le "
 "conferme sono disattivate per questo messaggio."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:38
+msgid ""
+"Diese Rollen beschreiben Aufgaben. Eine Person oder Organisation kann mehrere übernehmen. Ihre "
+"LEG legt ihre Vertretung und den Betrieb fest; eine Vereinsmitgliedschaft ist davon unabhängig."
+msgstr ""
+"Questi ruoli descrivono compiti. Una persona o un'organizzazione può assumerne diversi. La vostra"
+" LEG stabilisce rappresentanza e gestione. L'adesione all'associazione è distinta."
 
 #. Draft translation; native language and domain review pending.
 #: templates/documents/community_agreement.html:25
@@ -5878,6 +6083,17 @@ msgstr ""
 msgid "Eine Liste der passenden Anschlüsse und Anlagen."
 msgstr "Un elenco dei collegamenti e degli impianti adatti."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:3
+msgid ""
+"Eine Lokale Elektrizitätsgemeinschaft (LEG) organisiert den Austausch lokal erzeugter "
+"Elektrizität. Ihre Gruppe vereinbart die Teilnahme, bestellt ihre Vertretung und wählt, wer die "
+"Verwaltung und den Softwarebetrieb übernimmt."
+msgstr ""
+"Una comunità locale di energia elettrica (LEG) organizza lo scambio di elettricità prodotta "
+"localmente. Il gruppo concorda la partecipazione, designa la rappresentanza e sceglie chi si "
+"occupa di amministrazione e gestione del software."
+
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:30
 msgid "Eine Lokale Elektrizitätsgemeinschaft gründen"
@@ -5904,6 +6120,11 @@ msgstr ""
 "allo stesso livello di rete nello stesso comune politico e che consumano insieme elettricità da "
 "fonti rinnovabili. È possibile in tutta la Svizzera dal 1° gennaio 2026. Base giuridica: articoli"
 " 17d e 17e StromVG e articoli 19e-19h StrombV."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:56
+msgid "Eine Rechnungsvorbereitung in der Software ist noch keine ausgeführte Bankzahlung."
+msgstr "La preparazione delle fatture nel software non è ancora un pagamento bancario eseguito."
 
 #. Draft translation; native language and domain review pending.
 #: templates/telemetry_shared.html:28
@@ -6204,10 +6425,20 @@ msgstr ""
 "ElCom · PDF · Italiano · Alto 16 giugno 2026. La lingua di questa fonte rimane indipendente dalla"
 " lingua di visualizzazione."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:40
+msgid "ElCom, Fragen und Antworten, Stand 16. Juni 2026, Kapitel 9 (PDF, Deutsch)"
+msgstr "ElCom, Domande e risposte, stato al 16 giugno 2026, capitolo 9 (PDF, tedesco)"
+
 #. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:23
 msgid "ElCom: Fragen und Antworten zur Energiestrategie 2050"
 msgstr "ElCom: Domande e risposte sulla strategia energetica 2050"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:42
+msgid "Elektrizität"
+msgstr "Elettricità"
 
 #. Draft translation; native language and domain review pending.
 #: sandbox_formation.py:186 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
@@ -6365,6 +6596,28 @@ msgstr "Esame del progetto"
 #: billing_workspace.py:141 dashboard.py:379
 msgid "Entwurf ungültig"
 msgstr "Progetto non valido"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:24
+msgid "Er bleibt für seine gesetzlichen Netz-, Mess- und Abrechnungsaufgaben zuständig."
+msgstr "Il gestore conserva i propri compiti legali di rete, misurazione e fatturazione."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:28
+msgid "Er erledigt die ausdrücklich beauftragte Verwaltung, Abrechnung oder den Softwarebetrieb."
+msgstr ""
+"Il servizio svolge i compiti di amministrazione, fatturazione o gestione del software "
+"espressamente affidati."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:26
+msgid ""
+"Er übernimmt die ihm zugewiesene Messung, Netznutzungsabrechnung und Datenlieferung. Bei "
+"Grundversorgung liefert er auch den übrigen Strom."
+msgstr ""
+"Il gestore si occupa della misurazione, della fatturazione dell'utilizzo della rete e della "
+"trasmissione dei dati di sua competenza. Nell'approvvigionamento di base fornisce anche "
+"l'elettricità restante."
 
 #. Draft translation; native language and domain review pending.
 #: sandbox_seed.py:88
@@ -6584,6 +6837,11 @@ msgstr "Durata prevista:"
 #: templates/telemetry_dashboard.html:53 templates/telemetry_shared.html:51
 msgid "Erwarteter Messtakt"
 msgstr "Tempo di misurazione atteso"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:12 templates/release/how_it_works.html:43
+msgid "Erzeugende Teilnehmende"
+msgstr "Partecipanti produttori"
 
 #. Draft translation; native language and domain review pending.
 #: templates/partials/leg_facts.html:6
@@ -7950,6 +8208,11 @@ msgstr ""
 "Ponderazione: Solar 30 per cento, Auto elettriche 20 per cento; Riscaldamento rinnovabile 25 per "
 "cento."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:28
+msgid "Gewählter Betriebsdienst"
+msgstr "Servizio di gestione scelto"
+
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/profil.html:34
 #, python-format
@@ -8921,6 +9184,11 @@ msgstr "L'ultima fattura di %(utility_name)s contiene le informazioni necessarie
 msgid "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
 msgstr "La tua nuova fattura LEG è disponibile nella scheda OpenLEGdashboard protetta: %(invoice_url)s"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:64
+msgid "Ihre nächste Aufgabe"
+msgstr "Il prossimo compito"
+
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/accounts.html:6
 msgid "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
@@ -9190,6 +9458,11 @@ msgstr "Interessante"
 #: templates/gemeinde/verzeichnis.html:50
 msgid "Interessierte"
 msgstr "Interesse"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:53
+msgid "Interne LEG-Abrechnung"
+msgstr "Fatturazione interna della LEG"
 
 #. Draft translation; native language and domain review pending.
 #: i18n.py:88
@@ -10257,6 +10530,11 @@ msgstr "LEG non trovato."
 msgid "LEG prüfen"
 msgstr "LEG Verifica"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:55
+msgid "LEG und beauftragter Betriebsdienst"
+msgstr "LEG e servizio di gestione incaricato"
+
 #. Draft translation; native language and domain review pending.
 #: templates/api_docs.html:103
 msgid "LEG value-gap analysis"
@@ -10268,7 +10546,8 @@ msgid "LEG vorbereiten"
 msgstr "Preparare una LEG"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/release/knowledge.html:2 templates/release/knowledge.html:6
+#: templates/release/how_it_works.html:62 templates/release/knowledge.html:2
+#: templates/release/knowledge.html:6
 msgid "LEG, ZEV und vZEV einordnen"
 msgstr "Comprendere i modelli CLE, RCP e RCP virtuale"
 
@@ -10377,6 +10656,16 @@ msgstr "Sconto LEG:"
 #: templates/leg_verzeichnis/liste.html:57
 msgid "LEG-Status"
 msgstr "Stato LEG"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:20
+msgid "LEG-Vertretung"
+msgstr "Rappresentanza della LEG"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:49
+msgid "LEG-Vertretung und gewählter Betriebsdienst"
+msgstr "Rappresentanza della LEG e servizio di gestione scelto"
 
 #. Draft translation; native language and domain review pending.
 #: templates/admin/ops.html:35 templates/fuer_gemeinden.html:107
@@ -10725,6 +11014,11 @@ msgstr "Distribuzione locale"
 #: templates/admin/abrechnungen.html:107
 msgid "Lokal zugeteilt"
 msgstr "Assegnato localmente"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:43
+msgid "Lokale Anlagen speisen Strom ein."
+msgstr "Gli impianti locali immettono elettricità nella rete."
 
 #. Draft translation; native language and domain review pending.
 #: formation_wizard.py:115
@@ -11726,6 +12020,15 @@ msgstr ""
 "Gli operatori di rete e il livello della rete devono essere esaminati prima della loro "
 "costituzione."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:54
+msgid ""
+"Netzbetreiber und übriger Lieferant rechnen ihre Leistungen entsprechend den geltenden Regeln und"
+" Vereinbarungen ab."
+msgstr ""
+"Il gestore di rete e il fornitore dell'elettricità restante fatturano le proprie prestazioni "
+"secondo le regole e gli accordi applicabili."
+
 #. Draft translation; native language and domain review pending.
 #: dashboard.py:1115
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
@@ -11822,6 +12125,11 @@ msgstr "Tariffe di rete"
 #: templates/gemeinde/pilotgemeinde.html:22 templates/leg_kalkulator.html:219
 msgid "Netznutzung"
 msgstr "Uso della rete"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:54
+msgid "Netznutzung und übriger Strom"
+msgstr "Utilizzo della rete ed elettricità restante"
 
 #. Draft translation; native language and domain review pending.
 #: templates/partials/leg_facts.html:7
@@ -11958,6 +12266,15 @@ msgid ""
 msgstr ""
 "Non tutte le connessioni VNB sono già state attuate, quindi è necessario impostare la "
 "registrazione e la consegna dei dati per ciascun gestore di rete."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:35
+msgid ""
+"Nicht jede VNB-Anbindung ist umgesetzt. Prüfen Sie die tatsächlichen Schnittstellen und den "
+"Betriebsaufwand. Ein vollständiger Betriebswechsel ist nicht mit einem einzelnen Export erledigt."
+msgstr ""
+"Non tutte le integrazioni VNB sono realizzate. Occorre verificare le interfacce effettive e il "
+"lavoro di gestione. Una singola esportazione non completa un cambio di gestione."
 
 #. Draft translation; native language and domain review pending.
 #: equipment.py:32
@@ -12565,6 +12882,11 @@ msgstr "OpenLEG Public API"
 msgid "OpenLEG Registereinträge"
 msgstr "OpenLEG Registri"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:32 templates/release/how_it_works.html:50
+msgid "OpenLEG Software"
+msgstr "Software OpenLEG"
+
 #. Draft translation; native language and domain review pending.
 #: pv_badge.py:53
 msgid "OpenLEG Solarnutzungs-Rangliste"
@@ -12598,6 +12920,11 @@ msgid ""
 msgstr ""
 "Installa OpenLEG sulla propria infrastruttura: carica il codice sorgente, crea le chiavi di "
 "accesso locali e avvia i servizi Docker."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:46
+msgid "OpenLEG betreibt keine Stromleitungen und schaltet den physikalischen Stromfluss nicht."
+msgstr "OpenLEG non gestisce linee elettriche e non comanda il flusso fisico dell'elettricità."
 
 #. Draft translation; native language and domain review pending.
 #: templates/open_source.html:173
@@ -13585,6 +13912,11 @@ msgstr ""
 msgid "Prüfplatz"
 msgstr "Area di prova"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:59
+msgid "Prüft OpenLEG, ob unsere Anschlüsse eine LEG bilden dürfen?"
+msgstr "OpenLEG verifica se i nostri allacciamenti possono formare una LEG?"
+
 #. Draft translation; native language and domain review pending.
 #: community_access.py:66
 msgid "Prüfung"
@@ -14464,8 +14796,9 @@ msgstr "Pagine dell'elenco delle domande"
 #: templates/fuer_gemeinden.html:90 templates/open_source.html:39 templates/open_source.html:58
 #: templates/open_source.html:66 templates/open_source.html:157 templates/partials/site_nav.html:16
 #: templates/partials/site_nav.html:41 templates/pricing.html:41 templates/pricing.html:122
-#: templates/release/footer.html:10 templates/release/navigation.html:9
-#: templates/release/pricing.html:10 templates/release/software.html:22 templates/self_host.html:57
+#: templates/release/footer.html:10 templates/release/how_it_works.html:64
+#: templates/release/navigation.html:9 templates/release/pricing.html:10
+#: templates/release/software.html:22 templates/self_host.html:57
 msgid "Selbst betreiben"
 msgstr "Gestire in proprio"
 
@@ -14544,6 +14877,24 @@ msgstr ""
 msgid "Sie benennen Personen für Technik, Daten und Abrechnung."
 msgstr "Essi designano persone per la tecnologia, i dati e la fatturazione."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:17
+msgid ""
+"Sie bringen die Angaben zur Verbrauchsstätte und die nötigen Zustimmungserklärungen ein. Auch "
+"ohne eigene Solaranlage können Sie eine Teilnahme prüfen."
+msgstr ""
+"Si forniscono i dati del luogo di consumo e i consensi necessari. È possibile valutare la "
+"partecipazione anche senza un proprio impianto solare."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:12
+msgid ""
+"Sie bringen lokale Erzeugung ein und vereinbaren, zu welchen Bedingungen ihre Strommengen in der "
+"LEG abgerechnet werden."
+msgstr ""
+"I partecipanti apportano la produzione locale e concordano le condizioni di fatturazione delle "
+"proprie quantità di elettricità nella LEG."
+
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:130
 msgid "Sie die Adressen der interessierten Anschlüsse kennen."
@@ -14558,6 +14909,15 @@ msgstr "L'amministrazione è riservata ad un altro conto."
 #: templates/verein/member_access.html:3
 msgid "Sie erhalten einen einmal verwendbaren Link an Ihre bestätigte E-Mail-Adresse."
 msgstr "Riceverai un link utilizzabile al tuo indirizzo e-mail confermato."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:21
+msgid ""
+"Sie führt die vereinbarten Teilnehmer- und Anschlussangaben zusammen und hält Zuständigkeiten und"
+" Änderungen fest."
+msgstr ""
+"La rappresentanza raccoglie i dati concordati dei partecipanti e degli allacciamenti, e registra "
+"responsabilità e modifiche."
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/index.html:11
@@ -14593,6 +14953,11 @@ msgstr "Non hai ancora ricevuto nessuna richiesta."
 msgid "Sie halten Aufgaben, Zugriffsrechte und Freigaben im Auftrag fest."
 msgstr "Essi mantengono in ordine compiti, diritti di accesso e autorizzazioni."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:20
+msgid "Sie koordiniert die Teilnehmenden, die Vereinbarungen und den Kontakt zum Verteilnetzbetreiber."
+msgstr "Coordina i partecipanti, gli accordi e i contatti con il gestore della rete di distribuzione."
+
 #. Draft translation; native language and domain review pending.
 #: templates/dashboard.html:186
 msgid "Sie können beide Einwilligungen hier jederzeit ändern."
@@ -14611,6 +14976,15 @@ msgstr ""
 #: templates/fuer_gemeinden.html:36
 msgid "Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein."
 msgstr "Organizza la tua comunità con i dati pubblici."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:18
+msgid ""
+"Sie prüfen die Vereinbarung und die Kosten. Der übrige Strombezug und die Netznutzung bleiben "
+"eigene Abrechnungsbestandteile."
+msgstr ""
+"Occorre verificare accordo e costi. L'approvvigionamento elettrico restante e l'utilizzo della "
+"rete rimangono componenti di fatturazione distinte."
 
 #. Draft translation; native language and domain review pending.
 #: templates/telemetry_shared.html:21
@@ -14648,6 +15022,22 @@ msgstr "Siete invitati a partecipare a \"%(community)s.\""
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 msgstr "Sono ora depositati come gestori di \"%(entry_name)s.\""
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:13
+msgid ""
+"Sie stellen die Angaben zu Anlage und Anschluss bereit. Eine Solaranlage allein begründet keine "
+"Teilnahme an einer LEG."
+msgstr ""
+"Si forniscono i dati dell'impianto e dell'allacciamento. Un impianto solare da solo non determina"
+" la partecipazione a una LEG."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:32
+msgid "Sie unterstützt die Verwaltung, den Datenimport und die prüfbare Vorbereitung von Abrechnungen."
+msgstr ""
+"Il software supporta amministrazione, importazione dei dati e preparazione verificabile delle "
+"fatture."
+
 #. Draft translation; native language and domain review pending.
 #: templates/release/home.html:57
 msgid ""
@@ -14657,6 +15047,24 @@ msgstr ""
 "L'utente accorda l'accesso ai dati con il gestore della rete di distribuzione. Non tutti gli "
 "operatori forniscono lo stesso formato. Controllare l'importazione con i dati prima di preparare "
 "una fatturazione."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:16
+msgid ""
+"Sie vereinbaren ihre Teilnahme und beziehen den in der LEG zugeordneten Anteil zu den "
+"vereinbarten Bedingungen."
+msgstr ""
+"I partecipanti concordano la propria partecipazione e ricevono la quota attribuita nella LEG alle"
+" condizioni concordate."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:14
+msgid ""
+"Sie vereinbaren mit der Gemeinschaft die Teilnahme und den internen Preis. Die Vertretung "
+"koordiniert die nötigen Meldungen und Unterlagen."
+msgstr ""
+"Si concordano con la comunità partecipazione e prezzo interno. La rappresentanza coordina le "
+"notifiche e i documenti necessari."
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/metering.html:9
@@ -15272,6 +15680,11 @@ msgstr "Utilizzare elettricità"
 #: templates/emails/day_14_formation.html:64
 msgid "Strom teilen und sparen"
 msgstr "Condividere e risparmiare energia"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:41
+msgid "Strom, Daten und Zahlungen getrennt verstehen"
+msgstr "Comprendere separatamente l'elettricità, i dati e i pagamenti"
 
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:68
@@ -16013,6 +16426,15 @@ msgstr "Responsabile del contenuto"
 msgid "Verantwortlich für die Antragsdaten"
 msgstr "Responsabile dei dati relativi alla domanda"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:34
+msgid ""
+"Verantwortliche Personen prüfen Entwürfe und geben Rechnungen frei. Der Code ist unter AGPL-3.0"
+"-or-later einsehbar und kann selbst betrieben werden."
+msgstr ""
+"Le persone responsabili verificano le bozze e approvano le fatture. Il codice è consultabile con "
+"licenza AGPL-3.0-or-later e il software può essere gestito autonomamente."
+
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:192
 msgid "Verantwortlichkeiten im Detail"
@@ -16052,6 +16474,11 @@ msgstr "Guarda consumi e impianti solari"
 #: templates/member_invoice_detail.html:181
 msgid "Verbrauch:"
 msgstr "Consumo:"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:16 templates/release/how_it_works.html:45
+msgid "Verbrauchende Teilnehmende"
+msgstr "Partecipanti consumatori"
 
 #. Draft translation; native language and domain review pending.
 #: templates/emails/day_7_consumption.html:47
@@ -16294,6 +16721,11 @@ msgstr "Modello di distribuzione:"
 #: templates/gemeinde/pilotgemeinde.html:23
 msgid "Verteilnetzbetreiber"
 msgstr "Gestore della rete di distribuzione"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:24 templates/release/how_it_works.html:48
+msgid "Verteilnetzbetreiber (VNB)"
+msgstr "Gestore della rete di distribuzione (VNB)"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:10
@@ -16778,6 +17210,11 @@ msgstr "Che cosa può facilitare il suo Comune?"
 msgid "Was kostenlos bleibt"
 msgstr "Cosa rimane gratis"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:60
+msgid "Was kostet der Einsatz?"
+msgstr "Quali sono i costi di utilizzo?"
+
 #. Draft translation; native language and domain review pending.
 #: templates/how-it-works.html:46 templates/how-it-works.html:123
 msgid "Was kostet die Gründung mit OpenLEG?"
@@ -16953,6 +17390,11 @@ msgstr "Chi è il responsabile della resa dei conti?"
 #: templates/fuer_gemeinden.html:49
 msgid "Wer wofür verantwortlich ist"
 msgstr "Chi è responsabile di che cosa"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:2
+msgid "Wer übernimmt welche Aufgabe?"
+msgstr "Chi svolge ciascun compito?"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:229
@@ -17429,6 +17871,11 @@ msgstr "Pagamento"
 msgid "Zahlung erfassen"
 msgstr "Rilevazione del pagamento"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:52
+msgid "Zahlungen"
+msgstr "Pagamenti"
+
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:40
 msgid "Zahlungsabgleich prüfen"
@@ -17690,6 +18137,11 @@ msgstr ""
 #: templates/sandbox/metering.html:15
 msgid "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum."
 msgstr "Assegnazione non completamente confermata. Verificare la partecipazione e il periodo."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/how_it_works.html:40
+msgid "Zur Aufgabenteilung und zu den Anschlussbedingungen:"
+msgstr "Per la ripartizione dei compiti e le condizioni di allacciamento:"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:83
@@ -18624,6 +19076,11 @@ msgstr "App pubblica Repo"
 #: templates/gemeinde/dashboard.html:136
 msgid "Öffentliches Energieprofil"
 msgstr "Profilo energetico pubblico"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:44
+msgid "Öffentliches Verteilnetz"
+msgstr "Rete pubblica di distribuzione"
 
 #. Draft translation; native language and domain review pending.
 #: templates/dashboard.html:252
