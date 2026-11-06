@@ -167,6 +167,23 @@ def test_invalid_postcode_has_linked_and_inline_recovery(directory):
     assert 'value="Fictional"' in page.text and 'value="54"' in page.text
 
 
+def test_directory_form_keeps_original_municipality_context_after_changing_filters(
+    directory,
+):
+    client, _db = directory
+    page = client.get("/leg-verzeichnis?bfs=4021&check_q=Baden&lang=en")
+    hidden = dict(
+        re.findall(r'<input type="hidden" name="([^"]+)" value="([^"]*)"', page.text)
+    )
+    assert hidden["check_q"] == "Baden" and hidden["check_bfs"] == "4021"
+    filtered = client.get(
+        "/leg-verzeichnis", query_string={**hidden, "q": "Solar", "bfs": "9999"}
+    )
+    return_url = _href(filtered, "data-directory-check")
+    assert parse_qs(urlsplit(return_url).query)["q"] == ["Baden"]
+    assert parse_qs(urlsplit(return_url).query)["bfs"] == ["4021"]
+
+
 def test_leg_check_links_published_entries_and_reports_a_failed_read(
     directory, monkeypatch
 ):

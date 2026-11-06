@@ -61,9 +61,17 @@ def directory(slug=None):
         for key in ("q", "kanton", "plz", "leg_status", "bfs")
     }
     check_q = request.args.get("check_q", "").strip()[:200]
+    check_bfs = request.args.get("check_bfs", filters["bfs"]).strip()
+    if not (
+        check_bfs.isascii()
+        and check_bfs.isdigit()
+        and 1 <= len(check_bfs) <= 6
+        and 1 <= int(check_bfs) <= 999999
+    ):
+        check_q, check_bfs = "", ""
     check_url = (
-        "/leg-check?" + urlencode({"q": check_q, "bfs": filters["bfs"]})
-        if check_q and filters["bfs"]
+        "/leg-check?" + urlencode({"q": check_q, "bfs": check_bfs})
+        if check_q
         else "/leg-check"
     )
     errors = {}
@@ -106,6 +114,7 @@ def directory(slug=None):
             errors=errors,
             check_url=check_url,
             check_q=check_q,
+            check_bfs=check_bfs,
             unavailable=False,
             canton_options=sorted(SWISS_CANTONS),
             site_url=current_app.config["SITE_URL"],
@@ -117,6 +126,7 @@ def directory(slug=None):
         args = {key: value for key, value in filters.items() if value}
         if check_q:
             args["check_q"] = check_q
+            args["check_bfs"] = check_bfs
         args["page"] = page if target_page is None else target_page
         path = "/leg-verzeichnis" + (
             "/" + quote(entry_slug, safe="") if entry_slug else ""
@@ -130,6 +140,7 @@ def directory(slug=None):
         "errors": errors,
         "check_url": check_url,
         "check_q": check_q,
+        "check_bfs": check_bfs,
         "unavailable": False,
         "canton_options": sorted(SWISS_CANTONS),
         "site_url": current_app.config["SITE_URL"],
