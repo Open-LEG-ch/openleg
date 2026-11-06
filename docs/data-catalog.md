@@ -614,6 +614,11 @@ Reset, discard and expiry remove the entire capture directory and database.
 - **Sensitivity:** published business facts and private business contact data.
 - **Resident-visible:** directory fields are public; contact email and language
   stay out of public API responses.
+- **Public HTML:** `read_public_registry` selects only published public fields,
+  publication dates and ownership/freshness status. Contact addresses, capability
+  tokens, moderation notes and internal identifiers are excluded in SQL. Reads
+  distinguish unavailable storage from an empty page. Pagination is bounded to
+  25 entries per page and 10,000 pages; the existing API contract is unchanged.
 - **Consent gate:** none.
 
 ## store/ops

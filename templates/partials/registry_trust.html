@@ -1,4 +1,4 @@
-{% macro format_date(value) %}{% if value.strftime is defined %}{{ value.strftime('%d.%m.%Y') }}{% else %}{{ value }}{% endif %}{% endmacro %}
+{% macro format_date(value) %}{% if site_release_enabled %}{{ value|datelabel }}{% elif value.strftime is defined %}{{ value.strftime('%d.%m.%Y') }}{% else %}{{ value }}{% endif %}{% endmacro %}
 <div data-testid="registry-trust" class="border-l-2 border-brand pl-3 text-sm">
   {% if entry.get('moderation_status') == 'pending' %}
   <p class="font-semibold"><span aria-hidden="true">○</span> {{ _("Prüfung ausstehend") }}</p>

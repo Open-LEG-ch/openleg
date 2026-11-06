@@ -51,10 +51,11 @@
 
       <div class="bg-white rounded-xl border p-5 mb-6">
         <h3 class="text-sm text-ink-muted mb-2">{{ _("Stromgemeinschaften im offenen Verzeichnis") }}</h3>
-        {% if entries %}
+        {% if registry_unavailable %}<p role="status" data-registry-unavailable>{{ _('Dienst vorübergehend nicht verfügbar') }}. {{ _('Bitte laden Sie die Seite später erneut.') }}</p>
+        {% elif entries %}
         <ul class="space-y-2">
           {% for entry in entries %}
-          <li class="grid gap-2 border-b border-slate-200 pb-3 sm:grid-cols-[1fr_19rem]"><span><span class="font-semibold">{{ entry.name }}</span>{% if entry.leg_status %} <span class="text-xs text-ink-muted">({{ {"planung": _("planung"), "gruendung": _("Gründung"), "aktiv": _("aktiv"), "pausiert": _("pausiert")}.get(entry.leg_status, entry.leg_status) }})</span>{% endif %}</span>{% include "partials/registry_trust.html" %}</li>
+          <li class="grid gap-2 border-b border-slate-200 pb-3 sm:grid-cols-[1fr_19rem]"><span>{% if site_release_enabled %}<a class="font-semibold text-brand underline" href="{{ ('/leg-verzeichnis/' ~ entry.slug ~ '?bfs=' ~ profile.bfs_number ~ '&q=' ~ (q|urlencode))|localized_url }}">{{ entry.name }}</a>{% else %}<span class="font-semibold">{{ entry.name }}</span>{% endif %}{% if entry.leg_status %} <span class="text-xs text-ink-muted">({{ {"planung": _("planung"), "gruendung": _("Gründung"), "aktiv": _("aktiv"), "pausiert": _("pausiert")}.get(entry.leg_status, entry.leg_status) }})</span>{% endif %}</span>{% include "partials/registry_trust.html" %}</li>
           {% endfor %}
         </ul>
         {% else %}
@@ -62,6 +63,7 @@
         {% endif %}
       </div>
 
+      {% if site_release_enabled %}<p class="mb-8"><a href="{{ ('/leg-verzeichnis?bfs=' ~ profile.bfs_number)|localized_url }}" class="text-brand underline">{{ _('LEG-Verzeichnis') }}</a></p>{% endif %}
       {{ data_provenance(_("Datenstand"), _("laufend aktualisiert"), ["ElCom / LINDAS", _("BFE Sonnendach"), _("OpenLEG Registereinträge")]) }}
 
       <div class="bg-brand/5 border border-brand/20 rounded-xl p-5 mb-6">

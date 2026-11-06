@@ -85,7 +85,7 @@ msgid "%(count)s interessierte Person in derselben Gemeinde."
 msgstr "%(count)s persona interessata nella stessa comunità."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:420
+#: verein_routes.py:419 verein_routes.py:420
 #, python-format
 msgid "%(count)s neue Beitragsjahre erfasst. Benachrichtigungen werden erst über den Versand ausgelöst."
 msgstr ""
@@ -1257,6 +1257,11 @@ msgstr "Tutti i cantoni"
 #: templates/leg_dashboard.html:216
 msgid "Alle Mitglieder"
 msgstr "Tutti i membri"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:13
+msgid "Alle Status"
+msgstr "Tutti gli stati"
 
 #. Draft translation; native language and domain review pending.
 #: templates/how-it-works.html:128
@@ -2967,6 +2972,11 @@ msgstr ""
 "Controllare le informazioni. Per 'Come specificato 'Devono essere date fonti. La data non deve "
 "essere futura."
 
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:87
+msgid "Bitte prüfen Sie die Suchangaben."
+msgstr "Verifichi i criteri di ricerca."
+
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/dashboard.html:159
 msgid "Bitte registrieren Sie zuerst Ihre Gemeinde."
@@ -3330,6 +3340,15 @@ msgstr "Questo incontro non viene registrato. Vengono pubblicati solo gli appunt
 #: billing_policy.py:206
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr "Il modello di distribuzione della direttiva non è valido."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:21
+msgid ""
+"Das Verzeichnis enthält nur freigeschaltete Selbstauskünfte. Ein fehlender Eintrag sagt nichts "
+"über die Eignung einer Adresse aus."
+msgstr ""
+"Il registro contiene soltanto autodichiarazioni approvate per la pubblicazione. L'assenza di una "
+"voce non indica se un indirizzo è idoneo."
 
 #. Draft translation; native language and domain review pending.
 #: dashboard.py:1046
@@ -3987,7 +4006,8 @@ msgstr ""
 "adottati."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:375
+#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:362
+#: verein_routes.py:375
 #, python-format
 msgid ""
 "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
@@ -6418,6 +6438,11 @@ msgstr "Simulare il risultato"
 msgid "Ergebnis zum Fernzugriff"
 msgstr "Risultato dell'accesso remoto"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:20
+msgid "Ergebnisseiten"
+msgstr "Pagine dei risultati"
+
 #. Draft translation; native language and domain review pending.
 #: templates/emails/day_7_consumption.html:31
 msgid "Ergänzen Sie Ihren Stromverbrauch"
@@ -6458,6 +6483,11 @@ msgstr "Fatto"
 #: templates/datenschutz.html:43
 msgid "Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeinde"
 msgstr "Individuazione dell'interesse confermato all'interno di un comune politico"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:17
+msgid "Erneut versuchen"
+msgstr "Riprova"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:144
@@ -6888,6 +6918,11 @@ msgstr "Domande su questa fattura"
 msgid "Fragen zum Betrieb?"
 msgstr "Domande sul funzionamento?"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/detail.html:63 templates/leg_verzeichnis/liste.html:22
+msgid "Fragen zum Verzeichnis"
+msgstr "Domande sul registro"
+
 #. Draft translation; native language and domain review pending.
 #: templates/emails/day_14_formation.html:82
 msgid "Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns:"
@@ -7083,7 +7118,7 @@ msgid "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 msgstr "Per le comunità: vedere il potenziale, creare l'ingresso."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:361
+#: verein_routes.py:350 verein_routes.py:361
 #, python-format
 msgid ""
 "Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am %(due_on)s fällig."
@@ -7138,7 +7173,7 @@ msgstr ""
 "i BKK nell'ambito della registrazione."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:350
+#: verein_routes.py:341 verein_routes.py:350
 #, python-format
 msgid ""
 "Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von "
@@ -8580,7 +8615,8 @@ msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr "La tua voce LEG nella directory aperta è stata rivendicata con successo."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:340 verein_routes.py:344
+#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:335 verein_routes.py:340
+#: verein_routes.py:344
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
@@ -8592,7 +8628,8 @@ msgstr ""
 "Può presentare ricorso all'assemblea dei membri. Contatto: hallo@openleg.ch."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:334 verein_routes.py:338
+#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:329 verein_routes.py:334
+#: verein_routes.py:338
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
@@ -8683,7 +8720,7 @@ msgid "Ihre Aufgabe"
 msgstr "Il vostro compito"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:370
+#: verein_routes.py:357 verein_routes.py:370
 msgid ""
 "Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine "
 "Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über Ihren persönlichen "
@@ -10327,7 +10364,7 @@ msgid "LEG-Verzeichnis"
 msgstr "Directory LEG"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:7
+#: templates/leg_verzeichnis/liste.html:3 templates/leg_verzeichnis/liste.html:7
 msgid "LEG-Verzeichnis: Lokale Elektrizitätsgemeinschaften in der Schweiz | OpenLEG"
 msgstr "Elenco LEG: comunità elettriche locali in Svizzera | OpenLEG"
 
@@ -12331,6 +12368,15 @@ msgstr "Software aperto e conoscenze pratiche per comunità indipendenti di ener
 msgid "Offenes LEG-Verzeichnis Schweiz"
 msgstr "Directory aperta LEG Svizzera"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:3
+msgid ""
+"Offenes Verzeichnis Schweizer Lokaler Elektrizitätsgemeinschaften (LEG), unabhängig davon, welche"
+" Plattform bei der Gründung half."
+msgstr ""
+"Registro aperto delle comunità locali di energia elettrica (LEG) in Svizzera, indipendentemente "
+"dalla piattaforma utilizzata per costituirle."
+
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/liste.html:8
 msgid ""
@@ -13089,6 +13135,11 @@ msgstr "Obblighi"
 #: templates/gemeinde/pilotgemeinde.html:12
 msgid "Pilotgemeinde"
 msgstr "Comune pilota"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:13
+msgid "Planung"
+msgstr "Pianificazione"
 
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:220
@@ -14372,6 +14423,12 @@ msgstr ""
 "OpenLEG verifica il vostro indirizzo, mostra l'interesse confermato nel vostro comune e conduce "
 "attraverso la creazione. Gratis, Open Source, ospitato in Svizzera."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:20
+#, python-format
+msgid "Seite %(page)s"
+msgstr "Pagina %(page)s"
+
 #. Draft translation; native language and domain review pending.
 #: i18n.py:79
 msgid "Seite nicht gefunden"
@@ -15308,6 +15365,11 @@ msgstr "Segnalazione di guasto"
 msgid "Suche aktuell nicht verfügbar."
 msgstr "Cerca non disponibile."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:16 templates/leg_verzeichnis/liste.html:21
+msgid "Suche zurücksetzen"
+msgstr "Azzera la ricerca"
+
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/verzeichnis.html:35 templates/leg_verzeichnis/liste.html:62
 msgid "Suchen"
@@ -16036,7 +16098,7 @@ msgid "Verein: Entscheid zum Mitgliedsantrag"
 msgstr "Associazione: decisione sull'adesione"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:398
+#: verein_routes.py:385 verein_routes.py:398
 msgid "Verein: Mitgliedschaft und Jahresbeitrag"
 msgstr "Associazione: adesione e quota annua"
 
@@ -17461,7 +17523,8 @@ msgid "Zielgruppe"
 msgstr "Destinatari"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:386
+#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:373
+#: verein_routes.py:386
 #, python-format
 msgid ""
 "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist "
