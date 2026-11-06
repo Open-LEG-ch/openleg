@@ -201,7 +201,7 @@ msgstr[1] ""
 msgid "%(platform_name)s · LEG für %(city_name)s"
 msgstr "%(platform_name)s · LEG für %(city_name)s"
 
-#: app.py:230 app.py:233 app.py:234
+#: app.py:230 app.py:233 app.py:234 app.py:235
 #, python-format
 msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr "%(platform_name)s: Interessenmeldung bestätigen"
@@ -639,6 +639,10 @@ msgstr "Abgaben"
 msgid "Abgaben & Gebühren"
 msgstr "Abgaben & Gebühren"
 
+#: templates/release/finance.html:5 templates/release/finance.html:6
+msgid "Abgeglichen und durch eine zweite berechtigte Person freigegeben am"
+msgstr "Abgeglichen und durch eine zweite berechtigte Person freigegeben am"
+
 #: templates/contact_requests.html:32
 msgid "Abgelaufen"
 msgstr "Abgelaufen"
@@ -831,7 +835,7 @@ msgstr "Adresssuche und Energieprofile"
 msgid "Address suggestions"
 msgstr "Adressvorschläge"
 
-#: community_access.py:60
+#: community_access.py:60 verein_finance_routes.py:78
 msgid "Administration"
 msgstr "Administration"
 
@@ -872,11 +876,11 @@ msgstr "Adresse ist erforderlich"
 msgid "Adresse ist zu kurz"
 msgstr "Adresse ist zu kurz"
 
-#: app.py:518 app.py:521 app.py:546 app.py:548 app.py:558 app.py:560 app.py:562
+#: app.py:518 app.py:521 app.py:546 app.py:548 app.py:558 app.py:560 app.py:562 app.py:563
 msgid "Adresse konnte nicht analysiert werden."
 msgstr "Adresse konnte nicht analysiert werden."
 
-#: app.py:510 app.py:513 app.py:538 app.py:540 app.py:550 app.py:552 app.py:554
+#: app.py:510 app.py:513 app.py:538 app.py:540 app.py:550 app.py:552 app.py:554 app.py:555
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr "Adresse konnte nicht eindeutig geprüft werden."
 
@@ -1014,6 +1018,10 @@ msgstr "Alle Dichten"
 msgid "Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung"
 msgstr "Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung"
 
+#: templates/release/finance.html:13 templates/release/finance.html:14 templates/verein/index.html:13
+msgid "Alle Finanzberichte"
+msgstr "Alle Finanzberichte"
+
 #: templates/fuer_bewohner.html:112
 msgid "Alle Funktionen sind kostenlos. Die"
 msgstr "Alle Funktionen sind kostenlos. Die"
@@ -1074,6 +1082,14 @@ msgstr "Alle bestätigten Anträge"
 msgid "Alle drei Modelle vergleichen"
 msgstr "Alle drei Modelle vergleichen"
 
+#: templates/verein/finance_edit.html:9
+msgid ""
+"Alle kontrollierten Konten und Anbieter sind vollständig erfasst; es fehlen keine "
+"Fremdwährungsbestände."
+msgstr ""
+"Alle kontrollierten Konten und Anbieter sind vollständig erfasst; es fehlen keine "
+"Fremdwährungsbestände."
+
 #: templates/sandbox/entry.html:9
 msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
 msgstr "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
@@ -1126,6 +1142,10 @@ msgstr "Als deaktiviert angegeben"
 msgid "Als erledigt angegeben"
 msgstr "Als erledigt angegeben"
 
+#: templates/verein/finance_review.html:11
+msgid "Als zweite prüfende Person freigeben und veröffentlichen"
+msgstr "Als zweite prüfende Person freigeben und veröffentlichen"
+
 #: templates/telemetry_dashboard.html:109 templates/telemetry_shared.html:59
 msgid "Alter beim Laden"
 msgstr "Alter beim Laden"
@@ -1151,9 +1171,17 @@ msgstr "An VNB eskalieren"
 msgid "An:"
 msgstr "An:"
 
+#: verein_finance_routes.py:75
+msgid "Anbietergebühr"
+msgstr "Anbietergebühr"
+
 #: templates/member_invoice_detail.html:223
 msgid "Anderes"
 msgstr "Anderes"
+
+#: verein_finance_routes.py:69
+msgid "Anfangseinlage"
+msgstr "Anfangseinlage"
 
 #: templates/api_docs.html:233
 msgid "Anfrage ausführen"
@@ -1223,7 +1251,7 @@ msgstr ""
 msgid "Anlagenhinweise"
 msgstr "Anlagenhinweise"
 
-#: app.py:134 app.py:137 app.py:138 formation_guide.py:65
+#: app.py:134 app.py:137 app.py:138 app.py:139 formation_guide.py:65
 msgid "Anleitung zum eigenen Betrieb"
 msgstr "Anleitung zum eigenen Betrieb"
 
@@ -1555,6 +1583,14 @@ msgstr ""
 msgid "Ausblick: zentrales LEG-Register"
 msgstr "Ausblick: zentrales LEG-Register"
 
+#: verein_finance_routes.py:64
+msgid "Ausgabe"
+msgstr "Ausgabe"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Ausgaben"
+msgstr "Ausgaben"
+
 #: templates/leg_dashboard.html:344 templates/leg_dashboard.html:363
 msgid "Ausgang"
 msgstr "Ausgang"
@@ -1753,6 +1789,22 @@ msgstr "BKW"
 msgid "Badge einbetten"
 msgstr "Badge einbetten"
 
+#: verein_finance_routes.py:76
+msgid "Bankgebühr"
+msgstr "Bankgebühr"
+
+#: templates/release/finance.html:9 templates/release/finance.html:10
+msgid "Bankguthaben"
+msgstr "Bankguthaben"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bankguthaben am Ende"
+msgstr "Bankguthaben am Ende"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bankguthaben zu Beginn"
+msgstr "Bankguthaben zu Beginn"
+
 #: templates/leg_billing.html:28
 msgid "Bankzahlungen abgleichen"
 msgstr "Bankzahlungen abgleichen"
@@ -1927,7 +1979,7 @@ msgstr "Beitritt"
 msgid "Beitritt melden oder erneut abrufen"
 msgstr "Beitritt melden oder erneut abrufen"
 
-#: templates/verein/index.html:13
+#: templates/verein/index.html:13 templates/verein/index.html:14
 msgid ""
 "Beiträge zum Code, zu Texten und Übersetzungen sind unabhängig von einer Mitgliedschaft "
 "willkommen. Für das erste Jahr werden zwei geeignete Personen für Finanzen und Administration "
@@ -1977,6 +2029,10 @@ msgstr "Berechtigte Personen übernehmen und prüfen die bereitgestellten Daten.
 msgid "Bereich laut Quelle"
 msgstr "Bereich laut Quelle"
 
+#: templates/release/finance.html:11 templates/release/finance.html:12
+msgid "Bereinigte Belegkennung"
+msgstr "Bereinigte Belegkennung"
+
 #: templates/index.html:385 templates/partials/address_intake.html:8
 #, python-format
 msgid "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalt registriert"
@@ -2003,6 +2059,10 @@ msgstr "Bereitschaft, Checkliste und Ersparnis."
 #: templates/documents/participant_contract.html:24
 msgid "Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft"
 msgstr "Bereitstellung der 15-Minuten-Messdaten an die Gemeinschaft"
+
+#: templates/verein/finance_edit.html:12
+msgid "Bericht zur Prüfung vorbereiten"
+msgstr "Bericht zur Prüfung vorbereiten"
 
 #: templates/utility/register.html:45
 msgid "Bern"
@@ -2107,7 +2167,7 @@ msgstr ""
 "\n"
 "Die Bestätigung ist noch keine Aufnahme. Der Vorstand prüft den Antrag."
 
-#: app.py:235 app.py:238 app.py:239
+#: app.py:235 app.py:238 app.py:239 app.py:240
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre Interessenmeldung für eine Lokale Elektrizitätsgemeinschaft (LEG) in "
@@ -2151,7 +2211,7 @@ msgstr ""
 "Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren"
 " Sie diese E-Mail."
 
-#: app.py:740 app.py:743 app.py:768 app.py:770 app.py:780 app.py:782 app.py:784
+#: app.py:740 app.py:743 app.py:768 app.py:770 app.py:780 app.py:782 app.py:784 app.py:785
 #, python-format
 msgid ""
 "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen Gebietsanfrage bei OpenLEG "
@@ -2207,6 +2267,18 @@ msgstr "Bestätigte Treffen ansehen"
 #, python-format
 msgid "Bestätigter Start: %(date)s. Referenz: %(reference)s."
 msgstr "Bestätigter Start: %(date)s. Referenz: %(reference)s."
+
+#: templates/release/finance.html:9 templates/release/finance.html:10
+msgid "Bestätigtes Anbieterguthaben"
+msgstr "Bestätigtes Anbieterguthaben"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bestätigtes Anbieterguthaben am Ende"
+msgstr "Bestätigtes Anbieterguthaben am Ende"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bestätigtes Anbieterguthaben zu Beginn"
+msgstr "Bestätigtes Anbieterguthaben zu Beginn"
 
 #: templates/admin/ops.html:43
 msgid "Bestätigtes LEG-Interesse"
@@ -2303,6 +2375,10 @@ msgstr "Betriebsdaten Ihrer angemeldeten Anlagen. Für die Abrechnung gelten die
 #: templates/release/pricing.html:14
 msgid "Betriebsfrage stellen"
 msgstr "Betriebsfrage stellen"
+
+#: verein_finance_routes.py:77
+msgid "Betriebskosten"
+msgstr "Betriebskosten"
 
 #: templates/fuer_gemeinden.html:82
 msgid "Betriebsmodell vergleichen"
@@ -2523,7 +2599,8 @@ msgstr "Bitte senden Sie ein JSON-Objekt."
 msgid "Bitte sicher speichern, wird nur einmal angezeigt:"
 msgstr "Bitte sicher speichern, wird nur einmal angezeigt:"
 
-#: verein_event_routes.py:35 verein_routes.py:38 verein_routes.py:40 verein_routes.py:64
+#: verein_event_routes.py:35 verein_finance_routes.py:41 verein_routes.py:38 verein_routes.py:40
+#: verein_routes.py:64
 msgid "Bitte versuchen Sie es später erneut."
 msgstr "Bitte versuchen Sie es später erneut."
 
@@ -2552,7 +2629,7 @@ msgstr "Bitte wählen Sie zuerst eine Gemeinde aus der Suche."
 msgid "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
 msgstr "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
 
-#: app.py:78 app.py:81 app.py:82 formation_guide.py:9
+#: app.py:78 app.py:81 app.py:82 app.py:83 formation_guide.py:9
 msgid "Brauchen die Teilnehmenden eigene Smart Meter?"
 msgstr "Brauchen die Teilnehmenden eigene Smart Meter?"
 
@@ -2563,6 +2640,18 @@ msgstr "Breitengrad ausserhalb des gültigen Bereichs"
 #: templates/leg_dashboard.html:345 templates/leg_dashboard.html:368
 msgid "Brief"
 msgstr "Brief"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Bruttoeingänge"
+msgstr "Bruttoeingänge"
+
+#: templates/release/finance.html:10 templates/release/finance.html:11
+msgid "Buchungen"
+msgstr "Buchungen"
+
+#: templates/verein/finance_edit.html:11
+msgid "Buchungen mit privaten Quellen und bereinigten öffentlichen Angaben"
+msgstr "Buchungen mit privaten Quellen und bereinigten öffentlichen Angaben"
 
 #: templates/meter_upload.html:23
 msgid "Building ID"
@@ -2607,9 +2696,25 @@ msgstr "CKW-Format: Datum oder Bezug Spalte fehlt"
 msgid "CSV Seeds in"
 msgstr "CSV Seeds in"
 
+#: templates/verein/finance_edit.html:10
+msgid ""
+"CSV mit Komma als Trennzeichen, Punkt als Dezimalzeichen und ohne Tausendertrennzeichen. Beträge "
+"sind positiv; die Buchungsart bestimmt die Richtung. Jede Quellkennung muss vereinsweit eindeutig"
+" sein. Öffentliche Zwecke in allen vier Sprachen müssen persönliche Daten ausschliessen. "
+"Ausführliche Regeln stehen in der Dokumentation zur Vereinsverwaltung."
+msgstr ""
+"CSV mit Komma als Trennzeichen, Punkt als Dezimalzeichen und ohne Tausendertrennzeichen. Beträge "
+"sind positiv; die Buchungsart bestimmt die Richtung. Jede Quellkennung muss vereinsweit eindeutig"
+" sein. Öffentliche Zwecke in allen vier Sprachen müssen persönliche Daten ausschliessen. "
+"Ausführliche Regeln stehen in der Dokumentation zur Vereinsverwaltung."
+
 #: templates/meter_upload.html:27
 msgid "CSV-Datei"
 msgstr "CSV-Datei"
+
+#: templates/verein/finance_edit.html:11
+msgid "CSV-Spaltenvorlage herunterladen"
+msgstr "CSV-Spaltenvorlage herunterladen"
 
 #: templates/open_source.html:109
 msgid "Cache und kurzfristige technische Zustände."
@@ -2679,7 +2784,7 @@ msgstr "Codebase und Install"
 msgid "Codebase verstehen"
 msgstr "Codebase verstehen"
 
-#: templates/release/footer.html:8 templates/release/navigation.html:12
+#: templates/release/footer.html:8 templates/release/navigation.html:12 verein_finance_routes.py:79
 msgid "Community"
 msgstr "Community"
 
@@ -2715,7 +2820,7 @@ msgstr "Danke für die Beiträge"
 msgid "Danke für die Bestätigung"
 msgstr "Danke für die Bestätigung"
 
-#: app.py:113 app.py:116 app.py:117 formation_guide.py:44
+#: app.py:113 app.py:116 app.py:117 app.py:118 formation_guide.py:44
 msgid "Darf ich OpenLEG installieren, anpassen oder forken?"
 msgstr "Darf ich OpenLEG installieren, anpassen oder forken?"
 
@@ -3094,6 +3199,18 @@ msgstr "Der Austausch nutzt die bestehende Netzinfrastruktur."
 msgid "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
 msgstr "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
 
+#: verein_finance_routes.py:107
+msgid ""
+"Der Bericht wurde nicht gespeichert. Prüfen Sie CSV-Spalten, Quellen, Beträge und Datum, alle "
+"Konten und Fonds sowie die Übereinstimmung der Anfangs- und Schlussbestände. Für eine neue "
+"Version ist eine öffentliche Begründung erforderlich. Bereits veröffentlichte Belege dürfen nicht"
+" verschwinden. Ihre Eingaben bleiben erhalten."
+msgstr ""
+"Der Bericht wurde nicht gespeichert. Prüfen Sie CSV-Spalten, Quellen, Beträge und Datum, alle "
+"Konten und Fonds sowie die Übereinstimmung der Anfangs- und Schlussbestände. Für eine neue "
+"Version ist eine öffentliche Begründung erforderlich. Bereits veröffentlichte Belege dürfen nicht"
+" verschwinden. Ihre Eingaben bleiben erhalten."
+
 #: templates/release/pricing.html:6
 msgid ""
 "Der Code steht unter AGPL-3.0-or-later. Beachten Sie die Lizenzpflichten, wenn Sie eine "
@@ -3394,7 +3511,7 @@ msgstr ""
 "Der Verteilnetzbetreiber prüft die Voraussetzungen und liefert die vereinbarten Messdaten. "
 "Datenzugang, Format und Zuständigkeit müssen vor dem Betrieb geklärt sein."
 
-#: app.py:104 app.py:107 app.py:108 formation_guide.py:35
+#: app.py:104 app.py:107 app.py:108 app.py:109 formation_guide.py:35
 msgid ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der "
 "Grundversorgung auch den übrigen Strombezug. Die LEG oder ihr Dienstleister rechnet den innerhalb"
@@ -3509,7 +3626,7 @@ msgstr ""
 " keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung "
 "anschliessend."
 
-#: app.py:814 app.py:817 app.py:842 app.py:844 app.py:854 app.py:856 app.py:858
+#: app.py:814 app.py:817 app.py:842 app.py:844 app.py:854 app.py:856 app.py:858 app.py:859
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -3639,6 +3756,16 @@ msgstr ""
 #: templates/dashboard.html:325
 msgid "Die Berechnung ist gerade nicht möglich. Bitte versuchen Sie es in einer Minute erneut."
 msgstr "Die Berechnung ist gerade nicht möglich. Bitte versuchen Sie es in einer Minute erneut."
+
+#: templates/release/finance.html:3 templates/release/finance.html:4
+msgid ""
+"Die Berichte zeigen Bankguthaben, bestätigte Anbieterguthaben und noch unbestätigte Zahlungen "
+"getrennt. Reserve, Zweckbindung und unbezahlte Verpflichtungen begrenzen das verfügbare Budget. "
+"Die zweite Prüfung ist keine gesetzliche Revision. Eine Buchung belegt keine Ausgabenfreigabe."
+msgstr ""
+"Die Berichte zeigen Bankguthaben, bestätigte Anbieterguthaben und noch unbestätigte Zahlungen "
+"getrennt. Reserve, Zweckbindung und unbezahlte Verpflichtungen begrenzen das verfügbare Budget. "
+"Die zweite Prüfung ist keine gesetzliche Revision. Eine Buchung belegt keine Ausgabenfreigabe."
 
 #: templates/unsubscribe.html:27
 msgid ""
@@ -4280,6 +4407,14 @@ msgstr "Die erfasste Firmware liegt ausserhalb des Bereichs dieser Meldung."
 msgid "Die erfasste Firmware liegt im veröffentlichten Bereich."
 msgstr "Die erfasste Firmware liegt im veröffentlichten Bereich."
 
+#: templates/release/finance.html:8 templates/release/finance.html:9
+msgid ""
+"Die freien Bankmittel decken die offenen Verpflichtungen nicht. Der negative Betrag zeigt die "
+"Finanzierungslücke."
+msgstr ""
+"Die freien Bankmittel decken die offenen Verpflichtungen nicht. Der negative Betrag zeigt die "
+"Finanzierungslücke."
+
 #: member_savings.py:348
 msgid "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
 msgstr "Die gemessene lokale Energiemenge stimmt nicht mit der Rechnung überein."
@@ -4328,6 +4463,16 @@ msgstr "Die letzte Quellenprüfung ist fehlgeschlagen. Frühere Quellen bleiben 
 msgid "Die neue LEG erscheint in Ihrem LEG-Dashboard."
 msgstr "Die neue LEG erscheint in Ihrem LEG-Dashboard."
 
+#: templates/verein/finance_edit.html:5
+msgid ""
+"Die private Freigabe des Umfangs muss die Konten, Bereinigung persönlicher Daten, "
+"vierteljährliche Berichterstattung, Belegzugang und zweite Prüfung abdecken. Ein Zahlungseingang "
+"ist keine Ausgabenfreigabe. Dieses Formular führt keine Bankzahlung aus."
+msgstr ""
+"Die private Freigabe des Umfangs muss die Konten, Bereinigung persönlicher Daten, "
+"vierteljährliche Berichterstattung, Belegzugang und zweite Prüfung abdecken. Ein Zahlungseingang "
+"ist keine Ausgabenfreigabe. Dieses Formular führt keine Bankzahlung aus."
+
 #: templates/sandbox/formation.html:43
 msgid ""
 "Die simulierte Anmeldung wurde abgelehnt. Sie bleibt mit ihrem Beleg erhalten. Beginnen Sie mit "
@@ -4354,7 +4499,8 @@ msgstr "Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versan
 
 #: i18n.py:80 i18n.py:91 i18n.py:98 i18n.py:99 templates/leg_verzeichnis/leg_check.html:54
 #: templates/leg_verzeichnis/liste.html:17 templates/leg_verzeichnis/liste.html:19
-#: verein_event_routes.py:34 verein_routes.py:37 verein_routes.py:39 verein_routes.py:63
+#: verein_event_routes.py:34 verein_finance_routes.py:40 verein_routes.py:37 verein_routes.py:39
+#: verein_routes.py:63
 msgid "Dienst vorübergehend nicht verfügbar"
 msgstr "Dienst vorübergehend nicht verfügbar"
 
@@ -4502,6 +4648,14 @@ msgstr ""
 "Diese Übersicht beschreibt den veröffentlichten Funktionsumfang. Eine vorhandene Funktion ersetzt"
 " keinen Test mit Ihren Anschlüssen, Verträgen und Daten."
 
+#: templates/verein/finance_review.html:11
+msgid "Diesen Bericht als Vorlage für eine neue Version verwenden"
+msgstr "Diesen Bericht als Vorlage für eine neue Version verwenden"
+
+#: templates/release/finance.html:12 templates/release/finance.html:13
+msgid "Diesen veröffentlichten Stand als JSON herunterladen"
+msgstr "Diesen veröffentlichten Stand als JSON herunterladen"
+
 #: billing_workspace.py:233
 msgid ""
 "Dieser Abrechnungsentwurf ist keine definitive Rechnung. Prüfen Sie Tarif, Abgleich und "
@@ -4551,6 +4705,14 @@ msgid ""
 msgstr ""
 "Dieser Schritt löscht den mit dem Link verknüpften Eintrag endgültig: ein Adressprofil oder eine "
 "offene Gebietsanfrage."
+
+#: templates/verein/finance_review.html:8
+msgid ""
+"Dieser Stand wurde veröffentlicht und bleibt unverändert erhalten. Bereiten Sie eine begründete "
+"neue Version vor, falls eine Korrektur nötig ist."
+msgstr ""
+"Dieser Stand wurde veröffentlicht und bleibt unverändert erhalten. Bereiten Sie eine begründete "
+"neue Version vor, falls eine Korrektur nötig ist."
 
 #: billing_lifecycle.py:43
 msgid "Dieser Statuswechsel ist nicht zulässig."
@@ -5219,7 +5381,7 @@ msgstr "Einen Dienstleister beauftragen"
 msgid "Einfach"
 msgstr "Einfach"
 
-#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:364
+#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:364 verein_finance_routes.py:61
 msgid "Eingang"
 msgstr "Eingang"
 
@@ -5517,6 +5679,10 @@ msgstr "Entscheidung"
 msgid "Entwickler und Self-Hosting"
 msgstr "Entwickler und Self-Hosting"
 
+#: verein_finance_routes.py:80
+msgid "Entwicklung"
+msgstr "Entwicklung"
+
 #: billing_workspace.py:139 templates/verein/events.html:8 verein_routes.py:51
 msgid "Entwurf"
 msgstr "Entwurf"
@@ -5792,7 +5958,7 @@ msgstr ""
 "Falls die Adresse zu einem bestätigten Antrag gehört, wird ein Zugangslink versendet. Bei einem "
 "Versandproblem können Sie es erneut versuchen."
 
-#: app.py:757 app.py:760 app.py:785 app.py:787 app.py:797 app.py:799 app.py:801
+#: app.py:757 app.py:760 app.py:785 app.py:787 app.py:797 app.py:799 app.py:801 app.py:802
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 
@@ -5908,6 +6074,14 @@ msgstr ""
 msgid "Financial projections"
 msgstr "Finanzprognosen"
 
+#: templates/verein/finance_review.html:2 templates/verein/finance_review.html:3
+msgid "Finanzbericht prüfen"
+msgstr "Finanzbericht prüfen"
+
+#: templates/verein/finance_edit.html:2 templates/verein/finance_edit.html:3
+msgid "Finanzbericht vorbereiten"
+msgstr "Finanzbericht vorbereiten"
+
 #: templates/admin/abrechnungen.html:97
 msgid "Fingerabdruck:"
 msgstr "Fingerabdruck:"
@@ -5953,6 +6127,10 @@ msgstr "Firmwareversion"
 #: templates/open_source.html:78
 msgid "Flask-App und öffentliche API"
 msgstr "Flask-App und öffentliche API"
+
+#: templates/release/finance.html:9 templates/release/finance.html:10
+msgid "Fonds und Verpflichtungen"
+msgstr "Fonds und Verpflichtungen"
 
 #: templates/unsubscribe.html:7
 #, python-format
@@ -6050,6 +6228,10 @@ msgstr "Freie Energieinfrastruktur, die man prüfen und selbst betreiben kann."
 msgid "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
 msgstr "Freie Infrastruktur für Schweizer Stromgemeinschaften. Open Source, gehostet in der Schweiz."
 
+#: verein_finance_routes.py:85
+msgid "Freie Mittel"
+msgstr "Freie Mittel"
+
 #: templates/release/footer.html:5
 msgid "Freie Software für lokale Elektrizitätsgemeinschaften in der Schweiz."
 msgstr "Freie Software für lokale Elektrizitätsgemeinschaften in der Schweiz."
@@ -6122,6 +6304,10 @@ msgstr "Fällig am:"
 #: templates/verein/queue.html:8
 msgid "Fällige Beitragsjahre einmalig erfassen"
 msgstr "Fällige Beitragsjahre einmalig erfassen"
+
+#: verein_finance_routes.py:72
+msgid "Förderbeitrag"
+msgstr "Förderbeitrag"
 
 #: templates/datenschutz.html:78
 msgid "Für Anfragen wenden Sie sich bitte an:"
@@ -6234,6 +6420,14 @@ msgstr ""
 "Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von "
 "weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur "
 "Beendigung treffen. Sie können Beschwerde einlegen. Kontakt: hallo@openleg.ch."
+
+#: templates/release/finance.html:15 templates/release/finance.html:16
+msgid ""
+"Für das zuletzt abgeschlossene Quartal liegt noch kein freigegebener Bericht vor. Der neueste "
+"veröffentlichte Bericht zeigt einen früheren Zeitraum."
+msgstr ""
+"Für das zuletzt abgeschlossene Quartal liegt noch kein freigegebener Bericht vor. Der neueste "
+"veröffentlichte Bericht zeigt einen früheren Zeitraum."
 
 #: templates/leg_gruenden.html:203
 msgid ""
@@ -6416,7 +6610,7 @@ msgstr "Gebiet und Messung:"
 msgid "Gebiet und Voraussetzungen prüfen"
 msgstr "Gebiet und Voraussetzungen prüfen"
 
-#: app.py:676 app.py:679 app.py:704 app.py:706 app.py:716 app.py:718 app.py:720
+#: app.py:676 app.py:679 app.py:704 app.py:706 app.py:716 app.py:718 app.py:720 app.py:721
 msgid "Gebäude nicht gefunden."
 msgstr "Gebäude nicht gefunden."
 
@@ -6431,6 +6625,14 @@ msgstr "Gebäude-ID ist erforderlich"
 #: security_utils.py:196
 msgid "Gebäude-ID ist zu lang"
 msgstr "Gebäude-ID ist zu lang"
+
+#: verein_finance_routes.py:63
+msgid "Gebühr"
+msgstr "Gebühr"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Gebühren"
+msgstr "Gebühren"
 
 #: templates/gemeinde/pilotgemeinde.html:24 templates/gemeinde/profil.html:53
 msgid "Geeignete Dachfläche"
@@ -6452,6 +6654,10 @@ msgstr "Gehostet auf openleg.ch"
 #: templates/admin/abrechnungen.html:104
 msgid "Geladen"
 msgstr "Geladen"
+
+#: verein_finance_routes.py:61
+msgid "Geldeingang"
+msgstr "Geldeingang"
 
 #: templates/admin/ops.html:87 templates/fuer_gemeinden.html:54 templates/gemeinde/rangliste.html:83
 #: templates/index.html:59 templates/index.html:62 templates/index.html:169 templates/index.html:172
@@ -7358,6 +7564,22 @@ msgstr ""
 msgid "Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor."
 msgstr "Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor."
 
+#: templates/verein/finance_review.html:10
+msgid ""
+"Ich habe Zwecke, Belegcodes und Korrekturbegründung geprüft. Öffentliche Angaben enthalten keine "
+"privaten Personen-, Konto- oder Quelldaten."
+msgstr ""
+"Ich habe Zwecke, Belegcodes und Korrekturbegründung geprüft. Öffentliche Angaben enthalten keine "
+"privaten Personen-, Konto- oder Quelldaten."
+
+#: templates/verein/finance_review.html:10
+msgid ""
+"Ich habe alle kontrollierten Konten, Anbieter, Fonds und Verpflichtungen sowie die tatsächliche "
+"Berichtsfreigabe geprüft."
+msgstr ""
+"Ich habe alle kontrollierten Konten, Anbieter, Fonds und Verpflichtungen sowie die tatsächliche "
+"Berichtsfreigabe geprüft."
+
 #: templates/verein/application.html:20 templates/verein/dues.html:5
 msgid "Ich habe den tatsächlichen Zahlungseingang und die Zuordnung geprüft."
 msgstr "Ich habe den tatsächlichen Zahlungseingang und die Zuordnung geprüft."
@@ -7369,6 +7591,10 @@ msgstr "Ich habe die Aufnahmebedingungen und die Datenschutzhinweise gelesen."
 #: templates/sandbox/formation.html:22
 msgid "Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts."
 msgstr "Ich habe die Entwürfe geprüft und simuliere die Unterschrift meines aktuellen Haushalts."
+
+#: templates/verein/finance_review.html:10
+msgid "Ich habe die Originalquellen und die vollständige Abstimmung tatsächlich geprüft."
+msgstr "Ich habe die Originalquellen und die vollständige Abstimmung tatsächlich geprüft."
 
 #: templates/advisories.html:57
 msgid "Ich habe diese Version des Hinweises gelesen."
@@ -7789,6 +8015,10 @@ msgstr "In Prüfung"
 msgid "In Vorbereitung"
 msgstr "In Vorbereitung"
 
+#: templates/release/finance.html:11 templates/release/finance.html:12
+msgid "In diesem Quartal gab es keine Buchungen."
+msgstr "In diesem Quartal gab es keine Buchungen."
+
 #: templates/member_invoice_detail.html:193
 msgid "In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs."
 msgstr "In dieser Abrechnungsperiode deckte der gemeinsame Speicher einen Teil Ihres lokalen Verbrauchs."
@@ -7917,9 +8147,23 @@ msgstr "Interessiert"
 msgid "Interessierte"
 msgstr "Interessierte"
 
+#: verein_finance_routes.py:82
+msgid "Interne Bewegung"
+msgstr "Interne Bewegung"
+
 #: templates/release/how_it_works.html:53
 msgid "Interne LEG-Abrechnung"
 msgstr "Interne LEG-Abrechnung"
+
+#: templates/release/finance.html:10 templates/release/finance.html:11
+msgid ""
+"Interne Transfers und Umbuchungen sind keine zusätzlichen Eingänge oder Ausgaben. Die öffentliche"
+" Belegkennung verweist auf bereinigte Nachweise; Originalquellen bleiben für die berechtigte "
+"Prüfung privat zugänglich."
+msgstr ""
+"Interne Transfers und Umbuchungen sind keine zusätzlichen Eingänge oder Ausgaben. Die öffentliche"
+" Belegkennung verweist auf bereinigte Nachweise; Originalquellen bleiben für die berechtigte "
+"Prüfung privat zugänglich."
 
 #: i18n.py:77 i18n.py:88 i18n.py:95 i18n.py:96
 msgid "Interner Fehler"
@@ -7945,6 +8189,10 @@ msgstr "Interner Preis:"
 msgid "Interner Strompreis"
 msgstr "Interner Strompreis"
 
+#: verein_finance_routes.py:65
+msgid "Interner Transfer"
+msgstr "Interner Transfer"
+
 #: equipment.py:40
 msgid "Internet-Erreichbarkeit"
 msgstr "Internet-Erreichbarkeit"
@@ -7957,7 +8205,7 @@ msgstr "Intervallenergie"
 msgid "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 msgstr "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 
-#: app.py:141 app.py:144 app.py:145 formation_guide.py:72
+#: app.py:141 app.py:144 app.py:145 app.py:146 formation_guide.py:72
 msgid "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
 msgstr "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
 
@@ -7970,7 +8218,7 @@ msgstr "Ist die Berechnung genau?"
 msgid "Ja"
 msgstr "Ja"
 
-#: app.py:117 app.py:120 app.py:121 formation_guide.py:48
+#: app.py:117 app.py:120 app.py:121 app.py:122 formation_guide.py:48
 msgid ""
 "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG installieren, nutzen und anpassen. Auch"
 " ein Fork ist erlaubt. Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen Sie "
@@ -8119,15 +8367,19 @@ msgstr "Jährlicher Verbrauch:"
 msgid "Kalendereintrag herunterladen"
 msgstr "Kalendereintrag herunterladen"
 
+#: templates/verein/finance_edit.html:8
+msgid "Kalenderquartal, z. B. 2026-Q3"
+msgstr "Kalenderquartal, z. B. 2026-Q3"
+
 #: templates/leg_dashboard.html:335 templates/leg_dashboard.html:366
 msgid "Kanal"
 msgstr "Kanal"
 
-#: app.py:152 app.py:155 app.py:156 formation_guide.py:83
+#: app.py:152 app.py:155 app.py:156 app.py:157 formation_guide.py:83
 msgid "Kann OpenLEG unsere Gruppe persönlich unterstützen?"
 msgstr "Kann OpenLEG unsere Gruppe persönlich unterstützen?"
 
-#: app.py:90 app.py:93 app.py:94 formation_guide.py:21
+#: app.py:90 app.py:93 app.py:94 app.py:95 formation_guide.py:21
 msgid "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 msgstr "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 
@@ -8170,7 +8422,8 @@ msgstr "Kapazität und Anteile erfassen"
 msgid "Katalogprüfung am"
 msgstr "Katalogprüfung am"
 
-#: templates/gemeinde/profil.html:75
+#: templates/gemeinde/profil.html:75 templates/release/finance.html:11
+#: templates/release/finance.html:12
 msgid "Kategorie"
 msgstr "Kategorie"
 
@@ -8295,9 +8548,9 @@ msgstr "Keine Cloud-Abhängigkeit angegeben"
 msgid "Keine Datei ausgewählt"
 msgstr "Keine Datei ausgewählt"
 
-#: app.py:495 app.py:498 app.py:523 app.py:525 app.py:535 app.py:537 app.py:539 app.py:547 app.py:550
-#: app.py:575 app.py:577 app.py:587 app.py:589 app.py:591 app.py:600 app.py:603 app.py:628 app.py:630
-#: app.py:640 app.py:642 app.py:644
+#: app.py:495 app.py:498 app.py:523 app.py:525 app.py:535 app.py:537 app.py:539 app.py:540 app.py:547
+#: app.py:550 app.py:575 app.py:577 app.py:587 app.py:589 app.py:591 app.py:592 app.py:600 app.py:603
+#: app.py:628 app.py:630 app.py:640 app.py:642 app.py:644 app.py:645
 msgid "Keine Daten empfangen."
 msgstr "Keine Daten empfangen."
 
@@ -8308,6 +8561,16 @@ msgstr "Keine Datenverkäufe"
 #: templates/leg_verzeichnis/leg_check.html:38
 msgid "Keine ElCom-Daten hinterlegt."
 msgstr "Keine ElCom-Daten hinterlegt."
+
+#: verein_finance_routes.py:184
+msgid ""
+"Keine Freigabe. Eine andere aktive berechtigte Person muss den aktuellen Stand anhand der "
+"Originalquellen, des vollständigen Umfangs und der bereinigten öffentlichen Angaben prüfen und "
+"die tatsächliche Freigabe belegen."
+msgstr ""
+"Keine Freigabe. Eine andere aktive berechtigte Person muss den aktuellen Stand anhand der "
+"Originalquellen, des vollständigen Umfangs und der bereinigten öffentlichen Angaben prüfen und "
+"die tatsächliche Freigabe belegen."
 
 #: templates/leg_verzeichnis/leg_check.html:89 templates/leg_verzeichnis/leg_check.html:91
 #, python-format
@@ -8403,7 +8666,7 @@ msgstr "Keine angegeben"
 msgid "Keine ausstehenden Einträge"
 msgstr "Keine ausstehenden Einträge"
 
-#: app.py:525 app.py:528 app.py:553 app.py:555 app.py:565 app.py:567 app.py:569
+#: app.py:525 app.py:528 app.py:553 app.py:555 app.py:565 app.py:567 app.py:569 app.py:570
 msgid "Keine direkten Partner gefunden."
 msgstr "Keine direkten Partner gefunden."
 
@@ -8536,6 +8799,10 @@ msgstr "Kontaktanfragen |"
 msgid "Kontaktperson"
 msgstr "Kontaktperson"
 
+#: templates/verein/finance_edit.html:11
+msgid "Konten und Fonds: Anfang, Schluss und unbestätigte Anbieterzahlungen"
+msgstr "Konten und Fonds: Anfang, Schluss und unbestätigte Anbieterzahlungen"
+
 #: templates/sandbox/account_unavailable.html:2 templates/sandbox/account_unavailable.html:5
 msgid "Konto nicht verfügbar"
 msgstr "Konto nicht verfügbar"
@@ -8577,6 +8844,10 @@ msgstr "Korrektur verknüpfen"
 #: templates/member_invoice_detail.html:53
 msgid "Korrektur zu:"
 msgstr "Korrektur zu:"
+
+#: templates/release/finance.html:6 templates/release/finance.html:7
+msgid "Korrekturbegründung"
+msgstr "Korrekturbegründung"
 
 #: templates/leg_billing.html:147
 msgid "Korrekturgrund"
@@ -9163,7 +9434,7 @@ msgstr "Live ansehen"
 msgid "Lizenz"
 msgstr "Lizenz"
 
-#: app.py:126 app.py:129 app.py:130 formation_guide.py:57 templates/release/pricing.html:6
+#: app.py:126 app.py:129 app.py:130 app.py:131 formation_guide.py:57 templates/release/pricing.html:6
 msgid "Lizenz lesen"
 msgstr "Lizenz lesen"
 
@@ -9667,7 +9938,7 @@ msgstr ""
 msgid "Mit einem prüfbaren Schritt beginnen"
 msgstr "Mit einem prüfbaren Schritt beginnen"
 
-#: templates/verein/index.html:13
+#: templates/verein/index.html:13 templates/verein/index.html:14
 msgid "Mitarbeit und Kontakt"
 msgstr "Mitarbeit und Kontakt"
 
@@ -9726,6 +9997,10 @@ msgstr "Mitgliedsantrag prüfen"
 msgid "Mitgliedsanträge"
 msgstr "Mitgliedsanträge"
 
+#: verein_finance_routes.py:70
+msgid "Mitgliedsbeitrag"
+msgstr "Mitgliedsbeitrag"
+
 #: templates/verein/application.html:10 verein_routes.py:196 verein_routes.py:213 verein_routes.py:219
 #: verein_routes.py:222
 msgid "Mitgliedschaft"
@@ -9739,7 +10014,7 @@ msgstr "Mitgliedschaft beantragen"
 msgid "Mitgliedschaft: LEG und VNB"
 msgstr "Mitgliedschaft: LEG und VNB"
 
-#: templates/verein/index.html:13
+#: templates/verein/index.html:13 templates/verein/index.html:14
 msgid "Mithelfen, auch ohne Mitgliedschaft"
 msgstr "Mithelfen, auch ohne Mitgliedschaft"
 
@@ -9962,7 +10237,7 @@ msgstr "Navigation öffnen"
 msgid "Nein"
 msgstr "Nein"
 
-#: app.py:94 app.py:97 app.py:98 formation_guide.py:25
+#: app.py:94 app.py:97 app.py:98 app.py:99 formation_guide.py:25
 msgid ""
 "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im Netzgebiet eines "
 "Verteilnetzbetreibers. Für mehrere Gemeinden oder VNB-Gebiete braucht es separate lokale LEGs."
@@ -9970,7 +10245,7 @@ msgstr ""
 "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im Netzgebiet eines "
 "Verteilnetzbetreibers. Für mehrere Gemeinden oder VNB-Gebiete braucht es separate lokale LEGs."
 
-#: app.py:81 app.py:84 app.py:85 formation_guide.py:12
+#: app.py:81 app.py:84 app.py:85 app.py:86 formation_guide.py:12
 msgid ""
 "Nein. Vorhandene gesetzeskonforme Smart Meter des Verteilnetzbetreibers werden weiterverwendet. "
 "Fehlende erforderliche Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
@@ -10170,6 +10445,10 @@ msgstr ""
 "Neue Teilnehmer können mit Zustimmung der bestehenden Mitglieder beitreten.\n"
 "Der Austritt ist mit einer Frist von 3 Monaten auf Quartalsende möglich."
 
+#: templates/verein/finance_review.html:11
+msgid "Neue Version aus diesem Prüfstand vorbereiten"
+msgstr "Neue Version aus diesem Prüfstand vorbereiten"
+
 #: templates/leg_billing_policy.html:17
 msgid "Neue Version erfassen"
 msgstr "Neue Version erfassen"
@@ -10316,6 +10595,10 @@ msgstr ""
 msgid "Noch keine Beitragsforderung erfasst."
 msgstr "Noch keine Beitragsforderung erfasst."
 
+#: templates/verein/finance_edit.html:13
+msgid "Noch keine Berichte vorbereitet."
+msgstr "Noch keine Berichte vorbereitet."
+
 #: templates/gemeinde/dashboard.html:48 templates/gemeinde/dashboard.html:58
 msgid "Noch keine Daten"
 msgstr "Noch keine Daten"
@@ -10357,6 +10640,16 @@ msgstr "Noch keine Treffen erfasst."
 msgid "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 msgstr "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 
+#: templates/release/finance.html:16 templates/release/finance.html:17
+msgid ""
+"Noch keine abgeglichenen und unabhängig geprüften Berichte veröffentlicht. Daraus lässt sich kein"
+" Kontostand ableiten. Die geplante Anfangseinlage ist kein Nachweis einer tatsächlichen "
+"Einzahlung."
+msgstr ""
+"Noch keine abgeglichenen und unabhängig geprüften Berichte veröffentlicht. Daraus lässt sich kein"
+" Kontostand ableiten. Die geplante Anfangseinlage ist kein Nachweis einer tatsächlichen "
+"Einzahlung."
+
 #: templates/sandbox/metering.html:60
 msgid "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
 msgstr "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
@@ -10385,6 +10678,10 @@ msgstr ""
 msgid "Noch mehr Nachbarn einladen?"
 msgstr "Noch mehr Nachbarn einladen?"
 
+#: templates/verein/finance_edit.html:13
+msgid "Noch nicht freigegeben"
+msgstr "Noch nicht freigegeben"
+
 #: equipment.py:74
 msgid "Noch nicht geprüft"
 msgstr "Noch nicht geprüft"
@@ -10396,6 +10693,10 @@ msgstr "Noch nicht öffentlich geprüft oder freigeschaltet."
 #: templates/partials/registry_trust.html:11 templates/partials/registry_trust.html:17
 msgid "Noch nie erneut bestätigt."
 msgstr "Noch nie erneut bestätigt."
+
+#: templates/verein/finance_edit.html:11
+msgid "Noch unbezahlte Verpflichtungen"
+msgstr "Noch unbezahlte Verpflichtungen"
 
 #: templates/api_docs.html:74
 msgid "Not found"
@@ -10436,6 +10737,16 @@ msgstr "Nur LEG-Teilnahme, Daten mit Nachbarn und Gemeinde teilen"
 #: templates/dashboard.html:50
 msgid "Nur Lesezugriff"
 msgstr "Nur Lesezugriff"
+
+#: templates/verein/finance_edit.html:4
+msgid ""
+"Nur abgeschlossene Kalenderquartale und CHF. Erfassen Sie alle kontrollierten Bankkonten und "
+"Zahlungsanbieter. Fremdwährungen, fehlende Quellen oder unbestätigte Konten verhindern eine "
+"vollständige Berichterstattung. Fiktive Testwerte sind keine Vereinsfinanzen."
+msgstr ""
+"Nur abgeschlossene Kalenderquartale und CHF. Erfassen Sie alle kontrollierten Bankkonten und "
+"Zahlungsanbieter. Fremdwährungen, fehlende Quellen oder unbestätigte Konten verhindern eine "
+"vollständige Berichterstattung. Fiktive Testwerte sind keine Vereinsfinanzen."
 
 #: templates/verein/queue.html:10 templates/verein/queue.html:12
 msgid ""
@@ -10876,7 +11187,7 @@ msgstr ""
 "OpenLEG ist kostenlose Open Source Infrastruktur für Schweizer Stromgemeinschaften: für Bewohner,"
 " Gemeinden und Entwickler, ohne Lizenzkosten oder Datenverkauf."
 
-#: app.py:145 app.py:148 app.py:149 formation_guide.py:76 templates/leg_gruenden.html:87
+#: app.py:145 app.py:148 app.py:149 app.py:150 formation_guide.py:76 templates/leg_gruenden.html:87
 msgid ""
 "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. Noch ist nicht jede VNB-Anbindung "
 "fertig umgesetzt. Anmeldung und Datenlieferung müssen pro VNB konfiguriert werden."
@@ -11103,7 +11414,7 @@ msgstr "OpenLEG: Ihr Login-Link"
 msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr "OpenLEG: Interessenmeldung bestätigen"
 
-#: app.py:738 app.py:741 app.py:766 app.py:768 app.py:778 app.py:780 app.py:782
+#: app.py:738 app.py:741 app.py:766 app.py:768 app.py:778 app.py:780 app.py:782 app.py:783
 msgid "OpenLEG: Löschung bestätigen"
 msgstr "OpenLEG: Löschung bestätigen"
 
@@ -11205,7 +11516,7 @@ msgstr "Parameter"
 msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr "Parse-Fehler mit Delimiter '%(delimiter)s'."
 
-#: app.py:532 app.py:535 app.py:560 app.py:562 app.py:572 app.py:574 app.py:576
+#: app.py:532 app.py:535 app.py:560 app.py:562 app.py:572 app.py:574 app.py:576 app.py:577
 msgid "Partner gefunden!"
 msgstr "Partner gefunden!"
 
@@ -11213,7 +11524,7 @@ msgstr "Partner gefunden!"
 msgid "Passwort"
 msgstr "Passwort"
 
-#: app.py:1001 app.py:1004 app.py:1029 app.py:1031 app.py:1041 app.py:1043 app.py:1045
+#: app.py:1001 app.py:1004 app.py:1029 app.py:1031 app.py:1041 app.py:1043 app.py:1045 app.py:1046
 msgid "Period not found"
 msgstr "Period not found"
 
@@ -11363,6 +11674,22 @@ msgstr "Private Notizen"
 #: templates/verein/index.html:11
 msgid "Private Prüfung durch den Vorstand"
 msgstr "Private Prüfung durch den Vorstand"
+
+#: templates/verein/finance_review.html:7
+msgid "Private Quellen und Umfang prüfen"
+msgstr "Private Quellen und Umfang prüfen"
+
+#: templates/verein/finance_edit.html:8
+msgid "Private Quellenreferenz zu den Anfangsbeständen"
+msgstr "Private Quellenreferenz zu den Anfangsbeständen"
+
+#: templates/verein/finance_edit.html:8
+msgid "Private Referenz zur tatsächlich beschlossenen Berichtsordnung und zum vollständigen Kontenumfang"
+msgstr "Private Referenz zur tatsächlich beschlossenen Berichtsordnung und zum vollständigen Kontenumfang"
+
+#: templates/verein/finance_review.html:11
+msgid "Private Referenz zur tatsächlichen zweiten Prüfung und Freigabe"
+msgstr "Private Referenz zur tatsächlichen zweiten Prüfung und Freigabe"
 
 #: templates/admin/ops.html:14
 msgid "Private operator view"
@@ -11515,6 +11842,16 @@ msgstr ""
 #: templates/leg_dashboard.html:24
 msgid "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
 msgstr "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
+
+#: templates/verein/finance_review.html:5
+msgid ""
+"Prüfen Sie Originalauszüge, Anbieterabrechnungen und Belege ausserhalb dieser Zusammenstellung. "
+"Erst die tatsächliche zweite Prüfung erlaubt die Veröffentlichung. Diese Prüfung ist keine "
+"gesetzliche Revision und keine Zahlungsfreigabe."
+msgstr ""
+"Prüfen Sie Originalauszüge, Anbieterabrechnungen und Belege ausserhalb dieser Zusammenstellung. "
+"Erst die tatsächliche zweite Prüfung erlaubt die Veröffentlichung. Diese Prüfung ist keine "
+"gesetzliche Revision und keine Zahlungsfreigabe."
 
 #: templates/sandbox/formation.html:17
 msgid ""
@@ -12030,9 +12367,13 @@ msgstr "Registrierung fehlgeschlagen."
 msgid "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 msgstr "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 
-#: app.py:130 app.py:133 app.py:134 formation_guide.py:61
+#: app.py:130 app.py:133 app.py:134 app.py:135 formation_guide.py:61
 msgid "Repository öffnen"
 msgstr "Repository öffnen"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8 verein_finance_routes.py:86
+msgid "Reserve"
+msgstr "Reserve"
 
 #: formation_wizard.py:377
 msgid "Richten Sie die Abrechnung ein."
@@ -12118,6 +12459,14 @@ msgstr "Rundungsausgleich"
 #: payment_reconciliation.py:24
 msgid "Rückbuchung"
 msgstr "Rückbuchung"
+
+#: verein_finance_routes.py:62 verein_finance_routes.py:74
+msgid "Rückzahlung"
+msgstr "Rückzahlung"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Rückzahlungen"
+msgstr "Rückzahlungen"
 
 #: meter_data.py:312
 msgid "SDAT Parse-Fehler: Ungültiges Dateiformat."
@@ -12373,11 +12722,11 @@ msgstr ""
 "Server, Domain, E-Mail-Versand, Sicherungen und Monitoring benötigen einen Betreiber und können "
 "laufende Kosten verursachen."
 
-#: app.py:691 app.py:694 app.py:719 app.py:721 app.py:731 app.py:733 app.py:735
+#: app.py:691 app.py:694 app.py:719 app.py:721 app.py:731 app.py:733 app.py:735 app.py:736
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr "Server-Fehler beim Verarbeiten der Messdaten."
 
-#: app.py:540 app.py:543 app.py:568 app.py:570 app.py:580 app.py:582 app.py:584
+#: app.py:540 app.py:543 app.py:568 app.py:570 app.py:580 app.py:582 app.py:584 app.py:585
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr "Server-Fehler. Bitte später erneut versuchen."
 
@@ -12924,6 +13273,10 @@ msgstr "Speicherkapazität:"
 msgid "Speichern"
 msgstr "Speichern"
 
+#: verein_finance_routes.py:71
+msgid "Spende"
+msgstr "Spende"
+
 #: templates/http_error.html:10 templates/partials/language_switcher.html:1
 #: templates/product_base.html:20 templates/release/navigation.html:21
 msgid "Sprache"
@@ -12949,6 +13302,10 @@ msgstr ""
 #: templates/utility/register.html:48
 msgid "St. Gallen"
 msgstr "St. Gallen"
+
+#: templates/release/finance.html:11 templates/release/finance.html:12
+msgid "Stabile Buchungskennung"
+msgstr "Stabile Buchungskennung"
 
 #: templates/verein/events.html:6
 msgid "Stabile URL-Kennung"
@@ -13428,6 +13785,10 @@ msgstr "UTC"
 msgid "Umbau erforderlich"
 msgstr "Umbau erforderlich"
 
+#: verein_finance_routes.py:66
+msgid "Umbuchung zwischen Fonds"
+msgstr "Umbuchung zwischen Fonds"
+
 #: templates/fuer_gemeinden.html:66
 msgid ""
 "Unabhängig vom Netzbetreiber betreibt OpenLEG die Plattform, wenn die Gemeinde das gehostete "
@@ -13509,6 +13870,19 @@ msgstr "Unbekanntes Verteilmodell."
 #: templates/admin/ops.html:39
 msgid "Unbestätigt (LEG-Verzeichnis)"
 msgstr "Unbestätigt (LEG-Verzeichnis)"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Unbestätigte Anbieterzahlungen, nicht als Eingang oder verfügbares Geld gezählt"
+msgstr "Unbestätigte Anbieterzahlungen, nicht als Eingang oder verfügbares Geld gezählt"
+
+#: templates/release/finance.html:9 templates/release/finance.html:10
+msgid "Unbestätigte Zahlungen"
+msgstr "Unbestätigte Zahlungen"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8 templates/release/finance.html:9
+#: templates/release/finance.html:10
+msgid "Unbezahlte Verpflichtungen"
+msgstr "Unbezahlte Verpflichtungen"
 
 #: templates/gemeinde/rangliste.html:86
 msgid "Ungenutzt"
@@ -13594,13 +13968,17 @@ msgstr "Unterstützt werden nur camt.053 und camt.054."
 msgid "Unterstützung"
 msgstr "Unterstützung"
 
-#: app.py:159 app.py:162 app.py:163 formation_guide.py:90
+#: app.py:159 app.py:162 app.py:163 app.py:164 formation_guide.py:90
 msgid "Unterstützung anfragen"
 msgstr "Unterstützung anfragen"
 
 #: templates/leg_dashboard.html:206
 msgid "Unterzeichnet"
 msgstr "Unterzeichnet"
+
+#: templates/verein/finance_edit.html:12
+msgid "Unveränderlichen Prüfstand vorbereiten"
+msgstr "Unveränderlichen Prüfstand vorbereiten"
 
 #: dashboard.py:266 dashboard.py:267
 msgid "Unvollständig"
@@ -13815,6 +14193,10 @@ msgstr ""
 "Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem Netzbetreiber. "
 "Ein Entwurf ist noch keine freigegebene Rechnung."
 
+#: verein_finance_routes.py:223
+msgid "Vereinsfinanzen"
+msgstr "Vereinsfinanzen"
+
 #: templates/verein/login.html:2 templates/verein/login.html:5
 msgid "Vereinsvorstand anmelden"
 msgstr "Vereinsvorstand anmelden"
@@ -13826,6 +14208,10 @@ msgstr "Verfügbar"
 #: templates/leg_gruenden.html:200
 msgid "Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf."
 msgstr "Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf."
+
+#: templates/release/finance.html:7 templates/release/finance.html:8
+msgid "Verfügbares freies Bankguthaben nach Verpflichtungen"
+msgstr "Verfügbares freies Bankguthaben nach Verpflichtungen"
 
 #: templates/release/events.html:6
 msgid "Vergangene Treffen"
@@ -13899,7 +14285,10 @@ msgstr "Verkleinern"
 msgid "Verknüpft mit Korrektur:"
 msgstr "Verknüpft mit Korrektur:"
 
-#: templates/verein/events.html:11
+#: templates/release/finance.html:5 templates/release/finance.html:6 templates/release/finance.html:13
+#: templates/release/finance.html:14 templates/release/finance.html:16
+#: templates/release/finance.html:17 templates/verein/events.html:11
+#: templates/verein/finance_edit.html:13 templates/verein/finance_review.html:3
 msgid "Version"
 msgstr "Version"
 
@@ -14006,6 +14395,10 @@ msgstr "Verwenden Sie höchstens 200 Zeichen für die Suche."
 msgid "Verzeichniseintrag nicht gefunden."
 msgstr "Verzeichniseintrag nicht gefunden."
 
+#: templates/verein/finance_edit.html:13
+msgid "Veröffentlicht"
+msgstr "Veröffentlicht"
+
 #: templates/advisories.html:8
 msgid "Veröffentlicht am"
 msgstr "Veröffentlicht am"
@@ -14017,6 +14410,10 @@ msgstr "Veröffentlichte Quelle und Versionsbereich"
 #: templates/equipment_form.html:29
 msgid "Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen"
 msgstr "Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen"
+
+#: templates/release/finance.html:13 templates/release/finance.html:14
+msgid "Veröffentlichte Versionen"
+msgstr "Veröffentlichte Versionen"
 
 #: templates/verein/events.html:8
 msgid "Veröffentlichung"
@@ -14039,6 +14436,14 @@ msgstr "Vier Punkte entscheiden, ob die Anmeldung starten kann."
 #: templates/leg_dashboard.html:399
 msgid "Vier-Augen-Prinzip"
 msgstr "Vier-Augen-Prinzip"
+
+#: verein_finance_routes.py:225
+msgid ""
+"Vierteljährliche Berichte über alle kontrollierten Mittel des Vereins, mit Quellenabgleich und "
+"unabhängiger zweiter Prüfung."
+msgstr ""
+"Vierteljährliche Berichte über alle kontrollierten Mittel des Vereins, mit Quellenabgleich und "
+"unabhängiger zweiter Prüfung."
 
 #: templates/release/software.html:16
 msgid "Viertelstunden verteilen, Tarifversionen verwenden und Entwürfe prüfen."
@@ -14149,6 +14554,10 @@ msgstr "Voraussetzungen"
 msgid "Vorbereitet durch:"
 msgstr "Vorbereitet durch:"
 
+#: templates/verein/finance_edit.html:13
+msgid "Vorbereitete Berichte"
+msgstr "Vorbereitete Berichte"
+
 #: dashboard.py:687
 msgid "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
@@ -14219,11 +14628,15 @@ msgstr ""
 msgid "Vorlage"
 msgstr "Vorlage"
 
+#: templates/verein/finance_review.html:6
+msgid "Vorschau der öffentlichen Angaben"
+msgstr "Vorschau der öffentlichen Angaben"
+
 #: templates/index.html:529 templates/index.html:624
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 
-#: app.py:155 app.py:158 app.py:159 formation_guide.py:86
+#: app.py:155 app.py:158 app.py:159 app.py:160 formation_guide.py:86
 msgid ""
 "Vorträge, Workshops und Projektunterstützung bieten wir nach vorgängiger Vereinbarung gegen "
 "Honorar an."
@@ -14403,6 +14816,10 @@ msgstr ""
 "Wechseln Sie zum eingeladenen Konto und bestätigen Sie die Teilnahme im LEG-Dashboard. Diese "
 "Einladung ist erfunden."
 
+#: verein_finance_routes.py:81
+msgid "Weitere Kosten"
+msgstr "Weitere Kosten"
+
 #: templates/verein/join.html:11
 msgid "Weitere Verbindungen zum Energiesektor"
 msgstr "Weitere Verbindungen zum Energiesektor"
@@ -14482,7 +14899,7 @@ msgstr ""
 msgid "Wer einen Fehler verfolgt oder einen Pull Request plant, findet hier den passenden Einstieg."
 msgstr "Wer einen Fehler verfolgt oder einen Pull Request plant, findet hier den passenden Einstieg."
 
-#: app.py:101 app.py:104 app.py:105 formation_guide.py:32
+#: app.py:101 app.py:104 app.py:105 app.py:106 formation_guide.py:32
 msgid "Wer ist für die Abrechnung zuständig?"
 msgstr "Wer ist für die Abrechnung zuständig?"
 
@@ -14648,7 +15065,7 @@ msgstr ""
 "Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine passende Gruppe entsteht, "
 "erhalten Sie die nächsten Schritte."
 
-#: app.py:802 app.py:805 app.py:830 app.py:832 app.py:842 app.py:844 app.py:846
+#: app.py:802 app.py:805 app.py:830 app.py:832 app.py:842 app.py:844 app.py:846 app.py:847
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -15027,7 +15444,7 @@ msgstr ""
 msgid "Zu meinen Solargeräten"
 msgstr "Zu meinen Solargeräten"
 
-#: app.py:171 app.py:174 app.py:175 templates/index.html:553 templates/index.html:648
+#: app.py:171 app.py:174 app.py:175 app.py:176 templates/index.html:553 templates/index.html:648
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 msgstr "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 
@@ -15125,9 +15542,18 @@ msgstr "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und d
 msgid "Zur Aufgabenteilung und zu den Anschlussbedingungen:"
 msgstr "Zur Aufgabenteilung und zu den Anschlussbedingungen:"
 
+#: templates/verein/finance_review.html:11 templates/verein/queue.html:3
+msgid "Zur Finanzverwaltung"
+msgstr "Zur Finanzverwaltung"
+
 #: templates/leg_billing.html:83
 msgid "Zur Freigabe vorbereiten"
 msgstr "Zur Freigabe vorbereiten"
+
+#: templates/release/finance.html:7 templates/release/finance.html:8 verein_finance_routes.py:73
+#: verein_finance_routes.py:88
+msgid "Zur Prüfung zurückgehalten"
+msgstr "Zur Prüfung zurückgehalten"
 
 #: templates/dashboard.html:29 templates/http_error.html:20
 msgid "Zur Startseite"
@@ -15137,7 +15563,7 @@ msgstr "Zur Startseite"
 msgid "Zur Unterschrift versendet"
 msgstr "Zur Unterschrift versendet"
 
-#: templates/verein/events.html:11
+#: templates/verein/events.html:11 templates/verein/finance_edit.html:13
 msgid "Zur Vereinsverwaltung"
 msgstr "Zur Vereinsverwaltung"
 
@@ -15231,6 +15657,10 @@ msgstr "Zweck und Mitgliedschaft"
 msgid "Zweck, Unabhängigkeit und Mitgliedschaft"
 msgstr "Zweck, Unabhängigkeit und Mitgliedschaft"
 
+#: templates/release/finance.html:7 templates/release/finance.html:8 verein_finance_routes.py:87
+msgid "Zweckgebundene Mittel"
+msgstr "Zweckgebundene Mittel"
+
 #: templates/gemeinde/rangliste.html:23
 msgid "Zwei Gemeinden vergleichen"
 msgstr "Zwei Gemeinden vergleichen"
@@ -15242,6 +15672,10 @@ msgstr "Zwei Gemeinden vergleichen | OpenLEG"
 #: templates/open_source.html:66 templates/pricing.html:41
 msgid "Zwei Modelle"
 msgstr "Zwei Modelle"
+
+#: templates/release/finance.html:16 templates/release/finance.html:17
+msgid "Zweite Prüfung"
+msgstr "Zweite Prüfung"
 
 #: templates/index.html:294 templates/index.html:297
 msgid "Zählen, wie viele Dächer bis zum oberen Viertel fehlen."
@@ -15319,11 +15753,11 @@ msgstr "bis 14 Tage"
 msgid "bis 40"
 msgstr "bis 40"
 
-#: app.py:948 app.py:951 app.py:976 app.py:978 app.py:988 app.py:990 app.py:992
+#: app.py:948 app.py:951 app.py:976 app.py:978 app.py:988 app.py:990 app.py:992 app.py:993
 msgid "building_id required"
 msgstr "building_id required"
 
-#: app.py:670 app.py:673 app.py:698 app.py:700 app.py:710 app.py:712 app.py:714
+#: app.py:670 app.py:673 app.py:698 app.py:700 app.py:710 app.py:712 app.py:714 app.py:715
 msgid "building_id und csv_content erforderlich."
 msgstr "building_id und csv_content erforderlich."
 
@@ -15577,7 +16011,7 @@ msgstr ""
 "speichert Periode, Preise und Positionen. Messdatenimport, Mitgliederzuordnung, CLI-Befehl für "
 "einen Abrechnungslauf und definitive Rechnungsdokumente sind noch kein durchgängiger Ablauf."
 
-#: app.py:667 app.py:670 app.py:695 app.py:697 app.py:707 app.py:709 app.py:711
+#: app.py:667 app.py:670 app.py:695 app.py:697 app.py:707 app.py:709 app.py:711 app.py:712
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr "tier muss 1, 2 oder 3 sein."
 
@@ -15842,6 +16276,10 @@ msgstr "Öffentliche API"
 msgid "Öffentliche API-Dokumentation"
 msgstr "Öffentliche API-Dokumentation"
 
+#: templates/verein/finance_edit.html:8
+msgid "Öffentliche Begründung einer neuen Version"
+msgstr "Öffentliche Begründung einer neuen Version"
+
 #: templates/release/community.html:8
 msgid "Öffentliche Beitragshistorie ansehen"
 msgstr "Öffentliche Beitragshistorie ansehen"
@@ -15866,9 +16304,17 @@ msgstr "Öffentliche Seite"
 msgid "Öffentliche, anonymisierte Gemeindezählung; bei weniger als drei Personen zeigen wir nur «< 3»"
 msgstr "Öffentliche, anonymisierte Gemeindezählung; bei weniger als drei Personen zeigen wir nur «< 3»"
 
+#: templates/verein/finance_review.html:8
+msgid "Öffentlichen Stand ansehen"
+msgstr "Öffentlichen Stand ansehen"
+
 #: templates/verein/events.html:9
 msgid "Öffentlicher HTTPS-Anmeldelink"
 msgstr "Öffentlicher HTTPS-Anmeldelink"
+
+#: templates/verein/finance_review.html:6
+msgid "Öffentlicher Prüfstand"
+msgstr "Öffentlicher Prüfstand"
 
 #: templates/advisories.html:65 templates/equipment_form.html:21
 msgid "Öffentlicher Quellenlink (optional)"
