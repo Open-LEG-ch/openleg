@@ -43,6 +43,7 @@ import private_http
 import registration
 import release_mode
 import security_utils
+import site_release
 import tenant as tenant_module
 from admin import admin_bp, require_admin
 from advisory_routes import advisory_bp
@@ -1071,6 +1072,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     release_mode.install_http_guard(application, read_only=read_only)
     i18n.init_app(application)
     application.context_processor(private_http.template_context)
+    application.context_processor(site_release.template_context)
 
     public_site_base = app_config.validated_public_site_url(
         application.config["PUBLIC_SITE_URL"]
@@ -1107,6 +1109,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         telemetry_bp,
         equipment_bp,
         advisory_bp,
+        site_release.site_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)
