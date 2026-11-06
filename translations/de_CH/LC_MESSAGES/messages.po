@@ -1027,6 +1027,7 @@ msgid "Alle Grössen"
 msgstr "Alle Grössen"
 
 #: municipality.py:441 rangliste.py:52 templates/leg_verzeichnis/liste.html:12
+#: templates/leg_verzeichnis/liste.html:13
 msgid "Alle Kantone"
 msgstr "Alle Kantone"
 
@@ -1034,7 +1035,7 @@ msgstr "Alle Kantone"
 msgid "Alle Mitglieder"
 msgstr "Alle Mitglieder"
 
-#: templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:14
 msgid "Alle Status"
 msgstr "Alle Status"
 
@@ -1154,7 +1155,7 @@ msgstr "Anfrage zurückziehen"
 msgid "Anfrageinhalt (JSON)"
 msgstr "Anfrageinhalt (JSON)"
 
-#: templates/leg_verzeichnis/detail.html:56
+#: templates/leg_verzeichnis/detail.html:56 templates/leg_verzeichnis/detail.html:57
 msgid "Angaben der eintragenden Organisation"
 msgstr "Angaben der eintragenden Organisation"
 
@@ -2429,7 +2430,8 @@ msgid "Bitte geben Sie mindestens %(value)s Zeichen ein."
 msgstr "Bitte geben Sie mindestens %(value)s Zeichen ein."
 
 #: templates/leg_verzeichnis/leg_check.html:54 templates/leg_verzeichnis/liste.html:17
-#: templates/telemetry_dashboard.html:46 templates/telemetry_shared.html:19
+#: templates/leg_verzeichnis/liste.html:19 templates/telemetry_dashboard.html:46
+#: templates/telemetry_shared.html:19
 msgid "Bitte laden Sie die Seite später erneut."
 msgstr "Bitte laden Sie die Seite später erneut."
 
@@ -2465,7 +2467,7 @@ msgstr ""
 "Bitte prüfen Sie die Angaben. Für «Als erledigt angegeben» brauchen Sie eine datierte Quelle. Das"
 " Datum darf nicht in der Zukunft liegen."
 
-#: site_release.py:87
+#: site_release.py:87 site_release.py:105
 msgid "Bitte prüfen Sie die Suchangaben."
 msgstr "Bitte prüfen Sie die Suchangaben."
 
@@ -2770,7 +2772,7 @@ msgstr "Das Treffen wird nicht aufgezeichnet. Veröffentlicht werden nur ausdrü
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr "Das Verteilmodell der Richtlinie ist ungültig."
 
-#: templates/leg_verzeichnis/liste.html:21
+#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:23
 msgid ""
 "Das Verzeichnis enthält nur freigeschaltete Selbstauskünfte. Ein fehlender Eintrag sagt nichts "
 "über die Eignung einer Adresse aus."
@@ -2951,8 +2953,8 @@ msgstr "Datenschutzstufen:"
 
 #: templates/gemeinde/pilotgemeinde.html:45 templates/gemeinde/profil.html:136
 #: templates/leg_kalkulator.html:279 templates/leg_verzeichnis/detail.html:56
-#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/leg_check.html:67
-#: templates/leg_verzeichnis/liste.html:80
+#: templates/leg_verzeichnis/detail.html:57 templates/leg_verzeichnis/leg_check.html:65
+#: templates/leg_verzeichnis/leg_check.html:67 templates/leg_verzeichnis/liste.html:80
 msgid "Datenstand"
 msgstr "Datenstand"
 
@@ -3052,7 +3054,7 @@ msgstr ""
 msgid "Der E-Mail-Versand ist derzeit nicht verfügbar."
 msgstr "Der E-Mail-Versand ist derzeit nicht verfügbar."
 
-#: registry_intake.py:101
+#: registry_intake.py:101 registry_intake.py:104
 msgid "Der Eintrag konnte nicht gespeichert werden."
 msgstr "Der Eintrag konnte nicht gespeichert werden."
 
@@ -3648,6 +3650,10 @@ msgstr ""
 "Beitragshistorie zeigt die tatsächliche Mitarbeit. Sie ist keine Mitgliederliste und keine "
 "Rangliste."
 
+#: site_release.py:78
+msgid "Die Ergebnisseite ist ungültig. Starten Sie die Suche erneut."
+msgstr "Die Ergebnisseite ist ungültig. Starten Sie die Suche erneut."
+
 #: member_savings.py:284 member_savings.py:288
 msgid "Die Ersparnis dieser Periode ist nicht berechenbar."
 msgstr "Die Ersparnis dieser Periode ist nicht berechenbar."
@@ -4177,8 +4183,8 @@ msgid "Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand
 msgstr "Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der Erinnerung."
 
 #: i18n.py:80 i18n.py:91 i18n.py:98 i18n.py:99 templates/leg_verzeichnis/leg_check.html:54
-#: templates/leg_verzeichnis/liste.html:17 verein_event_routes.py:34 verein_routes.py:37
-#: verein_routes.py:39 verein_routes.py:63
+#: templates/leg_verzeichnis/liste.html:17 templates/leg_verzeichnis/liste.html:19
+#: verein_event_routes.py:34 verein_routes.py:37 verein_routes.py:39 verein_routes.py:63
 msgid "Dienst vorübergehend nicht verfügbar"
 msgstr "Dienst vorübergehend nicht verfügbar"
 
@@ -5399,7 +5405,7 @@ msgstr "Ergebnis simulieren"
 msgid "Ergebnis zum Fernzugriff"
 msgstr "Ergebnis zum Fernzugriff"
 
-#: templates/leg_verzeichnis/liste.html:20
+#: templates/leg_verzeichnis/liste.html:20 templates/leg_verzeichnis/liste.html:22
 msgid "Ergebnisseiten"
 msgstr "Ergebnisseiten"
 
@@ -5437,7 +5443,7 @@ msgstr "Erledigt"
 msgid "Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeinde"
 msgstr "Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeinde"
 
-#: templates/leg_verzeichnis/liste.html:17
+#: templates/leg_verzeichnis/liste.html:17 templates/leg_verzeichnis/liste.html:19
 msgid "Erneut versuchen"
 msgstr "Erneut versuchen"
 
@@ -5791,7 +5797,8 @@ msgstr "Fragen zu dieser Rechnung"
 msgid "Fragen zum Betrieb?"
 msgstr "Fragen zum Betrieb?"
 
-#: templates/leg_verzeichnis/detail.html:63 templates/leg_verzeichnis/liste.html:22
+#: templates/leg_verzeichnis/detail.html:63 templates/leg_verzeichnis/detail.html:64
+#: templates/leg_verzeichnis/liste.html:22 templates/leg_verzeichnis/liste.html:24
 msgid "Fragen zum Verzeichnis"
 msgstr "Fragen zum Verzeichnis"
 
@@ -6169,6 +6176,14 @@ msgstr ""
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
 msgstr "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
 
+#: site_release.py:98
+msgid "Geben Sie eine gültige BFS-Gemeindenummer ein."
+msgstr "Geben Sie eine gültige BFS-Gemeindenummer ein."
+
+#: site_release.py:89
+msgid "Geben Sie eine vierstellige PLZ ein."
+msgstr "Geben Sie eine vierstellige PLZ ein."
+
 #: store/formation_activation.py:86
 msgid "Geben Sie einen gültigen Beleg und ein Startdatum an."
 msgstr "Geben Sie einen gültigen Beleg und ein Startdatum an."
@@ -6340,6 +6355,10 @@ msgstr "Gemeinden unterstützen"
 #: templates/release/navigation.html:10
 msgid "Gemeinden vergleichen"
 msgstr "Gemeinden vergleichen"
+
+#: templates/leg_verzeichnis/liste.html:15
+msgid "Gemeindenummer (BFS)"
+msgstr "Gemeindenummer (BFS)"
 
 #: templates/gemeinde/dashboard.html:33
 msgid "Gemeindestatistik"
@@ -6765,6 +6784,7 @@ msgstr ""
 
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
 #: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:14
 msgid "Gründung"
 msgstr "Gründung"
 
@@ -7879,8 +7899,8 @@ msgstr "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 
 #: templates/gemeinde/rangliste.html:45 templates/gemeinde/rangliste.html:85
 #: templates/gemeinde/rangliste_fortschritte.html:49 templates/leg_verzeichnis/eintragen.html:58
-#: templates/leg_verzeichnis/liste.html:12 templates/leg_verzeichnis/liste.html:52
-#: templates/utility/register.html:41
+#: templates/leg_verzeichnis/liste.html:12 templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:52 templates/utility/register.html:41
 msgid "Kanton"
 msgstr "Kanton"
 
@@ -8079,7 +8099,8 @@ msgstr "Keine Gutschriften"
 msgid "Keine Gutschriften."
 msgstr "Keine Gutschriften."
 
-#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:84
+#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:23
+#: templates/leg_verzeichnis/liste.html:84
 msgid "Keine LEGs gefunden"
 msgstr "Keine LEGs gefunden"
 
@@ -8636,13 +8657,15 @@ msgstr "LEG-Preis"
 msgid "LEG-Rabatt:"
 msgstr "LEG-Rabatt:"
 
-#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:57
+#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:14
+#: templates/leg_verzeichnis/liste.html:57
 msgid "LEG-Status"
 msgstr "LEG-Status"
 
 #: templates/admin/ops.html:35 templates/fuer_gemeinden.html:107
-#: templates/leg_verzeichnis/detail.html:56 templates/leg_verzeichnis/leg_check.html:66
-#: templates/leg_verzeichnis/liste.html:40 templates/release/navigation.html:8
+#: templates/leg_verzeichnis/detail.html:56 templates/leg_verzeichnis/detail.html:57
+#: templates/leg_verzeichnis/leg_check.html:66 templates/leg_verzeichnis/liste.html:40
+#: templates/release/navigation.html:8
 msgid "LEG-Verzeichnis"
 msgstr "LEG-Verzeichnis"
 
@@ -9655,11 +9678,12 @@ msgstr "Name der LEG *"
 msgid "Name des Netzbetreibers"
 msgstr "Name des Netzbetreibers"
 
-#: templates/leg_verzeichnis/liste.html:10 templates/leg_verzeichnis/liste.html:50
+#: templates/leg_verzeichnis/liste.html:10 templates/leg_verzeichnis/liste.html:11
+#: templates/leg_verzeichnis/liste.html:50
 msgid "Name oder Ort"
 msgstr "Name oder Ort"
 
-#: registry_intake.py:53
+#: registry_intake.py:53 registry_intake.py:56
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr "Name und Kontakt-E-Mail sind erforderlich."
 
@@ -10194,8 +10218,8 @@ msgstr "Nächste Aktion"
 msgid "Nächste Schritte"
 msgstr "Nächste Schritte"
 
-#: templates/leg_verzeichnis/liste.html:20 templates/verein/queue.html:15
-#: templates/verein/queue.html:17
+#: templates/leg_verzeichnis/liste.html:20 templates/leg_verzeichnis/liste.html:22
+#: templates/verein/queue.html:15 templates/verein/queue.html:17
 msgid "Nächste Seite"
 msgstr "Nächste Seite"
 
@@ -10633,7 +10657,7 @@ msgstr ""
 "OpenLEG prüft diese Angaben nicht. «Installateurnachweis» bezeichnet einen von Ihnen hinterlegten"
 " Nachweis."
 
-#: templates/leg_verzeichnis/detail.html:60
+#: templates/leg_verzeichnis/detail.html:60 templates/leg_verzeichnis/detail.html:61
 msgid ""
 "OpenLEG prüft keine Netz-Topologie und bestätigt nicht, welche Adressen konkret teilnehmen "
 "können. Angaben zum Netzbetreiber stammen aus dem Eintrag und sind nicht amtlich verifiziert."
@@ -10844,8 +10868,8 @@ msgid "PDF-Download"
 msgstr "PDF-Download"
 
 #: templates/admin/ops.html:88 templates/index.html:455 templates/leg_verzeichnis/eintragen.html:47
-#: templates/leg_verzeichnis/liste.html:11 templates/leg_verzeichnis/liste.html:51
-#: templates/partials/address_intake.html:78
+#: templates/leg_verzeichnis/liste.html:11 templates/leg_verzeichnis/liste.html:12
+#: templates/leg_verzeichnis/liste.html:51 templates/partials/address_intake.html:78
 msgid "PLZ"
 msgstr "PLZ"
 
@@ -10964,7 +10988,7 @@ msgstr "Pflichten"
 msgid "Pilotgemeinde"
 msgstr "Pilotgemeinde"
 
-#: templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:14
 msgid "Planung"
 msgstr "Planung"
 
@@ -12025,7 +12049,7 @@ msgstr ""
 "bilden. OpenLEG prüft Ihre Adresse, zeigt das bestätigte Interesse in Ihrer Gemeinde und führt "
 "durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."
 
-#: templates/leg_verzeichnis/liste.html:20
+#: templates/leg_verzeichnis/liste.html:20 templates/leg_verzeichnis/liste.html:22
 #, python-format
 msgid "Seite %(page)s"
 msgstr "Seite %(page)s"
@@ -12804,12 +12828,13 @@ msgstr "Störungsmeldung"
 msgid "Suche aktuell nicht verfügbar."
 msgstr "Suche aktuell nicht verfügbar."
 
-#: templates/leg_verzeichnis/liste.html:16 templates/leg_verzeichnis/liste.html:21
+#: templates/leg_verzeichnis/liste.html:8 templates/leg_verzeichnis/liste.html:16
+#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:23
 msgid "Suche zurücksetzen"
 msgstr "Suche zurücksetzen"
 
 #: templates/gemeinde/verzeichnis.html:35 templates/leg_verzeichnis/liste.html:14
-#: templates/leg_verzeichnis/liste.html:62
+#: templates/leg_verzeichnis/liste.html:16 templates/leg_verzeichnis/liste.html:62
 msgid "Suchen"
 msgstr "Suchen"
 
@@ -13603,6 +13628,10 @@ msgstr ""
 "Verwenden Sie das Datum %(date)s und die Referenz %(reference)s. Bestätigen Sie den Startbeleg "
 "ausdrücklich. Erst danach können Sie die LEG aktivieren."
 
+#: site_release.py:81
+msgid "Verwenden Sie höchstens 200 Zeichen für die Suche."
+msgstr "Verwenden Sie höchstens 200 Zeichen für die Suche."
+
 #: templates/api_docs.html:241
 msgid "Verzeichniseintrag nicht gefunden."
 msgstr "Verzeichniseintrag nicht gefunden."
@@ -13803,8 +13832,8 @@ msgstr ""
 msgid "Vorher prüfen"
 msgstr "Vorher prüfen"
 
-#: templates/leg_verzeichnis/liste.html:20 templates/verein/queue.html:15
-#: templates/verein/queue.html:17
+#: templates/leg_verzeichnis/liste.html:20 templates/leg_verzeichnis/liste.html:22
+#: templates/verein/queue.html:15 templates/verein/queue.html:17
 msgid "Vorherige Seite"
 msgstr "Vorherige Seite"
 
@@ -13892,7 +13921,7 @@ msgstr "Was das Skript ausführt"
 msgid "Was dieser Check bedeutet"
 msgstr "Was dieser Check bedeutet"
 
-#: templates/leg_verzeichnis/detail.html:59
+#: templates/leg_verzeichnis/detail.html:59 templates/leg_verzeichnis/detail.html:60
 msgid "Was dieser Eintrag bedeutet"
 msgstr "Was dieser Eintrag bedeutet"
 
@@ -13988,7 +14017,7 @@ msgstr "Website"
 msgid "Website (optional)"
 msgstr "Website (optional)"
 
-#: registry_intake.py:78
+#: registry_intake.py:78 registry_intake.py:81
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr "Website-URL muss mit http:// oder https:// beginnen."
 
@@ -14452,6 +14481,14 @@ msgstr "Wählen Sie den passenden Zugang. Danach melden Sie sich sicher per E-Ma
 msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
 msgstr "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
 
+#: site_release.py:83
+msgid "Wählen Sie einen Kanton aus der Liste."
+msgstr "Wählen Sie einen Kanton aus der Liste."
+
+#: site_release.py:91
+msgid "Wählen Sie einen Status aus der Liste."
+msgstr "Wählen Sie einen Status aus der Liste."
+
 #: store/formation_activation.py:65
 msgid "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
 msgstr "Wählen Sie einen eingehenden Beleg mit Anhang aus dem Korrespondenzjournal."
@@ -14841,6 +14878,7 @@ msgstr "acknowledged"
 
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
 #: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:14
 msgid "aktiv"
 msgstr "aktiv"
 
@@ -15047,7 +15085,7 @@ msgstr "n/a"
 msgid "name@beispiel.ch"
 msgstr "name@beispiel.ch"
 
-#: templates/leg_verzeichnis/detail.html:56
+#: templates/leg_verzeichnis/detail.html:56 templates/leg_verzeichnis/detail.html:57
 msgid "nicht angegeben"
 msgstr "nicht angegeben"
 
@@ -15107,6 +15145,7 @@ msgstr "other"
 
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
 #: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:14
 msgid "pausiert"
 msgstr "pausiert"
 

@@ -147,9 +147,13 @@
 }
 @media (prefers-reduced-motion: reduce) { .site-release *, .site-release *::before, .site-release *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
 
-.release-directory-search { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) auto; gap: 16px; align-items: end; }
+.release-directory-search { display: grid; grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr)) auto; gap: 16px; align-items: end; }
 .release-directory-search label { display: block; margin-bottom: 8px; }
 .release-directory-search input, .release-directory-search select { width: 100%; min-width: 0; }
 .release-directory-results h2 { font: 600 24px/1.3 system-ui, sans-serif; }
 @media (max-width: 900px) { .release-directory-search { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 500px) { .release-directory-search { grid-template-columns: minmax(0, 1fr); } }
+.release-directory-search [aria-invalid="true"] { border: 2px solid #982f40; }
+.release-field-error, .release-search-errors { color: #982f40; }
+.release-search-errors { margin-top: 32px; padding: 16px; border-left: 3px solid #982f40; }
+.release-search-errors ul { padding-left: 24px; list-style: disc; }

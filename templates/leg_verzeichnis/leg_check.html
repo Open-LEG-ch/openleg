@@ -55,7 +55,7 @@
         {% elif entries %}
         <ul class="space-y-2">
           {% for entry in entries %}
-          <li class="grid gap-2 border-b border-slate-200 pb-3 sm:grid-cols-[1fr_19rem]"><span>{% if site_release_enabled %}<a class="font-semibold text-brand underline" href="{{ ('/leg-verzeichnis/' ~ entry.slug ~ '?bfs=' ~ profile.bfs_number ~ '&q=' ~ (q|urlencode))|localized_url }}">{{ entry.name }}</a>{% else %}<span class="font-semibold">{{ entry.name }}</span>{% endif %}{% if entry.leg_status %} <span class="text-xs text-ink-muted">({{ {"planung": _("planung"), "gruendung": _("Gründung"), "aktiv": _("aktiv"), "pausiert": _("pausiert")}.get(entry.leg_status, entry.leg_status) }})</span>{% endif %}</span>{% include "partials/registry_trust.html" %}</li>
+          <li class="grid gap-2 border-b border-slate-200 pb-3 sm:grid-cols-[1fr_19rem]"><span>{% if site_release_enabled %}<a class="font-semibold text-brand underline" href="{{ ('/leg-verzeichnis/' ~ entry.slug ~ '?bfs=' ~ profile.bfs_number ~ '&check_q=' ~ (q|urlencode))|localized_url }}">{{ entry.name }}</a>{% else %}<span class="font-semibold">{{ entry.name }}</span>{% endif %}{% if entry.leg_status %} <span class="text-xs text-ink-muted">({{ {"planung": _("planung"), "gruendung": _("Gründung"), "aktiv": _("aktiv"), "pausiert": _("pausiert")}.get(entry.leg_status, entry.leg_status) }})</span>{% endif %}</span>{% include "partials/registry_trust.html" %}</li>
           {% endfor %}
         </ul>
         {% else %}

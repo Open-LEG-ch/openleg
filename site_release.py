@@ -60,31 +60,52 @@ def directory(slug=None):
         key: request.args.get(key, "").strip()
         for key in ("q", "kanton", "plz", "leg_status", "bfs")
     }
+    check_q = request.args.get("check_q", "").strip()[:200]
+    check_url = (
+        "/leg-check?" + urlencode({"q": check_q, "bfs": filters["bfs"]})
+        if check_q and filters["bfs"]
+        else "/leg-check"
+    )
+    errors = {}
     page = request.args.get("page", "1")
     try:
         page = int(page)
-        if not 1 <= page <= 10000 or len(filters["q"]) > 200:
+        if not 1 <= page <= 10000:
             raise ValueError
-        if filters["kanton"] and filters["kanton"] not in SWISS_CANTONS:
-            raise ValueError
-        if filters["plz"] and (
-            len(filters["plz"]) != 4
-            or not filters["plz"].isascii()
-            or not filters["plz"].isdigit()
-        ):
-            raise ValueError
-        if filters["leg_status"] and filters["leg_status"] not in VALID_LEG_STATUSES:
-            raise ValueError
+    except ValueError:
+        page = 1
+        errors["page"] = _(
+            "Die Ergebnisseite ist ungültig. Starten Sie die Suche erneut."
+        )
+    if len(filters["q"]) > 200:
+        errors["q"] = _("Verwenden Sie höchstens 200 Zeichen für die Suche.")
+    if filters["kanton"] and filters["kanton"] not in SWISS_CANTONS:
+        errors["kanton"] = _("Wählen Sie einen Kanton aus der Liste.")
+    if filters["plz"] and (
+        len(filters["plz"]) != 4
+        or not filters["plz"].isascii()
+        or not filters["plz"].isdigit()
+    ):
+        errors["plz"] = _("Geben Sie eine vierstellige PLZ ein.")
+    if filters["leg_status"] and filters["leg_status"] not in VALID_LEG_STATUSES:
+        errors["leg_status"] = _("Wählen Sie einen Status aus der Liste.")
+    try:
         bfs = int(filters["bfs"]) if filters["bfs"] else None
         if bfs is not None and not 1 <= bfs <= 999999:
             raise ValueError
     except ValueError:
+        bfs = None
+        errors["bfs"] = _("Geben Sie eine gültige BFS-Gemeindenummer ein.")
+    if errors:
         return render_template(
             "leg_verzeichnis/liste.html",
             entries=[],
             filters=filters,
             page=1,
             error=_("Bitte prüfen Sie die Suchangaben."),
+            errors=errors,
+            check_url=check_url,
+            check_q=check_q,
             unavailable=False,
             canton_options=sorted(SWISS_CANTONS),
             site_url=current_app.config["SITE_URL"],
@@ -94,6 +115,8 @@ def directory(slug=None):
 
     def directory_url(entry_slug=None, target_page=None):
         args = {key: value for key, value in filters.items() if value}
+        if check_q:
+            args["check_q"] = check_q
         args["page"] = page if target_page is None else target_page
         path = "/leg-verzeichnis" + (
             "/" + quote(entry_slug, safe="") if entry_slug else ""
@@ -104,6 +127,9 @@ def directory(slug=None):
         "filters": filters,
         "page": page,
         "error": None,
+        "errors": errors,
+        "check_url": check_url,
+        "check_q": check_q,
         "unavailable": False,
         "canton_options": sorted(SWISS_CANTONS),
         "site_url": current_app.config["SITE_URL"],
