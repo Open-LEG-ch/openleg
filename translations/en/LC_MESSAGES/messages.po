@@ -1415,7 +1415,7 @@ msgid "Anderes"
 msgstr "Other"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:329
+#: verein_finance.py:329 verein_finance.py:333
 msgid ""
 "Anfangsbestand plus Buchungen stimmt für dieses Konto und diesen Fonds nicht mit dem "
 "Schlussbestand überein."
@@ -2635,7 +2635,7 @@ msgstr ""
 " anonymously. If you have not signed up, you ignore this email."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:142
+#: verein_finance.py:142 verein_finance.py:146
 msgid "Bestätigen Sie den vollständigen Konten- und Anbieterumfang ohne fehlende Fremdwährungsbestände."
 msgstr "Confirm complete account and provider coverage, with no omitted foreign-currency balances."
 
@@ -3411,7 +3411,7 @@ msgstr ""
 "reviewed before admissions open."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:244
+#: verein_finance.py:244 verein_finance.py:248
 msgid "Das Buchungsdatum liegt ausserhalb des Quartals."
 msgstr "The transaction date falls outside the quarter."
 
@@ -3846,7 +3846,7 @@ msgstr ""
 "Previously published evidence must not disappear. Your input has been retained."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:115
+#: verein_finance.py:115 verein_finance.py:119
 msgid "Der Buchungsbetrag muss grösser als null sein."
 msgstr "The transaction amount must be greater than zero."
 
@@ -4043,6 +4043,16 @@ msgstr "The Quartierakku remains stored. You cannot change the clearance rule wi
 #: quartierakku.py:81
 msgid "Der Quartierakku hat keine gültigen Angaben."
 msgstr "The Quartierakku has no valid information."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_finance.py:392
+#, python-format
+msgid ""
+"Der Quellbeleg wäre in %(quarter)s bereits gebucht und zugleich als unbezahlte Verpflichtung "
+"veröffentlicht. Prüfen Sie alle betroffenen Quartale gemeinsam."
+msgstr ""
+"The source record would already be booked in %(quarter)s while also published as an unpaid "
+"commitment. Review all affected quarters together."
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_kalkulator.html:270
@@ -4391,7 +4401,7 @@ msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr "The action is not permitted for the current accounting status."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:400
+#: verein_finance.py:400 verein_finance.py:425
 msgid ""
 "Die Anfangsbestände müssen den zuletzt veröffentlichten Schlussbeständen des Vorquartals "
 "entsprechen."
@@ -4500,7 +4510,7 @@ msgstr ""
 "area request. Invoices already issued, billing-relevant measurement data and usage events remain."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:98
+#: verein_finance.py:98 verein_finance.py:102
 msgid "Die CSV-Schreibweise ist ungültig. Prüfen Sie Anführungszeichen und Trennzeichen."
 msgstr "Invalid CSV syntax. Check quotation marks and separators."
 
@@ -4616,7 +4626,7 @@ msgid "Die Forderung ist noch nicht fällig."
 msgstr "This contribution is not yet due."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:298
+#: verein_finance.py:298 verein_finance.py:302
 msgid ""
 "Die Freigabe zurückgehaltener Mittel braucht die tatsächliche Unabhängigkeitsprüfung in "
 "funding_check."
@@ -5320,7 +5330,7 @@ msgstr ""
 "form does not execute bank payments."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:265
+#: verein_finance.py:265 verein_finance.py:269
 msgid "Die private Referenz zur tatsächlichen Prüfung der Finanzierungsunabhängigkeit fehlt."
 msgstr "The private reference to the actual funding independence review is missing."
 
@@ -5448,7 +5458,7 @@ msgid "Diese Kontaktdaten gebe ich nach beidseitiger Zustimmung frei:"
 msgstr "I release these contact details after both sides agree:"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:409
+#: verein_finance.py:409 verein_finance.py:434
 msgid "Diese Korrektur würde die Anfangsbestände des folgenden veröffentlichten Quartals ungültig machen."
 msgstr "This correction would invalidate the opening balances of the following published quarter."
 
@@ -6063,7 +6073,7 @@ msgid ""
 msgstr "A source record already belongs to another quarter. Do not import the same record again."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:280
+#: verein_finance.py:280 verein_finance.py:284
 msgid "Ein Transfer wechselt das Konto und behält denselben Fonds."
 msgstr "A transfer changes the account and keeps the same fund."
 
@@ -6230,7 +6240,7 @@ msgid "Eine Erinnerung ist erst nach Fälligkeit möglich und wird pro Beitragsj
 msgstr "A reminder is only possible after maturity and is prepared once per contribution year."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:287
+#: verein_finance.py:287 verein_finance.py:291
 msgid "Eine Fondsumbuchung wechselt den Fonds innerhalb desselben Kontos."
 msgstr "An allocation changes the fund within the same account."
 
@@ -6362,7 +6372,7 @@ msgid "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betri
 msgstr "An action-oriented overview from the address check to the operation."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:273
+#: verein_finance.py:273 verein_finance.py:277
 msgid "Eine interne Bewegung braucht zwei unterschiedliche erfasste Konto-Fonds-Kombinationen."
 msgstr "An internal movement requires two distinct recorded account/fund combinations."
 
@@ -6826,7 +6836,7 @@ msgstr ""
 "For customers on basic supply, it also supplies the remaining electricity."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:150
+#: verein_finance.py:150 verein_finance.py:154
 msgid "Erfassen Sie alle kontrollierten Konten und Anbieter."
 msgstr "Include every controlled account and provider."
 
@@ -7867,12 +7877,12 @@ msgstr ""
 "profile already exists."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:124
+#: verein_finance.py:124 verein_finance.py:128
 msgid "Geben Sie ein Kalenderquartal im Format 2026-Q3 an."
 msgstr "Enter a calendar quarter in the format 2026-Q3."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:240
+#: verein_finance.py:240 verein_finance.py:244
 msgid "Geben Sie ein gültiges Buchungsdatum im Format 2026-07-02 an."
 msgstr "Enter a valid transaction date in the format 2026-07-02."
 
@@ -11104,7 +11114,7 @@ msgid "Ladezustand"
 msgstr "Charging state"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:305
+#: verein_finance.py:305 verein_finance.py:309
 msgid "Lassen Sie bei externen Buchungen to_account_id und to_fund leer."
 msgstr "Leave to_account_id and to_fund empty for external transactions."
 
@@ -12784,7 +12794,7 @@ msgid "Noch mehr Nachbarn einladen?"
 msgstr "Invite more neighbors?"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:259
+#: verein_finance.py:259 verein_finance.py:263
 msgid "Noch nicht angenommene Finanzierung muss im Fonds held mit Kategorie held stehen."
 msgstr "Funding not yet accepted must be in fund held with category held."
 
@@ -12862,7 +12872,7 @@ msgid "Nur Lesezugriff"
 msgstr "Read-only"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:132
+#: verein_finance.py:132 verein_finance.py:136
 msgid "Nur abgeschlossene Kalenderquartale sind zulässig."
 msgstr "Only completed calendar quarters are allowed."
 
@@ -14170,7 +14180,7 @@ msgid "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
 msgstr "Check your access link or open the"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:195
+#: verein_finance.py:195 verein_finance.py:199
 msgid ""
 "Prüfen Sie Kontoart, Fonds und private Quellenreferenz. Jede Konto-Fonds-Kombination darf nur "
 "einmal vorkommen."
@@ -14190,7 +14200,7 @@ msgstr ""
 "approval."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:232
+#: verein_finance.py:232 verein_finance.py:236
 msgid ""
 "Prüfen Sie Quellkennung, Buchungsart, Konto, Fonds und Quellenreferenz. Quellkennungen dürfen "
 "nicht doppelt vorkommen."
@@ -14199,7 +14209,7 @@ msgstr ""
 "duplicated."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:346
+#: verein_finance.py:346 verein_finance.py:350 verein_finance.py:385
 msgid ""
 "Prüfen Sie Quellkennung, Fonds und Quellenreferenz der Verpflichtung. Ein bereits gebuchter oder "
 "doppelt erfasster Beleg darf nicht als unbezahlte Verpflichtung erscheinen."
@@ -14276,7 +14286,7 @@ msgid "Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."
 msgstr "Check the device time and time zone of the measuring source."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:251
+#: verein_finance.py:251 verein_finance.py:255
 msgid ""
 "Prüfen Sie die Kategorie für diese Buchungsart und die bereinigte Belegkennung mit 3 bis 40 "
 "Grossbuchstaben, Ziffern oder Bindestrichen."
@@ -16651,7 +16661,7 @@ msgid "Unbestätigte Zahlungen"
 msgstr "Unconfirmed payments"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:206
+#: verein_finance.py:206 verein_finance.py:210
 msgid ""
 "Unbestätigte Zahlungen gehören ausschliesslich in pending_chf eines Anbieterkontos vom Typ "
 "clearing."
@@ -17281,7 +17291,7 @@ msgid "Verwenden Sie höchstens 200 Zeichen für die Suche."
 msgstr "Use no more than 200 characters for the search."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:109
+#: verein_finance.py:109 verein_finance.py:113
 msgid "Verwenden Sie nichtnegative CHF-Beträge mit Punkt und höchstens zwei Nachkommastellen."
 msgstr "Use nonnegative CHF amounts with a decimal point and at most two decimal places."
 
@@ -17291,7 +17301,7 @@ msgid "Verzeichniseintrag nicht gefunden."
 msgstr "Directory entry not found."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:378
+#: verein_finance.py:378 verein_finance.py:403
 msgid "Veröffentlichen Sie aufeinanderfolgende Quartale ab dem festgelegten Anfangszeitraum."
 msgstr "Publish consecutive quarters from the declared opening period."
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-06 19:20+0000\n"
+"POT-Creation-Date: 2026-11-06 19:28+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1116,7 +1116,7 @@ msgstr ""
 msgid "Anderes"
 msgstr ""
 
-#: verein_finance.py:329
+#: verein_finance.py:333
 msgid ""
 "Anfangsbestand plus Buchungen stimmt für dieses Konto und diesen Fonds nicht mit dem "
 "Schlussbestand überein."
@@ -2051,7 +2051,7 @@ msgid ""
 " Sie diese E-Mail."
 msgstr ""
 
-#: verein_finance.py:142
+#: verein_finance.py:146
 msgid "Bestätigen Sie den vollständigen Konten- und Anbieterumfang ohne fehlende Fremdwährungsbestände."
 msgstr ""
 
@@ -2659,7 +2659,7 @@ msgid ""
 " Datenaufbewahrung werden vor der Aufnahme geprüft."
 msgstr ""
 
-#: verein_finance.py:244
+#: verein_finance.py:248
 msgid "Das Buchungsdatum liegt ausserhalb des Quartals."
 msgstr ""
 
@@ -2995,7 +2995,7 @@ msgid ""
 " verschwinden. Ihre Eingaben bleiben erhalten."
 msgstr ""
 
-#: verein_finance.py:115
+#: verein_finance.py:119
 msgid "Der Buchungsbetrag muss grösser als null sein."
 msgstr ""
 
@@ -3130,6 +3130,13 @@ msgstr ""
 
 #: quartierakku.py:81
 msgid "Der Quartierakku hat keine gültigen Angaben."
+msgstr ""
+
+#: verein_finance.py:392
+#, python-format
+msgid ""
+"Der Quellbeleg wäre in %(quarter)s bereits gebucht und zugleich als unbezahlte Verpflichtung "
+"veröffentlicht. Prüfen Sie alle betroffenen Quartale gemeinsam."
 msgstr ""
 
 #: templates/leg_kalkulator.html:270
@@ -3371,7 +3378,7 @@ msgstr ""
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
-#: verein_finance.py:400
+#: verein_finance.py:425
 msgid ""
 "Die Anfangsbestände müssen den zuletzt veröffentlichten Schlussbeständen des Vorquartals "
 "entsprechen."
@@ -3453,7 +3460,7 @@ msgid ""
 "Nutzungsereignisse bleiben erhalten."
 msgstr ""
 
-#: verein_finance.py:98
+#: verein_finance.py:102
 msgid "Die CSV-Schreibweise ist ungültig. Prüfen Sie Anführungszeichen und Trennzeichen."
 msgstr ""
 
@@ -3537,7 +3544,7 @@ msgstr ""
 msgid "Die Forderung ist noch nicht fällig."
 msgstr ""
 
-#: verein_finance.py:298
+#: verein_finance.py:302
 msgid ""
 "Die Freigabe zurückgehaltener Mittel braucht die tatsächliche Unabhängigkeitsprüfung in "
 "funding_check."
@@ -4041,7 +4048,7 @@ msgid ""
 "ist keine Ausgabenfreigabe. Dieses Formular führt keine Bankzahlung aus."
 msgstr ""
 
-#: verein_finance.py:265
+#: verein_finance.py:269
 msgid "Die private Referenz zur tatsächlichen Prüfung der Finanzierungsunabhängigkeit fehlt."
 msgstr ""
 
@@ -4135,7 +4142,7 @@ msgstr ""
 msgid "Diese Kontaktdaten gebe ich nach beidseitiger Zustimmung frei:"
 msgstr ""
 
-#: verein_finance.py:409
+#: verein_finance.py:434
 msgid "Diese Korrektur würde die Anfangsbestände des folgenden veröffentlichten Quartals ungültig machen."
 msgstr ""
 
@@ -4605,7 +4612,7 @@ msgid ""
 "nochmals."
 msgstr ""
 
-#: verein_finance.py:280
+#: verein_finance.py:284
 msgid "Ein Transfer wechselt das Konto und behält denselben Fonds."
 msgstr ""
 
@@ -4720,7 +4727,7 @@ msgstr ""
 msgid "Eine Erinnerung ist bereits vorbereitet."
 msgstr ""
 
-#: verein_finance.py:287
+#: verein_finance.py:291
 msgid "Eine Fondsumbuchung wechselt den Fonds innerhalb desselben Kontos."
 msgstr ""
 
@@ -4815,7 +4822,7 @@ msgstr ""
 msgid "Eine handlungsorientierte Übersicht von der Adressprüfung bis zum Betrieb."
 msgstr ""
 
-#: verein_finance.py:273
+#: verein_finance.py:277
 msgid "Eine interne Bewegung braucht zwei unterschiedliche erfasste Konto-Fonds-Kombinationen."
 msgstr ""
 
@@ -5178,7 +5185,7 @@ msgid ""
 "Grundversorgung liefert er auch den übrigen Strom."
 msgstr ""
 
-#: verein_finance.py:150
+#: verein_finance.py:154
 msgid "Erfassen Sie alle kontrollierten Konten und Anbieter."
 msgstr ""
 
@@ -5967,11 +5974,11 @@ msgid ""
 " nicht an, ob bereits ein Profil existiert."
 msgstr ""
 
-#: verein_finance.py:124
+#: verein_finance.py:128
 msgid "Geben Sie ein Kalenderquartal im Format 2026-Q3 an."
 msgstr ""
 
-#: verein_finance.py:240
+#: verein_finance.py:244
 msgid "Geben Sie ein gültiges Buchungsdatum im Format 2026-07-02 an."
 msgstr ""
 
@@ -8485,7 +8492,7 @@ msgstr ""
 msgid "Ladezustand"
 msgstr ""
 
-#: verein_finance.py:305
+#: verein_finance.py:309
 msgid "Lassen Sie bei externen Buchungen to_account_id und to_fund leer."
 msgstr ""
 
@@ -9795,7 +9802,7 @@ msgstr ""
 msgid "Noch mehr Nachbarn einladen?"
 msgstr ""
 
-#: verein_finance.py:259
+#: verein_finance.py:263
 msgid "Noch nicht angenommene Finanzierung muss im Fonds held mit Kategorie held stehen."
 msgstr ""
 
@@ -9855,7 +9862,7 @@ msgstr ""
 msgid "Nur Lesezugriff"
 msgstr ""
 
-#: verein_finance.py:132
+#: verein_finance.py:136
 msgid "Nur abgeschlossene Kalenderquartale sind zulässig."
 msgstr ""
 
@@ -10832,7 +10839,7 @@ msgstr ""
 msgid "Prüfen Sie Ihren Zugangslink oder öffnen Sie die"
 msgstr ""
 
-#: verein_finance.py:195
+#: verein_finance.py:199
 msgid ""
 "Prüfen Sie Kontoart, Fonds und private Quellenreferenz. Jede Konto-Fonds-Kombination darf nur "
 "einmal vorkommen."
@@ -10845,13 +10852,13 @@ msgid ""
 "gesetzliche Revision und keine Zahlungsfreigabe."
 msgstr ""
 
-#: verein_finance.py:232
+#: verein_finance.py:236
 msgid ""
 "Prüfen Sie Quellkennung, Buchungsart, Konto, Fonds und Quellenreferenz. Quellkennungen dürfen "
 "nicht doppelt vorkommen."
 msgstr ""
 
-#: verein_finance.py:346
+#: verein_finance.py:350 verein_finance.py:385
 msgid ""
 "Prüfen Sie Quellkennung, Fonds und Quellenreferenz der Verpflichtung. Ein bereits gebuchter oder "
 "doppelt erfasster Beleg darf nicht als unbezahlte Verpflichtung erscheinen."
@@ -10907,7 +10914,7 @@ msgstr ""
 msgid "Prüfen Sie die Gerätezeit und die Zeitzone der Messquelle."
 msgstr ""
 
-#: verein_finance.py:251
+#: verein_finance.py:255
 msgid ""
 "Prüfen Sie die Kategorie für diese Buchungsart und die bereinigte Belegkennung mit 3 bis 40 "
 "Grossbuchstaben, Ziffern oder Bindestrichen."
@@ -12743,7 +12750,7 @@ msgstr ""
 msgid "Unbestätigte Zahlungen"
 msgstr ""
 
-#: verein_finance.py:206
+#: verein_finance.py:210
 msgid ""
 "Unbestätigte Zahlungen gehören ausschliesslich in pending_chf eines Anbieterkontos vom Typ "
 "clearing."
@@ -13229,7 +13236,7 @@ msgstr ""
 msgid "Verwenden Sie höchstens 200 Zeichen für die Suche."
 msgstr ""
 
-#: verein_finance.py:109
+#: verein_finance.py:113
 msgid "Verwenden Sie nichtnegative CHF-Beträge mit Punkt und höchstens zwei Nachkommastellen."
 msgstr ""
 
@@ -13237,7 +13244,7 @@ msgstr ""
 msgid "Verzeichniseintrag nicht gefunden."
 msgstr ""
 
-#: verein_finance.py:378
+#: verein_finance.py:403
 msgid "Veröffentlichen Sie aufeinanderfolgende Quartale ab dem festgelegten Anfangszeitraum."
 msgstr ""
 

@@ -560,3 +560,119 @@ def test_balance_error_locates_csv_row_and_keeps_the_draft(membership):
     assert 'id="balances-error"' in result.text
     assert 'aria-describedby="balances-error"' in result.text
     assert "Zeile 2" in result.text
+
+
+def _quiet_following_quarter():
+    data = _data()
+    data["bookings"] = data["bookings"].splitlines()[0] + "\n"
+    _change(
+        data, "balances", lambda rows: [row.__setitem__(3, row[4]) for row in rows[1:]]
+    )
+    return data
+
+
+def _earlier_quarter():
+    data = _data()
+    data["quarter"] = "2026-Q2"
+    return _change(
+        data,
+        "bookings",
+        lambda rows: [
+            row.__setitem__(1, row[1].replace("2026-07", "2026-04")) for row in rows[1:]
+        ],
+    )
+
+
+def test_historical_paid_source_cannot_become_unpaid_but_unpaid_can_carry_forward(
+    membership,
+):
+    client, store = _setup(membership)
+    earlier = _prepare(client, _earlier_quarter())
+    _other_reviewer(client, store)
+    assert _publish(client, earlier).status_code == 303
+    bad = _change(
+        _quiet_following_quarter(),
+        "commitments",
+        lambda rows: rows[1].__setitem__(0, "private-hosting-1"),
+    )
+    result = client.post(
+        PATH, data={**bad, "csrf_token": test_verein_membership._csrf(client, PATH)}
+    )
+    assert result.status_code == 409
+    assert 'href="#commitments"' in result.text
+    assert "Zeile 2" in result.text
+    following = _prepare(client, _quiet_following_quarter())
+    client.post(
+        "/verein/vorstand/login",
+        data={
+            "csrf_token": test_verein_membership._csrf(
+                client, "/verein/vorstand/login"
+            ),
+            "email": "reviewer@example.org",
+            "password": "correct-horse-battery-staple",
+        },
+    )
+    assert _publish(client, following).status_code == 303
+    report = client.get("/verein/finanzen/2026-Q3.json").json
+    assert report["totals"]["commitments_cents"] == 12000
+    assert report["totals"]["spendable_bank_cents"] == 92800
+
+
+def test_publication_rechecks_paid_sources_after_preparation(membership):
+    client, store = _setup(membership)
+    earlier = _prepare(client, _earlier_quarter())
+    bad = _change(
+        _quiet_following_quarter(),
+        "commitments",
+        lambda rows: rows[1].__setitem__(0, "private-hosting-1"),
+    )
+    following = _prepare(client, bad)
+    _other_reviewer(client, store)
+    assert _publish(client, earlier).status_code == 303
+    assert _publish(client, following).status_code == 409
+    assert client.get("/verein/finanzen/2026-Q3.json").status_code == 404
+
+
+def test_correction_cannot_make_a_later_published_commitment_already_paid(membership):
+    client, store = _setup(membership)
+    earlier = _prepare(client, _earlier_quarter())
+    _other_reviewer(client, store)
+    assert _publish(client, earlier).status_code == 303
+    following = _prepare(client, _quiet_following_quarter())
+    client.post(
+        "/verein/vorstand/login",
+        data={
+            "csrf_token": test_verein_membership._csrf(
+                client, "/verein/vorstand/login"
+            ),
+            "email": "reviewer@example.org",
+            "password": "correct-horse-battery-staple",
+        },
+    )
+    assert _publish(client, following).status_code == 303
+    correction = _earlier_quarter()
+    correction["correction_reason"] = (
+        "Add a privately verified expense and matching donation"
+    )
+
+    def extra(rows):
+        expense = rows[6].copy()
+        expense[0], expense[7] = "private-unpaid-invoice", "120.00"
+        receipt = rows[1].copy()
+        receipt[0], receipt[3], receipt[7] = (
+            "private-new-donation",
+            "bank-private",
+            "120.00",
+        )
+        rows.extend([expense, receipt])
+
+    _change(correction, "bookings", extra)
+    correction["commitments"] = correction["commitments"].splitlines()[0] + "\n"
+    result = client.post(
+        PATH,
+        data={**correction, "csrf_token": test_verein_membership._csrf(client, PATH)},
+    )
+    assert result.status_code == 409
+    assert 'href="#bookings"' in result.text
+    assert "2026-Q3" in result.text
+    assert client.get("/verein/finanzen/2026-Q2.json").json["version"] == 1
