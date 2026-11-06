@@ -152,3 +152,9 @@ Association dues and receipts are not electricity billing or payment approval.
 An occurrence is one actual meetup with a stable URL and calendar UID. A draft is
 private; approval of public notes is explicit and independent of the event date.
 See [association administration](docs/verein-administration.md).
+
+Quarterly association reports are distinct from LEG electricity invoices, member
+dues receipts and spending approvals. `verein_finance.py` reconciles CHF account
+and fund balances without SQL. `store/verein_finance.py` owns private immutable
+inputs, stable source identities and independently approved public versions.
+Public reads select only redacted snapshots. No report executes a bank payment.
