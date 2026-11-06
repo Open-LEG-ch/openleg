@@ -815,6 +815,7 @@ def _issued_invoice(method="email"):
         "id": 42,
         "community_id": COMMUNITY,
         "participant_id": "member-building",
+        "matched_building_id": "member-building",
         "invoice_number": "LEG-2026-000001",
         "recipient_email": "member@example.ch",
         "policy_snapshot": {"delivery_method": method},

@@ -292,6 +292,13 @@ it.
   match the frozen invoice reference. Missing legacy references fail closed;
   they are never inferred from a current profile or email. Operator retention
   reads remain available. Member display fails closed on unreadable figures (#528).
+- **Migration:** initialization invalidates unissued pre-proof drafts that have
+  no registration map and no invoices. Their amounts, source references and
+  reconciliation remain retained. Operators can prepare the same window again
+  from its still-accepted evidence; no registration is assigned to the old draft.
+  Existing non-empty profile tokens are preserved. Missing profile tokens receive
+  fresh random identities for future billing only, without backfilling invoice
+  provenance or granting historical access.
 - **Consent gate:** not neighbour-visible.
 
 ## store/invoice_identity

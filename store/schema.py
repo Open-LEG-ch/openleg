@@ -65,6 +65,14 @@ def create_tables():
                 ON buildings (bfs_number, verified)
             """)
 
+            # Missing legacy profile identities get fresh random tokens for future
+            # billing. Never infer or backfill ownership into retained invoices.
+            cur.execute("""
+                UPDATE buildings
+                SET referral_code = replace(gen_random_uuid()::text, '-', '')
+                WHERE referral_code IS NULL OR referral_code = ''
+            """)
+
             # Consents table
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS consents (
@@ -2190,5 +2198,19 @@ def create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_sdat_veracity_flags_window "
                 "ON sdat_veracity_flags(window_start)"
             )
+
+            # Pre-registration-proof drafts cannot be safely approved or
+            # rebound. Retain their evidence and amounts, but release the live
+            # window so the operator can prepare a new draft from valid sources.
+            # Never invalidate issued periods or any period carrying invoices.
+            cur.execute("""
+                UPDATE billing_periods p SET status = 'invalidated'
+                WHERE p.status = 'draft'
+                  AND jsonb_typeof(p.reconciliation->'participant_registrations')
+                      IS DISTINCT FROM 'object'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM invoices i WHERE i.billing_period_id = p.id
+                  )
+            """)
 
             logger.info("[DB] Tables and indexes created successfully")
