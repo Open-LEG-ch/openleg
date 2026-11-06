@@ -3,6 +3,7 @@
 
 import logging
 
+from locale_policy import extended_locales_enabled
 from store import advisories, contact_request, equipment, telemetry, verein
 
 logger = logging.getLogger(__name__)
@@ -2241,5 +2242,20 @@ def create_tables():
                     SET {column} = 'sha256$' || encode(sha256(convert_to({column}, 'UTF8')), 'hex')
                     WHERE {column} IS NOT NULL AND {column} NOT LIKE 'sha256$%'
                 """)
+            if extended_locales_enabled():
+                # Expand only. A later feature-flag change must never remove an
+                # already-persisted recipient language or rewrite preferences.
+                for table in (
+                    "buildings",
+                    "coverage_requests",
+                    "utility_clients",
+                    "leg_registry",
+                ):
+                    cur.execute(
+                        f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {table}_preferred_locale_check"
+                    )
+                    cur.execute(
+                        f"ALTER TABLE {table} ADD CONSTRAINT {table}_preferred_locale_check CHECK (preferred_locale IN ('de_CH','en','fr_CH','it_CH'))"
+                    )
 
             logger.info("[DB] Tables and indexes created successfully")

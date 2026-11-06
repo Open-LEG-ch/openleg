@@ -36,6 +36,8 @@ def extract(destination):
             "_l",
             "-k",
             "_N",
+            "-k",
+            "recipient_gettext",
             "-o",
             str(destination),
             ".",

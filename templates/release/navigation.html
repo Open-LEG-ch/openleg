@@ -14,11 +14,11 @@
       {% for label, links in groups %}
       <details class="release-nav-group">
         <summary>{{ label }} <span aria-hidden="true">⌄</span></summary>
-        <ul>{% for href, text in links %}<li><a href="{{ href }}"{% if request.path == href %} aria-current="page"{% endif %}>{{ text }}</a></li>{% endfor %}</ul>
+        <ul>{% for href, text in links %}<li><a href="{{ href|localized_url }}"{% if request.path == href %} aria-current="page"{% endif %}>{{ text }}</a></li>{% endfor %}</ul>
       </details>
       {% endfor %}
-      <a class="release-login" href="/login"{% if request.path == '/login' %} aria-current="page"{% endif %}>{{ _('Anmelden') }}</a>
-      <div class="release-language">{% include 'partials/language_switcher.html' %}</div>
+      <a class="release-login" href="{{ '/login'|localized_url }}"{% if request.path == '/login' %} aria-current="page"{% endif %}>{{ _('Anmelden') }}</a>
+      <details class="release-nav-group release-language"><summary>{{ supported_locales.get(current_locale|replace('-', '_'), _('Sprache')) }} <span aria-hidden="true">⌄</span></summary><div class="release-language-options">{% include 'partials/language_switcher.html' %}</div></details>
     </div>
   </div>
 </nav>

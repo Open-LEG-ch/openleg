@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="{{ _('Eine LEG gründen und betreiben.') }}">
+  <rect width="1200" height="630" fill="#F6F2EA"/>
+  <rect x="690" width="510" height="630" fill="#EDF1F9"/>
+  <text x="64" y="80" font-family="monospace" font-size="32" fill="#26324B">open<tspan fill="#243B85" font-weight="700">LEG</tspan></text>
+  <path d="M140 91h58" stroke="#EE8D7C" stroke-width="3"/>
+  <foreignObject x="64" y="150" width="580" height="300">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Georgia,serif;font-size:70px;line-height:1.08;letter-spacing:-2px;color:#26324B;overflow-wrap:break-word;">{{ _('Eine LEG gründen und betreiben.') }}</div>
+  </foreignObject>
+  <image x="575" y="235" width="660" height="357" href="/static/images/release/neighbourhood.webp"/>
+  <text x="64" y="555" font-family="system-ui,sans-serif" font-size="26" fill="#243B85">openleg.ch</text>
+  <path d="M64 580h450" stroke="#BCC3D0"/>
+</svg>

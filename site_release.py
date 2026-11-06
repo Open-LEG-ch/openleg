@@ -14,7 +14,7 @@ def require_complete_site():
 
 @site_bp.get("/verein")
 def verein():
-    return render_template("verein/index.html")
+    return render_template("verein/index.html", site_url=current_app.config["SITE_URL"])
 
 
 def template_context():

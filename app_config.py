@@ -205,6 +205,10 @@ def build_config(env=None, overrides=None):
         "BABEL_DEFAULT_LOCALE": env.get("BABEL_DEFAULT_LOCALE", "de_CH"),
         "SITE_RELEASE_ENABLED": env.get("OPENLEG_SITE_RELEASE_ENABLED", "").lower()
         in TRUTHY,
+        "SITE_TRANSLATIONS_APPROVED": env.get(
+            "OPENLEG_SITE_TRANSLATIONS_APPROVED", ""
+        ).lower()
+        in TRUTHY,
         "VEREIN_ACCEPTING_APPLICATIONS": env.get(
             "VEREIN_ACCEPTING_APPLICATIONS", ""
         ).lower()
