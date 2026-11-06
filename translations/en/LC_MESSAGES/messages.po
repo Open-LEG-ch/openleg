@@ -2927,7 +2927,7 @@ msgstr ""
 "in the future."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:87 site_release.py:105
+#: site_release.py:87 site_release.py:105 site_release.py:113
 msgid "Bitte prüfen Sie die Suchangaben."
 msgstr "Please check the search criteria."
 
@@ -4305,7 +4305,7 @@ msgstr ""
 "history shows the actual cooperation. It is not a list of members and no ranking."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:78
+#: site_release.py:78 site_release.py:86
 msgid "Die Ergebnisseite ist ungültig. Starten Sie die Suche erneut."
 msgstr "This results page is invalid. Run the search again."
 
@@ -7284,12 +7284,12 @@ msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
 msgstr "Specify a reference with a maximum of 255 characters."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:98
+#: site_release.py:98 site_release.py:106
 msgid "Geben Sie eine gültige BFS-Gemeindenummer ein."
 msgstr "Enter a valid BFS municipality number."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:89
+#: site_release.py:89 site_release.py:97
 msgid "Geben Sie eine vierstellige PLZ ein."
 msgstr "Enter a four-digit postcode."
 
@@ -16214,7 +16214,7 @@ msgstr ""
 "Only then can you activate the LEG ."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:81
+#: site_release.py:81 site_release.py:89
 msgid "Verwenden Sie höchstens 200 Zeichen für die Suche."
 msgstr "Use no more than 200 characters for the search."
 
@@ -17222,12 +17222,12 @@ msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard n
 msgstr "Select a different surface language and reload the dashboard."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:83
+#: site_release.py:83 site_release.py:91
 msgid "Wählen Sie einen Kanton aus der Liste."
 msgstr "Choose a canton from the list."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:91
+#: site_release.py:91 site_release.py:99
 msgid "Wählen Sie einen Status aus der Liste."
 msgstr "Choose a status from the list."
 
@@ -17591,6 +17591,11 @@ msgstr "Back to the dashboard"
 #: templates/advisories.html:21
 msgid "Zurück zum Gerät"
 msgstr "Back to device"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:7
+msgid "Zurück zum LEG-Check"
+msgstr "Back to the LEG check"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:8 templates/leg_billing_policy.html:4
