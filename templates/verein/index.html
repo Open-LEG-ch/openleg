@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block meta %}<title>{{ _("Verein openLEG Schweiz") }} | OpenLEG</title>{% endblock %}
+{% from 'partials/page_meta.html' import page_meta with context %}
+{% block meta %}{{ page_meta(title=_("Verein openLEG Schweiz") + ' | OpenLEG', description=_("Offene Software und praktisches Wissen für unabhängige Stromgemeinschaften."), path='/verein', site_url=site_url) }}{% endblock %}
 {% block content %}
 <section class="max-w-6xl mx-auto px-4 py-16">
   <h1 class="text-4xl font-bold">{{ _("Verein openLEG Schweiz") }}</h1>

@@ -1,0 +1,38 @@
+{
+  "schema": "openleg-translation-review/1",
+  "source_digest": "2e73619d3f56255c35413fc1d48739326cee7077aa11a15053eee942d866cce9",
+  "source_messages": 2971,
+  "status": "draft",
+  "native_approval": false,
+  "legal_approval": false,
+  "locales": {
+    "de_CH": {
+      "catalog_digest": "d9a2ef0a10c184a014fd8d57332e98052629ef13920e1297084893ae1a35539b",
+      "native_review_status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence_reference": null
+    },
+    "en": {
+      "catalog_digest": "2b46653331befc6a822b154045caf57ef5075b3d2de81f7de4538f294e9e8ed3",
+      "native_review_status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence_reference": null
+    },
+    "fr_CH": {
+      "catalog_digest": "3801a4d276c3d14bfb8212849bfa0cc6d09a0263ea5a2c9b259db39d7d14bbd6",
+      "native_review_status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence_reference": null
+    },
+    "it_CH": {
+      "catalog_digest": "ece040169befd6d1567c822dd66fc3ba6b67e2c6827f627eb3da7ff9f387b37f",
+      "native_review_status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence_reference": null
+    }
+  }
+}

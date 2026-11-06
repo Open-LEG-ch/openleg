@@ -8,7 +8,7 @@
   path="/",
   og_title=_("Lokale Elektrizitätsgemeinschaft gründen | OpenLEG"),
   og_description=_("Eine LEG gründen und betreiben. Lernen Sie die Aufgaben kennen, prüfen Sie Ihre Adresse und bereiten Sie den eigenen Softwarebetrieb vor.") if site_release_enabled else _("Prüfen Sie Ihre Adresse, finden Sie Nachbarn und starten Sie eine lokale Stromgemeinschaft. Bis 40% weniger Netznutzungsentgelt. Kostenlos, Open Source, Schweizer Hosting."),
-  og_image="/static/images/og-image.png",
+  og_image="/static/images/release/og-image.png" if site_release_enabled else "/static/images/og-image.png",
   site_url=site_url
 ) }}
 {% endblock %}

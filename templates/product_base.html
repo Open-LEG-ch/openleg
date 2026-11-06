@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex, nofollow">
   {% block meta %}{% endblock %}
   {% include "partials/tailwind_brand.html" %}
+  {% if site_release_enabled %}<script src="/static/js/language_choice.js" defer></script>{% endif %}
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{{ 'site-release product-shell' if site_release_enabled else '' }} {% block body_class %}min-h-screen bg-paper text-ink{% endblock %}">
@@ -22,6 +23,7 @@
   </header>
   <main id="main-content" tabindex="-1">
     {% block content %}{% endblock %}
+    {% if g.untranslated_media %}<p class="max-w-6xl mx-auto px-5 py-6 text-sm">{{ _('Eine Abbildung auf dieser Seite zeigt die Oberfläche auf Deutsch.') }}</p>{% endif %}
   </main>
   {% block scripts %}{% endblock %}
   {% if matomo_site_id and not private_page %}

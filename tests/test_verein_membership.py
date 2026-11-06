@@ -119,6 +119,31 @@ def _accepted(membership):
     return client, mail, store, reviewer_id, path
 
 
+@pytest.mark.parametrize(
+    "locale,expected",
+    [
+        ("de-CH", "Ihr Mitgliedsantrag wurde angenommen"),
+        ("en", "Your membership application was accepted"),
+        ("fr-CH", "Votre demande d'adhésion a été acceptée"),
+        ("it-CH", "La sua domanda di adesione è stata accolta"),
+    ],
+)
+def test_admission_mail_uses_applicant_language_after_board_switch(
+    membership, locale, expected
+):
+    client, mail, _store = membership
+    client.get("/verein/beitreten?lang=" + locale)
+    client, _mail, _store, _reviewer_id, _path = _accepted(membership)
+    client.get("/verein/vorstand/antraege?lang=de-CH")
+    result = client.post(
+        "/verein/vorstand/benachrichtigungen",
+        data={"csrf_token": _csrf(client, "/verein/vorstand/antraege")},
+    )
+    assert result.status_code == 303
+    assert expected in mail[-1][2]
+    assert "CHF 50" in mail[-1][2]
+
+
 def test_revocation_and_csrf_protect_board_decisions(membership):
     client, _mail, store, reviewer_id, path = _accepted(membership)
     denied = client.post(path, data={"decision": "refused", "reason": "untrusted"})
