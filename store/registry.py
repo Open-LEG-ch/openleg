@@ -20,6 +20,56 @@ from locale_policy import require_recipient_locale
 logger = logging.getLogger(__name__)
 
 
+class PublicRegistryUnavailable(RuntimeError):
+    """The published directory cannot currently be read."""
+
+
+def read_public_registry(*, filters=None, slug=None, page=1):
+    """Read one bounded page; never select private registry columns.
+
+    Unlike the historical administrative readers, a storage failure is distinct
+    from an empty directory. Public visibility is fixed here, not caller input.
+    """
+    filters = filters or {}
+    allowed = {"kanton", "plz", "leg_status", "q", "bfs_number"}
+    if set(filters) - allowed or not isinstance(page, int) or not 1 <= page <= 10000:
+        raise ValueError("Invalid directory search")
+    clauses = ["moderation_status='published'"]
+    params = []
+    for field in ("kanton", "plz", "leg_status", "bfs_number"):
+        if filters.get(field):
+            clauses.append(field + "=%s")
+            params.append(filters[field])
+    if filters.get("q"):
+        query = (
+            str(filters["q"])
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+        )
+        clauses.append("(name ILIKE %s OR ort ILIKE %s)")
+        params.extend(["%" + query + "%"] * 2)
+    if slug is not None:
+        clauses.append("slug=%s")
+        params.append(slug)
+    params.extend([26, (page - 1) * 25])
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """SELECT slug,name,kanton,plz,ort,bfs_number,vnb_name,leg_status,
+                member_count_estimate,description,website_url,source,claimed_at,
+                last_verified_at,created_at,updated_at
+                FROM leg_registry WHERE """
+                + " AND ".join(clauses)
+                + " ORDER BY created_at DESC,id DESC LIMIT %s OFFSET %s",
+                tuple(params),
+            )
+            rows = [dict(row) for row in cur.fetchall()]
+    except Exception as exc:
+        raise PublicRegistryUnavailable("Published directory unavailable") from exc
+    return {"entries": rows[:25], "has_next": len(rows) > 25 and page < 10000}
+
+
 def _get_connection():
     import database
 

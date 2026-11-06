@@ -13,12 +13,12 @@
 {% endblock %}
 
 {% block content %}
-  <div class="max-w-3xl mx-auto px-4 py-12">
-    <p class="text-sm mb-4"><a href="/leg-verzeichnis" class="text-brand hover:underline">{{ _("← Zurück zum Verzeichnis") }}</a></p>
+  <div class="release-container release-document">
+    <p class="text-sm mb-4"><a data-directory-back="{{ directory_url() }}" href="{{ directory_url() }}" class="text-brand hover:underline">{{ _("← Zurück zum Verzeichnis") }}</a></p>
 
     <header class="mb-8">
       <h1 class="text-3xl font-bold tracking-tight mb-2">{{ entry.name }}</h1>
-      <p class="text-ink-muted">{{ entry.ort }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}{% if entry.plz %} {{ _("· %(entry_plz)s", entry_plz=entry.plz) }}{% endif %}</p>
+      <p class="text-ink-muted">{{ entry.ort or '' }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}{% if entry.plz %} {{ _("· %(entry_plz)s", entry_plz=entry.plz) }}{% endif %}</p>
       <div class="mt-5">{% include "partials/registry_trust.html" %}</div>
     </header>
 
@@ -53,15 +53,14 @@
       {% endif %}
     </dl>
 
-    {{ data_provenance(_("Datenstand"), entry.get('updated_at') or entry.get('created_at') or _("nicht angegeben"), [_("LEG-Verzeichnis"), _("Angaben der eintragenden Organisation")]) }}
+    {% set updated = entry.get('updated_at') or entry.get('created_at') %}
+    {{ data_provenance(_("Datenstand"), updated|datelabel if updated else _("nicht angegeben"), [_("LEG-Verzeichnis"), _("Angaben der eintragenden Organisation")]) }}
 
     <section class="border-y border-slate-200 py-6 mb-8">
       <h2 class="font-bold mb-2">{{ _("Was dieser Eintrag bedeutet") }}</h2>
       <p class="text-sm text-ink-muted">{{ _("OpenLEG prüft keine Netz-Topologie und bestätigt nicht, welche Adressen konkret teilnehmen können. Angaben zum Netzbetreiber stammen aus dem Eintrag und sind nicht amtlich verifiziert.") }}</p>
     </section>
 
-    <div class="flex flex-col sm:flex-row gap-3">
-      <a href="/leg-verzeichnis/{{ entry.slug }}/beanspruchen" class="inline-block border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-white text-center">{{ _("Diese LEG betreiben Sie? Eintrag beanspruchen") }}</a>
-    </div>
+    <p><a href="mailto:hallo@openleg.ch">{{ _('Fragen zum Verzeichnis') }}</a></p>
   </div>
 {% endblock %}

@@ -72,3 +72,16 @@ requiring data that does not publicly exist.
 - `docs/codex-execution.md` — execution contract and review rubric.
 - `docs/architecture.md` — overall system architecture.
 - `docs/repo-boundary.md` — public/private repo boundary rules.
+
+## Complete-site directory restoration
+
+The gated public runtime serves `/leg-verzeichnis` and
+`/leg-verzeichnis/<slug>`. Lists, details and the release LEG check use the
+explicit published-only storage projection. Search and return links preserve
+municipality BFS identity, filters, page and display language. An unavailable
+directory returns 503 rather than claiming no listings exist.
+
+The list and detail pages do not expose submission or claim entry points until
+their separate protected journeys are complete. This implementation does not
+assert that self-service ownership or publication review has been completed.
+Existing verification, moderation and public API routes retain their contracts.
