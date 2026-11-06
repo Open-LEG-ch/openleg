@@ -1245,7 +1245,7 @@ msgid "Alle Mitglieder"
 msgstr "All members"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:14
 msgid "Alle Status"
 msgstr "All statuses"
 
@@ -2927,7 +2927,7 @@ msgstr ""
 "in the future."
 
 #. Draft checked against source; native language and domain review pending.
-#: site_release.py:87
+#: site_release.py:87 site_release.py:105
 msgid "Bitte prüfen Sie die Suchangaben."
 msgstr "Please check the search criteria."
 
@@ -3293,7 +3293,7 @@ msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr "The distribution model of the policy is invalid."
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:21
+#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:23
 msgid ""
 "Das Verzeichnis enthält nur freigeschaltete Selbstauskünfte. Ein fehlender Eintrag sagt nichts "
 "über die Eignung einer Adresse aus."
@@ -3508,8 +3508,8 @@ msgstr "Data protection levels:"
 #. Draft checked against source; native language and domain review pending.
 #: templates/gemeinde/pilotgemeinde.html:45 templates/gemeinde/profil.html:136
 #: templates/leg_kalkulator.html:279 templates/leg_verzeichnis/detail.html:56
-#: templates/leg_verzeichnis/leg_check.html:65 templates/leg_verzeichnis/leg_check.html:67
-#: templates/leg_verzeichnis/liste.html:80
+#: templates/leg_verzeichnis/detail.html:57 templates/leg_verzeichnis/leg_check.html:65
+#: templates/leg_verzeichnis/leg_check.html:67 templates/leg_verzeichnis/liste.html:80
 msgid "Datenstand"
 msgstr "Data as of"
 
@@ -4303,6 +4303,11 @@ msgid ""
 msgstr ""
 "The development is based on code, tests, translations and feedback. The public contribution "
 "history shows the actual cooperation. It is not a list of members and no ranking."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:78
+msgid "Die Ergebnisseite ist ungültig. Starten Sie die Suche erneut."
+msgstr "This results page is invalid. Run the search again."
 
 #. Draft translation; native language and domain review pending.
 #: member_savings.py:284 member_savings.py:288
@@ -6358,7 +6363,7 @@ msgid "Ergebnis zum Fernzugriff"
 msgstr "Remote access result"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:20
+#: templates/leg_verzeichnis/liste.html:20 templates/leg_verzeichnis/liste.html:22
 msgid "Ergebnisseiten"
 msgstr "Result pages"
 
@@ -6404,7 +6409,7 @@ msgid "Ermittlung von bestätigtem Interesse innerhalb einer politischen Gemeind
 msgstr "Identification of confirmed interest within a political community"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:17
+#: templates/leg_verzeichnis/liste.html:17 templates/leg_verzeichnis/liste.html:19
 msgid "Erneut versuchen"
 msgstr "Try again"
 
@@ -6830,7 +6835,8 @@ msgid "Fragen zum Betrieb?"
 msgstr "Questions about the company?"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/detail.html:63 templates/leg_verzeichnis/liste.html:22
+#: templates/leg_verzeichnis/detail.html:63 templates/leg_verzeichnis/detail.html:64
+#: templates/leg_verzeichnis/liste.html:22 templates/leg_verzeichnis/liste.html:24
 msgid "Fragen zum Verzeichnis"
 msgstr "Questions about the directory"
 
@@ -7277,6 +7283,16 @@ msgstr ""
 msgid "Geben Sie eine Referenz mit höchstens 255 Zeichen an."
 msgstr "Specify a reference with a maximum of 255 characters."
 
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:98
+msgid "Geben Sie eine gültige BFS-Gemeindenummer ein."
+msgstr "Enter a valid BFS municipality number."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:89
+msgid "Geben Sie eine vierstellige PLZ ein."
+msgstr "Enter a four-digit postcode."
+
 #. Draft translation; native language and domain review pending.
 #: store/formation_activation.py:86
 msgid "Geben Sie einen gültigen Beleg und ein Startdatum an."
@@ -7482,6 +7498,11 @@ msgstr "Supporting communities"
 #: templates/release/navigation.html:10
 msgid "Gemeinden vergleichen"
 msgstr "Compare municipalities"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/leg_verzeichnis/liste.html:15
+msgid "Gemeindenummer (BFS)"
+msgstr "Municipality number (BFS)"
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/dashboard.html:33
@@ -13007,7 +13028,7 @@ msgid "Pilotgemeinde"
 msgstr "Pilot community"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:13
+#: templates/leg_verzeichnis/liste.html:13 templates/leg_verzeichnis/liste.html:14
 msgid "Planung"
 msgstr "Planning"
 
@@ -14285,7 +14306,7 @@ msgstr ""
 "foundation. Free, Open Source, hosted in Switzerland."
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:20
+#: templates/leg_verzeichnis/liste.html:20 templates/leg_verzeichnis/liste.html:22
 #, python-format
 msgid "Seite %(page)s"
 msgstr "Page %(page)s"
@@ -15223,7 +15244,8 @@ msgid "Suche aktuell nicht verfügbar."
 msgstr "Search currently not available."
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/leg_verzeichnis/liste.html:16 templates/leg_verzeichnis/liste.html:21
+#: templates/leg_verzeichnis/liste.html:8 templates/leg_verzeichnis/liste.html:16
+#: templates/leg_verzeichnis/liste.html:21 templates/leg_verzeichnis/liste.html:23
 msgid "Suche zurücksetzen"
 msgstr "Reset search"
 
@@ -16190,6 +16212,11 @@ msgid ""
 msgstr ""
 "Use the date %(date)s and the reference %(reference)s. Confirm the start document explicitly. "
 "Only then can you activate the LEG ."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:81
+msgid "Verwenden Sie höchstens 200 Zeichen für die Suche."
+msgstr "Use no more than 200 characters for the search."
 
 #. Draft translation; native language and domain review pending.
 #: templates/api_docs.html:241
@@ -17193,6 +17220,16 @@ msgstr "Select the appropriate access. After that, you can safely log in via e-m
 #: sandbox_seed.py:105
 msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
 msgstr "Select a different surface language and reload the dashboard."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:83
+msgid "Wählen Sie einen Kanton aus der Liste."
+msgstr "Choose a canton from the list."
+
+#. Draft checked against source; native language and domain review pending.
+#: site_release.py:91
+msgid "Wählen Sie einen Status aus der Liste."
+msgstr "Choose a status from the list."
 
 #. Draft translation; native language and domain review pending.
 #: store/formation_activation.py:65
