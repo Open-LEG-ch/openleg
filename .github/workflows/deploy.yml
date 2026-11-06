@@ -59,5 +59,6 @@ jobs:
       - name: Run tests
         env:
           DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
+          OPENLEG_TEST_VEREIN_DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
           OPENLEG_TEST_FORECAST_REDIS_URL: redis://127.0.0.1:6379/15
         run: bash scripts/test.sh full

@@ -1,0 +1,16 @@
+{% extends 'product_base.html' %}
+{% block title %}{{ _("Mitgliedsanträge") }} | OpenLEG{% endblock %}
+{% block content %}
+<section class="max-w-5xl mx-auto px-4 py-12">
+<h1 class="text-3xl font-bold">{{ _("Mitgliedsanträge") }}</h1>
+<h2 class="text-2xl font-bold mt-10">{{ _("Austritte und Beschwerden") }}</h2>
+{% for item in member_requests %}<article class="border rounded-xl p-5 mt-4"><h3>{{ item.name }} · {{ _("Austrittsantrag") if item.kind=='resignation' else _("Beschwerde") }}</h3><p class="mt-3">{{ item.reason }}</p>
+<form method="post" action="/verein/vorstand/gesuche/{{ item.id }}" class="grid gap-3 mt-4"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>{{ _("Begründung des Entscheids") }}<textarea class="block w-full border p-3" name="reason" minlength="3" maxlength="2000" required></textarea></label><label>{{ _("Referenz zum tatsächlichen Beschluss") }}<input class="block w-full border p-3" name="evidence" minlength="3" maxlength="500" required></label><p>{{ _("Beschwerden entscheidet die Mitgliederversammlung. Erfassen Sie hier nur den tatsächlichen Beschluss.") }}</p><div class="flex gap-4"><button class="border p-3 rounded-lg" name="outcome" value="approved">{{ _("Gutheissung erfassen") }}</button><button class="border p-3 rounded-lg" name="outcome" value="dismissed">{{ _("Abweisung erfassen") }}</button></div></form></article>{% else %}<p class="mt-4">{{ _("Keine offenen Gesuche.") }}</p>{% endfor %}
+<p class="mt-4">{{ _("Nur bestätigte Anträge warten hier auf einen Entscheid. Eine E-Mail-Bestätigung ist noch keine Mitgliedschaft.") }}</p>
+<form method="post" action="/verein/vorstand/benachrichtigungen" class="mt-6"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="border rounded-full px-5 py-3">{{ _("Offene Benachrichtigungen senden") }}</button></form>
+<ul class="mt-8 grid gap-4">{% for item in applications %}
+<li class="p-5 border rounded-xl" data-application-id="{{ item.id }}"><a class="underline" href="/verein/vorstand/antraege/{{ item.id }}">{{ item.name }}</a> <span>{{ item.email }}</span></li>
+{% else %}<li>{{ _("Keine offenen Anträge.") }}</li>{% endfor %}</ul>
+<form method="post" action="/verein/vorstand/logout" class="mt-8"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="underline">{{ _("Abmelden") }}</button></form>
+</section>
+{% endblock %}

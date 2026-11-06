@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block meta %}<title>{{ _("Mitglied werden") }} | OpenLEG</title>{% endblock %}
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 py-16">
+  <h1 class="text-4xl font-bold">{{ _("Mitglied werden") }}</h1>
+  <p class="mt-4">{{ _("Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen Beitragserlass.") }}</p>
+  <form method="post" class="mt-8 grid gap-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ _("Name") }}<input class="block w-full border rounded-lg p-3" name="name" autocomplete="name" maxlength="120" required></label>
+    <label>{{ _("E-Mail") }}<input class="block w-full border rounded-lg p-3" name="email" type="email" autocomplete="email" maxlength="320" required></label>
+    <label>{{ _("Weitere Verbindungen zum Energiesektor") }}<textarea class="block w-full border rounded-lg p-3" name="affiliation" maxlength="1000"></textarea></label>
+    <label><input type="checkbox" name="adult" value="yes" required> {{ _("Ich bin mindestens 18 Jahre alt und stelle den Antrag persönlich.") }}</label>
+    <label><input type="checkbox" name="independent" value="yes" required> {{ _("Ich arbeite nicht für einen Energieversorger, kontrolliere oder vertrete keinen Energieversorger und unterstütze den Vereinszweck.") }}</label>
+    <label><input type="checkbox" name="terms" value="yes" required> {{ _("Ich habe die Aufnahmebedingungen und die Datenschutzhinweise gelesen.") }}</label>
+    <a class="underline" href="/datenschutz">{{ _("Datenschutz") }}</a>
+    <button class="bg-brand text-white px-6 py-3 rounded-full" type="submit">{{ _("Antrag senden") }}</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% block meta %}<title>{{ _("Persönlicher Vereinszugang") }} | OpenLEG</title>{% endblock %}
+{% block content %}<section class="max-w-xl mx-auto px-4 py-16"><h1 class="text-3xl font-bold">{{ _("Persönlicher Vereinszugang") }}</h1><p class="mt-4">{{ _("Sie erhalten einen einmal verwendbaren Link an Ihre bestätigte E-Mail-Adresse.") }}</p>
+<form method="post" class="grid gap-5 mt-8"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>{{ _("E-Mail") }}<input class="block w-full border p-3 rounded-lg" type="email" name="email" autocomplete="email" required></label><button class="bg-brand text-white px-6 py-3 rounded-full">{{ _("Zugangslink anfordern") }}</button></form></section>{% endblock %}

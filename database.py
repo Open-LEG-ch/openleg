@@ -483,3 +483,22 @@ from store.telemetry import ingest as ingest_telemetry_samples  # noqa: F401
 from store.telemetry import list_installations as list_telemetry_installations  # noqa: F401
 from store.telemetry import owner_overview as get_owner_telemetry_overview  # noqa: F401
 from store.telemetry import shared_overview as get_shared_telemetry_overview  # noqa: F401
+from store.verein import VereinDenied, VereinUnavailable  # noqa: F401
+from store.verein import applicant_profile as get_verein_applicant_profile  # noqa: F401
+from store.verein import application as get_verein_application  # noqa: F401
+from store.verein import apply as submit_verein_application  # noqa: F401
+from store.verein import confirm as confirm_verein_application  # noqa: F401
+from store.verein import consume_applicant_access as consume_verein_applicant_access  # noqa: F401
+from store.verein import decide as decide_verein_application  # noqa: F401
+from store.verein import list_applications as list_verein_applications  # noqa: F401
+from store.verein import list_member_requests as list_verein_member_requests  # noqa: F401
+from store.verein import login as login_verein_reviewer  # noqa: F401
+from store.verein import logout as logout_verein_reviewer  # noqa: F401
+from store.verein import pending_notifications as get_verein_notifications  # noqa: F401
+from store.verein import record_delivery as record_verein_delivery  # noqa: F401
+from store.verein import request_applicant_access as request_verein_applicant_access  # noqa: F401
+from store.verein import request_reminder as request_verein_reminder  # noqa: F401
+from store.verein import resolve_member_request as resolve_verein_member_request  # noqa: F401
+from store.verein import reviewer as get_verein_reviewer  # noqa: F401
+from store.verein import submit_member_request as submit_verein_member_request  # noqa: F401
+from store.verein import terminate as terminate_verein_membership  # noqa: F401
