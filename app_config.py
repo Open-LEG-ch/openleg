@@ -203,6 +203,8 @@ def build_config(env=None, overrides=None):
         "RATELIMIT_STORAGE_URI": env.get("REDIS_URL", DEFAULT_REDIS_URL),
         "MATOMO_SITE_ID": env.get("MATOMO_SITE_ID", "").strip(),
         "BABEL_DEFAULT_LOCALE": env.get("BABEL_DEFAULT_LOCALE", "de_CH"),
+        "SITE_RELEASE_ENABLED": env.get("OPENLEG_SITE_RELEASE_ENABLED", "").lower()
+        in TRUTHY,
     }
 
     if overrides:
