@@ -1,0 +1,12 @@
+{% extends 'product_base.html' %}
+{% block title %}{{ _("Vereinsvorstand anmelden") }} | OpenLEG{% endblock %}
+{% block content %}
+<section class="max-w-lg mx-auto px-4 py-12">
+<h1 class="text-3xl font-bold">{{ _("Vereinsvorstand anmelden") }}</h1>
+<form method="post" class="mt-6 grid gap-5">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>{{ _("E-Mail") }}<input class="block w-full p-3 border rounded-lg" name="email" type="email" autocomplete="username" required></label>
+<label>{{ _("Passwort") }}<input class="block w-full p-3 border rounded-lg" name="password" type="password" autocomplete="current-password" required></label>
+<button class="bg-brand text-white rounded-full px-6 py-3">{{ _("Anmelden") }}</button>
+</form></section>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block meta %}<title>{{ title }} | OpenLEG</title>{% endblock %}
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 py-16">
+  <h1 class="text-3xl font-bold">{{ title }}</h1><p class="mt-6">{{ message }}</p>
+  <a class="inline-block underline mt-8" href="/verein">{{ _("Zum Verein") }}</a>
+</section>
+{% endblock %}
