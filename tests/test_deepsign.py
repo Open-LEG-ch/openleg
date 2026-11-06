@@ -100,3 +100,33 @@ class TestStatusCheck:
         )
         status = get_signing_status("doc_abc123")
         assert status["status"] == "completed"
+
+
+class TestOutboundTimeouts:
+    """A hung DeepSign API must not pin a worker until gunicorn kills it."""
+
+    def test_every_deepsign_call_sets_a_timeout(self, mock_requests):
+        import deepsign_integration
+
+        ok = MagicMock(status_code=200, json=lambda: {"id": "x", "status": "ok"})
+        mock_requests.post.return_value = ok
+        mock_requests.get.return_value = ok
+
+        deepsign_integration.upload_document(b"%PDF-fake", "a.pdf", "A")
+        deepsign_integration.request_signatures("doc", [{"name": "A", "email": "a@x"}])
+        deepsign_integration.get_signing_status("doc")
+
+        calls = mock_requests.post.call_args_list + mock_requests.get.call_args_list
+        assert len(calls) == 3
+        for call in calls:
+            assert call.kwargs.get("timeout") == deepsign_integration.REQUEST_TIMEOUT
+
+    def test_a_timed_out_deepsign_call_raises(self, mock_requests):
+        import requests
+
+        import deepsign_integration
+
+        mock_requests.get.side_effect = requests.Timeout("read timed out")
+
+        with pytest.raises(requests.Timeout):
+            deepsign_integration.get_signing_status("doc")
