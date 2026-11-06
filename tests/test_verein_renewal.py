@@ -237,7 +237,9 @@ def test_termination_cancels_all_unsent_contribution_notices(membership, monkeyp
     assert [n["kind"] for n in store.pending_notifications(board)] == ["terminated"]
     called = []
     assert (
-        store.send_notification(board, str(stale["id"]), lambda: called.append(True))
+        store.send_notification(
+            board, str(stale["id"]), lambda notice: called.append(True)
+        )
         is None
     )
     assert called == []
@@ -257,7 +259,9 @@ def test_termination_cancels_all_unsent_contribution_notices(membership, monkeyp
         )
     assert [n["kind"] for n in store.pending_notifications(board)] == ["terminated"]
     assert (
-        store.send_notification(board, str(stale["id"]), lambda: called.append(True))
+        store.send_notification(
+            board, str(stale["id"]), lambda notice: called.append(True)
+        )
         is None
     )
     store.record_delivery(board, str(stale["id"]), True)
@@ -306,3 +310,38 @@ def test_upgrade_applies_pending_resignation_at_original_receipt_once(membership
     assert [n["kind"] for n in store.pending_notifications(board)] == [
         "resignation_received"
     ]
+
+
+def test_reminder_uses_receipt_balance_at_delivery_even_after_batch_fetch(
+    membership, monkeypatch
+):
+    import database
+
+    client, mail, store, _reviewer_id, path = _accepted(membership)
+    identifier = path.rsplit("/", 1)[1]
+    with client.session_transaction() as session:
+        board = session["verein_session"]
+    monkeypatch.setattr(store, "now_utc", lambda: datetime(2027, 2, 1, tzinfo=UTC))
+    store.request_reminder(board, identifier)
+    fetch = database.get_verein_notifications
+
+    def fetch_then_receive(token):
+        batch = fetch(token)
+        store.record_payment(
+            token,
+            identifier,
+            amount_chf="20",
+            source="test-bank",
+            reference="late-receipt",
+            evidence="Verified test statement",
+        )
+        return batch
+
+    monkeypatch.setattr(database, "get_verein_notifications", fetch_then_receive)
+    response = client.post(
+        "/verein/vorstand/benachrichtigungen",
+        data={"csrf_token": _csrf(client, "/verein/vorstand/antraege")},
+    )
+    assert response.status_code == 303
+    reminder = next(item[2] for item in mail if "offen" in item[2])
+    assert "CHF 30.00 offen" in reminder

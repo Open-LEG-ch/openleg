@@ -767,11 +767,7 @@ _CURRENT_CONTRIBUTION_NOTICE = """(n.kind NOT IN ('accepted','renewal','reminder
         WHERE m.application_id=n.application_id AND m.status='active'))"""
 
 
-def pending_notifications(token):
-    with transaction_cursor() as cur:
-        require_reviewer(cur, token)
-        cur.execute(
-            """SELECT n.id,n.kind,a.email,a.preferred_locale,e.reason AS decision_reason,
+_NOTIFICATION_QUERY = """SELECT n.id,n.kind,n.dues_id,a.email,a.preferred_locale,e.reason AS decision_reason,
             d.period_start,d.amount_chf-(SELECT COALESCE(SUM(r.amount_chf),0)
                 FROM verein_dues_receipts r WHERE r.dues_id=d.id) AS outstanding_chf,
             COALESCE(d.due_on,(SELECT first.due_on FROM verein_dues first JOIN verein_members m ON m.id=first.member_id
@@ -780,6 +776,13 @@ def pending_notifications(token):
             JOIN verein_events e ON e.id=n.event_id
             LEFT JOIN verein_dues d ON d.id=n.dues_id
             WHERE n.sent_at IS NULL AND n.superseded_at IS NULL AND """
+
+
+def pending_notifications(token):
+    with transaction_cursor() as cur:
+        require_reviewer(cur, token)
+        cur.execute(
+            _NOTIFICATION_QUERY
             + _CURRENT_CONTRIBUTION_NOTICE
             + " ORDER BY n.created_at,due_on,n.id LIMIT 50"
         )
@@ -800,10 +803,9 @@ def _delivery_notice(cur, identifier):
         (row["application_id"],),
     )
     cur.execute(
-        """SELECT n.id,n.kind,n.dues_id FROM verein_notifications n
-        WHERE n.id=%s AND n.sent_at IS NULL AND n.superseded_at IS NULL AND """
+        _NOTIFICATION_QUERY
         + _CURRENT_CONTRIBUTION_NOTICE
-        + " FOR UPDATE OF n",
+        + " AND n.id=%s FOR UPDATE OF n",
         (identifier,),
     )
     return cur.fetchone()
@@ -831,7 +833,7 @@ def send_notification(token, identifier, send):
         notice = _delivery_notice(cur, identifier)
         if not notice:
             return None
-        sent = send()
+        sent = send(dict(notice))
         _record_delivery(cur, notice, sent)
         return sent
 

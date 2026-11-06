@@ -3,7 +3,6 @@
 
 import hmac
 import secrets
-from functools import partial
 from urllib.parse import urljoin
 
 from babel.dates import format_date
@@ -323,6 +322,74 @@ def applications():
     )
 
 
+def _send_notice(notice):
+    locale = resolve_locale(notice["preferred_locale"], extended=True)
+    if notice["kind"] == "accepted":
+        message = recipient_gettext(
+            "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und Rückfragen: hallo@openleg.ch.",
+            due_on=format_date(notice["due_on"], format="long", locale=locale),
+            locale=notice["preferred_locale"],
+        )
+    elif notice["kind"] == "refused":
+        message = recipient_gettext(
+            "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n\nSie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
+            reason=notice["decision_reason"],
+            locale=notice["preferred_locale"],
+        )
+    elif notice["kind"] == "reminder":
+        message = recipient_gettext(
+            "Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
+            period=format_date(notice["period_start"], format="long", locale=locale),
+            amount=format_decimal(
+                notice["outstanding_chf"], format="#,##0.00", locale=locale
+            ),
+            locale=notice["preferred_locale"],
+        )
+    elif notice["kind"] == "renewal":
+        message = recipient_gettext(
+            "Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am %(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang. Kontakt: hallo@openleg.ch.",
+            period=format_date(notice["period_start"], format="long", locale=locale),
+            due_on=format_date(notice["due_on"], format="long", locale=locale),
+            locale=notice["preferred_locale"],
+        )
+    elif notice["kind"] == "resignation_received":
+        message = recipient_gettext(
+            "Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- und Entscheidnachweise. Kontakt: hallo@openleg.ch.",
+            locale=notice["preferred_locale"],
+        )
+    elif notice["kind"] == "terminated":
+        message = recipient_gettext(
+            "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n\nSie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
+            reason=notice["decision_reason"],
+            locale=notice["preferred_locale"],
+        )
+    elif notice["kind"] in {
+        "appeal_approved",
+        "appeal_dismissed",
+        "resignation_approved",
+        "resignation_dismissed",
+    }:
+        message = recipient_gettext(
+            "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter %(access_url)s. Kontakt: hallo@openleg.ch.",
+            reason=notice["decision_reason"],
+            access_url=urljoin(
+                current_app.config["APP_BASE_URL"], "/verein/mitglied/zugang"
+            ),
+            locale=notice["preferred_locale"],
+        )
+    else:
+        abort(409)
+    return email_utils.send_email(
+        notice["email"],
+        recipient_gettext(
+            "Verein: Mitgliedschaft und Jahresbeitrag",
+            locale=notice["preferred_locale"],
+        ),
+        message,
+        private=True,
+    )
+
+
 @verein_bp.post("/vorstand/benachrichtigungen")
 def deliver_notifications():
     require_reviewer()
@@ -333,80 +400,7 @@ def deliver_notifications():
     failed = False
     try:
         for notice in db.get_verein_notifications(token):
-            locale = resolve_locale(notice["preferred_locale"], extended=True)
-            if notice["kind"] == "accepted":
-                message = recipient_gettext(
-                    "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und Rückfragen: hallo@openleg.ch.",
-                    due_on=format_date(notice["due_on"], format="long", locale=locale),
-                    locale=notice["preferred_locale"],
-                )
-            elif notice["kind"] == "refused":
-                message = recipient_gettext(
-                    "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n\nSie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
-                    reason=notice["decision_reason"],
-                    locale=notice["preferred_locale"],
-                )
-            elif notice["kind"] == "reminder":
-                message = recipient_gettext(
-                    "Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
-                    period=format_date(
-                        notice["period_start"], format="long", locale=locale
-                    ),
-                    amount=format_decimal(
-                        notice["outstanding_chf"], format="#,##0.00", locale=locale
-                    ),
-                    locale=notice["preferred_locale"],
-                )
-            elif notice["kind"] == "renewal":
-                message = recipient_gettext(
-                    "Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am %(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang. Kontakt: hallo@openleg.ch.",
-                    period=format_date(
-                        notice["period_start"], format="long", locale=locale
-                    ),
-                    due_on=format_date(notice["due_on"], format="long", locale=locale),
-                    locale=notice["preferred_locale"],
-                )
-            elif notice["kind"] == "resignation_received":
-                message = recipient_gettext(
-                    "Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- und Entscheidnachweise. Kontakt: hallo@openleg.ch.",
-                    locale=notice["preferred_locale"],
-                )
-            elif notice["kind"] == "terminated":
-                message = recipient_gettext(
-                    "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n\nSie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
-                    reason=notice["decision_reason"],
-                    locale=notice["preferred_locale"],
-                )
-            elif notice["kind"] in {
-                "appeal_approved",
-                "appeal_dismissed",
-                "resignation_approved",
-                "resignation_dismissed",
-            }:
-                message = recipient_gettext(
-                    "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter %(access_url)s. Kontakt: hallo@openleg.ch.",
-                    reason=notice["decision_reason"],
-                    access_url=urljoin(
-                        current_app.config["APP_BASE_URL"], "/verein/mitglied/zugang"
-                    ),
-                    locale=notice["preferred_locale"],
-                )
-            else:
-                abort(409)
-            sent = db.send_verein_notification(
-                token,
-                str(notice["id"]),
-                partial(
-                    email_utils.send_email,
-                    notice["email"],
-                    recipient_gettext(
-                        "Verein: Mitgliedschaft und Jahresbeitrag",
-                        locale=notice["preferred_locale"],
-                    ),
-                    message,
-                    private=True,
-                ),
-            )
+            sent = db.send_verein_notification(token, str(notice["id"]), _send_notice)
             failed = failed or sent is False
     except db.VereinUnavailable:
         abort(503)
