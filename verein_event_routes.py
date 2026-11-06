@@ -186,5 +186,21 @@ def notes(identifier):
             version=int(request.form.get("version", "0")),
         )
     except (db.VereinDenied, ValueError):
-        abort(409)
+        events = db.list_verein_meetups_for_review(session["verein_session"])
+        for event in events:
+            if str(event["id"]) == str(identifier):
+                event["notes_form"] = {
+                    locale: request.form.get("notes_" + locale, "")
+                    for locale in verein_events.LOCALES
+                }
+                event["notes_evidence_form"] = request.form.get("evidence", "")
+        return render_template(
+            "verein/events.html",
+            events=events,
+            form={},
+            csrf_token=csrf_token(),
+            error=_(
+                "Die Notizen konnten nicht gespeichert werden. Prüfen Sie den aktuellen Stand, die Freigabereferenz und alle vier Sprachfassungen. Veröffentlicht werden können nur Notizen zu einem vergangenen, veröffentlichten Treffen. Ihr Entwurf bleibt unten erhalten; vergleichen Sie ihn vor dem erneuten Speichern mit der öffentlichen Seite."
+            ),
+        ), 409
     return redirect("/verein/vorstand/treffen", code=303)

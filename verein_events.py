@@ -6,10 +6,12 @@ from datetime import UTC, datetime
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
-from store.verein import VereinDenied
-
 LOCALES = ("de_CH", "en", "fr_CH", "it_CH")
 ZURICH = ZoneInfo("Europe/Zurich")
+
+
+class EventInputError(ValueError):
+    """An incomplete or ambiguous public occurrence, independent of storage."""
 
 
 def local_instant(value):
@@ -29,7 +31,7 @@ def local_instant(value):
             raise ValueError
         return instants.pop()
     except (TypeError, ValueError):
-        raise VereinDenied("Invalid or ambiguous Europe/Zurich time") from None
+        raise EventInputError("Invalid or ambiguous Europe/Zurich time") from None
 
 
 def validated(data):
@@ -78,7 +80,7 @@ def validated(data):
         ):
             raise ValueError
     except (KeyError, TypeError, ValueError, AttributeError):
-        raise VereinDenied(
+        raise EventInputError(
             "Complete actual occurrence details required in all four languages"
         ) from None
     return {
