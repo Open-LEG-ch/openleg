@@ -233,6 +233,11 @@ def resolve_member_request(token, identifier, outcome, reason, evidence):
                 )
                 # A successful appeal invalidates the challenged reminder period.
                 cur.execute(
+                    """UPDATE verein_notifications SET superseded_at=%s
+                    WHERE application_id=%s AND kind='reminder' AND superseded_at IS NULL""",
+                    (now, app_id),
+                )
+                cur.execute(
                     "UPDATE verein_dues SET reminder_sent_at=NULL WHERE member_id=%s AND paid_at IS NULL",
                     (member["id"],),
                 )

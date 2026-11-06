@@ -338,6 +338,61 @@ def test_terminated_owner_sees_actual_reason_and_date(membership, monkeypatch):
     assert profile["decision_at"] == datetime(2026, 4, 3, tzinfo=UTC)
 
 
+def test_termination_appeal_preserves_sent_history_and_allows_fresh_reminder(
+    membership, monkeypatch
+):
+    client, _mail, store, _reviewer_id, path = _accepted(membership)
+    from datetime import timedelta
+
+    import database
+
+    identifier = path.rsplit("/", 1)[1]
+    with client.session_transaction() as session:
+        board = session["verein_session"]
+    now = datetime(2027, 1, 5, tzinfo=UTC)
+    monkeypatch.setattr(store, "now_utc", lambda: now)
+    store.request_reminder(board, identifier)
+    old_notice = next(
+        n for n in store.pending_notifications(board) if n["kind"] == "reminder"
+    )
+    store.record_delivery(board, str(old_notice["id"]), True)
+    now += timedelta(days=60)
+    store.terminate(board, identifier, "Unpaid after sixty further days")
+    access = store.request_applicant_access("ada@example.org")
+    owner = store.consume_applicant_access(access["token"])
+    store.submit_member_request(owner, "appeal", "Please reconsider termination")
+    request = store.list_member_requests(board)[0]
+    store.resolve_member_request(
+        board,
+        str(request["id"]),
+        "approved",
+        "Assembly restored membership",
+        "Minutes item 4",
+    )
+    store.request_reminder(board, identifier)
+    fresh = next(
+        n for n in store.pending_notifications(board) if n["kind"] == "reminder"
+    )
+    assert fresh["id"] != old_notice["id"]
+    with pytest.raises(store.VereinDenied):
+        store.terminate(board, identifier, "Previous period must not apply")
+    now += timedelta(days=2)
+    store.record_delivery(board, str(fresh["id"]), True)
+    now += timedelta(days=59)
+    with pytest.raises(store.VereinDenied):
+        store.terminate(board, identifier, "Fresh sixty days still running")
+    now += timedelta(days=1)
+    store.terminate(board, identifier, "Fresh sixty days elapsed")
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT sent_at,superseded_at FROM verein_notifications WHERE id=%s",
+            (str(old_notice["id"]),),
+        )
+        history = cur.fetchone()
+        assert history["sent_at"] is not None
+        assert history["superseded_at"] is not None
+
+
 def test_verified_dues_receipt_is_repeat_safe_and_blocks_termination(
     membership, monkeypatch
 ):
