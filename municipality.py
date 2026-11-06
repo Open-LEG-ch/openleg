@@ -105,6 +105,7 @@ ONBOARDING_STATUS_LABELS = {
 
 
 def _dashboard_context(muni):
+    """Read dashboard metrics and select the municipality invitation URL."""
     subdomain = (muni.get("subdomain") or "").strip()
     stats = db.get_stats(city_id=subdomain or None) or {}
     profile = None

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-06 20:27+0000\n"
+"POT-Creation-Date: 2026-11-06 20:32+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -128,7 +128,7 @@ msgid_plural "%(num)s Gemeinden in dieser Liga"
 msgstr[0] ""
 msgstr[1] ""
 
-#: municipality.py:381
+#: municipality.py:384
 #, python-format
 msgid "%(num)s Interessierte"
 msgid_plural "%(num)s Interessierte"
@@ -160,7 +160,7 @@ msgid_plural "%(num)s Tage"
 msgstr[0] ""
 msgstr[1] ""
 
-#: municipality.py:377
+#: municipality.py:380
 #, python-format
 msgid "%(num)s bestätigte Interessierte"
 msgid_plural "%(num)s bestätigte Interessierte"
@@ -565,11 +565,11 @@ msgstr ""
 msgid "9. Kontakt"
 msgstr ""
 
-#: municipality.py:373
+#: municipality.py:376
 msgid "< 3 Interessierte"
 msgstr ""
 
-#: municipality.py:373
+#: municipality.py:376
 msgid "< 3 bestätigte Interessierte"
 msgstr ""
 
@@ -944,7 +944,7 @@ msgstr ""
 msgid "Aktion derzeit nicht möglich"
 msgstr ""
 
-#: formation_wizard.py:57 municipality.py:102 municipality.py:293
+#: formation_wizard.py:57 municipality.py:102 municipality.py:296
 msgid "Aktiv"
 msgstr ""
 
@@ -1016,7 +1016,7 @@ msgstr ""
 msgid "Alle Grössen"
 msgstr ""
 
-#: municipality.py:443 rangliste.py:52
+#: municipality.py:446 rangliste.py:52
 msgid "Alle Kantone"
 msgstr ""
 
@@ -2796,7 +2796,7 @@ msgstr ""
 msgid "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgstr ""
 
-#: municipality.py:169
+#: municipality.py:172
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr ""
 
@@ -3826,7 +3826,7 @@ msgstr ""
 msgid "Eigentümer-Dashboard"
 msgstr ""
 
-#: municipality.py:131 municipality.py:305 templates/index.html:431 templates/index.html:459
+#: municipality.py:132 municipality.py:308 templates/index.html:431 templates/index.html:459
 msgid "Eigentümer/in"
 msgstr ""
 
@@ -4513,7 +4513,7 @@ msgstr ""
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
-#: municipality.py:193
+#: municipality.py:196
 msgid ""
 "Falls eine Gemeinde zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink "
 "gesendet."
@@ -5096,7 +5096,7 @@ msgstr ""
 msgid "Gemeinde auswählen"
 msgstr ""
 
-#: municipality.py:182 templates/api_docs.html:242
+#: municipality.py:185 templates/api_docs.html:242
 msgid "Gemeinde nicht gefunden."
 msgstr ""
 
@@ -5155,7 +5155,7 @@ msgstr ""
 msgid "Gemeinde-Dashboard öffnen"
 msgstr ""
 
-#: municipality.py:135 templates/index.html:435 templates/index.html:459
+#: municipality.py:136 templates/index.html:435 templates/index.html:459
 msgid "Gemeinde/Organisation"
 msgstr ""
 
@@ -5930,7 +5930,7 @@ msgstr ""
 msgid "Ihr Dashboard-Zugangslink"
 msgstr ""
 
-#: municipality.py:218
+#: municipality.py:221
 msgid "Ihr Gemeinde-Dashboard-Zugangslink"
 msgstr ""
 
@@ -6201,7 +6201,7 @@ msgid ""
 "die mögliche Ersparnis."
 msgstr ""
 
-#: municipality.py:101 municipality.py:146
+#: municipality.py:101 municipality.py:149
 msgid "In Prüfung"
 msgstr ""
 
@@ -7547,7 +7547,7 @@ msgstr ""
 msgid "Lokale Stromgemeinschaften seit dem 1. Januar erlaubt."
 msgstr ""
 
-#: municipality.py:134 templates/index.html:434 templates/index.html:459
+#: municipality.py:135 templates/index.html:434 templates/index.html:459
 msgid "Lokales Unternehmen"
 msgstr ""
 
@@ -7844,7 +7844,7 @@ msgstr ""
 msgid "Methodik und Datenquellen"
 msgstr ""
 
-#: municipality.py:132 municipality.py:306 templates/index.html:432 templates/index.html:459
+#: municipality.py:133 municipality.py:309 templates/index.html:432 templates/index.html:459
 msgid "Mieter/in"
 msgstr ""
 
@@ -8394,7 +8394,7 @@ msgstr ""
 msgid "Nicht unterstützte Genauigkeit"
 msgstr ""
 
-#: municipality.py:368 templates/admin/ops.html:44 templates/admin/ops.html:48
+#: municipality.py:371 templates/admin/ops.html:44 templates/admin/ops.html:48
 msgid "Nicht verfügbar"
 msgstr ""
 
@@ -10537,7 +10537,7 @@ msgstr ""
 msgid "Solarpotenzial sehen."
 msgstr ""
 
-#: municipality.py:133 templates/index.html:433 templates/index.html:459
+#: municipality.py:134 templates/index.html:433 templates/index.html:459
 msgid "Solarstromproduzent/in"
 msgstr ""
 
@@ -13136,7 +13136,7 @@ msgid ""
 "Falls Sie diesen Link nicht angefordert haben, können Sie diese E-Mail ignorieren."
 msgstr ""
 
-#: municipality.py:220
+#: municipality.py:223
 #, python-format
 msgid ""
 "Öffnen Sie Ihr Gemeinde-Dashboard über diesen Link:\n"
