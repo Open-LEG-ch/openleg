@@ -872,11 +872,11 @@ msgstr "Adresse ist erforderlich"
 msgid "Adresse ist zu kurz"
 msgstr "Adresse ist zu kurz"
 
-#: app.py:518 app.py:521 app.py:546 app.py:548 app.py:558 app.py:560
+#: app.py:518 app.py:521 app.py:546 app.py:548 app.py:558 app.py:560 app.py:562
 msgid "Adresse konnte nicht analysiert werden."
 msgstr "Adresse konnte nicht analysiert werden."
 
-#: app.py:510 app.py:513 app.py:538 app.py:540 app.py:550 app.py:552
+#: app.py:510 app.py:513 app.py:538 app.py:540 app.py:550 app.py:552 app.py:554
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr "Adresse konnte nicht eindeutig geprüft werden."
 
@@ -1081,6 +1081,38 @@ msgstr "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später e
 #: templates/utility/register.html:92
 msgid "Als Netzbetreiber erhalten Sie:"
 msgstr "Als Netzbetreiber erhalten Sie:"
+
+#: templates/release/how_it_works.html:31
+msgid ""
+"Als Nächstes klären Sie Einrichtung, Datenübernahme, laufende Arbeit, Sicherungen und die "
+"Übergabe bei einem späteren Wechsel."
+msgstr ""
+"Als Nächstes klären Sie Einrichtung, Datenübernahme, laufende Arbeit, Sicherungen und die "
+"Übergabe bei einem späteren Wechsel."
+
+#: templates/release/how_it_works.html:15
+msgid ""
+"Als Nächstes klären Sie mit der Vertretung, welche Anschlüsse geprüft werden und welche Daten für"
+" die Abrechnung vorliegen müssen."
+msgstr ""
+"Als Nächstes klären Sie mit der Vertretung, welche Anschlüsse geprüft werden und welche Daten für"
+" die Abrechnung vorliegen müssen."
+
+#: templates/release/how_it_works.html:19
+msgid ""
+"Als Nächstes lassen Sie die Anschlussbedingungen prüfen und klären, wer Ihre Fragen zu Vertrag "
+"und Abrechnung beantwortet."
+msgstr ""
+"Als Nächstes lassen Sie die Anschlussbedingungen prüfen und klären, wer Ihre Fragen zu Vertrag "
+"und Abrechnung beantwortet."
+
+#: templates/release/how_it_works.html:23
+msgid ""
+"Als Nächstes vereinbaren Sie Anmeldung, Datenzugang und Lieferung mit dem Netzbetreiber und legen"
+" die Prüfung der internen Abrechnung fest."
+msgstr ""
+"Als Nächstes vereinbaren Sie Anmeldung, Datenzugang und Lieferung mit dem Netzbetreiber und legen"
+" die Prüfung der internen Abrechnung fest."
 
 #: templates/member_invoice_detail.html:36
 msgid "Als PDF herunterladen"
@@ -1466,6 +1498,10 @@ msgstr "Auffällige Messfenster:"
 #: templates/release/software.html:13
 msgid "Aufgabe"
 msgstr "Aufgabe"
+
+#: templates/release/how_it_works.html:39
+msgid "Aufgaben im Detail"
+msgstr "Aufgaben im Detail"
 
 #: templates/release/home.html:15
 msgid "Aufgaben im Quartier"
@@ -1933,6 +1969,10 @@ msgstr "Berechnet aus BFE Anlagenregister und Sonnendach"
 msgid "Berechnet aus der OpenLEG Rangliste"
 msgstr "Berechnet aus der OpenLEG Rangliste"
 
+#: templates/release/how_it_works.html:49
+msgid "Berechtigte Personen übernehmen und prüfen die bereitgestellten Daten."
+msgstr "Berechtigte Personen übernehmen und prüfen die bereitgestellten Daten."
+
 #: templates/advisories.html:13
 msgid "Bereich laut Quelle"
 msgstr "Bereich laut Quelle"
@@ -2111,7 +2151,7 @@ msgstr ""
 "Erst danach wird Ihre Anmeldung anonym gezählt. Falls Sie sich nicht angemeldet haben, ignorieren"
 " Sie diese E-Mail."
 
-#: app.py:740 app.py:743 app.py:768 app.py:770 app.py:780 app.py:782
+#: app.py:740 app.py:743 app.py:768 app.py:770 app.py:780 app.py:782 app.py:784
 #, python-format
 msgid ""
 "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen Gebietsanfrage bei OpenLEG "
@@ -2971,6 +3011,14 @@ msgstr "Datenverarbeitungsvertrag unterzeichnen"
 msgid "Datenzugang, Berechtigung, Format und konkrete VNB-Anbindung vereinbaren und testen."
 msgstr "Datenzugang, Berechtigung, Format und konkrete VNB-Anbindung vereinbaren und testen."
 
+#: templates/release/how_it_works.html:51
+msgid ""
+"Datenzugang, Format und Einrichtung müssen für Ihre LEG geklärt sein. Die Zeichnung verspricht "
+"keine fertige Anbindung an jeden Netzbetreiber."
+msgstr ""
+"Datenzugang, Format und Einrichtung müssen für Ihre LEG geklärt sein. Die Zeichnung verspricht "
+"keine fertige Anbindung an jeden Netzbetreiber."
+
 #: templates/open_source.html:130
 msgid "Datenzugriff"
 msgstr "Datenzugriff"
@@ -3037,6 +3085,10 @@ msgstr "Der Anhang ist keine gültige PDF-Datei."
 #: verein_routes.py:248 verein_routes.py:265 verein_routes.py:271 verein_routes.py:274
 msgid "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
 msgstr "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
+
+#: templates/release/how_it_works.html:44
+msgid "Der Austausch nutzt die bestehende Netzinfrastruktur."
+msgstr "Der Austausch nutzt die bestehende Netzinfrastruktur."
 
 #: store/formation_activation.py:154
 msgid "Der Beleg stimmt nicht mehr mit der Startbestätigung überein."
@@ -3122,6 +3174,14 @@ msgstr "Der Kontoauszug wurde importiert und abgeglichen."
 msgid "Der Koordinator sieht Verbindungsdaten, nie Ihre Messdaten."
 msgstr "Der Koordinator sieht Verbindungsdaten, nie Ihre Messdaten."
 
+#: templates/release/how_it_works.html:59
+msgid ""
+"Der LEG-Check zeigt öffentliche Gemeindedaten und gemeldete Gemeinschaften. Die massgeblichen "
+"Anschluss- und Netzbedingungen klären Sie mit dem Netzbetreiber."
+msgstr ""
+"Der LEG-Check zeigt öffentliche Gemeindedaten und gemeldete Gemeinschaften. Die massgeblichen "
+"Anschluss- und Netzbedingungen klären Sie mit dem Netzbetreiber."
+
 #: billing_policy.py:237 billing_policy.py:243
 msgid "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
 msgstr "Der Mehrwertsteuersatz der Richtlinie ist ungültig."
@@ -3176,6 +3236,14 @@ msgstr ""
 "Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die "
 "Abrechnung. OpenLEG stellt dafür offene Software bereit, die Sie selbst oder durch einen "
 "gewählten Dienstleister betreiben können."
+
+#: templates/release/how_it_works.html:25
+msgid ""
+"Der Netzbetreiber prüft die massgeblichen Anschluss- und Netzbedingungen. Eine Karte oder ein "
+"Verzeichniseintrag ersetzt diese Prüfung nicht."
+msgstr ""
+"Der Netzbetreiber prüft die massgeblichen Anschluss- und Netzbedingungen. Eine Karte oder ein "
+"Verzeichniseintrag ersetzt diese Prüfung nicht."
 
 #: dashboard.py:1264
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
@@ -3415,6 +3483,14 @@ msgstr "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Der Zugangslink ist ungültig oder bereits verwendet."
 
+#: templates/release/how_it_works.html:50
+msgid ""
+"Der eingerichtete Import bereitet Daten und Abrechnungsentwürfe auf. Verantwortliche prüfen das "
+"Ergebnis."
+msgstr ""
+"Der eingerichtete Import bereitet Daten und Abrechnungsentwürfe auf. Verantwortliche prüfen das "
+"Ergebnis."
+
 #: templates/documents/community_agreement.html:28
 msgid ""
 "Der interne Strompreis wird durch die Gemeinschaft festgelegt und darf den lokalen\n"
@@ -3433,7 +3509,7 @@ msgstr ""
 " keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung "
 "anschliessend."
 
-#: app.py:814 app.py:817 app.py:842 app.py:844 app.py:854 app.py:856
+#: app.py:814 app.py:817 app.py:842 app.py:844 app.py:854 app.py:856 app.py:858
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -3674,6 +3750,24 @@ msgstr "Die Gemeinden sind nach Namen sortiert."
 msgid "Die Gemeinschaft beim Verteilnetzbetreiber anmelden."
 msgstr "Die Gemeinschaft beim Verteilnetzbetreiber anmelden."
 
+#: templates/release/how_it_works.html:30
+msgid ""
+"Die Gemeinschaft entscheidet, wen sie beauftragt und wer Ergebnisse freigibt. Der gewählte Dienst"
+" ist nicht automatisch der Netzbetreiber oder die Gemeinde."
+msgstr ""
+"Die Gemeinschaft entscheidet, wen sie beauftragt und wer Ergebnisse freigibt. Der gewählte Dienst"
+" ist nicht automatisch der Netzbetreiber oder die Gemeinde."
+
+#: templates/release/how_it_works.html:61
+msgid ""
+"Die Gemeinschaft vereinbart ihren internen Preis und die Aufteilung der Verwaltungskosten. Prüfen"
+" Sie tatsächliche Tarife, Gebühren und Vertragsbedingungen; eine Modellrechnung ist keine "
+"zugesicherte Ersparnis."
+msgstr ""
+"Die Gemeinschaft vereinbart ihren internen Preis und die Aufteilung der Verwaltungskosten. Prüfen"
+" Sie tatsächliche Tarife, Gebühren und Vertragsbedingungen; eine Modellrechnung ist keine "
+"zugesicherte Ersparnis."
+
 #: templates/documents/community_agreement.html:34
 msgid ""
 "Die Gemeinschaft wird gegenüber dem Verteilnetzbetreiber durch den Vertreter vertreten,\n"
@@ -3762,6 +3856,22 @@ msgstr ""
 "gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung"
 " müssen pro Netzbetreiber eingerichtet werden."
 
+#: templates/release/how_it_works.html:55
+msgid ""
+"Die LEG bezahlt die ausdrücklich vereinbarten Verwaltungs- oder Betriebskosten an den gewählten "
+"Dienst."
+msgstr ""
+"Die LEG bezahlt die ausdrücklich vereinbarten Verwaltungs- oder Betriebskosten an den gewählten "
+"Dienst."
+
+#: templates/release/how_it_works.html:27
+msgid ""
+"Die LEG klärt mit ihm die tatsächlichen Anmelde- und Datenprozesse. Die interne Organisation und "
+"die Abrechnung des LEG-Stroms bleiben Aufgaben der Gemeinschaft."
+msgstr ""
+"Die LEG klärt mit ihm die tatsächlichen Anmelde- und Datenprozesse. Die interne Organisation und "
+"die Abrechnung des LEG-Stroms bleiben Aufgaben der Gemeinschaft."
+
 #: templates/how-it-works.html:62 templates/how-it-works.html:137
 msgid ""
 "Die LEG legt den Preis selbst fest. Als Orientierung dient ein Bereich von der Einspeisevergütung"
@@ -3773,6 +3883,34 @@ msgstr ""
 " bis zum Gesamtstrompreis der Gemeinde minus Abrechnungsentgelt des Netzbetreibers. OpenLEG zeigt"
 " die Quellen und speichert Preis und Gebühr versioniert. Die LEG kann vom vorgeschlagenen Bereich"
 " abweichen."
+
+#: templates/release/how_it_works.html:22
+msgid ""
+"Die LEG legt ihre internen Regeln fest und beauftragt die Vertretung ausdrücklich. Verwaltung "
+"oder Abrechnung können an einen gewählten Dienstleister delegiert werden."
+msgstr ""
+"Die LEG legt ihre internen Regeln fest und beauftragt die Vertretung ausdrücklich. Verwaltung "
+"oder Abrechnung können an einen gewählten Dienstleister delegiert werden."
+
+#: templates/release/how_it_works.html:45
+msgid "Die LEG ordnet gemessene Strommengen zu. Übriger Strom kommt vom jeweiligen Lieferanten."
+msgstr "Die LEG ordnet gemessene Strommengen zu. Übriger Strom kommt vom jeweiligen Lieferanten."
+
+#: templates/release/how_it_works.html:53
+msgid ""
+"Die LEG regelt mit den verbrauchenden und erzeugenden Teilnehmenden die interne Verrechnung und "
+"die vorgesehenen Zahlungen."
+msgstr ""
+"Die LEG regelt mit den verbrauchenden und erzeugenden Teilnehmenden die interne Verrechnung und "
+"die vorgesehenen Zahlungen."
+
+#: templates/release/how_it_works.html:29
+msgid ""
+"Die LEG übergibt ihm die vereinbarten Unterlagen, Berechtigungen und Aufgaben. Der Auftrag "
+"bestimmt Umfang, Kosten und Verantwortlichkeiten."
+msgstr ""
+"Die LEG übergibt ihm die vereinbarten Unterlagen, Berechtigungen und Aufgaben. Der Auftrag "
+"bestimmt Umfang, Kosten und Verantwortlichkeiten."
 
 #: templates/leg_gruenden.html:92
 msgid ""
@@ -4014,6 +4152,22 @@ msgstr ""
 msgid "Die Software einsetzen"
 msgstr "Die Software einsetzen"
 
+#: templates/release/how_it_works.html:60
+msgid ""
+"Die Software steht unter AGPL-3.0-or-later. Einrichtung, Infrastruktur und laufende Arbeit "
+"verursachen eigenen Aufwand. Ein Vereinsbeitrag ist kein Hosting- oder Betriebsvertrag."
+msgstr ""
+"Die Software steht unter AGPL-3.0-or-later. Einrichtung, Infrastruktur und laufende Arbeit "
+"verursachen eigenen Aufwand. Ein Vereinsbeitrag ist kein Hosting- oder Betriebsvertrag."
+
+#: templates/release/how_it_works.html:33
+msgid ""
+"Die Software verarbeitet die eingerichteten Datenquellen und die von Ihrer LEG gewählten "
+"Einstellungen. Fehlende Messwerte werden nicht durch erfundene Werte ersetzt."
+msgstr ""
+"Die Software verarbeitet die eingerichteten Datenquellen und die von Ihrer LEG gewählten "
+"Einstellungen. Fehlende Messwerte werden nicht durch erfundene Werte ersetzt."
+
 #: templates/gemeinde/profil.html:118
 msgid "Die Solarnutzung beruht auf"
 msgstr "Die Solarnutzung beruht auf"
@@ -4085,6 +4239,18 @@ msgstr ""
 #: billing_policy.py:211
 msgid "Die Zustellmethode der Richtlinie ist ungültig."
 msgstr "Die Zustellmethode der Richtlinie ist ungültig."
+
+#: templates/release/how_it_works.html:41
+msgid ""
+"Die drei Ansichten zeigen Aufgaben und Übergaben schematisch. Sie bilden keine konkrete "
+"Netztopologie ab. Eine Berechtigung zum Datenzugang ist keine neue Stromleitung."
+msgstr ""
+"Die drei Ansichten zeigen Aufgaben und Übergaben schematisch. Sie bilden keine konkrete "
+"Netztopologie ab. Eine Berechtigung zum Datenzugang ist keine neue Stromleitung."
+
+#: templates/release/how_it_works.html:52
+msgid "Die drei Felder zeigen getrennte Abrechnungsbeziehungen."
+msgstr "Die drei Felder zeigen getrennte Abrechnungsbeziehungen."
 
 #: templates/release/knowledge.html:12
 msgid ""
@@ -4169,6 +4335,10 @@ msgid ""
 msgstr ""
 "Die simulierte Anmeldung wurde abgelehnt. Sie bleibt mit ihrem Beleg erhalten. Beginnen Sie mit "
 "einer neuen LEG oder setzen Sie das Dorf zurück, um einen erfolgreichen Ablauf auszuprobieren."
+
+#: templates/release/how_it_works.html:48
+msgid "Die tatsächliche Datenlieferung wird vereinbart."
+msgstr "Die tatsächliche Datenlieferung wird vereinbart."
 
 #: templates/release/home.html:18
 msgid ""
@@ -4287,6 +4457,14 @@ msgid ""
 msgstr ""
 "Diese Quelle ist nicht im aktuellen Prüfumfang enthalten. Aktuelle Hinweise und Bestätigungen "
 "bleiben für diese Meldung ausgeschaltet."
+
+#: templates/release/how_it_works.html:38
+msgid ""
+"Diese Rollen beschreiben Aufgaben. Eine Person oder Organisation kann mehrere übernehmen. Ihre "
+"LEG legt ihre Vertretung und den Betrieb fest; eine Vereinsmitgliedschaft ist davon unabhängig."
+msgstr ""
+"Diese Rollen beschreiben Aufgaben. Eine Person oder Organisation kann mehrere übernehmen. Ihre "
+"LEG legt ihre Vertretung und den Betrieb fest; eine Vereinsmitgliedschaft ist davon unabhängig."
 
 #: templates/documents/community_agreement.html:25
 msgid ""
@@ -4938,6 +5116,16 @@ msgstr ""
 msgid "Eine Liste der passenden Anschlüsse und Anlagen."
 msgstr "Eine Liste der passenden Anschlüsse und Anlagen."
 
+#: templates/release/how_it_works.html:3
+msgid ""
+"Eine Lokale Elektrizitätsgemeinschaft (LEG) organisiert den Austausch lokal erzeugter "
+"Elektrizität. Ihre Gruppe vereinbart die Teilnahme, bestellt ihre Vertretung und wählt, wer die "
+"Verwaltung und den Softwarebetrieb übernimmt."
+msgstr ""
+"Eine Lokale Elektrizitätsgemeinschaft (LEG) organisiert den Austausch lokal erzeugter "
+"Elektrizität. Ihre Gruppe vereinbart die Teilnahme, bestellt ihre Vertretung und wählt, wer die "
+"Verwaltung und den Softwarebetrieb übernimmt."
+
 #: templates/leg_gruenden.html:30
 msgid "Eine Lokale Elektrizitätsgemeinschaft gründen"
 msgstr "Eine Lokale Elektrizitätsgemeinschaft gründen"
@@ -4961,6 +5149,10 @@ msgstr ""
 "in derselben politischen Gemeinde an derselben Netzebene angeschlossen sind und gemeinsam Strom "
 "aus erneuerbaren Anlagen verbrauchen. Sie ist seit dem 1. Januar 2026 in der ganzen Schweiz "
 "möglich. Rechtsgrundlage: Art. 17d und 17e StromVG sowie Art. 19e bis 19h StromVV."
+
+#: templates/release/how_it_works.html:56
+msgid "Eine Rechnungsvorbereitung in der Software ist noch keine ausgeführte Bankzahlung."
+msgstr "Eine Rechnungsvorbereitung in der Software ist noch keine ausgeführte Bankzahlung."
 
 #: templates/telemetry_shared.html:28
 msgid ""
@@ -5207,9 +5399,17 @@ msgstr ""
 "ElCom · PDF · Deutsch · Stand 16. Juni 2026. Die Sprache dieser Quelle bleibt unabhängig von "
 "Ihrer Anzeigesprache."
 
+#: templates/release/how_it_works.html:40
+msgid "ElCom, Fragen und Antworten, Stand 16. Juni 2026, Kapitel 9 (PDF, Deutsch)"
+msgstr "ElCom, Fragen und Antworten, Stand 16. Juni 2026, Kapitel 9 (PDF, Deutsch)"
+
 #: templates/release/knowledge.html:23
 msgid "ElCom: Fragen und Antworten zur Energiestrategie 2050"
 msgstr "ElCom: Fragen und Antworten zur Energiestrategie 2050"
+
+#: templates/release/how_it_works.html:42
+msgid "Elektrizität"
+msgstr "Elektrizität"
 
 #: sandbox_formation.py:186 templates/sandbox/formation.html:38 templates/sandbox/formation.html:85
 msgid "Empfang bestätigt"
@@ -5336,6 +5536,22 @@ msgstr "Entwurf prüfen"
 #: billing_workspace.py:141 dashboard.py:379
 msgid "Entwurf ungültig"
 msgstr "Entwurf ungültig"
+
+#: templates/release/how_it_works.html:24
+msgid "Er bleibt für seine gesetzlichen Netz-, Mess- und Abrechnungsaufgaben zuständig."
+msgstr "Er bleibt für seine gesetzlichen Netz-, Mess- und Abrechnungsaufgaben zuständig."
+
+#: templates/release/how_it_works.html:28
+msgid "Er erledigt die ausdrücklich beauftragte Verwaltung, Abrechnung oder den Softwarebetrieb."
+msgstr "Er erledigt die ausdrücklich beauftragte Verwaltung, Abrechnung oder den Softwarebetrieb."
+
+#: templates/release/how_it_works.html:26
+msgid ""
+"Er übernimmt die ihm zugewiesene Messung, Netznutzungsabrechnung und Datenlieferung. Bei "
+"Grundversorgung liefert er auch den übrigen Strom."
+msgstr ""
+"Er übernimmt die ihm zugewiesene Messung, Netznutzungsabrechnung und Datenlieferung. Bei "
+"Grundversorgung liefert er auch den übrigen Strom."
 
 #: sandbox_seed.py:88
 msgid "Erfassen Sie einen Quartierakku mit Kapazität, Jahreskosten und Kostenanteilen."
@@ -5520,6 +5736,10 @@ msgstr "Erwartete Dauer:"
 msgid "Erwarteter Messtakt"
 msgstr "Erwarteter Messtakt"
 
+#: templates/release/how_it_works.html:12 templates/release/how_it_works.html:43
+msgid "Erzeugende Teilnehmende"
+msgstr "Erzeugende Teilnehmende"
+
 #: templates/partials/leg_facts.html:6
 msgid "Erzeugung:"
 msgstr "Erzeugung:"
@@ -5572,7 +5792,7 @@ msgstr ""
 "Falls die Adresse zu einem bestätigten Antrag gehört, wird ein Zugangslink versendet. Bei einem "
 "Versandproblem können Sie es erneut versuchen."
 
-#: app.py:757 app.py:760 app.py:785 app.py:787 app.py:797 app.py:799
+#: app.py:757 app.py:760 app.py:785 app.py:787 app.py:797 app.py:799 app.py:801
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 
@@ -5882,7 +6102,7 @@ msgstr "Frühere Bestätigungen und Geräteangaben"
 msgid "Funktion nicht verfügbar"
 msgstr "Funktion nicht verfügbar"
 
-#: templates/release/navigation.html:9
+#: templates/release/how_it_works.html:64 templates/release/navigation.html:9
 msgid "Funktionen und Ablauf"
 msgstr "Funktionen und Ablauf"
 
@@ -6196,7 +6416,7 @@ msgstr "Gebiet und Messung:"
 msgid "Gebiet und Voraussetzungen prüfen"
 msgstr "Gebiet und Voraussetzungen prüfen"
 
-#: app.py:676 app.py:679 app.py:704 app.py:706 app.py:716 app.py:718
+#: app.py:676 app.py:679 app.py:704 app.py:706 app.py:716 app.py:718 app.py:720
 msgid "Gebäude nicht gefunden."
 msgstr "Gebäude nicht gefunden."
 
@@ -6640,6 +6860,10 @@ msgstr ""
 "Gewichtung: Solar 30 Prozent, Elektroautos 20 Prozent, erneuerbare Heizungen 25 Prozent, "
 "erneuerbare Produktion 25 Prozent."
 
+#: templates/release/how_it_works.html:28
+msgid "Gewählter Betriebsdienst"
+msgstr "Gewählter Betriebsdienst"
+
 #: templates/gemeinde/profil.html:34
 #, python-format
 msgid ""
@@ -6825,7 +7049,8 @@ msgstr ""
 msgid "Gründung verstehen"
 msgstr "Gründung verstehen"
 
-#: templates/leg_gruenden.html:35 templates/leg_gruenden.html:170 templates/release/navigation.html:8
+#: templates/leg_gruenden.html:35 templates/leg_gruenden.html:170
+#: templates/release/how_it_works.html:64 templates/release/navigation.html:8
 #: templates/release/software.html:14
 msgid "Gründung vorbereiten"
 msgstr "Gründung vorbereiten"
@@ -7105,6 +7330,7 @@ msgid "Hinweisstatus geändert"
 msgstr "Hinweisstatus geändert"
 
 #: templates/how-it-works.html:107 templates/leg_kalkulator.html:283
+#: templates/release/how_it_works.html:58
 msgid "Häufige Fragen"
 msgstr "Häufige Fragen"
 
@@ -7462,6 +7688,10 @@ msgstr "Ihre letzte Stromrechnung von %(utility_name)s enthält die nötigen Ang
 msgid "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
 msgstr "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
 
+#: templates/release/how_it_works.html:64
+msgid "Ihre nächste Aufgabe"
+msgstr "Ihre nächste Aufgabe"
+
 #: templates/sandbox/accounts.html:6
 msgid "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
 msgstr "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
@@ -7686,6 +7916,10 @@ msgstr "Interessiert"
 #: templates/gemeinde/verzeichnis.html:50
 msgid "Interessierte"
 msgstr "Interessierte"
+
+#: templates/release/how_it_works.html:53
+msgid "Interne LEG-Abrechnung"
+msgstr "Interne LEG-Abrechnung"
 
 #: i18n.py:77 i18n.py:88 i18n.py:95 i18n.py:96
 msgid "Interner Fehler"
@@ -8061,8 +8295,9 @@ msgstr "Keine Cloud-Abhängigkeit angegeben"
 msgid "Keine Datei ausgewählt"
 msgstr "Keine Datei ausgewählt"
 
-#: app.py:495 app.py:498 app.py:523 app.py:525 app.py:535 app.py:537 app.py:547 app.py:550 app.py:575
-#: app.py:577 app.py:587 app.py:589 app.py:600 app.py:603 app.py:628 app.py:630 app.py:640 app.py:642
+#: app.py:495 app.py:498 app.py:523 app.py:525 app.py:535 app.py:537 app.py:539 app.py:547 app.py:550
+#: app.py:575 app.py:577 app.py:587 app.py:589 app.py:591 app.py:600 app.py:603 app.py:628 app.py:630
+#: app.py:640 app.py:642 app.py:644
 msgid "Keine Daten empfangen."
 msgstr "Keine Daten empfangen."
 
@@ -8168,7 +8403,7 @@ msgstr "Keine angegeben"
 msgid "Keine ausstehenden Einträge"
 msgstr "Keine ausstehenden Einträge"
 
-#: app.py:525 app.py:528 app.py:553 app.py:555 app.py:565 app.py:567
+#: app.py:525 app.py:528 app.py:553 app.py:555 app.py:565 app.py:567 app.py:569
 msgid "Keine direkten Partner gefunden."
 msgstr "Keine direkten Partner gefunden."
 
@@ -8367,11 +8602,11 @@ msgstr "Korrigiert durch:"
 msgid "Kosten"
 msgstr "Kosten"
 
-#: templates/release/navigation.html:11
+#: templates/release/how_it_works.html:61 templates/release/navigation.html:11
 msgid "Kosten abschätzen"
 msgstr "Kosten abschätzen"
 
-#: templates/release/navigation.html:9
+#: templates/release/how_it_works.html:60 templates/release/navigation.html:9
 msgid "Kosten und Betrieb"
 msgstr "Kosten und Betrieb"
 
@@ -8560,9 +8795,13 @@ msgstr "LEG konnte nicht erstellt werden."
 msgid "LEG nicht gefunden."
 msgstr "LEG nicht gefunden."
 
-#: templates/release/navigation.html:8
+#: templates/release/how_it_works.html:59 templates/release/navigation.html:8
 msgid "LEG prüfen"
 msgstr "LEG prüfen"
+
+#: templates/release/how_it_works.html:55
+msgid "LEG und beauftragter Betriebsdienst"
+msgstr "LEG und beauftragter Betriebsdienst"
 
 #: templates/api_docs.html:103
 msgid "LEG value-gap analysis"
@@ -8572,7 +8811,8 @@ msgstr "Analyse des LEG-Sparpotenzials"
 msgid "LEG vorbereiten"
 msgstr "LEG vorbereiten"
 
-#: templates/release/knowledge.html:2 templates/release/knowledge.html:6
+#: templates/release/how_it_works.html:62 templates/release/knowledge.html:2
+#: templates/release/knowledge.html:6
 msgid "LEG, ZEV und vZEV einordnen"
 msgstr "LEG, ZEV und vZEV einordnen"
 
@@ -8661,6 +8901,14 @@ msgstr "LEG-Rabatt:"
 #: templates/leg_verzeichnis/liste.html:57
 msgid "LEG-Status"
 msgstr "LEG-Status"
+
+#: templates/release/how_it_works.html:20
+msgid "LEG-Vertretung"
+msgstr "LEG-Vertretung"
+
+#: templates/release/how_it_works.html:49
+msgid "LEG-Vertretung und gewählter Betriebsdienst"
+msgstr "LEG-Vertretung und gewählter Betriebsdienst"
 
 #: templates/admin/ops.html:35 templates/fuer_gemeinden.html:107
 #: templates/leg_verzeichnis/detail.html:56 templates/leg_verzeichnis/detail.html:57
@@ -8954,6 +9202,10 @@ msgstr "Lokal verteilt"
 #: templates/admin/abrechnungen.html:107
 msgid "Lokal zugeteilt"
 msgstr "Lokal zugeteilt"
+
+#: templates/release/how_it_works.html:43
+msgid "Lokale Anlagen speisen Strom ein."
+msgstr "Lokale Anlagen speisen Strom ein."
 
 #: formation_wizard.py:115
 msgid "Lokale Elektrizitätsgemeinschaft - Gemeinschaftsvereinbarung"
@@ -9250,7 +9502,8 @@ msgstr "Menschen und öffentlicher Verkehr in einer Schweizer Stadt"
 msgid "Menü"
 msgstr "Menü"
 
-#: community_access.py:63 templates/member_invoice_detail.html:223 templates/release/knowledge.html:13
+#: community_access.py:63 templates/member_invoice_detail.html:223
+#: templates/release/how_it_works.html:47 templates/release/knowledge.html:13
 msgid "Messdaten"
 msgstr "Messdaten"
 
@@ -9779,6 +10032,14 @@ msgstr "Netzbetreiber simulieren"
 msgid "Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden."
 msgstr "Netzbetreiber und Netzebene müssen vor der Gründung noch geprüft werden."
 
+#: templates/release/how_it_works.html:54
+msgid ""
+"Netzbetreiber und übriger Lieferant rechnen ihre Leistungen entsprechend den geltenden Regeln und"
+" Vereinbarungen ab."
+msgstr ""
+"Netzbetreiber und übriger Lieferant rechnen ihre Leistungen entsprechend den geltenden Regeln und"
+" Vereinbarungen ab."
+
 #: dashboard.py:1115
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
@@ -9857,6 +10118,10 @@ msgstr "Netzgebühren"
 #: templates/release/knowledge.html:14
 msgid "Netznutzung"
 msgstr "Netznutzung"
+
+#: templates/release/how_it_works.html:54
+msgid "Netznutzung und übriger Strom"
+msgstr "Netznutzung und übriger Strom"
 
 #: templates/partials/leg_facts.html:7
 msgid "Netznutzung:"
@@ -9970,6 +10235,14 @@ msgid ""
 msgstr ""
 "Nicht jede VNB-Anbindung ist bereits umgesetzt. Anmeldung und Datenlieferung müssen deshalb pro "
 "Netzbetreiber eingerichtet werden."
+
+#: templates/release/how_it_works.html:35
+msgid ""
+"Nicht jede VNB-Anbindung ist umgesetzt. Prüfen Sie die tatsächlichen Schnittstellen und den "
+"Betriebsaufwand. Ein vollständiger Betriebswechsel ist nicht mit einem einzelnen Export erledigt."
+msgstr ""
+"Nicht jede VNB-Anbindung ist umgesetzt. Prüfen Sie die tatsächlichen Schnittstellen und den "
+"Betriebsaufwand. Ein vollständiger Betriebswechsel ist nicht mit einem einzelnen Export erledigt."
 
 #: equipment.py:32
 msgid "Nicht mehr benötigte Zugänge"
@@ -10481,6 +10754,10 @@ msgstr "Öffentliche OpenLEG-API"
 msgid "OpenLEG Registereinträge"
 msgstr "OpenLEG Registereinträge"
 
+#: templates/release/how_it_works.html:32 templates/release/how_it_works.html:50
+msgid "OpenLEG Software"
+msgstr "OpenLEG Software"
+
 #: pv_badge.py:53
 msgid "OpenLEG Solarnutzungs-Rangliste"
 msgstr "OpenLEG Solarnutzungs-Rangliste"
@@ -10508,6 +10785,10 @@ msgid ""
 msgstr ""
 "OpenLEG auf eigener Infrastruktur installieren: Quellcode laden, lokale Zugangsschlüssel "
 "erstellen und Docker-Dienste starten."
+
+#: templates/release/how_it_works.html:46
+msgid "OpenLEG betreibt keine Stromleitungen und schaltet den physikalischen Stromfluss nicht."
+msgstr "OpenLEG betreibt keine Stromleitungen und schaltet den physikalischen Stromfluss nicht."
 
 #: templates/open_source.html:173
 msgid ""
@@ -10822,7 +11103,7 @@ msgstr "OpenLEG: Ihr Login-Link"
 msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr "OpenLEG: Interessenmeldung bestätigen"
 
-#: app.py:738 app.py:741 app.py:766 app.py:768 app.py:778 app.py:780
+#: app.py:738 app.py:741 app.py:766 app.py:768 app.py:778 app.py:780 app.py:782
 msgid "OpenLEG: Löschung bestätigen"
 msgstr "OpenLEG: Löschung bestätigen"
 
@@ -10924,7 +11205,7 @@ msgstr "Parameter"
 msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr "Parse-Fehler mit Delimiter '%(delimiter)s'."
 
-#: app.py:532 app.py:535 app.py:560 app.py:562 app.py:572 app.py:574
+#: app.py:532 app.py:535 app.py:560 app.py:562 app.py:572 app.py:574 app.py:576
 msgid "Partner gefunden!"
 msgstr "Partner gefunden!"
 
@@ -10932,7 +11213,7 @@ msgstr "Partner gefunden!"
 msgid "Passwort"
 msgstr "Passwort"
 
-#: app.py:1001 app.py:1004 app.py:1029 app.py:1031 app.py:1041 app.py:1043
+#: app.py:1001 app.py:1004 app.py:1029 app.py:1031 app.py:1041 app.py:1043 app.py:1045
 msgid "Period not found"
 msgstr "Period not found"
 
@@ -11340,6 +11621,10 @@ msgstr ""
 #: templates/admin/abrechnungen.html:12
 msgid "Prüfplatz"
 msgstr "Prüfplatz"
+
+#: templates/release/how_it_works.html:59
+msgid "Prüft OpenLEG, ob unsere Anschlüsse eine LEG bilden dürfen?"
+msgstr "Prüft OpenLEG, ob unsere Anschlüsse eine LEG bilden dürfen?"
 
 #: community_access.py:66
 msgid "Prüfung"
@@ -12066,8 +12351,9 @@ msgstr "Seiten der Antragsliste"
 #: templates/open_source.html:66 templates/open_source.html:157 templates/partials/site_nav.html:13
 #: templates/partials/site_nav.html:16 templates/partials/site_nav.html:38
 #: templates/partials/site_nav.html:41 templates/pricing.html:41 templates/pricing.html:122
-#: templates/release/footer.html:10 templates/release/navigation.html:9
-#: templates/release/pricing.html:10 templates/release/software.html:22 templates/self_host.html:57
+#: templates/release/footer.html:10 templates/release/how_it_works.html:64
+#: templates/release/navigation.html:9 templates/release/pricing.html:10
+#: templates/release/software.html:22 templates/self_host.html:57
 msgid "Selbst betreiben"
 msgstr "Selbst betreiben"
 
@@ -12087,11 +12373,11 @@ msgstr ""
 "Server, Domain, E-Mail-Versand, Sicherungen und Monitoring benötigen einen Betreiber und können "
 "laufende Kosten verursachen."
 
-#: app.py:691 app.py:694 app.py:719 app.py:721 app.py:731 app.py:733
+#: app.py:691 app.py:694 app.py:719 app.py:721 app.py:731 app.py:733 app.py:735
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr "Server-Fehler beim Verarbeiten der Messdaten."
 
-#: app.py:540 app.py:543 app.py:568 app.py:570 app.py:580 app.py:582
+#: app.py:540 app.py:543 app.py:568 app.py:570 app.py:580 app.py:582 app.py:584
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr "Server-Fehler. Bitte später erneut versuchen."
 
@@ -12133,6 +12419,22 @@ msgstr ""
 msgid "Sie benennen Personen für Technik, Daten und Abrechnung."
 msgstr "Sie benennen Personen für Technik, Daten und Abrechnung."
 
+#: templates/release/how_it_works.html:17
+msgid ""
+"Sie bringen die Angaben zur Verbrauchsstätte und die nötigen Zustimmungserklärungen ein. Auch "
+"ohne eigene Solaranlage können Sie eine Teilnahme prüfen."
+msgstr ""
+"Sie bringen die Angaben zur Verbrauchsstätte und die nötigen Zustimmungserklärungen ein. Auch "
+"ohne eigene Solaranlage können Sie eine Teilnahme prüfen."
+
+#: templates/release/how_it_works.html:12
+msgid ""
+"Sie bringen lokale Erzeugung ein und vereinbaren, zu welchen Bedingungen ihre Strommengen in der "
+"LEG abgerechnet werden."
+msgstr ""
+"Sie bringen lokale Erzeugung ein und vereinbaren, zu welchen Bedingungen ihre Strommengen in der "
+"LEG abgerechnet werden."
+
 #: templates/leg_gruenden.html:130
 msgid "Sie die Adressen der interessierten Anschlüsse kennen."
 msgstr "Sie die Adressen der interessierten Anschlüsse kennen."
@@ -12144,6 +12446,14 @@ msgstr "Sie dürfen Abrechnungen vorbereiten. Die Administration bleibt einem an
 #: templates/verein/member_access.html:3
 msgid "Sie erhalten einen einmal verwendbaren Link an Ihre bestätigte E-Mail-Adresse."
 msgstr "Sie erhalten einen einmal verwendbaren Link an Ihre bestätigte E-Mail-Adresse."
+
+#: templates/release/how_it_works.html:21
+msgid ""
+"Sie führt die vereinbarten Teilnehmer- und Anschlussangaben zusammen und hält Zuständigkeiten und"
+" Änderungen fest."
+msgstr ""
+"Sie führt die vereinbarten Teilnehmer- und Anschlussangaben zusammen und hält Zuständigkeiten und"
+" Änderungen fest."
 
 #: templates/verein/index.html:11
 msgid ""
@@ -12173,6 +12483,10 @@ msgstr "Sie haben noch keine Kontaktanfragen."
 msgid "Sie halten Aufgaben, Zugriffsrechte und Freigaben im Auftrag fest."
 msgstr "Sie halten Aufgaben, Zugriffsrechte und Freigaben im Auftrag fest."
 
+#: templates/release/how_it_works.html:20
+msgid "Sie koordiniert die Teilnehmenden, die Vereinbarungen und den Kontakt zum Verteilnetzbetreiber."
+msgstr "Sie koordiniert die Teilnehmenden, die Vereinbarungen und den Kontakt zum Verteilnetzbetreiber."
+
 #: templates/dashboard.html:186
 msgid "Sie können beide Einwilligungen hier jederzeit ändern."
 msgstr "Sie können beide Einwilligungen hier jederzeit ändern."
@@ -12188,6 +12502,14 @@ msgstr ""
 #: templates/fuer_gemeinden.html:36
 msgid "Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein."
 msgstr "Sie ordnen Ihre Gemeinde anhand öffentlicher Daten ein."
+
+#: templates/release/how_it_works.html:18
+msgid ""
+"Sie prüfen die Vereinbarung und die Kosten. Der übrige Strombezug und die Netznutzung bleiben "
+"eigene Abrechnungsbestandteile."
+msgstr ""
+"Sie prüfen die Vereinbarung und die Kosten. Der übrige Strombezug und die Netznutzung bleiben "
+"eigene Abrechnungsbestandteile."
 
 #: templates/telemetry_shared.html:21
 msgid ""
@@ -12219,6 +12541,18 @@ msgstr "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 msgstr "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
 
+#: templates/release/how_it_works.html:13
+msgid ""
+"Sie stellen die Angaben zu Anlage und Anschluss bereit. Eine Solaranlage allein begründet keine "
+"Teilnahme an einer LEG."
+msgstr ""
+"Sie stellen die Angaben zu Anlage und Anschluss bereit. Eine Solaranlage allein begründet keine "
+"Teilnahme an einer LEG."
+
+#: templates/release/how_it_works.html:32
+msgid "Sie unterstützt die Verwaltung, den Datenimport und die prüfbare Vorbereitung von Abrechnungen."
+msgstr "Sie unterstützt die Verwaltung, den Datenimport und die prüfbare Vorbereitung von Abrechnungen."
+
 #: templates/release/home.html:57
 msgid ""
 "Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber liefert "
@@ -12226,6 +12560,22 @@ msgid ""
 msgstr ""
 "Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber liefert "
 "dasselbe Format. Prüfen Sie den Import mit Ihren Daten, bevor Sie eine Abrechnung vorbereiten."
+
+#: templates/release/how_it_works.html:16
+msgid ""
+"Sie vereinbaren ihre Teilnahme und beziehen den in der LEG zugeordneten Anteil zu den "
+"vereinbarten Bedingungen."
+msgstr ""
+"Sie vereinbaren ihre Teilnahme und beziehen den in der LEG zugeordneten Anteil zu den "
+"vereinbarten Bedingungen."
+
+#: templates/release/how_it_works.html:14
+msgid ""
+"Sie vereinbaren mit der Gemeinschaft die Teilnahme und den internen Preis. Die Vertretung "
+"koordiniert die nötigen Meldungen und Unterlagen."
+msgstr ""
+"Sie vereinbaren mit der Gemeinschaft die Teilnahme und den internen Preis. Die Vertretung "
+"koordiniert die nötigen Meldungen und Unterlagen."
 
 #: templates/sandbox/metering.html:9
 msgid ""
@@ -12734,6 +13084,10 @@ msgstr "Strom nutzen"
 #: templates/emails/day_14_formation.html:64
 msgid "Strom teilen und sparen"
 msgstr "Strom teilen und sparen"
+
+#: templates/release/how_it_works.html:41
+msgid "Strom, Daten und Zahlungen getrennt verstehen"
+msgstr "Strom, Daten und Zahlungen getrennt verstehen"
 
 #: templates/index.html:65 templates/index.html:68
 msgid ""
@@ -13337,6 +13691,14 @@ msgstr "Verantwortlich für den Inhalt"
 msgid "Verantwortlich für die Antragsdaten"
 msgstr "Verantwortlich für die Antragsdaten"
 
+#: templates/release/how_it_works.html:34
+msgid ""
+"Verantwortliche Personen prüfen Entwürfe und geben Rechnungen frei. Der Code ist unter AGPL-3.0"
+"-or-later einsehbar und kann selbst betrieben werden."
+msgstr ""
+"Verantwortliche Personen prüfen Entwürfe und geben Rechnungen frei. Der Code ist unter AGPL-3.0"
+"-or-later einsehbar und kann selbst betrieben werden."
+
 #: templates/index.html:189 templates/index.html:192
 msgid "Verantwortlichkeiten im Detail"
 msgstr "Verantwortlichkeiten im Detail"
@@ -13368,6 +13730,10 @@ msgstr "Verbrauch und Solaranlage ansehen"
 #: templates/member_invoice_detail.html:181
 msgid "Verbrauch:"
 msgstr "Verbrauch:"
+
+#: templates/release/how_it_works.html:16 templates/release/how_it_works.html:45
+msgid "Verbrauchende Teilnehmende"
+msgstr "Verbrauchende Teilnehmende"
 
 #: templates/emails/day_7_consumption.html:47
 msgid "Verbrauchsdaten ergänzen"
@@ -13570,6 +13936,10 @@ msgstr "Verteilmodell:"
 #: templates/gemeinde/pilotgemeinde.html:23
 msgid "Verteilnetzbetreiber"
 msgstr "Verteilnetzbetreiber"
+
+#: templates/release/how_it_works.html:24 templates/release/how_it_works.html:48
+msgid "Verteilnetzbetreiber (VNB)"
+msgstr "Verteilnetzbetreiber (VNB)"
 
 #: templates/release/knowledge.html:10
 msgid ""
@@ -13965,6 +14335,10 @@ msgstr "Was kann Ihre Gemeinde ermöglichen?"
 msgid "Was kostenlos bleibt"
 msgstr "Was kostenlos bleibt"
 
+#: templates/release/how_it_works.html:60
+msgid "Was kostet der Einsatz?"
+msgstr "Was kostet der Einsatz?"
+
 #: templates/how-it-works.html:46 templates/how-it-works.html:123
 msgid "Was kostet die Gründung mit OpenLEG?"
 msgstr "Was kostet die Gründung mit OpenLEG?"
@@ -14116,6 +14490,10 @@ msgstr "Wer ist für die Abrechnung zuständig?"
 msgid "Wer wofür verantwortlich ist"
 msgstr "Wer wofür verantwortlich ist"
 
+#: templates/release/how_it_works.html:2
+msgid "Wer übernimmt welche Aufgabe?"
+msgstr "Wer übernimmt welche Aufgabe?"
+
 #: templates/leg_gruenden.html:229
 msgid "Werkzeuge und Betrieb"
 msgstr "Werkzeuge und Betrieb"
@@ -14181,6 +14559,7 @@ msgid "Wie der Score entsteht"
 msgstr "Wie der Score entsteht"
 
 #: templates/how-it-works.html:61 templates/how-it-works.html:136
+#: templates/release/how_it_works.html:61
 msgid "Wie legt eine LEG den internen Strompreis fest?"
 msgstr "Wie legt eine LEG den internen Strompreis fest?"
 
@@ -14269,7 +14648,7 @@ msgstr ""
 "Wir geben keine Namen, Adressen oder Kontaktdaten weiter. Sobald eine passende Gruppe entsteht, "
 "erhalten Sie die nächsten Schritte."
 
-#: app.py:802 app.py:805 app.py:830 app.py:832 app.py:842 app.py:844
+#: app.py:802 app.py:805 app.py:830 app.py:832 app.py:842 app.py:844 app.py:846
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -14521,6 +14900,10 @@ msgstr "Zahlung"
 msgid "Zahlung erfassen"
 msgstr "Zahlung erfassen"
 
+#: templates/release/how_it_works.html:52
+msgid "Zahlungen"
+msgstr "Zahlungen"
+
 #: templates/leg_billing.html:40
 msgid "Zahlungsabgleich prüfen"
 msgstr "Zahlungsabgleich prüfen"
@@ -14738,6 +15121,10 @@ msgstr ""
 msgid "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum."
 msgstr "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum."
 
+#: templates/release/how_it_works.html:40
+msgid "Zur Aufgabenteilung und zu den Anschlussbedingungen:"
+msgstr "Zur Aufgabenteilung und zu den Anschlussbedingungen:"
+
 #: templates/leg_billing.html:83
 msgid "Zur Freigabe vorbereiten"
 msgstr "Zur Freigabe vorbereiten"
@@ -14932,11 +15319,11 @@ msgstr "bis 14 Tage"
 msgid "bis 40"
 msgstr "bis 40"
 
-#: app.py:948 app.py:951 app.py:976 app.py:978 app.py:988 app.py:990
+#: app.py:948 app.py:951 app.py:976 app.py:978 app.py:988 app.py:990 app.py:992
 msgid "building_id required"
 msgstr "building_id required"
 
-#: app.py:670 app.py:673 app.py:698 app.py:700 app.py:710 app.py:712
+#: app.py:670 app.py:673 app.py:698 app.py:700 app.py:710 app.py:712 app.py:714
 msgid "building_id und csv_content erforderlich."
 msgstr "building_id und csv_content erforderlich."
 
@@ -15190,7 +15577,7 @@ msgstr ""
 "speichert Periode, Preise und Positionen. Messdatenimport, Mitgliederzuordnung, CLI-Befehl für "
 "einen Abrechnungslauf und definitive Rechnungsdokumente sind noch kein durchgängiger Ablauf."
 
-#: app.py:667 app.py:670 app.py:695 app.py:697 app.py:707 app.py:709
+#: app.py:667 app.py:670 app.py:695 app.py:697 app.py:707 app.py:709 app.py:711
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr "tier muss 1, 2 oder 3 sein."
 
@@ -15494,6 +15881,10 @@ msgstr "Öffentliches App-Repo"
 #: templates/gemeinde/dashboard.html:136
 msgid "Öffentliches Energieprofil"
 msgstr "Öffentliches Energieprofil"
+
+#: templates/release/how_it_works.html:44
+msgid "Öffentliches Verteilnetz"
+msgstr "Öffentliches Verteilnetz"
 
 #: templates/dashboard.html:252
 msgid "Öffnen Sie Ihr Dashboard mit einem sicheren Link per E-Mail."
