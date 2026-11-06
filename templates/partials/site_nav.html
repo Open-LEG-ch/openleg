@@ -1,3 +1,6 @@
+{% if site_release_enabled %}
+{% include 'release/navigation.html' %}
+{% else %}
 <a class="skip-link" href="#main-content">{{ _("Zum Inhalt springen") }}</a>
 {# Daylight hero is light: the homepage nav stays light like every other page. #}
 {% set home_nav = false %}
@@ -64,3 +67,4 @@
     observer.observe(hero);
   });
 </script>
+{% endif %}

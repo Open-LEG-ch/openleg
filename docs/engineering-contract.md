@@ -71,6 +71,9 @@ those values instead of hardcoding them. Do not add a second calculation.
 
 ## Public Site and Frontend
 
+For visual design, shared components, illustrations and interface wording, read
+the canonical [design contract](../design.md).
+
 The public entry contract is: anonymous `GET /` renders the public website.
 `GET /login` renders the
 Eigentümer/Gemeinde dashboard chooser. An authenticated session may redirect `/`

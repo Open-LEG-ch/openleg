@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ current_locale }}">
+<html lang="{{ current_locale }}"{% if site_release_enabled %} data-site-release="true"{% endif %}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,7 @@
   {% include "partials/tailwind_brand.html" %}
   {% block head_extra %}{% endblock %}
 </head>
-<body class="{% block body_class %}min-h-screen bg-paper text-ink{% endblock %}">
+<body class="{{ 'site-release product-shell' if site_release_enabled else '' }} {% block body_class %}min-h-screen bg-paper text-ink{% endblock %}">
   {% include 'sandbox/banner.html' %}
   <header class="border-b border-line bg-white">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">

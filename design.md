@@ -1,190 +1,268 @@
 ---
+version: alpha
 name: OpenLEG
-description: >
-  Visual identity for OpenLEG, free open-source infrastructure for Swiss local
-  electricity communities (Lokale Elektrizitätsgemeinschaften). Communal,
-  grounded, trustworthy. The "Daylight cooperative" direction: pine on paper,
-  warmed by solar. Action and identity coded in pine, energy sparked in solar.
+description: Selected ivory, cobalt and coral website and product design. Activation is controlled by SITE_RELEASE_ENABLED.
 colors:
-  ink: "#22201b"          # primary text, warm near-black
-  ink-soft: "#3a362c"     # dense secondary text
-  ink-muted: "#6b6555"    # muted secondary text
-  paper: "#f5f2ea"        # warm base surface, body background
-  paper-deep: "#ece7da"   # alternate warm surface, section banding
-  white: "#ffffff"
-  line: "#ded7c6"         # warm hairline borders
-  brand: "#1f3d32"        # pine: action + identity, links, primary buttons, logo
-  brand-light: "#2c5545"
-  brand-dark: "#16302a"   # button hover, dark surfaces
-  accent: "#e8a13a"       # solar: the energy spark, caret, highlights, data marks
-  accent-light: "#f0b968"
-  accent-dark: "#c9832a"
-  sage: "#6e8f7c"         # secondary support, positive/community states
-  sage-light: "#e4ede6"   # tinted sage surface
-  sage-dark: "#4f6d5c"
+  primary: "#243B85"
+  primary-hover: "#1B2F6A"
+  primary-selected: "#3B55A2"
+  ink: "#26324B"
+  text-secondary: "#505869"
+  paper: "#F6F2EA"
+  white: "#FFFDF8"
+  sky: "#EDF1F9"
+  line: "#BCC3D0"
+  coral: "#EE8D7C"
+  coral-surface: "#F5D4CA"
+  on-primary: "#FFFDF8"
+  on-primary-secondary: "#DDE4F5"
+  on-primary-link: "#FFD0C2"
+  focus: "#243B85"
+  focus-inverse: "#FFC8B8"
+  success: "#245546"
+  success-surface: "#E8F1EC"
+  warning: "#775127"
+  warning-surface: "#F6EADB"
+  error: "#982F40"
+  error-surface: "#FAE9EC"
 typography:
+  display:
+    fontFamily: "Georgia, Times New Roman, serif"
+    fontSize: 80px
+    fontWeight: 400
+    lineHeight: 1.05
+    letterSpacing: -0.04em
+  heading-page:
+    fontFamily: "Georgia, Times New Roman, serif"
+    fontSize: 64px
+    fontWeight: 400
+    lineHeight: 1.08
+    letterSpacing: -0.035em
+  heading-section:
+    fontFamily: "Georgia, Times New Roman, serif"
+    fontSize: 40px
+    fontWeight: 400
+    lineHeight: 1.15
+    letterSpacing: -0.025em
+  heading-card:
+    fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
+    fontSize: 24px
+    fontWeight: 600
+    lineHeight: 1.3
+    letterSpacing: -0.015em
+  lead:
+    fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
+    fontSize: 20px
+    fontWeight: 400
+    lineHeight: 1.6
+  body:
+    fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
+    fontSize: 16px
+    fontWeight: 400
+    lineHeight: 1.65
+  label:
+    fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
+    fontSize: 16px
+    fontWeight: 600
+    lineHeight: 1.4
+  caption:
+    fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
+    fontSize: 14px
+    fontWeight: 400
+    lineHeight: 1.5
+  data:
+    fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace"
+    fontSize: 16px
+    fontWeight: 400
+    lineHeight: 1.5
+    fontFeature: "'tnum' 1"
   wordmark:
-    family: "JetBrains Mono"
-    weight: 500
-    tracking: "-0.04em"
-    note: "open in ink/paper at 500, LEG in pine at 700, solar caret"
-  mono:
-    family: "JetBrains Mono"
-    weight: 500
-    use: "logo, code, tariff numbers, data, kbd"
-  sans:
-    family: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
-    use: "all body copy, headings, UI"
+    fontFamily: "JetBrains Mono, ui-monospace, monospace"
+    fontSize: 28px
+    fontWeight: 500
+    lineHeight: 1.1
+    letterSpacing: -0.04em
 rounded:
-  sm: "6px"
-  md: "8px"      # buttons, inputs
-  lg: "12px"     # cards
-  xl: "16px"     # favicon tile, feature panels
+  small: 4px
+  control: 8px
+  panel: 12px
+  pill: 9999px
 spacing:
-  container: "72rem"   # max-w-6xl
-  gutter: "1rem"
+  xs: 4px
+  sm: 8px
+  md: 16px
+  control: 12px
+  lg: 24px
+  xl: 32px
+  section-mobile: 40px
+  section-desktop: 72px
+  container: 1280px
+  reading: 720px
+  gutter-mobile: 20px
+  gutter-tablet: 32px
+  gutter-desktop: 48px
 components:
-  logo:
-    structure: "'open' lowercase ink/paper + 'LEG' uppercase pine, 700 + solar caret"
-    partial: "templates/partials/brand_wordmark.html"
-  favicon:
-    file: "static/favicon.svg"
-    art: "solar blinking caret block on pine rounded tile"
   button-primary:
-    bg: "{colors.brand}"
-    color: "{colors.white}"
-    radius: "{rounded.md}"
-    hover: "{colors.brand-dark}"
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.on-primary}"
+    typography: "{typography.label}"
+    rounded: "{rounded.pill}"
+    padding: "{spacing.control}"
+    height: 48px
+  button-primary-hover:
+    backgroundColor: "{colors.primary-hover}"
+    textColor: "{colors.on-primary}"
+  button-secondary:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.primary}"
+    typography: "{typography.label}"
+    rounded: "{rounded.pill}"
+    padding: "{spacing.control}"
+    height: 48px
+  input:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.control}"
+    padding: "{spacing.control}"
+    height: 48px
+  role-card:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.panel}"
+    padding: "{spacing.xl}"
+  explanation-panel:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.panel}"
+    padding: "{spacing.xl}"
+  association-panel:
+    backgroundColor: "{colors.coral-surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.panel}"
+    padding: "{spacing.xl}"
 ---
 
-## Overview
+# OpenLEG design contract
 
-OpenLEG is free, open-source infrastructure for Swiss local electricity
-communities. The identity carries three things at once: **open source**
-(developer credibility), **energy coordination** (what the product enables), and
-**civic trust** (citizens and municipalities act on it).
+Use this contract when changing page layout, shared components, typography, colors,
+illustrations or interface wording. The selected design is implemented behind
+`SITE_RELEASE_ENABLED`. The existing default stays available until the complete
+website and association launch meets its release conditions. See
+[the engineering contract](docs/engineering-contract.md) and
+[frontend build](docs/frontend-build.md).
 
-The direction is **Daylight cooperative**: it should feel like a Swiss local
-co-op in daylight, not a crypto dashboard. Warm paper ground, grounded pine for
-action, a solar spark for energy. Real neighborhoods over neon glow.
+## Identity and type
 
-Aesthetic: warm, communal, Swiss-precise, trustworthy. Not a dark SaaS template.
+Keep the text wordmark `openLEG`, with a static coral baseline under LEG. The
+favicon uses the same letters and baseline. No caret, roof, pulsing dot or
+perpetual animation. Use a local monospace fallback for the wordmark; the theme
+requires no external font request.
 
-## Colors
+Start the hero with its h1. Do not add an eyebrow, slash label or miniature brand
+slogan above it. Public display and section headings use Georgia at weight 400.
+Body copy, form controls and product headings use the system sans stack. Mono
+belongs to identifiers, code and numerical data. Let headings wrap naturally.
 
-One action colour, one ground, one spark:
+| Text | Desktop | Phone |
+| --- | --- | --- |
+| Display | 64-80 px | 40-48 px |
+| Page title | 48-64 px | 36-42 px |
+| Section title | 32-40 px | 28-34 px |
+| Card heading | 22-24 px | 20-22 px |
+| Body and controls | at least 16 px | at least 16 px |
+| Captions and sources | at least 14 px | at least 14 px |
 
-- **`brand` pine `#1f3d32`** is **both action and identity**. It is the primary
-  action (links, buttons, focus) AND the logo `LEG`. Pine is the whole action
-  system; there is no second action colour.
-- `brand-light #2c5545` supports lighter identity accents. `brand-dark #16302a`
-  is the primary hover colour and the warm dark surface (nav, footer).
-- Pine fills carry **white text**. Primary button:
-  `bg-brand text-white rounded-lg font-semibold hover:bg-brand-dark`.
-  This is the shipped contrast rule.
-- Tinted chips and icon badges use `bg-brand/10 text-brand`.
-- **`accent` solar `#e8a13a`** is the energy spark: the wordmark caret,
-  highlights, data marks, and small celebratory moments. It is an accent, not an
-  action; primary buttons stay pine. `accent-light #f0b968` and
-  `accent-dark #c9832a` support solar on dark and hover states. On paper, small
-  solar text uses `accent-dark` for legibility.
-- **`sage` `#6e8f7c`** is the secondary/community colour for positive states,
-  supporting marks, and quiet fills (`sage-light #e4ede6`, `sage-dark #4f6d5c`).
-- Focus indicators use a 2px solid pine `#1f3d32` outline on light surfaces
-  (`paper`, `white`). On `brand-dark` surfaces the focus outline switches to
-  solar `#e8a13a`.
-- **On dark pine surfaces**, use `paper` / `sage-light` for text, solar
-  `#f0b968` for identity accents and large numbers. Never put pine text on a
-  pine fill.
-- Muted small text on the `paper` body uses `text-ink-muted #6b6555`.
-- **`ink` `#22201b`** is the warm near-black ground: all body text and **all
-  h1/h2/h3 titles stay ink, never pine or solar**. `ink-soft #3a362c` supports
-  dense text. `ink-muted #6b6555` is secondary text.
-- **`paper #f5f2ea`** is the body surface; `paper-deep #ece7da` bands alternate
-  sections; `white #ffffff` raises cards. `line #ded7c6` is the warm hairline.
+## Color and layout
 
-No neon glow, no gridline overlay, no gradient blobs. Warmth comes from the
-paper ground, real photography, and flat pine/solar fills.
+YAML contains the semantic tokens. `static/css/site_release.css` applies them
+only to the opt-in theme. The existing Tailwind utility names remain compatible.
+Cobalt identifies actions, selection and explanatory panels. Ink is body text on
+paper, sky and coral surfaces. Coral adds illustration detail and the association
+panel; it is unsuitable for small text on paper. Use labeled success, warning and
+error states rather than color alone.
 
-## Typography
+Normal text needs 4.5:1 contrast; large text and essential controls need 3:1.
+Check actual foreground/background pairs. The quiet line token alone does not
+identify an input; use the stronger control boundary. On cobalt, use on-primary
+text, underlined on-primary-link links and inverse focus outlines.
 
-- **Sans** (`system-ui` stack): everything readable. Headings and body.
-- **Mono** (`JetBrains Mono`): the technical voice. The wordmark, inline code,
-  tariff figures, data tables, `kbd`. Mono signals "this is real infrastructure."
+Public containers are 1280 px; reading columns are 720 px. Gutters are 48 px on
+large screens, 32 px on tablets and 20 px below 768 px. Sections use 72 px vertical
+spacing, reduced to 40 px on phones. Below 1100 px navigation becomes a vertical
+menu. Reduce content columns before translated text becomes cramped. Text must
+reflow at 320 CSS pixels and 200% zoom without clipping or page-wide scrolling.
+Long identifiers wrap; data tables may scroll within their own labeled region.
 
-The wordmark sets the rule: lowercase `open` at weight 500, uppercase `LEG` at
-weight 700 in pine `#1f3d32`, tracking `-0.04em`, with a solar `#e8a13a` caret.
-The caret blinks slowly (1.1s), disabled under `prefers-reduced-motion`.
+## Shared components
 
-German user-facing text: Schweizer Hochdeutsch, real umlauts, `ss` not `ß`,
-active voice, no em or en dashes.
+Public navigation has LEG gründen, Software, Für Gemeinden, Wissen and Verein.
+Every destination must exist when linked. Anmelden opens the existing owner and
+municipality chooser. The utility portal has a separate explicit link. The mobile
+menu exposes expanded state. Escape closes an expanded group first, then the
+menu, and returns focus to its trigger. Navigation remains available without JS.
 
-## Layout
+Product screens retain task-specific toolbars, tables and navigation. They use
+the shared wordmark, colors, controls and focus treatment without adding the
+marketing navigation or footer. Keep private and capability URLs unchanged.
 
-- Centered column, `max-w-6xl` (72rem), `px-4` gutters.
-- Sticky translucent nav (`bg-white/80 backdrop-blur`), warm hairline `line`.
-- Warm dark footer on `brand-dark #16302a`.
-- The homepage hero leads with real neighborhood photography on the paper
-  ground, not a dark panel. Photos are the thesis.
+| Component state | Required behavior |
+| --- | --- |
+| Normal | Primary action uses cobalt and on-primary text; secondary uses a cobalt boundary. |
+| Hover | Primary becomes primary-hover; secondary gets sky background. |
+| Selected/pressed | Use primary-selected and an explicit state label or ARIA state. |
+| Focus | 3 px outline and 3 px offset, inverse on cobalt. |
+| Disabled | Explain the unmet condition; retain readable text and do not simulate a click target. |
+| Loading | Name the pending task, prevent duplicate submission and support recovery. |
+| Empty | State what is missing and the next useful action. Missing measurements remain missing. |
+| Error | Give a text reason and recovery action; inputs also get an error boundary. |
 
-## Elevation & Depth
+Controls have a 48 px minimum height and may grow when text wraps. Pointer targets
+are at least 44 px where practical; inline prose links are exempt. Inputs keep
+persistent labels and valid submitted values. Errors belong beside the affected
+field and in a linked summary. Use links for destinations and buttons for actions.
+Keep the checkbox purposes for email, map visibility and membership separate.
 
-Restraint. Flat surfaces, warm hairline borders (`line #ded7c6`) over shadows.
-Allowed: nav backdrop-blur, a soft `shadow-sm` on raised cards. No heavy drop
-shadows, no glow, no blurred colour blobs.
+## Graphics and evidence
 
-## Shapes
+Write the text explanation before drawing. Raster scenes show place; HTML/SVG
+diagrams explain relationships; charts show real or explicitly illustrative
+values. Labels, units, sources, period and uncertainty remain readable without
+color or hover. Provide an ordered explanation or data table. No automatic scene
+rotation or 3D runtime; honor reduced motion. Reserve raster dimensions and keep
+a useful caption when an image fails.
 
-Rounded, not pill (except tags/badges). Buttons/inputs `8px`, cards `12px`, the
-favicon tile and feature panels `16px`. Photo tiles may go larger (`24px`).
+Use original assets with a recorded source and export settings. Do not copy
+reference-site people, buildings, diagrams or text. Sanitized product captures
+must identify demo data and the actual state, including incomplete measurements,
+draft calculation, human approval and issued invoice. Print output keeps dates,
+units, sources and logical reading order.
 
-## Components
+## Wording, languages and association facts
 
-### Logo / wordmark
+German uses Schweizer Hochdeutsch, real umlauts, ss and Sie. Explain LEG and
+Verteilnetzbetreiber before abbreviating. Name the actor, decision and next step.
+Do not invent adoption, partners, guaranteed savings, tax exemption or offers.
 
-```
-openLEG▮
-```
+The complete redesign requires German, English, Swiss French and Swiss Italian.
+Keep existing German URLs and language-query compatibility. Public translated
+URLs must be stable with reciprocal alternates; never advertise a locale that
+still falls back to German. Preserve query filters, municipality identity and
+section when switching. APIs, webhooks, downloads and capability links retain
+their URL and response contracts. Emails and documents use the recipient's
+validated stored language. Record native-speaker review separately from
+catalog/build checks.
 
-- `open` lowercase, ink `#22201b` (paper `#f5f2ea` on dark via `.ol-logo--inverse`).
-- `LEG` uppercase, pine `#1f3d32`, weight 700, no gap after `open`.
-- Caret: solar `#e8a13a` block, slow blink (1.1s),
-  `prefers-reduced-motion` disables it.
-- Font: `JetBrains Mono`, weight 500, tracking `-0.04em`.
-- Source of truth: `templates/partials/brand_wordmark.html`, with CSS in
-  `templates/partials/brand_head.html`.
-- Inverse variant for dark pine surfaces: `{% with brand_inverse=true %}` makes
-  `open` paper `#f5f2ea` and `LEG` solar `#f0b968`.
-- Standalone asset (docs, OG, README): `static/images/openleg-logo.svg`.
+The legal name is Verein openLEG Schweiz. Formation, adopted statutes and elected
+people remain pending until actual evidence exists. Seat: Baden AG. The Verein's
+planned role is software, documentation and community, without hosted-product
+operation. Do not infer membership from a contribution or donation. Publish actual
+people only with their consent; a portrait must depict the real person.
 
-Never re-typeset the wordmark by hand: always include the partial or the SVG.
-There is no shell prompt `>` character in the wordmark.
+## Page acceptance
 
-### Favicon
-
-`static/favicon.svg`: solar `#e8a13a` blinking caret block on a pine `#1f3d32`
-16px-radius tile with `rx 16`. It is path-based, animated by opacity, and has no
-font dependency. Linked from `templates/partials/tailwind_brand.html` with
-`favicon.ico` as raster fallback.
-
-### Buttons
-
-- Primary action: `bg-brand text-white rounded-lg font-semibold hover:bg-brand-dark`.
-- Secondary: `border border-line text-ink bg-white`.
-- Chips and icon badges: `bg-brand/10 text-brand`; solar chips `bg-accent/15 text-accent-dark`.
-
-## Do's and Don'ts
-
-- **Do** make every primary action pine (`bg-brand`); pine is the only action colour.
-- **Do** use **white text on pine fills** with `bg-brand text-white`.
-- **Do** keep all h1/h2/h3 titles **ink**, never pine or solar.
-- **Do** reserve solar for the spark: caret, highlights, data marks, not buttons.
-- **Do** use the wordmark partial; keep `LEG` uppercase and pine.
-- **Do** respect `prefers-reduced-motion` (caret stops).
-- **Don't** reintroduce the dark navy hero, neon glow, or gridline overlay.
-- **Don't** introduce a second action colour.
-- **Don't** put pine or solar on a heading.
-- **Don't** add a separate icon badge next to the wordmark; the caret is the mark.
-- **Don't** reintroduce a shell prompt `>` into the wordmark or favicon.
-- **Don't** introduce new fonts; sans for reading, mono for the technical voice.
-- **Don't** use em or en dashes in German copy.
+Verify each changed task at phone and desktop widths, keyboard, zoom, slow or
+failed resources, and the next real destination. Run the relevant route, access,
+privacy, build and packaging checks. Preserve old routes and workspace behavior.
+Keep human language/legal review and actual account/payment setup visible as
+release prerequisites. A local preview does not establish launch readiness.

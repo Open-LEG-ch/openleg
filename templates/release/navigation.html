@@ -1,0 +1,25 @@
+<a class="skip-link" href="#main-content">{{ _("Zum Inhalt springen") }}</a>
+<nav class="release-nav" aria-label="{{ _('Hauptnavigation') }}" data-release-nav>
+  <div class="release-container release-nav-row">
+    {% with brand_inverse=false, brand_class='text-2xl' %}{% include 'partials/brand_wordmark.html' %}{% endwith %}
+    <button type="button" class="release-menu-toggle" aria-controls="release-menu" aria-expanded="false" data-menu-toggle>{{ _('Menü') }}</button>
+    <div id="release-menu" class="release-menu">
+      {% set groups = [
+        (_('LEG gründen'), [('/leg-gruenden', _('Gründung vorbereiten')), ('/fuer-bewohner', _('Adresse und Nachbarschaft')), ('/leg-check', _('LEG prüfen'))]),
+        (_('Software'), [('/open-source', _('Software und Quellcode')), ('/pricing', _('Kosten und Betrieb')), ('/self-host', _('Selbst betreiben')), ('/api/v1/docs', _('Öffentliche API'))]),
+        (_('Für Gemeinden'), [('/fuer-gemeinden', _('Gemeinden unterstützen')), ('/rangliste', _('Gemeinden vergleichen')), ('/gemeinde/onboarding', _('Gemeinde anmelden'))]),
+        (_('Wissen'), [('/how-it-works', _('So funktioniert eine LEG')), ('/leg-kalkulator', _('Kosten abschätzen')), ('/rangliste/methodik', _('Daten und Methodik'))]),
+        (_('Verein'), [('/verein', _('Zweck und Mitgliedschaft')), ('mailto:hallo@openleg.ch', _('Kontakt'))])
+      ] %}
+      {% for label, links in groups %}
+      <details class="release-nav-group">
+        <summary>{{ label }} <span aria-hidden="true">⌄</span></summary>
+        <ul>{% for href, text in links %}<li><a href="{{ href }}"{% if request.path == href %} aria-current="page"{% endif %}>{{ text }}</a></li>{% endfor %}</ul>
+      </details>
+      {% endfor %}
+      <a class="release-login" href="/login"{% if request.path == '/login' %} aria-current="page"{% endif %}>{{ _('Anmelden') }}</a>
+      <div class="release-language">{% include 'partials/language_switcher.html' %}</div>
+    </div>
+  </div>
+</nav>
+<script src="/static/js/site_navigation.js" defer></script>
