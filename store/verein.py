@@ -28,7 +28,7 @@ class VereinUnavailable(RuntimeError):
 
 
 @contextmanager
-def _cursor():
+def transaction_cursor():
     import database
 
     try:
@@ -42,7 +42,7 @@ def _cursor():
 
 def request_applicant_access(email):
     token = secrets.token_urlsafe(32)
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             """SELECT id,preferred_locale FROM verein_applications
             WHERE email=%s AND confirmed_at IS NOT NULL AND status!='withdrawn' """,
@@ -62,7 +62,7 @@ def request_applicant_access(email):
 def consume_applicant_access(token):
     if not isinstance(token, str) or not 32 <= len(token) <= 128:
         raise VereinDenied("Invalid access")
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             """DELETE FROM verein_applicant_access WHERE token_hash=%s
             AND expires_at>CURRENT_TIMESTAMP RETURNING application_id""",
@@ -87,7 +87,7 @@ def consume_applicant_access(token):
 def logout_applicant(token):
     if not isinstance(token, str):
         return
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             "DELETE FROM verein_applicant_sessions WHERE token_hash=%s",
             (token_digest(token),),
@@ -110,7 +110,7 @@ def _applicant(cur, token):
 
 
 def applicant_profile(token):
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         identifier = _applicant(cur, token)
         cur.execute(
             """SELECT a.id,a.name,a.email,a.status,
@@ -137,7 +137,7 @@ def applicant_profile(token):
 def submit_member_request(token, kind, reason):
     if kind not in {"resignation", "appeal"} or not 3 <= len(reason.strip()) <= 2000:
         raise VereinDenied("Invalid member request")
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         identifier = _applicant(cur, token)
         cur.execute(
             """SELECT a.status,m.status AS member_status FROM verein_applications a
@@ -167,8 +167,8 @@ def submit_member_request(token, kind, reason):
 
 
 def list_member_requests(token):
-    with _cursor() as cur:
-        _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        require_reviewer(cur, token)
         cur.execute("""SELECT r.id,r.application_id,r.kind,r.reason,r.created_at,a.name
             FROM verein_member_requests r JOIN verein_applications a ON a.id=r.application_id
             WHERE r.status='pending' ORDER BY r.created_at LIMIT 100""")
@@ -187,8 +187,8 @@ def resolve_member_request(token, identifier, outcome, reason, evidence):
     except (TypeError, ValueError):
         raise VereinDenied("Invalid request") from None
     now = now_utc()
-    with _cursor() as cur:
-        actor = _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        actor = require_reviewer(cur, token)
         cur.execute(
             "SELECT application_id FROM verein_member_requests WHERE id=%s AND status='pending'",
             (identifier,),
@@ -391,7 +391,7 @@ def apply(*, email, name, affiliation, locale, privacy_version):
     identifier = str(uuid.uuid4())
     token = secrets.token_urlsafe(32)
     now = datetime.now(UTC)
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             """INSERT INTO verein_applications
                 (id,email,name,affiliation,preferred_locale,policy_version,
@@ -441,7 +441,7 @@ def confirm(token):
     """Consume one live token; email confirmation does not admit a member."""
     if not isinstance(token, str) or not 32 <= len(token) <= 128:
         raise VereinDenied("Invalid confirmation")
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             """UPDATE verein_applications
                 SET status='pending',confirmed_at=CURRENT_TIMESTAMP,
@@ -465,7 +465,7 @@ def provision_reviewer(email, name, password, role="board"):
         raise VereinDenied("Invalid reviewer credentials")
     identifier = str(uuid.uuid4())
     password_hash = generate_password_hash(password)
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             "INSERT INTO verein_reviewers (id,email,name,password_hash,role) VALUES (%s,%s,%s,%s,%s)",
             (identifier, email.strip().casefold(), name, password_hash, role),
@@ -474,7 +474,7 @@ def provision_reviewer(email, name, password, role="board"):
 
 
 def login(email, password):
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             "SELECT id,password_hash,active FROM verein_reviewers WHERE email=%s",
             (email.strip().casefold(),),
@@ -497,7 +497,7 @@ def login(email, password):
         return token
 
 
-def _reviewer(cur, token):
+def require_reviewer(cur, token):
     if not isinstance(token, str) or not 32 <= len(token) <= 128:
         raise VereinDenied("Reviewer login required")
     cur.execute(
@@ -514,14 +514,14 @@ def _reviewer(cur, token):
 
 
 def reviewer(token):
-    with _cursor() as cur:
-        return _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        return require_reviewer(cur, token)
 
 
 def logout(token):
     if not isinstance(token, str):
         return
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             "DELETE FROM verein_sessions WHERE token_hash=%s", (token_digest(token),)
         )
@@ -529,7 +529,7 @@ def logout(token):
 
 def revoke_reviewer(identifier):
     """Local board-turnover command; sessions cease to work immediately."""
-    with _cursor() as cur:
+    with transaction_cursor() as cur:
         cur.execute(
             "UPDATE verein_reviewers SET active=FALSE WHERE id=%s", (identifier,)
         )
@@ -552,8 +552,8 @@ def list_applications(token, status="pending", page=1):
         or not 1 <= page <= 100000
     ):
         raise VereinDenied("Invalid application filter")
-    with _cursor() as cur:
-        _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        require_reviewer(cur, token)
         cur.execute(
             """SELECT a.id,a.name,a.email,a.status,a.created_at,a.confirmed_at,m.status AS member_status
             FROM verein_applications a LEFT JOIN verein_members m ON m.application_id=a.id
@@ -569,8 +569,8 @@ def application(token, identifier):
         uuid.UUID(identifier)
     except (ValueError, TypeError):
         raise VereinDenied("Invalid application") from None
-    with _cursor() as cur:
-        _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        require_reviewer(cur, token)
         cur.execute(
             """SELECT a.id,a.name,a.email,a.affiliation,a.preferred_locale,a.status,
                 a.created_at,a.confirmed_at,a.decided_at,a.decision_reason,
@@ -609,8 +609,8 @@ def decide(token, identifier, decision, reason):
     except (ValueError, TypeError):
         raise VereinDenied("Invalid application") from None
     now = now_utc()
-    with _cursor() as cur:
-        actor = _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        actor = require_reviewer(cur, token)
         cur.execute(
             "SELECT id,status FROM verein_applications WHERE id=%s FOR UPDATE",
             (identifier,),
@@ -638,8 +638,8 @@ def decide(token, identifier, decision, reason):
 
 
 def pending_notifications(token):
-    with _cursor() as cur:
-        _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        require_reviewer(cur, token)
         cur.execute("""SELECT n.id,n.kind,a.email,a.preferred_locale,e.reason AS decision_reason,
             (SELECT d.due_on FROM verein_dues d JOIN verein_members m ON m.id=d.member_id
              WHERE m.application_id=a.id ORDER BY d.period_start DESC LIMIT 1) AS due_on
@@ -650,8 +650,8 @@ def pending_notifications(token):
 
 
 def record_delivery(token, identifier, sent):
-    with _cursor() as cur:
-        _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        require_reviewer(cur, token)
         now = now_utc()
         cur.execute(
             """UPDATE verein_notifications SET attempts=attempts+1,
@@ -702,8 +702,8 @@ def record_payment(token, identifier, *, amount_chf, source, reference, evidence
         raise VereinDenied("Source, unique reference and private evidence required")
     source, reference, evidence = source.strip(), reference.strip(), evidence.strip()
     now = now_utc()
-    with _cursor() as cur:
-        actor = _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        actor = require_reviewer(cur, token)
         dues = _dues(cur, identifier, require_active=False)
         cur.execute(
             """SELECT r.amount_chf,r.evidence_reference,m.application_id
@@ -759,8 +759,8 @@ def record_payment(token, identifier, *, amount_chf, source, reference, evidence
 
 def request_reminder(token, identifier):
     now = now_utc()
-    with _cursor() as cur:
-        actor = _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        actor = require_reviewer(cur, token)
         dues = _dues(cur, identifier)
         if not verein_policy.can_remind(
             now=now, due_on=dues["due_on"], paid_at=dues["paid_at"]
@@ -789,8 +789,8 @@ def terminate(token, identifier, reason):
     if not 3 <= len(reason.strip()) <= 2000:
         raise VereinDenied("Reason required")
     now = now_utc()
-    with _cursor() as cur:
-        actor = _reviewer(cur, token)
+    with transaction_cursor() as cur:
+        actor = require_reviewer(cur, token)
         dues = _dues(cur, identifier)
         if not verein_policy.can_terminate(
             now=now, reminder_sent_at=dues["reminder_sent_at"], paid_at=dues["paid_at"]
