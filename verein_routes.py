@@ -314,7 +314,8 @@ def deliver_notifications():
         for notice in db.get_verein_notifications(token):
             if notice["kind"] == "accepted":
                 message = recipient_gettext(
-                    "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag von CHF 50 ist innerhalb von 30 Tagen fällig. Zahlungsangaben und Rückfragen: hallo@openleg.ch.",
+                    "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und Rückfragen: hallo@openleg.ch.",
+                    due_on=notice["due_on"].isoformat(),
                     locale=notice["preferred_locale"],
                 )
             elif notice["kind"] == "refused":
@@ -332,6 +333,20 @@ def deliver_notifications():
                 message = recipient_gettext(
                     "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n\nSie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: hallo@openleg.ch.",
                     reason=notice["decision_reason"],
+                    locale=notice["preferred_locale"],
+                )
+            elif notice["kind"] in {
+                "appeal_approved",
+                "appeal_dismissed",
+                "resignation_approved",
+                "resignation_dismissed",
+            }:
+                message = recipient_gettext(
+                    "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter %(access_url)s. Kontakt: hallo@openleg.ch.",
+                    reason=notice["decision_reason"],
+                    access_url=urljoin(
+                        current_app.config["APP_BASE_URL"], "/verein/mitglied/zugang"
+                    ),
                     locale=notice["preferred_locale"],
                 )
             else:

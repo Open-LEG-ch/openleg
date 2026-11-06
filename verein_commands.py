@@ -4,8 +4,8 @@
 import click
 from flask.cli import with_appcontext
 
+import database as db
 from security_utils import validate_email_address
-from store import verein
 
 
 def init_app(app):
@@ -23,10 +23,10 @@ def init_app(app):
         if not valid or not 2 <= len(name.strip()) <= 120:
             raise click.ClickException("Invalid reviewer identity")
         try:
-            verein.provision_reviewer(normalized, name.strip(), password, role)
-        except verein.VereinDenied as exc:
+            db.provision_verein_reviewer(normalized, name.strip(), password, role)
+        except db.VereinDenied as exc:
             raise click.ClickException(str(exc)) from None
-        except verein.VereinUnavailable:
+        except db.VereinUnavailable:
             raise click.ClickException("Reviewer storage unavailable") from None
         click.echo("Reviewer provisioned. Record the authorising election separately.")
 
@@ -36,7 +36,7 @@ def init_app(app):
     def revoke_reviewer(identifier):
         """Revoke a former reviewer and all their sessions."""
         try:
-            verein.revoke_reviewer(str(identifier))
-        except verein.VereinUnavailable:
+            db.revoke_verein_reviewer(str(identifier))
+        except db.VereinUnavailable:
             raise click.ClickException("Reviewer storage unavailable") from None
         click.echo("Reviewer access revoked.")
