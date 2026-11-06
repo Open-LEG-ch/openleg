@@ -363,6 +363,7 @@ def test_release_languages_survive_entry_management_and_reset(village, language)
     client = village.test_client()
     page = client.get("/sandbox?lang=" + language)
     assert f'<html lang="{language}"' in page.text
+    assert 'data-site-release="true"' in page.text and "data-language-menu" in page.text
     response = client.post(
         "/sandbox/start", data={"csrf_token": _csrf(page), "persona": "resident"}
     )
@@ -373,6 +374,7 @@ def test_release_languages_survive_entry_management_and_reset(village, language)
     selected = "it-CH" if language == "en" else "en"
     management = client.get(prefix + "/sandbox/manage?lang=" + selected)
     assert f'<html lang="{selected}"' in management.text
+    assert "data-language-menu" in management.text
     home = client.get(prefix + "/sandbox/home?lang=" + selected)
     assert home.headers["Content-Language"] == selected
     reset = client.post(
