@@ -55,13 +55,13 @@ def require_recipient_locale(value):
     return selected
 
 
-def resolve_locale(*candidates):
+def resolve_locale(*candidates, extended=None):
     """First supported choice wins; untrusted/unknown values cannot select files."""
     return next(
         (
             locale
             for value in (*candidates, "de_CH")
-            if (locale := normalize_locale(value))
+            if (locale := normalize_locale(value, extended=extended))
         ),
         "de_CH",
     )

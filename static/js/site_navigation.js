@@ -27,7 +27,7 @@
   });
   nav.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
-    const group = event.target.closest('details[open]');
+    const group = groups.find(candidate => candidate.open);
     if (group) {
       group.open = false;
       group.querySelector('summary').focus();

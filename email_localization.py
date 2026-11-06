@@ -30,7 +30,7 @@ def _catalog(locale):
 
 def gettext(message, *, locale="de_CH", **variables):
     """Translate a complete message without reading request or tenant language."""
-    message = _catalog(resolve_locale(locale)).gettext(message)
+    message = _catalog(resolve_locale(locale, extended=True)).gettext(message)
     return message % variables if variables else message
 
 
@@ -44,7 +44,7 @@ def recipient_locale(profile, email, *, email_field="email"):
         or stored_email.strip().casefold() != email.strip().casefold()
     ):
         return "de_CH"
-    return resolve_locale(profile.get("preferred_locale"))
+    return resolve_locale(profile.get("preferred_locale"), extended=True)
 
 
 @lru_cache(maxsize=4)
@@ -63,7 +63,7 @@ def render_template(name, *, locale="de_CH", **context):
     """Keep user data in render arguments, never in shared environment globals."""
     if name not in _TEMPLATES:
         raise ValueError("unsupported_email_template")
-    selected = resolve_locale(locale)
+    selected = resolve_locale(locale, extended=True)
     return (
         _environment(selected)
         .get_template(name)
