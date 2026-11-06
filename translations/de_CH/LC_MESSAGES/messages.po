@@ -10048,8 +10048,8 @@ msgid "Quelle Ihrer Angabe"
 msgstr "Quelle Ihrer Angabe"
 
 #: templates/sandbox/telemetry.html:23
-msgid "Quelle bereit für einzelne Muster"
-msgstr "Quelle bereit für einzelne Muster"
+msgid "Quelle nicht pausiert"
+msgstr "Quelle nicht pausiert"
 
 #: templates/equipment_form.html:19
 msgid "Quelle der Angabe"
