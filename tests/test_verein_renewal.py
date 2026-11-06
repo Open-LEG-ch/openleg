@@ -205,3 +205,104 @@ def test_period_from_another_member_cannot_receive_payment(membership):
             reference="wrong-member",
             evidence="Test statement",
         )
+
+
+def test_termination_cancels_all_unsent_contribution_notices(membership, monkeypatch):
+    import database
+    from store import verein
+
+    now = datetime(2025, 6, 1, 12, tzinfo=UTC)
+    monkeypatch.setattr(verein, "now_utc", lambda: now)
+    client, _mail, store, _reviewer_id, path = _accepted(membership)
+    identifier = path.rsplit("/", 1)[1]
+    with client.session_transaction() as session:
+        board = session["verein_session"]
+    now = datetime(2026, 8, 1, 12, tzinfo=UTC)
+    store.renew_dues(board)
+    dues = store.application(board, identifier)["dues"]
+    for period in dues:
+        store.request_reminder(board, identifier, dues_id=str(period["id"]))
+    old = min(dues, key=lambda item: item["period_start"])
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE verein_dues SET reminder_sent_at='2026-01-01' WHERE id=%s",
+            (str(old["id"]),),
+        )
+    stale = next(
+        n for n in store.pending_notifications(board) if n["kind"] == "reminder"
+    )
+    store.terminate(
+        board, identifier, "Unpaid after actual notice", dues_id=str(old["id"])
+    )
+    assert [n["kind"] for n in store.pending_notifications(board)] == ["terminated"]
+    called = []
+    assert (
+        store.send_notification(board, str(stale["id"]), lambda: called.append(True))
+        is None
+    )
+    assert called == []
+    store.record_delivery(board, str(stale["id"]), True)
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT sent_at,superseded_at FROM verein_notifications WHERE id=%s",
+            (str(stale["id"]),),
+        )
+        record = cur.fetchone()
+    assert record["sent_at"] is None and record["superseded_at"] is not None
+    # Historical queued rows are also ineligible even without a cancellation.
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE verein_notifications SET superseded_at=NULL WHERE id=%s",
+            (str(stale["id"]),),
+        )
+    assert [n["kind"] for n in store.pending_notifications(board)] == ["terminated"]
+    assert (
+        store.send_notification(board, str(stale["id"]), lambda: called.append(True))
+        is None
+    )
+    store.record_delivery(board, str(stale["id"]), True)
+    assert called == []
+
+
+def test_upgrade_applies_pending_resignation_at_original_receipt_once(membership):
+    import database
+
+    client, _mail, store, _reviewer_id, path = _accepted(membership)
+    identifier = path.rsplit("/", 1)[1]
+    received = datetime(2026, 11, 5, 12, tzinfo=UTC)
+    with client.session_transaction() as session:
+        board = session["verein_session"]
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "ALTER TABLE verein_member_requests DROP CONSTRAINT verein_member_requests_status_check"
+        )
+        cur.execute(
+            "ALTER TABLE verein_member_requests ADD CONSTRAINT verein_member_requests_status_check CHECK(status IN ('pending','approved','dismissed'))"
+        )
+        cur.execute(
+            "INSERT INTO verein_member_requests(id,application_id,kind,reason,created_at) VALUES (gen_random_uuid(),%s,'resignation','Original declaration',%s)",
+            (identifier, received),
+        )
+        store.create_tables(cur)
+        store.create_tables(cur)
+        cur.execute(
+            "SELECT status,ended_at,end_reviewer FROM verein_members WHERE application_id=%s",
+            (identifier,),
+        )
+        member = cur.fetchone()
+        cur.execute(
+            "SELECT status,created_at,resolved_at,reason FROM verein_member_requests WHERE application_id=%s",
+            (identifier,),
+        )
+        request = cur.fetchone()
+    assert member == {"status": "resigned", "ended_at": received, "end_reviewer": None}
+    assert request == {
+        "status": "received",
+        "created_at": received,
+        "resolved_at": received,
+        "reason": "Original declaration",
+    }
+    assert store.list_member_requests(board) == []
+    assert [n["kind"] for n in store.pending_notifications(board)] == [
+        "resignation_received"
+    ]

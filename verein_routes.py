@@ -3,6 +3,7 @@
 
 import hmac
 import secrets
+from functools import partial
 from urllib.parse import urljoin
 
 from babel.dates import format_date
@@ -392,17 +393,21 @@ def deliver_notifications():
                 )
             else:
                 abort(409)
-            sent = email_utils.send_email(
-                notice["email"],
-                recipient_gettext(
-                    "Verein: Mitgliedschaft und Jahresbeitrag",
-                    locale=notice["preferred_locale"],
+            sent = db.send_verein_notification(
+                token,
+                str(notice["id"]),
+                partial(
+                    email_utils.send_email,
+                    notice["email"],
+                    recipient_gettext(
+                        "Verein: Mitgliedschaft und Jahresbeitrag",
+                        locale=notice["preferred_locale"],
+                    ),
+                    message,
+                    private=True,
                 ),
-                message,
-                private=True,
             )
-            db.record_verein_delivery(token, str(notice["id"]), sent)
-            failed = failed or not sent
+            failed = failed or sent is False
     except db.VereinUnavailable:
         abort(503)
     if failed:
