@@ -1,11 +1,49 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The complete site is opt-in; drafting does not invent a founded Verein."""
 
+import pytest
+
 from tests import test_i18n
 
 app_module = test_i18n.app_module
 isolated_environment = test_i18n.isolated_environment
 web = test_i18n.web
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["/software", "/wissen", "/dokumente", "/community", "/mitmachen", "/kontakt"],
+)
+def test_new_project_destinations_require_complete_site(web, path):
+    client = web.test_client()
+    assert client.get(path).status_code == 404
+    web.config["SITE_RELEASE_ENABLED"] = True
+    response = client.get(path)
+    assert response.status_code == 200
+    assert response.text.count("<h1") == 1
+    assert 'href="/verein"' in response.text
+
+
+def test_release_costs_do_not_offer_unapproved_hosting(web):
+    web.config["SITE_RELEASE_ENABLED"] = True
+    response = web.test_client().get("/pricing")
+    assert response.status_code == 200
+    assert "Was beim Betrieb Kosten verursacht." in response.text
+    assert "CHF 0" not in response.text
+    assert "Für immer" not in response.text
+    assert "AGPL-3.0-or-later" in response.text
+
+
+def test_verified_formation_metadata_updates_public_status_and_join_link(web):
+    web.config.update(
+        SITE_RELEASE_ENABLED=True,
+        VEREIN_FORMATION_DATE="2026-01-01",
+        VEREIN_STATUTES_URL="/statuten.pdf",
+    )
+    response = web.test_client().get("/verein")
+    assert "noch nicht gegründet" not in response.text
+    assert 'href="/verein/beitreten"' in response.text
+    assert 'href="/statuten.pdf"' in response.text
 
 
 def test_new_verein_surface_is_not_published_by_default(web):

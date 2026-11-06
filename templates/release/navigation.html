@@ -6,10 +6,10 @@
     <div id="release-menu" class="release-menu">
       {% set groups = [
         (_('LEG gründen'), [('/leg-gruenden', _('Gründung vorbereiten')), ('/fuer-bewohner', _('Adresse und Nachbarschaft')), ('/leg-check', _('LEG prüfen'))]),
-        (_('Software'), [('/open-source', _('Software und Quellcode')), ('/pricing', _('Kosten und Betrieb')), ('/self-host', _('Selbst betreiben')), ('/api/v1/docs', _('Öffentliche API'))]),
+        (_('Software'), [('/software', _('Funktionen und Ablauf')), ('/open-source', _('Quellcode und Lizenz')), ('/pricing', _('Kosten und Betrieb')), ('/self-host', _('Selbst betreiben')), ('/api/v1/docs', _('Öffentliche API'))]),
         (_('Für Gemeinden'), [('/fuer-gemeinden', _('Gemeinden unterstützen')), ('/rangliste', _('Gemeinden vergleichen')), ('/gemeinde/onboarding', _('Gemeinde anmelden'))]),
-        (_('Wissen'), [('/how-it-works', _('So funktioniert eine LEG')), ('/leg-kalkulator', _('Kosten abschätzen')), ('/rangliste/methodik', _('Daten und Methodik'))]),
-        (_('Verein'), [('/verein', _('Zweck und Mitgliedschaft')), ('mailto:hallo@openleg.ch', _('Kontakt'))])
+        (_('Wissen'), [('/wissen', _('Wissen und Quellen')), ('/how-it-works', _('So funktioniert eine LEG')), ('/dokumente', _('Dokumente')), ('/leg-kalkulator', _('Kosten abschätzen')), ('/rangliste/methodik', _('Daten und Methodik'))]),
+        (_('Verein'), [('/verein', _('Zweck und Mitgliedschaft')), ('/community', _('Community')), ('/mitmachen', _('Mitmachen')), ('/kontakt', _('Kontakt'))])
       ] %}
       {% for label, links in groups %}
       <details class="release-nav-group">

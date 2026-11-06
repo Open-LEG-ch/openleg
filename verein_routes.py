@@ -3,9 +3,7 @@
 
 import hmac
 import secrets
-from datetime import date, datetime
 from urllib.parse import urljoin
-from zoneinfo import ZoneInfo
 
 from flask import (
     Blueprint,
@@ -26,7 +24,7 @@ from i18n import gettext as _
 from i18n import localized_url
 from security_extensions import rate_limit
 from security_utils import validate_email_address
-from site_release import require_complete_site
+from site_release import formation_date, require_complete_site
 
 verein_bp = Blueprint("verein", __name__, url_prefix="/verein")
 verein_bp.before_request(require_complete_site)
@@ -191,13 +189,9 @@ def require_csrf():
 
 def accepting_applications():
     config = current_app.config
-    try:
-        formed = date.fromisoformat(config.get("VEREIN_FORMATION_DATE", ""))
-    except (ValueError, TypeError):
-        return False
     return (
         config.get("VEREIN_ACCEPTING_APPLICATIONS") is True
-        and formed <= datetime.now(ZoneInfo("Europe/Zurich")).date()
+        and formation_date() is not None
         and all(
             config.get(key)
             for key in (

@@ -115,3 +115,23 @@ def test_private_metadata_never_advertises_language_alternates(web, path, robots
             robots=robots,
         )
     assert "hreflang=" not in rendered
+
+
+def test_sitemap_excludes_draft_languages_and_private_routes(web):
+    from xml.etree import ElementTree
+
+    web.config["SITE_RELEASE_ENABLED"] = True
+    client = web.test_client()
+    assert b"<loc>" not in client.get("/sitemap.xml").data
+    web.config["SITE_TRANSLATIONS_APPROVED"] = True
+    response = client.get("/sitemap.xml")
+    root = ElementTree.fromstring(response.data)
+    locations = [
+        node.text
+        for node in root.iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")
+    ]
+    assert "http://localhost/software?lang=en" in locations
+    assert "http://localhost/verein?lang=it-CH" in locations
+    assert all(
+        "/verein/mitglied" not in url and "/vorstand" not in url for url in locations
+    )

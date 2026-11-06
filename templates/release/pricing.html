@@ -1,0 +1,15 @@
+{% extends 'release/page.html' %}
+{% set page_title = _('Was beim Betrieb Kosten verursacht.') %}
+{% set page_description = _('Für die OpenLEG-Software fallen keine Lizenzgebühren an. Für Server, Einrichtung und Unterstützung können Kosten entstehen. Klären Sie vor dem Start, wer welche Aufgaben übernimmt.') %}
+{% block document %}
+<section class="release-document-section"><h2>{{ _('Drei Teile Ihrer Betriebskosten') }}</h2><dl class="release-definition-list">
+  <div><dt>{{ _('Softwarelizenz') }}</dt><dd>{{ _('Der Code steht unter AGPL-3.0-or-later. Beachten Sie die Lizenzpflichten, wenn Sie eine veränderte Version über ein Netzwerk anbieten.') }} <a href="https://github.com/Open-LEG-ch/openleg/blob/main/LICENSE">{{ _('Lizenz lesen') }}</a></dd></div>
+  <div><dt>{{ _('Infrastruktur') }}</dt><dd>{{ _('Server, Domain, E-Mail-Versand, Sicherungen und Monitoring benötigen einen Betreiber und können laufende Kosten verursachen.') }}</dd></div>
+  <div><dt>{{ _('Einrichtung und Arbeit') }}</dt><dd>{{ _('Datenanbindung, Teilnehmerpflege, Rechnungsprüfung, Aktualisierungen und Unterstützung brauchen Zeit. Vereinbaren Sie Umfang und Vergütung mit den beauftragten Personen.') }}</dd></div>
+</dl></section>
+<section class="release-document-section"><h2>{{ _('Betrieb vor dem Start vereinbaren') }}</h2><div class="release-table-scroll" tabindex="0" role="region" aria-label="{{ _('Betriebsmodelle vergleichen') }}"><table class="release-table"><caption>{{ _('Betriebsmodelle vergleichen') }}</caption><thead><tr><th scope="col">{{ _('Entscheidung') }}</th><th scope="col">{{ _('Selbst betreiben') }}</th><th scope="col">{{ _('Einen Dienstleister beauftragen') }}</th></tr></thead><tbody>
+<tr><th scope="row">{{ _('Verantwortung') }}</th><td>{{ _('Sie benennen Personen für Technik, Daten und Abrechnung.') }}</td><td>{{ _('Sie halten Aufgaben, Zugriffsrechte und Freigaben im Auftrag fest.') }}</td></tr>
+<tr><th scope="row">{{ _('Kostenbasis') }}</th><td>{{ _('Eigene Infrastruktur und Arbeitszeit.') }}</td><td>{{ _('Ein konkretes Angebot für vereinbarte Leistungen.') }}</td></tr>
+<tr><th scope="row">{{ _('Vor dem Start') }}</th><td>{{ _('Installation, Sicherung und Wiederherstellung testen.') }}</td><td>{{ _('Datenhaltung, Support, Kündigung und Datenübergabe vereinbaren.') }}</td></tr>
+</tbody></table></div><p>{{ _('Die Veröffentlichung der Software ist keine Zusage für kostenloses Hosting oder Support. Ein Vereinsbeitrag ist kein Betriebsvertrag für Ihre LEG.') }}</p><div class="release-actions"><a class="release-button release-button-primary" href="{{ '/self-host'|localized_url }}">{{ _('Eigenen Betrieb vorbereiten') }}</a><a class="release-button" href="{{ '/kontakt'|localized_url }}">{{ _('Betriebsfrage stellen') }}</a></div></section>
+{% endblock %}

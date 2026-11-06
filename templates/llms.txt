@@ -1,8 +1,17 @@
 # OpenLEG
 
+{% if site_release_enabled %}
+{{ _('> Offene, selbst betreibbare Software für lokale Elektrizitätsgemeinschaften in der Schweiz. Lizenz: AGPL-3.0-or-later.') }}
+{{ _('OpenLEG unterstützt Beteiligte, Dokumente, Messdatenimport und die Prüfung und Freigabe von Rechnungen. Jede LEG bestimmt ihre Vertretung und ihren Betreiber. Datenzugang und VNB-Anbindung müssen konkret vereinbart und getestet werden. Die Veröffentlichung des Codes ist keine Zusage für kostenloses Hosting oder Support.') }}
+{{ _('- [Software](%(url)s): Funktionsumfang und Voraussetzungen', url=(site_url ~ '/software')|localized_url) }}
+{{ _('- [Wissen](%(url)s): Erklärungen, Begriffe und Quellen', url=(site_url ~ '/wissen')|localized_url) }}
+{{ _('- [Verein](%(url)s): Zweck, tatsächlicher Gründungsstand und geplante Mitgliedschaft', url=(site_url ~ '/verein')|localized_url) }}
+{{ _('- [Mitmachen](%(url)s): Code, Dokumentation und Kontakt', url=(site_url ~ '/mitmachen')|localized_url) }}
+{% else %}
 {{ _("> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), %(site_url)s. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.", site_url=site_url) }}
 
 {{ _("OpenLEG prüft Solarpotenzial pro Adresse, unterstützt die Organisation einer LEG und bereitet Dokumente und die Netzbetreiber-Anmeldung vor. Die öffentlich angebotenen Funktionen sind kostenlos.") }}
+{% endif %}
 
 {{ _("Die LEG bestimmt ihre interne Organisation, Vertretung, Verträge, den internen Strompreis, die Administration und die Abrechnung. Sie wählt den Betreiber und Hosting-Anbieter. OpenLEG stellt dafür prüfbare, selbst betreibbare Software bereit. Der Netzbetreiber prüft Netzgebiet und Netzebene, misst, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten. Der Grundversorger liefert den übrigen Strom. OpenLEG ersetzt diese gesetzlichen Aufgaben nicht. Nicht jede VNB-Anbindung ist umgesetzt; Anmeldung und Datenlieferung müssen pro Netzbetreiber eingerichtet werden.") }}
 
@@ -20,6 +29,6 @@
 {{ _("- [Fallstudie Baden](%(url)s): Tarife, Solardaten und Potenzial für Baden AG", url=(site_url ~ "/pilotgemeinde/baden")|localized_url) }}
 {{ _("- [Open Source](%(url)s): Architektur, Repos und Datenpipeline", url=(site_url ~ "/open-source")|localized_url) }}
 {{ _("- [Selbst betreiben](%(url)s): Installation auf eigener Hardware", url=(site_url ~ "/self-host")|localized_url) }}
-{{ _("- [Kosten](%(url)s): Kostenlos, ohne Datenverkauf; Finanzierung", url=(site_url ~ "/pricing")|localized_url) }}
+{% if site_release_enabled %}{{ _('- [Kosten](%(url)s): Softwarelizenz, Infrastruktur und Betriebsarbeit', url=(site_url ~ '/pricing')|localized_url) }}{% else %}{{ _("- [Kosten](%(url)s): Kostenlos, ohne Datenverkauf; Finanzierung", url=(site_url ~ "/pricing")|localized_url) }}{% endif %}
 {{ _("- [Öffentliche API](%(url)s): Tarife, Solardaten, Rangliste, ohne API-Key", url=(site_url ~ "/api/v1/docs")|localized_url) }}
 {{ _("- [Kontakt](mailto:%(email)s): E-Mail", email=contact_email) }}
