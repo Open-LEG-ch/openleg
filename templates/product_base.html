@@ -17,7 +17,7 @@
       {% include "partials/brand_wordmark.html" %}
       <div class="flex items-center gap-3">
         <span class="hidden text-sm font-semibold text-ink-muted sm:inline">{{ _('Dashboard') }}</span>
-        {% include 'partials/language_switcher.html' %}
+        {% if site_release_enabled %}<details class="release-product-language" data-language-menu><summary>{{ supported_locales.get(current_locale|replace('-', '_'), _('Sprache')) }}</summary><div>{% include 'partials/language_switcher.html' %}</div></details>{% else %}{% include 'partials/language_switcher.html' %}{% endif %}
       </div>
     </div>
   </header>

@@ -669,6 +669,11 @@ msgstr "Demandes rejetées"
 msgid "Abgemeldet"
 msgstr "Déconnecté"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:7 templates/verein/events.html:8
+msgid "Abgesagt"
+msgstr "Annulé"
+
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: Abweichung prüfen."
 msgstr "Rapprochement avec le GRD : vérifier l’écart."
@@ -997,6 +1002,11 @@ msgstr ""
 "Les informations actuelles et les nouvelles confirmations sont mises en pause. Les attributions "
 "documentées ne constituent pas une vérification de source actuelle."
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Aktuellen Stand bearbeiten"
+msgstr "Modifier l'état actuel"
+
 #: templates/gemeinde/methodik.html:75
 msgid "Aktueller Snapshot:"
 msgstr "État actuel :"
@@ -1066,6 +1076,11 @@ msgstr ""
 #: templates/emails/day_14_formation.html:51
 msgid "Alle Teilnehmer unterzeichnen den Gemeinschaftsvertrag digital."
 msgstr "Tous les participants signent le contrat communautaire par voie numérique."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:9
+msgid "Alle Treffen ansehen"
+msgstr "Voir toutes les réunions"
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/queue.html:6
@@ -1216,6 +1231,11 @@ msgstr "Télécharger le dossier d'inscription"
 #: templates/leg_dashboard.html:292
 msgid "Anmeldepaket vorbereiten"
 msgstr "Préparer le dossier d'inscription"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Anmeldestatus"
+msgstr "État de la connexion"
 
 #: formation_wizard.py:144 templates/documents/dso_registration.html:13
 msgid "Anmeldung Lokale Elektrizitätsgemeinschaft"
@@ -1537,6 +1557,11 @@ msgid "Ausgang"
 msgstr "Sortant"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Ausgebucht"
+msgstr "Équipé"
+
+#. Draft translation; native language and domain review pending.
 #: templates/verein/index.html:10
 msgid ""
 "Ausgeschlossen sind Mitarbeitende, Verwaltungsräte, Eigentümer und bezahlte Beratende von "
@@ -1784,6 +1809,16 @@ msgstr "Copier la commande"
 #: templates/partials/install_console.html:1
 msgid "Befehl kopiert."
 msgstr "Commande copiée."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5 templates/verein/events.html:7
+msgid "Beginn"
+msgstr "Début"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:7
+msgid "Beginn und Ende in Europe/Zurich. Zeiten während der Zeitumstellung müssen eindeutig sein."
+msgstr "Début et fin d'Europe/Région. Les périodes de changement de temps doivent être claires."
 
 #: templates/sandbox/home.html:37
 msgid ""
@@ -2038,7 +2073,7 @@ msgid "Bestätigen"
 msgstr "Confirmer"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:257 verein_routes.py:263
+#: verein_routes.py:240 verein_routes.py:257 verein_routes.py:263
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre E-Mail für den Mitgliedsantrag:\n"
@@ -2133,6 +2168,11 @@ msgstr "Confirmé"
 msgid "Bestätigt bis"
 msgstr "Confirmé jusqu’au"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:8
+msgid "Bestätigt veröffentlichen"
+msgstr "Publier la rencontre confirmée"
+
 #: templates/gemeinde/verzeichnis.html:98
 msgid "Bestätigte Interessenmeldungen"
 msgstr "Manifestations d’intérêt confirmées"
@@ -2140,6 +2180,11 @@ msgstr "Manifestations d’intérêt confirmées"
 #: templates/leg_dashboard.html:41
 msgid "Bestätigte Mitglieder"
 msgstr "Membres confirmés"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/community.html:7
+msgid "Bestätigte Treffen ansehen"
+msgstr "Voir les réunions confirmées"
 
 #: templates/leg_dashboard.html:304
 #, python-format
@@ -2438,6 +2483,17 @@ msgstr ""
 msgid "Bitte prüfen Sie Name, E-Mail und die Aufnahmebedingungen."
 msgstr "Veuillez vérifier le nom, l'e-mail et les conditions d'admission."
 
+#. Draft translation; native language and domain review pending.
+#: verein_event_routes.py:134
+msgid ""
+"Bitte prüfen Sie alle Angaben. Die Zeit muss in Europe/Zurich eindeutig sein, das Ende nach dem "
+"Beginn liegen. Alle vier Sprachen und für eine offene Anmeldung ein öffentlicher HTTPS-Link sind "
+"erforderlich. Bei einem veralteten Formular öffnen Sie den aktuellen Stand erneut."
+msgstr ""
+"Veuillez vérifier toutes les informations. Le temps doit être clair en Europe/Zurrich, la fin est"
+" après le début. Toutes les quatre langues et pour une inscription ouverte, un lien HTTPS public "
+"est requis. Si vous avez un formulaire obsolète, ouvrez à nouveau la mise à jour."
+
 #: templates/advisories.html:34
 msgid ""
 "Bitte prüfen Sie die Angaben. Für «Als erledigt angegeben» brauchen Sie eine datierte Quelle. Das"
@@ -2721,6 +2777,11 @@ msgstr ""
 msgid "Das Rechnungspräfix der Richtlinie ist ungültig."
 msgstr "Le préfixe de facture de la règle de facturation n'est pas valide."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/event.html:8
+msgid "Das Treffen wird nicht aufgezeichnet. Veröffentlicht werden nur ausdrücklich freigegebene Notizen."
+msgstr "Cette rencontre n’est pas enregistrée. Seules les notes expressément approuvées sont publiées."
+
 #: billing_policy.py:206
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr "Le modèle de répartition de la règle de facturation n'est pas valide."
@@ -3002,7 +3063,7 @@ msgstr ""
 " modifiée sur un réseau."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:238 verein_routes.py:244
+#: verein_routes.py:221 verein_routes.py:238 verein_routes.py:244
 msgid "Der E-Mail-Versand ist derzeit nicht verfügbar."
 msgstr "L'envoi d'e-mails est momentanément indisponible."
 
@@ -3196,6 +3257,11 @@ msgstr ""
 "\n"
 "%(url)s"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
+msgstr "La participation n'est pas encore autorisée. Questions à ce sujet: hallo@openleg.ch."
+
 #: store/formation_signatures.py:165
 msgid "Der Unterschriftsbeleg ist ungültig."
 msgstr "Le justificatif de signature est invalide."
@@ -3303,7 +3369,7 @@ msgid "Der Vorstand bestätigt den Austritt und das wirksame Datum gemäss den b
 msgstr "Le comité confirme la démission et sa date d'effet conformément aux statuts adoptés."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:345 verein_routes.py:351
+#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351
 #, python-format
 msgid ""
 "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
@@ -3460,6 +3526,11 @@ msgid ""
 "Netzwerk."
 msgstr "Le guide couvre l’installation, les mises à jour, les sauvegardes et l’accès par un réseau privé."
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Die Anmeldung für dieses Treffen ist geschlossen."
+msgstr "L'inscription à cette réunion est terminée."
+
 #: templates/sandbox/onboarding.html:7
 msgid "Die Anmeldung ist fehlgeschlagen. Prüfen Sie Ihre Angaben und versuchen Sie es erneut."
 msgstr "L'inscription a échoué. Vérifiez vos données et réessayez."
@@ -3501,7 +3572,7 @@ msgid "Die Anteile müssen zusammen 100 Prozent ergeben."
 msgstr "La somme des parts doit être égale à 100 pour cent."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:215 verein_routes.py:221
+#: templates/verein/index.html:11 verein_routes.py:198 verein_routes.py:215 verein_routes.py:221
 msgid "Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der Datenschutzangaben."
 msgstr ""
 "Les admissions ouvriront après la constitution effective de l'association et la validation des "
@@ -4374,6 +4445,21 @@ msgstr ""
 "Ce village a été fermé ou réinitialisé. Cet onglet ne peut plus enregistrer de modifications. "
 "Ouvrez votre village actuel ou recommencez."
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
+msgstr "Cette réunion est complète. Questions concernant d'autres dates: salut@openleg.ch."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Dieses Treffen liegt in der Vergangenheit."
+msgstr "Cette rencontre est dans le passé."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Dieses Treffen wurde abgesagt. Aktualisieren Sie den Eintrag in Ihrem Kalender."
+msgstr "Cette rencontre a été annulée. Mettez à jour votre calendrier."
+
 #: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
 msgid "Dieses Übungsdorf ist abgelaufen"
 msgstr "Ce village d'essai a expiré"
@@ -4785,6 +4871,11 @@ msgstr "Une date de paiement valide est requise."
 msgid "Ein konkretes Angebot für vereinbarte Leistungen."
 msgstr "Une offre concrète pour les services convenus."
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:9
+msgid "Ein monatlicher Versuch"
+msgstr "Une expérience mensuelle"
+
 #: templates/pricing.html:147
 msgid ""
 "Ein privates Netzwerk, damit Nachbarn die Box ohne offene Ports erreichen. Selbst gehostet oder "
@@ -5169,6 +5260,11 @@ msgstr "ElCom : questions et réponses sur la Stratégie énergétique 2050"
 msgid "Empfang bestätigt"
 msgstr "Réception confirmée"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5 templates/verein/events.html:7
+msgid "Ende"
+msgstr "Fin"
+
 #: templates/gemeinde/profil.html:75
 msgid "Energie"
 msgstr "Énergie"
@@ -5297,6 +5393,15 @@ msgstr "Brouillon invalide"
 msgid "Erfassen Sie einen Quartierakku mit Kapazität, Jahreskosten und Kostenanteilen."
 msgstr "Saisissez un accumulateur de quartier avec sa capacité, ses coûts annuels et les parts de coûts."
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:3
+msgid ""
+"Erfassen Sie nur tatsächlich bestätigte Termine und öffentliche Angaben. Zugangscodes und private"
+" Einladungslinks gehören nicht in dieses Formular."
+msgstr ""
+"Ne saisissez que les dates et informations publiques effectivement confirmées. Les codes d'accès "
+"et les liens d'invitation privés ne sont pas inclus dans ce formulaire."
+
 #: store/formation_activation.py:150
 msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
 msgstr "Enregistrez d’abord la confirmation de mise en service du gestionnaire de réseau."
@@ -5317,6 +5422,11 @@ msgid ""
 msgstr ""
 "Les rapports d'énergie et les entrées sont pris en compte. Les valeurs du quart d'heure sont "
 "exprimées en kWh; une puissance en kW est une autre taille."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Erfasste Treffen"
+msgstr "Réunions prises en compte"
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/application.html:10 templates/verein/member.html:5
@@ -5780,6 +5890,16 @@ msgstr "Validée"
 msgid "Freigegebene Messwerte"
 msgstr "Mesures partagées"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Freigegebene Notizen veröffentlichen"
+msgstr "Publier les notes approuvées"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:7
+msgid "Freigegebene Notizen vorhanden"
+msgstr "Notes partagées disponibles"
+
 #: templates/leg_billing.html:100
 msgid "Freigegebene Rechnungen"
 msgstr "Factures approuvées"
@@ -5974,6 +6094,11 @@ msgstr "Applicable à ce modèle"
 msgid "Für dieses Modell und das zugehörige Cloud-Konto klären, ob MFA unterstützt wird."
 msgstr "Pour ce modèle et le compte cloud associé, précisez si MFA est pris en charge."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/event.html:9
+msgid "Für dieses Treffen sind keine freigegebenen Notizen veröffentlicht."
+msgstr "Aucune note approuvée n’a été publiée pour cette rencontre."
+
 #: sandbox_metering.py:51
 msgid ""
 "Für dieses Zeitfenster liegt bereits eine Quelle vor. Prüfen Sie das Original und ziehen Sie es "
@@ -6030,6 +6155,11 @@ msgstr ""
 #: templates/open_source.html:120
 msgid "Für technische Nutzer"
 msgstr "Pour les utilisateurs techniques"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:10
+msgid "Für wen"
+msgstr "Pour qui?"
 
 #: templates/leg_gruenden.html:70
 msgid ""
@@ -6360,6 +6490,17 @@ msgstr ""
 "partagées. Les réunions ne sont pas enregistrées. Les dates et les hôtes ne seront publiés "
 "qu'après leur confirmation."
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:9
+msgid ""
+"Geplant sind drei monatliche Online-Treffen. Tatsächliche Termine und Gastgeber werden einzeln "
+"bestätigt. Eine übersetzte Veranstaltungsseite ändert die angegebene Gesprächssprache nicht. "
+"Teilnahme begründet keine Vereinsmitgliedschaft."
+msgstr ""
+"Trois réunions en ligne mensuelles sont prévues. Les rendez-vous et les hôtes réels sont "
+"confirmés individuellement. Une page d'événement traduite ne modifie pas la langue de "
+"conversation indiquée. La participation ne crée pas d'affiliation à un club."
+
 #: templates/sandbox/metering.html:63
 msgid "Geplanten Import ausprobieren"
 msgstr "Essayer l'import planifié"
@@ -6436,6 +6577,11 @@ msgstr "Puissance photovoltaïque totale :"
 msgid "Gesamter Code auf GitHub, AGPL-3.0-or-later"
 msgstr "Tout le code sur GitHub, AGPL-3.0-or-later"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Geschlossen"
+msgstr "Fermé"
+
 #: templates/utility/login.html:39
 msgid "Geschäftliche E-Mail"
 msgstr "E-mail professionnel"
@@ -6501,6 +6647,11 @@ msgstr "Télécharger le transfert enregistré"
 #: templates/advisories.html:70
 msgid "Gespeicherter Stand:"
 msgstr "Statut enregistré :"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/event.html:5
+msgid "Gesprächssprache"
+msgstr "Langue de la discussion"
 
 #: templates/api_docs.html:72
 msgid "Get municipality profile"
@@ -6937,6 +7088,15 @@ msgstr ""
 "Vous trouverez ici les inscriptions, l’exploitation du potentiel solaire et l’avancement de votre"
 " commune."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/events.html:3
+msgid ""
+"Hier stehen bestätigte Treffen mit Termin, Sprache und Teilnahmeweg. Die monatlichen Online-"
+"Treffen werden nicht aufgezeichnet."
+msgstr ""
+"Vous trouverez ici les rencontres confirmées, leur date, leur langue et les modalités de "
+"participation. Les rencontres mensuelles en ligne ne sont pas enregistrées."
+
 #: advisories.py:51 equipment.py:18 templates/equipment_form.html:19
 msgid "Hinterlegter Installateurnachweis"
 msgstr "Justificatif d’installateur enregistré"
@@ -7044,7 +7204,7 @@ msgid "Identische Wiederholung"
 msgstr "Répétition identique"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:290 verein_routes.py:296
+#: verein_routes.py:273 verein_routes.py:290 verein_routes.py:296
 msgid "Ihr Antrag wartet auf die Prüfung durch den Vorstand. Sie sind noch kein Mitglied."
 msgstr "Votre demande attend l'examen du comité. Vous n'êtes pas encore membre."
 
@@ -7061,7 +7221,7 @@ msgid "Ihr Haushalt am Musterweg 2 hat eine Solaranlage."
 msgstr "Votre foyer du Musterweg 2 possède une installation photovoltaïque."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:340 verein_routes.py:346
+#: verein_routes.py:323 verein_routes.py:340 verein_routes.py:346
 msgid ""
 "Ihr Jahresbeitrag von CHF 50 ist offen. Bitte zahlen Sie innerhalb von weiteren 60 Tagen ab "
 "dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur Beendigung treffen. "
@@ -7080,7 +7240,7 @@ msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr "Votre fiche CEL dans le répertoire ouvert a bien été revendiquée."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:334 verein_routes.py:340
+#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:340
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
@@ -7092,7 +7252,7 @@ msgstr ""
 "Vous pouvez recourir auprès de l'assemblée des membres. Contact : hallo@openleg.ch."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:328 verein_routes.py:334
+#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:334
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
@@ -7742,6 +7902,11 @@ msgstr "Consommation électrique annuelle en kWh"
 msgid "Jährlicher Verbrauch:"
 msgstr "Consommation annuelle :"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:7
+msgid "Kalendereintrag herunterladen"
+msgstr "Télécharger l'entrée d'agenda"
+
 #: templates/leg_dashboard.html:335 templates/leg_dashboard.html:366
 msgid "Kanal"
 msgstr "Canal"
@@ -8112,6 +8277,11 @@ msgstr "Cliquez sur « Exporter CSV »"
 #: templates/index.html:161
 msgid "Klären Sie Mitglieder, Verträge, Netzbetreiber und Abrechnung."
 msgstr "Clarifiez les membres, les contrats, le gestionnaire de réseau et la facturation."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:6
+msgid "Kommende Treffen"
+msgstr "Réunion à venir"
 
 #: templates/gemeinde/profil.html:122
 msgid "Konkrete Massnahmen"
@@ -9355,7 +9525,7 @@ msgid "Mitgliedsanträge"
 msgstr "Demandes d'adhésion"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/verein/application.html:10 verein_routes.py:213 verein_routes.py:219
+#: templates/verein/application.html:10 verein_routes.py:196 verein_routes.py:213 verein_routes.py:219
 msgid "Mitgliedschaft"
 msgstr "Adhésion"
 
@@ -9957,6 +10127,11 @@ msgstr "Aucune période pour le moment"
 msgid "Noch keine Statusänderung protokolliert."
 msgstr "Aucun changement de statut n'a encore été enregistré."
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Noch keine Treffen erfasst."
+msgstr "Pas encore de rendez-vous."
+
 #: templates/leg_billing_policy.html:134
 msgid "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 msgstr ""
@@ -9974,6 +10149,11 @@ msgstr "Aucune facture publiée pour l'instant."
 #: templates/sandbox/inbox.html:23
 msgid "Noch keine simulierten Nachrichten."
 msgstr "Aucun message simulé pour le moment."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:7
+msgid "Noch keine vergangenen Treffen veröffentlicht."
+msgstr "Pas encore publié de réunions passées."
 
 #: templates/emails/day_3_smartmeter.html:41
 msgid ""
@@ -10006,6 +10186,25 @@ msgstr "Introuvable"
 #: templates/leg_dashboard.html:372
 msgid "Notiz"
 msgstr "Note"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:9
+msgid "Notizen"
+msgstr "Notes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid ""
+"Notizen erst nach dem Treffen und nach tatsächlicher Freigabe veröffentlichen. Keine persönlichen"
+" Daten ohne Erlaubnis und keine Aufzeichnungen."
+msgstr ""
+"Ne publier des notes qu'après la réunion et après la libération effective. Pas de données "
+"personnelles sans permission ni enregistrement."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Notizen zurückziehen"
+msgstr "Retirer les notes"
 
 #: templates/equipment_index.html:8
 msgid ""
@@ -10238,6 +10437,11 @@ msgstr ""
 #: templates/utility/dashboard.html:96
 msgid "Onboarding"
 msgstr "Mise en route"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5
+msgid "Online, Zeitzone Europe/Zurich"
+msgstr "En ligne, fuseau horaire Europe/Zurich"
 
 #: templates/assets/og-image.svg:1 templates/open_source.html:27
 msgid "Open Source Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften."
@@ -11554,6 +11758,11 @@ msgstr "Référence du gestionnaire de réseau"
 msgid "Referenz zum tatsächlichen Beschluss"
 msgstr "Référence de la décision effectivement prise"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Referenz zur tatsächlichen Freigabe"
+msgstr "Référence à la libération effective"
+
 #: templates/leg_billing.html:160
 msgid "Referenz:"
 msgstr "Référence:"
@@ -12498,6 +12707,11 @@ msgstr ""
 msgid "St. Gallen"
 msgstr "Saint-Gall"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:6
+msgid "Stabile URL-Kennung"
+msgstr "Identification stable de l'URL"
+
 #: templates/gemeinde/methodik.html:26 templates/gemeinde/rangliste.html:30
 #: templates/gemeinde/vergleich.html:28 templates/gemeinde/verzeichnis.html:21
 msgid "Stand"
@@ -12514,6 +12728,11 @@ msgstr "État au chargement"
 #: templates/equipment_form.html:75
 msgid "Stand der manuellen Prüfung"
 msgstr "État de la vérification manuelle"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:10
+msgid "Stand speichern"
+msgstr "Enregistrer l' état"
 
 #: templates/leg_gruenden.html:85
 msgid "Stand: 11. September 2026"
@@ -12781,6 +13000,11 @@ msgid "Tariffs across municipalities"
 msgstr "Tarifs des différentes communes"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:6
+msgid "Tatsächliche Gesprächssprachen"
+msgstr "Langues de conversation effectives"
+
+#. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:21
 msgid "Technische Betriebsdokumentation"
 msgstr "Documentation technique opérationnelle"
@@ -12809,6 +13033,11 @@ msgstr "Confirmer votre participation"
 #: templates/gemeinde/pilotgemeinde.html:38
 msgid "Teilnahme, Rollen und Abrechnung festlegen."
 msgstr "Définir la participation, les rôles et la facturation."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Teilnahmeweg noch nicht freigegeben"
+msgstr "Voie de participation non encore ouverte"
 
 #: templates/leg_gruenden.html:33 templates/leg_gruenden.html:144
 msgid "Teilnehmende und Anlagen erfassen"
@@ -12867,6 +13096,11 @@ msgstr "Modèles de pages, ressources statiques et tests"
 msgid "Tenant"
 msgstr "Instance"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5
+msgid "Termin und Teilnahme"
+msgstr "Date et participation"
+
 #: templates/utility/register.html:57
 msgid "Tessin"
 msgstr "Tessin"
@@ -12879,6 +13113,16 @@ msgstr "Les tests se trouvent dans"
 msgid "Tests und Beiträge"
 msgstr "Tests et contributions"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:10
+msgid "Themen"
+msgstr "Thèmes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:8
+msgid "Themen des Treffens"
+msgstr "Thèmes de la réunion"
+
 #: templates/utility/register.html:52
 msgid "Thurgau"
 msgstr "Thurgovie"
@@ -12890,6 +13134,11 @@ msgstr "Niveau"
 #: templates/emails/day_7_consumption.html:51
 msgid "Tipp:"
 msgstr "Conseil :"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:10
+msgid "Titel"
+msgstr "Titre"
 
 #: security_utils.py:212
 msgid "Token ist erforderlich"
@@ -12913,6 +13162,21 @@ msgstr ""
 "Saisissez votre adresse e-mail. Nous vous envoyons un lien de confirmation distinct pour chaque "
 "profil d’adresse enregistré et chaque demande de couverture ouverte. Nous supprimons l’entrée "
 "liée à chaque lien uniquement après votre confirmation."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:12
+msgid "Treffen"
+msgstr "Réunion"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/events.html:2
+msgid "Treffen und Austausch"
+msgstr "Rencontres et échanges"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:2 templates/verein/events.html:3 templates/verein/queue.html:3
+msgid "Treffen verwalten"
+msgstr "Gérer les rencontres"
 
 #: equipment.py:45
 msgid "Trennung vom privaten Netz mit dem Betreiber prüfen."
@@ -13182,6 +13446,11 @@ msgstr "Lire les statuts adoptés"
 msgid "Veraltet"
 msgstr "Données anciennes"
 
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5 templates/verein/events.html:6
+msgid "Veranstalter"
+msgstr "Organisateur"
+
 #: templates/leg_dashboard.html:216
 msgid "Verantwortlich"
 msgstr "Responsable"
@@ -13287,7 +13556,7 @@ msgid "Verein: E-Mail bestätigen"
 msgstr "Association: Confirmer l'e-mail"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:368 verein_routes.py:374
+#: verein_routes.py:351 verein_routes.py:368 verein_routes.py:374
 msgid "Verein: Entscheid zum Mitgliedsantrag"
 msgstr "Association : décision sur l'adhésion"
 
@@ -13326,6 +13595,11 @@ msgstr "Disponible"
 #: templates/leg_gruenden.html:200
 msgid "Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf."
 msgstr "Données de mesure disponibles et processus de facturation documenté."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:6
+msgid "Vergangene Treffen"
+msgstr "Rencontres passées"
 
 #: templates/index.html:85
 msgid "Vergleich mit 2'000+ Gemeinden"
@@ -13395,6 +13669,11 @@ msgstr "Réduire"
 #: templates/leg_billing.html:176 templates/member_invoice_detail.html:207
 msgid "Verknüpft mit Korrektur:"
 msgstr "Lié à la correction :"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Version"
+msgstr "Version"
 
 #: templates/leg_billing_policy.html:94
 msgid "Version speichern"
@@ -13507,6 +13786,11 @@ msgstr "Source publiée et plage de versions"
 #: templates/equipment_form.html:29
 msgid "Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen"
 msgstr "Consultez les instructions de sécurité publiées pour cet appareil"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:8
+msgid "Veröffentlichung"
+msgstr "Publication"
 
 #: templates/sandbox/metering.html:11
 msgid ""
@@ -14496,7 +14780,7 @@ msgid "Zielgruppe"
 msgstr "Public cible"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:356 verein_routes.py:362
+#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362
 #, python-format
 msgid ""
 "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist "
@@ -14619,9 +14903,26 @@ msgid "Zur Unterschrift versendet"
 msgstr "Envoyé pour signature"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Zur Vereinsverwaltung"
+msgstr "Sur l'administration des associations"
+
+#. Draft translation; native language and domain review pending.
 #: templates/verein/index.html:11
 msgid "Zur geplanten Mitgliedschaft fragen"
 msgstr "Demande d'adhésion"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Zur öffentlichen Anmeldung"
+msgstr "Sur la demande publique"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/events.html:7
+msgid "Zurzeit ist kein kommendes Treffen bestätigt. Fragen zum Austausch können Sie per E-Mail stellen."
+msgstr ""
+"Aucune prochaine rencontre n’est confirmée pour le moment. Vous pouvez nous écrire au sujet des "
+"échanges à venir."
 
 #: templates/contact_requests.html:76
 msgid "Zurzeit sind keine weiteren Haushalte für eine Anfrage verfügbar."
@@ -15328,11 +15629,21 @@ msgstr ""
 "Les données publiques sur l'énergie et le solaire aident à comprendre la situation locale. "
 "Comparez les communes et découvrez le parcours destiné à votre administration."
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Öffentliche Seite"
+msgstr "Secteur public"
+
 #: templates/datenschutz.html:45
 msgid "Öffentliche, anonymisierte Gemeindezählung; bei weniger als drei Personen zeigen wir nur «< 3»"
 msgstr ""
 "Comptage public et anonymisé par commune ; pour moins de trois personnes, nous affichons "
 "uniquement «< 3»"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Öffentlicher HTTPS-Anmeldelink"
+msgstr "Lien de connexion HTTPS public"
 
 #: templates/advisories.html:65 templates/equipment_form.html:21
 msgid "Öffentlicher Quellenlink (optional)"

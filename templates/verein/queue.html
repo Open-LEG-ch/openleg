@@ -1,6 +1,6 @@
 {% extends 'product_base.html' %}
 {% block meta %}<title>{{ _("Mitgliedsanträge") }} | OpenLEG</title>{% endblock %}
-{% block content %}
+{% block content %}<p class="release-container mt-6"><a class="underline" href="/verein/vorstand/treffen">{{ _("Treffen verwalten") }}</a></p>
 <section class="max-w-5xl mx-auto px-4 py-12">
 <h1 class="text-3xl font-bold">{{ _("Mitgliedsanträge") }}</h1>
 <form method="get" class="mt-6 flex flex-wrap gap-4 items-end"><label>{{ _('Anträge und Mitglieder filtern') }}<select class="block border p-3" name="status">{% for value,label in [('pending',_('Offene Anträge')),('active',_('Aktive Mitglieder')),('refused',_('Abgelehnte Anträge')),('resigned',_('Ausgetretene Mitglieder')),('terminated',_('Beendete Mitgliedschaften')),('all',_('Alle bestätigten Anträge'))] %}<option value="{{ value }}"{% if filter_status==value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><button class="border px-5 py-3 rounded-full">{{ _('Anzeigen') }}</button></form>

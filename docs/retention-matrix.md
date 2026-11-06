@@ -137,3 +137,15 @@ changes preserve earlier owner evidence for the same equipment but do not reuse
 its acknowledgement for the new source revision/device context. No evidence is
 sent to an external recipient. Database deletion does not alter any copies an
 owner made outside the application.
+
+## Association records and meetup publication
+
+`store/verein` is separate from resident registration and unsubscribe. A
+resignation/termination changes association state and preserves decision, dues
+and receipt history. It does not imply erasure. No approved association retention
+horizon or automated purge is implemented; actual intake needs reviewed rules.
+
+`store/verein_meetups` keeps occurrence versions and authorising board references.
+Withdrawing notes removes the current public notes immediately and retains the
+private revision history. Changing publication is not deletion. Public titles,
+organisers and notes require actual publication permission.

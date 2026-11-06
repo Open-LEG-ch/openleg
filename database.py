@@ -455,6 +455,7 @@ list_operator_invoices = _operator_operations.list_invoices
 list_operator_invoice_cases = _operator_operations.list_cases
 list_operator_payment_matches = _operator_operations.list_payments
 
+from store import verein_meetups as _verein_meetups
 from store.advisories import (  # noqa: F401
     append_advisory_revision,
     create_advisory,
@@ -506,3 +507,9 @@ from store.verein import reviewer as get_verein_reviewer  # noqa: F401
 from store.verein import revoke_reviewer as revoke_verein_reviewer  # noqa: F401
 from store.verein import submit_member_request as submit_verein_member_request  # noqa: F401
 from store.verein import terminate as terminate_verein_membership  # noqa: F401
+
+list_verein_meetups_for_review = _verein_meetups.list_for_review
+publish_verein_meetup_notes = _verein_meetups.publish_notes
+list_published_verein_meetups = _verein_meetups.published
+save_verein_meetup = _verein_meetups.save
+withdraw_verein_meetup_notes = _verein_meetups.withdraw_notes

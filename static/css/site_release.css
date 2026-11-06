@@ -40,6 +40,11 @@
 .release-language a { min-height: 44px; display: inline-flex; align-items: center; padding-inline: 6px; }
 .release-language-options { position: absolute; top: calc(100% + 8px); right: 0; width: 180px; padding: 12px; border: 1px solid #bcc3d0; border-radius: 12px; background: #fffdf8; }
 .release-language-options nav { display: grid; }
+.release-product-language { position: relative; }
+.release-product-language summary { min-height: 44px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.release-product-language > div { position: absolute; top: 100%; right: 0; z-index: 60; width: 180px; padding: 12px; background: #fffdf8; border: 1px solid #bcc3d0; border-radius: 12px; }
+.release-product-language nav { display: grid; gap: 4px; }
+.release-product-language a { min-height: 44px; display: flex; align-items: center; }
 .release-footer { background: #243b85; color: #fffdf8; padding-block: 56px; }
 .release-footer :where(a, summary):focus-visible { outline-color: #ffc8b8; }
 .release-footer-intro { display: grid; gap: 16px; max-width: 460px; margin-bottom: 40px; }
@@ -111,6 +116,7 @@
 .release-definition-list dt { font-weight: 600; }
 .release-resource-list > li { padding-block: 20px; border-top: 1px solid #bcc3d0; }
 .release-resource-list a { font-size: 22px; }
+.release-plain-text { white-space: pre-line; }
 @media (max-width: 1199px) { .release-container { padding-inline: 32px; } .release-menu { gap: 12px; } .release-nav-row { gap: 20px; } }
 @media (max-width: 1099px) {
   .release-hero-intro { gap: 32px; }

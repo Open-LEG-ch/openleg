@@ -143,3 +143,12 @@ Domain logic sits above storage and stays free of SQL:
 - Data pipeline and import commands: `docs/data-pipeline.md`
 - Repository boundary: `docs/repo-boundary.md`
 - Agent execution contract: `docs/codex-execution.md`
+
+## Association and meetups
+
+Association members belong to Verein openLEG Schweiz, independently of LEG
+participants or product users. An application is not membership until admitted.
+Association dues and receipts are not electricity billing or payment approval.
+An occurrence is one actual meetup with a stable URL and calendar UID. A draft is
+private; approval of public notes is explicit and independent of the event date.
+See [association administration](docs/verein-administration.md).

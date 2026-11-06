@@ -782,6 +782,11 @@ msgid "Abgemeldet"
 msgstr "Unregistered"
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/events.html:7 templates/verein/events.html:8
+msgid "Abgesagt"
+msgstr "Cancelled"
+
+#. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:59
 msgid "Abgleich mit dem VNB: Abweichung prüfen."
 msgstr "Comparison with VNB: Check deviation."
@@ -1169,6 +1174,11 @@ msgstr ""
 "check."
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Aktuellen Stand bearbeiten"
+msgstr "Edit Current State"
+
+#. Draft translation; native language and domain review pending.
 #: templates/gemeinde/methodik.html:75
 msgid "Aktueller Snapshot:"
 msgstr "Current snapshot:"
@@ -1248,6 +1258,11 @@ msgstr ""
 #: templates/emails/day_14_formation.html:51
 msgid "Alle Teilnehmer unterzeichnen den Gemeinschaftsvertrag digital."
 msgstr "All participants sign the Community Agreement digitally."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:9
+msgid "Alle Treffen ansehen"
+msgstr "View all meetings"
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/queue.html:6
@@ -1428,6 +1443,11 @@ msgstr "Download Log-in Package"
 #: templates/leg_dashboard.html:292
 msgid "Anmeldepaket vorbereiten"
 msgstr "Preparing a registration package"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Anmeldestatus"
+msgstr "Login status"
 
 #. Draft translation; native language and domain review pending.
 #: formation_wizard.py:144 templates/documents/dso_registration.html:13
@@ -1790,6 +1810,11 @@ msgstr "Outlook: central LEG register"
 msgid "Ausgang"
 msgstr "Output"
 
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Ausgebucht"
+msgstr "Booked"
+
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/index.html:10
 msgid ""
@@ -2076,6 +2101,16 @@ msgstr "Copy command"
 #: templates/partials/install_console.html:1
 msgid "Befehl kopiert."
 msgstr "Command copied."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5 templates/verein/events.html:7
+msgid "Beginn"
+msgstr "Start"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:7
+msgid "Beginn und Ende in Europe/Zurich. Zeiten während der Zeitumstellung müssen eindeutig sein."
+msgstr "Enter start and end times in Europe/Zurich. Times during a clock change must be unambiguous."
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/home.html:37
@@ -2440,6 +2475,11 @@ msgstr "Confirmed"
 msgid "Bestätigt bis"
 msgstr "Confirmed until"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:8
+msgid "Bestätigt veröffentlichen"
+msgstr "Publish confirmed occurrence"
+
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/verzeichnis.html:98
 msgid "Bestätigte Interessenmeldungen"
@@ -2449,6 +2489,11 @@ msgstr "Confirmed messages of interest"
 #: templates/leg_dashboard.html:41
 msgid "Bestätigte Mitglieder"
 msgstr "Confirmed members"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/community.html:7
+msgid "Bestätigte Treffen ansehen"
+msgstr "View Confirmed Meetings"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_dashboard.html:304
@@ -2798,6 +2843,17 @@ msgid "Bitte prüfen Sie Name, E-Mail und die Aufnahmebedingungen."
 msgstr "Please check your name, email and admission conditions."
 
 #. Draft translation; native language and domain review pending.
+#: verein_event_routes.py:134
+msgid ""
+"Bitte prüfen Sie alle Angaben. Die Zeit muss in Europe/Zurich eindeutig sein, das Ende nach dem "
+"Beginn liegen. Alle vier Sprachen und für eine offene Anmeldung ein öffentlicher HTTPS-Link sind "
+"erforderlich. Bei einem veralteten Formular öffnen Sie den aktuellen Stand erneut."
+msgstr ""
+"Please check all details. The time must be clear in Europe/Zurich, the end is after the start. "
+"All four languages and for an open login a public HTTPS link are required. If an outdated form "
+"opens the current status again."
+
+#. Draft translation; native language and domain review pending.
 #: templates/advisories.html:34
 msgid ""
 "Bitte prüfen Sie die Angaben. Für «Als erledigt angegeben» brauchen Sie eine datierte Quelle. Das"
@@ -3132,6 +3188,11 @@ msgstr ""
 #: billing_policy.py:221
 msgid "Das Rechnungspräfix der Richtlinie ist ungültig."
 msgstr "The prefix of the policy is invalid."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/event.html:8
+msgid "Das Treffen wird nicht aufgezeichnet. Veröffentlicht werden nur ausdrücklich freigegebene Notizen."
+msgstr "This meetup is not recorded. Only explicitly approved notes are published."
 
 #. Draft translation; native language and domain review pending.
 #: billing_policy.py:206
@@ -3673,6 +3734,11 @@ msgid ""
 msgstr "The status of your contact requests has changed. Open your dashboard to check the request. %(url)s"
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
+msgstr "The way to participate is not yet open. Questions: hallo@openleg.ch."
+
+#. Draft translation; native language and domain review pending.
 #: store/formation_signatures.py:165
 msgid "Der Unterschriftsbeleg ist ungültig."
 msgstr "The signature receipt is invalid."
@@ -3785,7 +3851,7 @@ msgstr ""
 "approved statutes."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:345 verein_routes.py:351
+#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351
 #, python-format
 msgid ""
 "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
@@ -3963,6 +4029,11 @@ msgid ""
 "Die Anleitung beschreibt Installation, Updates, Backups und den Zugriff über ein privates "
 "Netzwerk."
 msgstr "The guide describes installation, updates, backups and access via a private network."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Die Anmeldung für dieses Treffen ist geschlossen."
+msgstr "Registration for this meeting is closed."
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/onboarding.html:7
@@ -4975,6 +5046,21 @@ msgstr ""
 " village or restart."
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
+msgstr "This meeting is fully booked. Questions about further dates: hallo@openleg.ch."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Dieses Treffen liegt in der Vergangenheit."
+msgstr "This meeting is in the past."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Dieses Treffen wurde abgesagt. Aktualisieren Sie den Eintrag in Ihrem Kalender."
+msgstr "This meetup has been cancelled. Update the entry in your calendar."
+
+#. Draft translation; native language and domain review pending.
 #: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
 msgid "Dieses Übungsdorf ist abgelaufen"
 msgstr "This practice village has expired"
@@ -5447,6 +5533,11 @@ msgid "Ein konkretes Angebot für vereinbarte Leistungen."
 msgstr "A concrete offer for agreed services."
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/events.html:9
+msgid "Ein monatlicher Versuch"
+msgstr "A monthly trial"
+
+#. Draft translation; native language and domain review pending.
 #: templates/pricing.html:147
 msgid ""
 "Ein privates Netzwerk, damit Nachbarn die Box ohne offene Ports erreichen. Selbst gehostet oder "
@@ -5884,6 +5975,11 @@ msgid "Empfang bestätigt"
 msgstr "Reception confirmed"
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5 templates/verein/events.html:7
+msgid "Ende"
+msgstr "End"
+
+#. Draft translation; native language and domain review pending.
 #: templates/gemeinde/profil.html:75
 msgid "Energie"
 msgstr "Energy"
@@ -6036,6 +6132,15 @@ msgid "Erfassen Sie einen Quartierakku mit Kapazität, Jahreskosten und Kostenan
 msgstr "Capture a quarter battery with capacity, annual costs and cost shares."
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:3
+msgid ""
+"Erfassen Sie nur tatsächlich bestätigte Termine und öffentliche Angaben. Zugangscodes und private"
+" Einladungslinks gehören nicht in dieses Formular."
+msgstr ""
+"Only record actual confirmed dates and public information. Access codes and private invitation "
+"links do not belong in this form."
+
+#. Draft translation; native language and domain review pending.
 #: store/formation_activation.py:150
 msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
 msgstr "First, record the grid operator's start confirmation."
@@ -6057,6 +6162,11 @@ msgid ""
 msgstr ""
 "Determined energy receipts and feed-ins with time reference. Quarter-hour values are given in "
 "kWh; a power in kW is a different size."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Erfasste Treffen"
+msgstr "Meetings covered"
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/application.html:10 templates/verein/member.html:5
@@ -6609,6 +6719,16 @@ msgstr "Released"
 msgid "Freigegebene Messwerte"
 msgstr "Released values"
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Freigegebene Notizen veröffentlichen"
+msgstr "Publish approved notes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:7
+msgid "Freigegebene Notizen vorhanden"
+msgstr "Released notes available"
+
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:100
 msgid "Freigegebene Rechnungen"
@@ -6832,6 +6952,11 @@ msgstr "Applicable to this model"
 msgid "Für dieses Modell und das zugehörige Cloud-Konto klären, ob MFA unterstützt wird."
 msgstr "For this model and the associated cloud account, check whether MFA is supported."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/event.html:9
+msgid "Für dieses Treffen sind keine freigegebenen Notizen veröffentlicht."
+msgstr "No approved notes have been published for this meetup."
+
 #. Draft translation; native language and domain review pending.
 #: sandbox_metering.py:51
 msgid ""
@@ -6895,6 +7020,11 @@ msgstr ""
 #: templates/open_source.html:120
 msgid "Für technische Nutzer"
 msgstr "For technical users"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:10
+msgid "Für wen"
+msgstr "For whom"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:70
@@ -7287,6 +7417,17 @@ msgstr ""
 "not recorded. Dates and hosts will only be published after their confirmation."
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/events.html:9
+msgid ""
+"Geplant sind drei monatliche Online-Treffen. Tatsächliche Termine und Gastgeber werden einzeln "
+"bestätigt. Eine übersetzte Veranstaltungsseite ändert die angegebene Gesprächssprache nicht. "
+"Teilnahme begründet keine Vereinsmitgliedschaft."
+msgstr ""
+"Three monthly online meetings are planned. Actual dates and hosts are confirmed individually. A "
+"translated event page does not change the specified conversation language. Participation does not"
+" justify membership of the association."
+
+#. Draft translation; native language and domain review pending.
 #: templates/sandbox/metering.html:63
 msgid "Geplanten Import ausprobieren"
 msgstr "Try Planned Import"
@@ -7382,6 +7523,11 @@ msgid "Gesamter Code auf GitHub, AGPL-3.0-or-later"
 msgstr "Total code to GitHub, AGPL-3.0-or-later"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Geschlossen"
+msgstr "Closed"
+
+#. Draft translation; native language and domain review pending.
 #: templates/utility/login.html:39
 msgid "Geschäftliche E-Mail"
 msgstr "Business e-mail"
@@ -7461,6 +7607,11 @@ msgstr "Download Saved Transfer"
 #: templates/advisories.html:70
 msgid "Gespeicherter Stand:"
 msgstr "Stored status:"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/event.html:5
+msgid "Gesprächssprache"
+msgstr "Spoken language"
 
 #. Draft translation; native language and domain review pending.
 #: templates/api_docs.html:72
@@ -7964,6 +8115,15 @@ msgstr ""
 msgid "Hier sehen Sie künftig Registrierungen, Solarnutzung und den Stand Ihrer Gemeinde."
 msgstr "Here you will see registrations, solar usage and the status of your municipality."
 
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/events.html:3
+msgid ""
+"Hier stehen bestätigte Treffen mit Termin, Sprache und Teilnahmeweg. Die monatlichen Online-"
+"Treffen werden nicht aufgezeichnet."
+msgstr ""
+"Confirmed meetups are listed here with their date, spoken language and how to take part. The "
+"monthly online meetups are not recorded."
+
 #. Draft translation; native language and domain review pending.
 #: advisories.py:51 equipment.py:18 templates/equipment_form.html:19
 msgid "Hinterlegter Installateurnachweis"
@@ -8106,7 +8266,7 @@ msgid "Ihr Haushalt am Musterweg 2 hat eine Solaranlage."
 msgstr "Your household at the sample path 2 has a solar system."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:340 verein_routes.py:346
+#: verein_routes.py:323 verein_routes.py:340 verein_routes.py:346
 msgid ""
 "Ihr Jahresbeitrag von CHF 50 ist offen. Bitte zahlen Sie innerhalb von weiteren 60 Tagen ab "
 "dieser Erinnerung. Danach kann der Vorstand einen begründeten Entscheid zur Beendigung treffen. "
@@ -8127,7 +8287,7 @@ msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr "Your LEG entry in the open directory has been successfully claimed."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:334 verein_routes.py:340
+#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:340
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
@@ -8139,7 +8299,7 @@ msgstr ""
 "You may appeal to the members' assembly. Contact: hallo@openleg.ch."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:328 verein_routes.py:334
+#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:334
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
@@ -8892,6 +9052,11 @@ msgid "Jährlicher Verbrauch:"
 msgstr "Annual consumption:"
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/event.html:7
+msgid "Kalendereintrag herunterladen"
+msgstr "Download calendar entry"
+
+#. Draft translation; native language and domain review pending.
 #: templates/leg_dashboard.html:335 templates/leg_dashboard.html:366
 msgid "Kanal"
 msgstr "Channel"
@@ -9334,6 +9499,11 @@ msgstr "Click on \"ExportCSV\""
 #: templates/index.html:164
 msgid "Klären Sie Mitglieder, Verträge, Netzbetreiber und Abrechnung."
 msgstr "Clear members, contracts, network operators and billing."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:6
+msgid "Kommende Treffen"
+msgstr "Meetings to be held"
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/profil.html:122
@@ -11534,6 +11704,11 @@ msgid "Noch keine Statusänderung protokolliert."
 msgstr "No status change logged yet."
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Noch keine Treffen erfasst."
+msgstr "No meetings recorded yet."
+
+#. Draft translation; native language and domain review pending.
 #: templates/leg_billing_policy.html:134
 msgid "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 msgstr "The billing run starts only with a stored policy."
@@ -11552,6 +11727,11 @@ msgstr "No cleared invoices yet available."
 #: templates/sandbox/inbox.html:23
 msgid "Noch keine simulierten Nachrichten."
 msgstr "No simulated messages yet."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:7
+msgid "Noch keine vergangenen Treffen veröffentlicht."
+msgstr "No previous meetings have been published yet."
 
 #. Draft translation; native language and domain review pending.
 #: templates/emails/day_3_smartmeter.html:41
@@ -11591,6 +11771,25 @@ msgstr "Not found"
 #: templates/leg_dashboard.html:372
 msgid "Notiz"
 msgstr "Note"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:9
+msgid "Notizen"
+msgstr "Notes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid ""
+"Notizen erst nach dem Treffen und nach tatsächlicher Freigabe veröffentlichen. Keine persönlichen"
+" Daten ohne Erlaubnis und keine Aufzeichnungen."
+msgstr ""
+"Publish notes only after the meeting and after actual release. No personal data without "
+"permission and no records."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Notizen zurückziehen"
+msgstr "Withdraw notes"
 
 #. Draft translation; native language and domain review pending.
 #: templates/equipment_index.html:8
@@ -11862,6 +12061,11 @@ msgstr ""
 #: templates/utility/dashboard.html:96
 msgid "Onboarding"
 msgstr "Onboarding"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5
+msgid "Online, Zeitzone Europe/Zurich"
+msgstr "Online, Time zone Europe/Zurich"
 
 #. Draft translation; native language and domain review pending.
 #: templates/assets/og-image.svg:1 templates/open_source.html:27
@@ -13386,6 +13590,11 @@ msgid "Referenz zum tatsächlichen Beschluss"
 msgstr "Reference to the actual decision"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Referenz zur tatsächlichen Freigabe"
+msgstr "Reference to actual release"
+
+#. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:160
 msgid "Referenz:"
 msgstr "Reference:"
@@ -14477,6 +14686,11 @@ msgid "St. Gallen"
 msgstr "St. Gallen"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:6
+msgid "Stabile URL-Kennung"
+msgstr "Stable URL identifier"
+
+#. Draft translation; native language and domain review pending.
 #: templates/gemeinde/methodik.html:26 templates/gemeinde/rangliste.html:30
 #: templates/gemeinde/vergleich.html:28 templates/gemeinde/verzeichnis.html:21
 msgid "Stand"
@@ -14496,6 +14710,11 @@ msgstr "Stand at the shop"
 #: templates/equipment_form.html:75
 msgid "Stand der manuellen Prüfung"
 msgstr "State of manual testing"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:10
+msgid "Stand speichern"
+msgstr "Save Stand"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:85
@@ -14816,6 +15035,11 @@ msgid "Tariffs across municipalities"
 msgstr "Tariffs across communities"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:6
+msgid "Tatsächliche Gesprächssprachen"
+msgstr "Actual Talking Languages"
+
+#. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:21
 msgid "Technische Betriebsdokumentation"
 msgstr "Technical operational documentation"
@@ -14848,6 +15072,11 @@ msgstr "Confirm participation"
 #: templates/gemeinde/pilotgemeinde.html:38
 msgid "Teilnahme, Rollen und Abrechnung festlegen."
 msgstr "Set participation, roles and billing."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Teilnahmeweg noch nicht freigegeben"
+msgstr "Participation path not yet released"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:33 templates/leg_gruenden.html:144
@@ -14921,6 +15150,11 @@ msgid "Tenant"
 msgstr "Tenant"
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5
+msgid "Termin und Teilnahme"
+msgstr "Date and participation"
+
+#. Draft translation; native language and domain review pending.
 #: templates/utility/register.html:57
 msgid "Tessin"
 msgstr "Ticino"
@@ -14936,6 +15170,16 @@ msgid "Tests und Beiträge"
 msgstr "Tests and contributions"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:10
+msgid "Themen"
+msgstr "Topics"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:8
+msgid "Themen des Treffens"
+msgstr "Themes of the meeting"
+
+#. Draft translation; native language and domain review pending.
 #: templates/utility/register.html:52
 msgid "Thurgau"
 msgstr "Thurgau"
@@ -14949,6 +15193,11 @@ msgstr "Animal"
 #: templates/emails/day_7_consumption.html:51
 msgid "Tipp:"
 msgstr "Tip:"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:10
+msgid "Titel"
+msgstr "Title"
 
 #. Draft translation; native language and domain review pending.
 #: security_utils.py:212
@@ -14976,6 +15225,21 @@ msgstr ""
 "Enter your e-mail address. We will send you a confirmation link for each address profile and open"
 " area request. Only with your confirmation will we delete the entry associated with the "
 "respective link."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:12
+msgid "Treffen"
+msgstr "Meetings"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/events.html:2
+msgid "Treffen und Austausch"
+msgstr "Meetups and discussion"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/events.html:2 templates/verein/events.html:3 templates/verein/queue.html:3
+msgid "Treffen verwalten"
+msgstr "Manage meetups"
 
 #. Draft translation; native language and domain review pending.
 #: equipment.py:45
@@ -15299,6 +15563,11 @@ msgid "Veraltet"
 msgstr "Pasted"
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/event.html:5 templates/verein/events.html:6
+msgid "Veranstalter"
+msgstr "Organiser"
+
+#. Draft translation; native language and domain review pending.
 #: templates/leg_dashboard.html:216
 msgid "Verantwortlich"
 msgstr "Responsible"
@@ -15416,7 +15685,7 @@ msgid "Verein: E-Mail bestätigen"
 msgstr "Association: Confirm e-mail"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:368 verein_routes.py:374
+#: verein_routes.py:351 verein_routes.py:368 verein_routes.py:374
 msgid "Verein: Entscheid zum Mitgliedsantrag"
 msgstr "Association: membership decision"
 
@@ -15455,6 +15724,11 @@ msgstr "Available"
 #: templates/leg_gruenden.html:200
 msgid "Verfügbare Messdaten und ein dokumentierter Abrechnungsablauf."
 msgstr "Available measurement data and a documented billing process."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/events.html:6
+msgid "Vergangene Treffen"
+msgstr "Past meetings"
 
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:88
@@ -15534,6 +15808,11 @@ msgstr "Decrease"
 #: templates/leg_billing.html:176 templates/member_invoice_detail.html:207
 msgid "Verknüpft mit Korrektur:"
 msgstr "Linked to correction:"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Version"
+msgstr "Version"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing_policy.html:94
@@ -15664,6 +15943,11 @@ msgstr "Published source and version area"
 #: templates/equipment_form.html:29
 msgid "Veröffentlichte Sicherheitshinweise für dieses Gerät prüfen"
 msgstr "Check published safety instructions for this device"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:8
+msgid "Veröffentlichung"
+msgstr "Publication"
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/metering.html:11
@@ -16812,7 +17096,7 @@ msgid "Zielgruppe"
 msgstr "Target group"
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:356 verein_routes.py:362
+#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362
 #, python-format
 msgid ""
 "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist "
@@ -16957,9 +17241,24 @@ msgid "Zur Unterschrift versendet"
 msgstr "Shipped for signature"
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Zur Vereinsverwaltung"
+msgstr "To the Association Administration"
+
+#. Draft translation; native language and domain review pending.
 #: templates/verein/index.html:11
 msgid "Zur geplanten Mitgliedschaft fragen"
 msgstr "Asking about planned membership"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Zur öffentlichen Anmeldung"
+msgstr "The public notification"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/events.html:7
+msgid "Zurzeit ist kein kommendes Treffen bestätigt. Fragen zum Austausch können Sie per E-Mail stellen."
+msgstr "No upcoming meetup is currently confirmed. You can email us about future discussions."
 
 #. Draft translation; native language and domain review pending.
 #: templates/contact_requests.html:76
@@ -17825,9 +18124,19 @@ msgstr ""
 " the way to your administration."
 
 #. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:11
+msgid "Öffentliche Seite"
+msgstr "Public page"
+
+#. Draft translation; native language and domain review pending.
 #: templates/datenschutz.html:45
 msgid "Öffentliche, anonymisierte Gemeindezählung; bei weniger als drei Personen zeigen wir nur «< 3»"
 msgstr "Public, anonymised census; with less than three people we show only \"< 3\""
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/events.html:9
+msgid "Öffentlicher HTTPS-Anmeldelink"
+msgstr "Public HTTPS login link"
 
 #. Draft translation; native language and domain review pending.
 #: templates/advisories.html:65 templates/equipment_form.html:21

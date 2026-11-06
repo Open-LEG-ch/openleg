@@ -715,3 +715,20 @@ Reset, discard and expiry remove the entire capture directory and database.
 - Access: private worker/gateway files only; never accepted from a browser.
 - Retention: unchanged through worker reloads and individual profile deletion;
   removed with the village on reset, discard, expiry or scratch shutdown.
+
+## store/verein and store/verein_meetups
+
+- `verein_applications`, member records, CHF 50 dues, receipts and requests hold
+  private association administration. Events and notification records preserve
+  decisions and actual delivery evidence. Profile deletion does not cascade into
+  this separate association domain.
+- Reviewers have individual scrypt password hashes, hashed expiring sessions and
+  current revocation checks. Applicant confirmation/access credentials are hashed
+  and expire. Real access remains gated on actual setup and privacy review.
+- `verein_meetups` contains draft/public occurrence content and separately
+  approved notes. `verein_meetup_revisions` keeps private content/approval history
+  and the authorising reviewer. Public projection excludes drafts, reviewer
+  identities and approval references. Calendar output excludes notes and joining
+  links. No attendance record, member inference or recording is collected.
+- Reviewed retention rules remain required before collection of actual applicant
+  data. No automated association retention horizon is asserted by this code.

@@ -4,7 +4,14 @@
 import logging
 
 from locale_policy import extended_locales_enabled
-from store import advisories, contact_request, equipment, telemetry, verein
+from store import (
+    advisories,
+    contact_request,
+    equipment,
+    telemetry,
+    verein,
+    verein_meetups,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +97,7 @@ def create_tables():
 
             contact_request.create_tables(cur)
             verein.create_tables(cur)
+            verein_meetups.create_tables(cur)
             equipment.create_tables(cur)
             advisories.create_tables(cur)
 
