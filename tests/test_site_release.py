@@ -42,8 +42,16 @@ def test_verified_formation_metadata_updates_public_status_and_join_link(web):
     )
     response = web.test_client().get("/verein")
     assert "noch nicht gegründet" not in response.text
-    assert 'href="/verein/beitreten"' in response.text
+    assert 'href="/verein/beitreten"' not in response.text
+    assert 'href="mailto:hallo@openleg.ch"' in response.text
     assert 'href="/statuten.pdf"' in response.text
+    web.config.update(
+        VEREIN_ACCEPTING_APPLICATIONS=True,
+        VEREIN_CONTACT_ADDRESS="Fictional contact",
+        VEREIN_PRIVACY_VERSION="fictional-reviewed-v1",
+        VEREIN_DATA_CONTROLLER="Fictional test association",
+    )
+    assert 'href="/verein/beitreten"' in web.test_client().get("/verein").text
 
 
 def test_new_verein_surface_is_not_published_by_default(web):

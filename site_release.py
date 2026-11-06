@@ -55,8 +55,26 @@ def formation_date():
     return formed if formed <= datetime.now(ZoneInfo("Europe/Zurich")).date() else None
 
 
+def accepting_applications():
+    config = current_app.config
+    return (
+        config.get("VEREIN_ACCEPTING_APPLICATIONS") is True
+        and formation_date() is not None
+        and all(
+            config.get(key)
+            for key in (
+                "VEREIN_CONTACT_ADDRESS",
+                "VEREIN_PRIVACY_VERSION",
+                "VEREIN_STATUTES_URL",
+                "VEREIN_DATA_CONTROLLER",
+            )
+        )
+    )
+
+
 def template_context():
     return {
         "site_release_enabled": current_app.config.get("SITE_RELEASE_ENABLED") is True,
         "verein_formation_date": formation_date(),
+        "verein_accepting_applications": accepting_applications(),
     }
