@@ -152,6 +152,33 @@ website and association launch meets its release conditions. See
 [the engineering contract](docs/engineering-contract.md) and
 [frontend build](docs/frontend-build.md).
 
+## Compatibility while the release switch is off
+
+The default pages still use the existing Daylight cooperative theme. Its pine
+brand, solar accent and paper surfaces remain in the Tailwind build until the
+complete launch switches the shared presentation. The cobalt theme overrides
+these utility tokens only within `.site-release`; do not use the legacy palette
+for new release illustrations or components. Legacy primary buttons use
+`bg-brand text-white`. Their existing favicons remain the default until activation.
+
+| Legacy token | Shipped value |
+| --- | --- |
+| brand / pine | #1f3d32 |
+| brand-light | #2c5545 |
+| brand-dark | #16302a |
+| accent / solar | #e8a13a |
+| accent-light | #f0b968 |
+| accent-dark | #c9832a |
+| sage | #6e8f7c |
+| sage-light | #e4ede6 |
+| sage-dark | #4f6d5c |
+| paper | #f5f2ea |
+| paper-deep | #ece7da |
+| line | #ded7c6 |
+| ink | #22201b |
+| ink-soft | #3a362c |
+| ink-muted | #6b6555 |
+
 ## Identity and type
 
 Keep the text wordmark `openLEG`, with a static coral baseline under LEG. The

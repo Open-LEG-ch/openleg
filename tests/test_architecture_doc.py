@@ -28,6 +28,9 @@ BLUEPRINTS = {
     "telemetry_bp": "telemetry_routes.py",
     "equipment_bp": "equipment_routes.py",
     "advisory_bp": "advisory_routes.py",
+    "site_bp": "site_release.py",
+    "verein_bp": "verein_routes.py",
+    "events_bp": "verein_event_routes.py",
 }
 
 
