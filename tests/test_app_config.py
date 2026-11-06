@@ -261,6 +261,31 @@ def test_a_secret_key_is_generated_when_the_environment_omits_one():
     assert first and second and first != second
 
 
+@pytest.mark.parametrize(
+    "placeholder",
+    [
+        "your-secret-key-here",
+        "generate-a-strong-random-key-here",
+        "  your-secret-key-here  ",
+    ],
+)
+def test_a_documented_placeholder_secret_key_is_refused(placeholder):
+    """The example values are public, so a key copied from them signs nothing."""
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        app_config.build_config({"SECRET_KEY": placeholder})
+
+
+def test_a_placeholder_secret_key_override_is_refused():
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        app_config.build_config({}, {"SECRET_KEY": "your-secret-key-here"})
+
+
+def test_a_configured_secret_key_is_kept():
+    config = app_config.build_config({"SECRET_KEY": "a-real-random-key"})
+
+    assert config["SECRET_KEY"] == "a-real-random-key"
+
+
 def test_no_flask_import_is_needed_to_build_a_config():
     """The point of the seam: config is a value, testable without an app."""
     import ast
@@ -278,3 +303,35 @@ def test_no_flask_import_is_needed_to_build_a_config():
             imported.add(node.module.split(".")[0])
 
     assert "flask" not in imported
+
+
+def test_the_app_refuses_to_start_with_a_placeholder_secret_key():
+    """The guard runs on the real factory path, not only in build_config."""
+    import app as app_module
+
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        app_module.create_app(
+            {
+                "TESTING": True,
+                "SECRET_KEY": "your-secret-key-here",
+                "RATELIMIT_STORAGE_URI": "memory://",
+            },
+            load_environment=False,
+            check_database=False,
+        )
+
+
+def test_the_app_starts_with_a_real_secret_key():
+    import app as app_module
+
+    application = app_module.create_app(
+        {
+            "TESTING": True,
+            "SECRET_KEY": "a-real-random-key",
+            "RATELIMIT_STORAGE_URI": "memory://",
+        },
+        load_environment=False,
+        check_database=False,
+    )
+
+    assert application.config["SECRET_KEY"] == "a-real-random-key"
