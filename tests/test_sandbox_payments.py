@@ -362,3 +362,75 @@ def test_payment_controls_are_private_scoped_and_csrf_protected(village, monkeyp
     monkeypatch.delenv("OPENLEG_SANDBOX_WORKER", raising=False)
     with pytest.raises(RuntimeError, match="requires a village worker"):
         sandbox_payments.install(Flask(__name__))
+
+
+def test_payment_event_remains_visible_after_newer_unrelated_activity(village):
+    """A busy community cannot hide an already recorded payment event."""
+    client = village.test_client()
+    prefix, invoices = _issued(village, client)
+    path = prefix + "/sandbox/payments"
+    statement = client.get(
+        path + f"/fixtures/{invoices['sonnwil-resident']}/exact/053.xml"
+    )
+    assert _statement(client, prefix, statement).status_code == 302
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT event_id FROM operator_events WHERE event_type='invoice.paid'"
+        )
+        event_id = cursor.fetchone()[0]
+        cursor.execute(
+            "INSERT INTO operator_events(event_id,event_type,schema_version,aggregate_id,community_id,payload,occurred_at) "
+            "SELECT gen_random_uuid()::text,'invoice.delivered','operator-event/1','noise-'||n,'sonnwil-operating-leg','{}',clock_timestamp() "
+            "FROM generate_series(1,101) n"
+        )
+    page = client.get(path)
+    assert page.status_code == 200
+    assert event_id in page.text
+    assert "invoice.delivered" not in page.text
+
+
+def test_payment_replay_form_requires_its_existing_confirmation_record(village):
+    """Manual confirmations remain replayable; automatic matches offer no invalid action."""
+    client = village.test_client()
+    prefix, invoices = _issued(village, client)
+    path = prefix + "/sandbox/payments"
+    resident, neighbour = invoices["sonnwil-resident"], invoices["sonnwil-neighbour"]
+    unknown = client.get(path + f"/fixtures/{resident}/unknown-reference/053.xml")
+    assert _statement(client, prefix, unknown).status_code == 302
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute("SELECT id FROM bank_statement_entries")
+        manual = cursor.fetchone()[0]
+    page = client.get(path)
+    assert (
+        client.post(
+            path + f"/confirm/{manual}",
+            data={"csrf_token": _csrf(page), "invoice_id": resident, "confirm": "yes"},
+        ).status_code
+        == 303
+    )
+    exact = client.get(path + f"/fixtures/{neighbour}/exact/054.xml")
+    assert _statement(client, prefix, exact).status_code == 302
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cursor,
+    ):
+        cursor.execute(
+            "SELECT id FROM bank_statement_entries WHERE invoice_id=%s", (neighbour,)
+        )
+        automatic = cursor.fetchone()[0]
+    page = client.get(path)
+    assert f'action="{path}/confirm/{manual}"' in page.text
+    assert f'action="{path}/confirm/{automatic}"' not in page.text
+    assert (
+        client.post(
+            path + f"/confirm/{manual}",
+            data={"csrf_token": _csrf(page), "invoice_id": resident, "confirm": "yes"},
+        ).status_code
+        == 303
+    )

@@ -30,6 +30,9 @@ LABELS = {
 }
 
 
+CONFIRMATION_KEY_PREFIX = "simulation-payment-"
+
+
 def _authorize(*, write=False):
     """Require confirmed administrator membership and CSRF on writes."""
     actor = _require_dashboard_session()
@@ -73,12 +76,12 @@ def _present(error=None, status=200):
             (row for row in invoices if row["id"] == selected),
             invoices[0] if invoices else None,
         )
-        entries = db.list_bank_statement_entries(COMMUNITY)
-        events = [
-            row
-            for row in db.list_community_operator_events(COMMUNITY)
-            if row["event_type"] in {"invoice.paid", "payment.match.confirmed"}
-        ]
+        entries = db.list_bank_statement_entries(
+            COMMUNITY, confirmation_key_prefix=CONFIRMATION_KEY_PREFIX
+        )
+        events = db.list_community_operator_events(
+            COMMUNITY, event_types=("invoice.paid", "payment.match.confirmed")
+        )
         audit = db.list_community_invoice_events(COMMUNITY)
     except (db.BillingStoreError, DatabaseError):
         abort(503)
@@ -135,7 +138,11 @@ def install(web):
             abort(400)
         try:
             result = db.confirm_operator_payment_match(
-                entry_id, invoice_id, COMMUNITY, actor, f"simulation-payment-{entry_id}"
+                entry_id,
+                invoice_id,
+                COMMUNITY,
+                actor,
+                f"{CONFIRMATION_KEY_PREFIX}{entry_id}",
             )
         except (TypeError, ValueError):
             return _present(

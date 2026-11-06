@@ -1369,8 +1369,10 @@ def reconcile_bank_statement(
         raise BillingStoreError("Could not reconcile bank statement") from error
 
 
-def list_bank_statement_entries(community_id, limit=200):
-    """Return reviewable decisions and their immutable source audit fields."""
+def list_bank_statement_entries(
+    community_id, limit=200, *, confirmation_key_prefix=None
+):
+    """Return scoped decisions with replay availability for the caller's key namespace."""
     bounded_limit = max(1, min(int(limit), 500))
     try:
         with _get_connection() as conn, conn.cursor() as cur:
@@ -1378,14 +1380,21 @@ def list_bank_statement_entries(community_id, limit=200):
                 """
                 SELECT e.*, s.source_name, s.message_type,
                        s.statement_reference, s.fingerprint, s.actor_id,
-                       s.imported_at
+                       s.imported_at,
+                       EXISTS (
+                           SELECT 1 FROM operator_action_idempotency a
+                           WHERE a.community_id=e.community_id
+                             AND a.action='payment.confirm:' || e.id::text
+                             AND a.idempotency_key=%s || e.id::text
+                             AND jsonb_typeof(a.response)='object'
+                       ) AS confirmation_replay_available
                 FROM bank_statement_entries e
                 JOIN bank_statement_imports s ON s.id = e.statement_import_id
                 WHERE e.community_id = %s AND s.community_id = %s
                 ORDER BY e.id DESC
                 LIMIT %s
                 """,
-                (community_id, community_id, bounded_limit),
+                (confirmation_key_prefix, community_id, community_id, bounded_limit),
             )
             return [dict(row) for row in cur.fetchall()]
     except Exception as error:

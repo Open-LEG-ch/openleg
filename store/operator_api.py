@@ -239,14 +239,21 @@ def list_deliveries(community_id, limit=100):
         return [dict(row) for row in cur.fetchall()]
 
 
-def list_events(community_id, limit=100):
-    """Read scoped event identities even when no webhook receiver is configured."""
+def list_events(community_id, limit=100, *, event_types=None):
+    """Filter scoped event types before bounding the most recent audit identities."""
+    selected_types = list(event_types) if event_types is not None else None
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """SELECT event_id,event_type,aggregate_id,occurred_at
                FROM operator_events WHERE community_id=%s
+                 AND (%s::text[] IS NULL OR event_type=ANY(%s))
                ORDER BY occurred_at DESC,event_id LIMIT %s""",
-            (community_id, max(1, min(int(limit), 100))),
+            (
+                community_id,
+                selected_types,
+                selected_types,
+                max(1, min(int(limit), 100)),
+            ),
         )
         return [dict(row) for row in cur.fetchall()]
 

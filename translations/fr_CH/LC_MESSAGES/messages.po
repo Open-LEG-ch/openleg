@@ -10383,7 +10383,7 @@ msgstr "Ajustement d’arrondi"
 
 #: payment_reconciliation.py:24 sandbox_payments.py:29
 msgid "Rückbuchung"
-msgstr "Rétrofacturation"
+msgstr "Extourne"
 
 #: meter_data.py:312
 msgid "SDAT Parse-Fehler: Ungültiges Dateiformat."
