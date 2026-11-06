@@ -153,3 +153,12 @@ stores `initiating_client_id`, `actor_kind` and `agent_label` in the domain
 record or append-only transition and its transactional event. It never resolves
 historical attribution through a current credential or webhook subscriber.
 `operator_actor` carries this request-local snapshot; it grants no permissions.
+
+## Association and meetups
+
+Association members belong to Verein openLEG Schweiz, independently of LEG
+participants or product users. An application is not membership until admitted.
+Association dues and receipts are not electricity billing or payment approval.
+An occurrence is one actual meetup with a stable URL and calendar UID. A draft is
+private; approval of public notes is explicit and independent of the event date.
+See [association administration](docs/verein-administration.md).
