@@ -118,6 +118,30 @@ def test_deepsign_webhook_fails_closed_without_secret(app_without_deepsign_secre
     handler.assert_not_called()
 
 
+def test_deepsign_webhook_rejects_a_valid_empty_key_signature(
+    app_without_deepsign_secret,
+):
+    import hashlib
+    import hmac
+
+    import deepsign_integration
+
+    body = b'{"event":"document.signed","document_id":"doc-1"}'
+    signature = hmac.new(b"", body, hashlib.sha256).hexdigest()
+    with patch.object(
+        deepsign_integration, "handle_webhook", return_value={}
+    ) as handler:
+        response = app_without_deepsign_secret.app.test_client().post(
+            "/webhook/deepsign",
+            data=body,
+            content_type="application/json",
+            headers={"X-DeepSign-Signature": signature},
+        )
+
+    assert response.status_code == 403
+    handler.assert_not_called()
+
+
 def test_deepsign_webhook_accepts_valid_signature(app_with_deepsign_secret):
     import json as _json
 
