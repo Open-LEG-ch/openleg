@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Utility portal registration and link contracts."""
 
+import hmac
 from unittest.mock import Mock, patch
 
 import pytest
@@ -110,3 +111,72 @@ def test_register_page_renders_the_apps_configured_base_url():
         utility_portal.register_page()
 
     assert captured["site_url"] == "https://from-config.example"
+
+
+def _admin_clients_client(monkeypatch):
+    monkeypatch.setenv("ADMIN_TOKEN", "admin-secret")
+    app = Flask(__name__)
+    app.config.update(TESTING=True)
+    app.register_blueprint(utility_portal.utility_bp)
+    listing = Mock(return_value=[{"client_id": "c1"}])
+    monkeypatch.setattr(utility_portal.db, "get_all_utility_clients", listing)
+    monkeypatch.setattr(
+        utility_portal.db, "get_utility_client_stats", Mock(return_value={})
+    )
+    return app.test_client(), listing
+
+
+def test_admin_client_listing_accepts_the_admin_header(monkeypatch):
+    client, listing = _admin_clients_client(monkeypatch)
+
+    response = client.get(
+        "/utility/admin/clients", headers={"X-Admin-Token": "admin-secret"}
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["clients"] == [{"client_id": "c1"}]
+    listing.assert_called_once_with(status=None)
+
+
+@pytest.mark.parametrize("supplied", ["", "wrong", "admin-secre", "admin-secretX"])
+def test_admin_client_listing_refuses_a_wrong_token(monkeypatch, supplied):
+    client, listing = _admin_clients_client(monkeypatch)
+
+    response = client.get("/utility/admin/clients", headers={"X-Admin-Token": supplied})
+
+    assert response.status_code == 403
+    listing.assert_not_called()
+
+
+def test_admin_client_listing_refuses_the_token_in_the_query_string(monkeypatch):
+    """Query strings land in access logs, so the admin token only counts as a header."""
+    client, listing = _admin_clients_client(monkeypatch)
+
+    response = client.get("/utility/admin/clients?token=admin-secret")
+
+    assert response.status_code == 403
+    listing.assert_not_called()
+
+
+def test_admin_client_listing_compares_the_token_in_constant_time(monkeypatch):
+    client, _listing = _admin_clients_client(monkeypatch)
+
+    with patch(
+        "utility_portal.hmac.compare_digest", wraps=hmac.compare_digest
+    ) as compare:
+        response = client.get(
+            "/utility/admin/clients", headers={"X-Admin-Token": "admin-secret"}
+        )
+
+    assert response.status_code == 200
+    compare.assert_called_once()
+
+
+def test_admin_client_listing_is_hidden_without_an_admin_token(monkeypatch):
+    client, listing = _admin_clients_client(monkeypatch)
+    monkeypatch.setenv("ADMIN_TOKEN", "")
+
+    response = client.get("/utility/admin/clients", headers={"X-Admin-Token": ""})
+
+    assert response.status_code == 404
+    listing.assert_not_called()
