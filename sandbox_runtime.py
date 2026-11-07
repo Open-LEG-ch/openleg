@@ -34,6 +34,7 @@ from sandbox_urls import scope_page, scope_url
 
 SOURCE = Path(__file__).resolve().parent
 POSTGRES_SETUP_TIMEOUT_SECONDS = 60
+WORKER_TIMEOUT_SECONDS = 90
 HOP_HEADERS = {
     "connection",
     "keep-alive",
@@ -162,8 +163,10 @@ class LocalPostgres:
 
 
 class UnixConnection(http.client.HTTPConnection):
-    def __init__(self, path):
-        super().__init__("localhost", timeout=30)
+    def __init__(self, path, *, timeout=None):
+        super().__init__(
+            "localhost", timeout=WORKER_TIMEOUT_SECONDS if timeout is None else timeout
+        )
         self.path = str(path)
 
     def connect(self):
@@ -314,7 +317,7 @@ class Villages:
                 # The new in-progress workspace now owns this allocation.
                 self.replacements.discard(replacement)
         if existing:
-            if not existing["provisioned"].wait(timeout=35):
+            if not existing["provisioned"].wait(timeout=WORKER_TIMEOUT_SECONDS + 5):
                 raise RuntimeError("village startup did not finish")
             with self.lock:
                 if (
@@ -421,7 +424,7 @@ class Villages:
                         "--threads",
                         "2",
                         "--timeout",
-                        "45",
+                        str(WORKER_TIMEOUT_SECONDS),
                         "--no-control-socket",
                         "--pid",
                         str(directory / "worker.pid"),
@@ -435,13 +438,16 @@ class Villages:
                     start_new_session=True,
                 )
             self.owner.record_worker(directory, workspace["process"])
-            deadline = time.monotonic() + 30
+            deadline = time.monotonic() + WORKER_TIMEOUT_SECONDS
             while time.monotonic() < deadline:
                 if workspace["process"].poll() is not None:
                     raise RuntimeError("village worker could not start")
                 if socket_path.exists():
                     try:
-                        with UnixConnection(socket_path) as channel:
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            break
+                        with UnixConnection(socket_path, timeout=remaining) as channel:
                             channel.request(
                                 "GET",
                                 "/livez",

@@ -4,6 +4,7 @@
 import os
 import re
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -64,6 +65,64 @@ def _enter(client):
     assert "Sonnwil" in dashboard.text
     assert "Simulation" in dashboard.text
     return dashboard
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    ("delay", "budget", "expected_status"),
+    [(31, None, 200), (0.2, 0.1, 503)],
+    ids=["legitimate-delayed-response", "bounded-stalled-upstream"],
+)
+def test_gateway_delivers_a_worker_response_after_the_old_thirty_second_limit(
+    village, tmp_path, monkeypatch, delay, budget, expected_status
+):
+    from sandbox_runtime import WORKER_TIMEOUT_SECONDS
+
+    client = village.test_client()
+    _enter(client)
+    manager = village.extensions["villages"]
+    workspace = manager.workspaces[client.village_prefix.split("/")[-1]]
+    original_socket = workspace["socket"]
+    delayed_socket = tmp_path / "delayed.sock"
+    if budget is not None:
+        monkeypatch.setattr("sandbox_runtime.WORKER_TIMEOUT_SECONDS", budget)
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
+        listener.settimeout(5)
+        listener.bind(str(delayed_socket))
+        listener.listen(1)
+
+        def respond_after_monthly_import():
+            with listener.accept()[0] as channel:
+                channel.recv(65536)
+                time.sleep(delay)
+                try:
+                    channel.sendall(
+                        b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                        b"Content-Length: 18\r\nConnection: close\r\n\r\n"
+                        b'{"imported":true}\n'
+                    )
+                except BrokenPipeError:
+                    pass  # The old gateway closes before the legitimate result.
+
+        workspace["socket"] = delayed_socket
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                upstream = executor.submit(respond_after_monthly_import)
+                response = client.get(_path(client, "/sandbox/metering"))
+                upstream.result(timeout=35)
+        finally:
+            workspace["socket"] = original_socket
+            if budget is not None:
+                monkeypatch.setattr(
+                    "sandbox_runtime.WORKER_TIMEOUT_SECONDS", WORKER_TIMEOUT_SECONDS
+                )
+    assert response.status_code == expected_status
+    if expected_status == 200:
+        assert response.json == {"imported": True}
+    else:
+        assert "Das Übungsdorf ist nicht verfügbar" in response.text
+        assert response.headers["Cache-Control"] == "no-store"
+    assert client.get(_path(client, "/dashboard/export")).status_code == 200
 
 
 @pytest.mark.integration
@@ -502,6 +561,46 @@ def test_duplicate_start_for_one_visitor_reserves_one_workspace(village):
     with ThreadPoolExecutor(max_workers=2) as executor:
         responses = list(executor.map(start, (first, duplicate)))
     assert [r.status_code for r in responses] == [302, 302]
+    assert len(village.extensions["villages"].workspaces) == 1
+    with first.session_transaction() as a, duplicate.session_transaction() as b:
+        assert a["workspace"] == b["workspace"]
+
+
+@pytest.mark.integration
+def test_duplicate_start_waits_for_a_legitimate_slow_worker(village, monkeypatch):
+    first = village.test_client()
+    page = first.get("/sandbox")
+    duplicate = village.test_client()
+    duplicate.set_cookie("openleg_sandbox", first.get_cookie("openleg_sandbox").value)
+    provisioning, release = Event(), Event()
+    original = subprocess.Popen
+
+    def pause_worker(*args, **kwargs):
+        process = original(*args, **kwargs)
+        if "sandbox_worker:application" in args[0]:
+            provisioning.set()
+            assert release.wait(timeout=50)
+        return process
+
+    monkeypatch.setattr("sandbox_runtime.subprocess.Popen", pause_worker)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        startup = executor.submit(
+            first.post,
+            "/sandbox/start",
+            data={"csrf_token": _csrf(page), "persona": "resident"},
+        )
+        try:
+            assert provisioning.wait(timeout=10)
+            repeated = executor.submit(
+                duplicate.post,
+                "/sandbox/start",
+                data={"csrf_token": _csrf(page), "persona": "resident"},
+            )
+            time.sleep(36)
+        finally:
+            release.set()
+        assert startup.result(timeout=15).status_code == 302
+        assert repeated.result(timeout=15).status_code == 302
     assert len(village.extensions["villages"].workspaces) == 1
     with first.session_transaction() as a, duplicate.session_transaction() as b:
         assert a["workspace"] == b["workspace"]
