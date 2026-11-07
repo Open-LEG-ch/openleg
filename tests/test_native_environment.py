@@ -6,6 +6,10 @@ import os
 import pytest
 
 from tests import (
+    test_app_config,
+    test_interest_postgres,
+)
+from tests import (
     test_calculated_values_lifecycle_postgres as lifecycle,
 )
 from tests import (
@@ -14,14 +18,12 @@ from tests import (
 from tests import (
     test_cron_refresh_postgres as refresh,
 )
-from tests import (
-    test_interest_postgres,
-)
 
 interest_database = test_interest_postgres.interest_database
 calculated_client = lifecycle.calculated_client
 founder = community.founder
 refresh_web = refresh.refresh_web
+secret_key_factory = test_app_config.secret_key_factory
 pytestmark = pytest.mark.integration
 
 
@@ -35,7 +37,13 @@ def native_i18n_environment():
 
 @pytest.mark.parametrize(
     "fixture_name",
-    ["calculated_client", "founder", "refresh_web", "native_i18n_environment"],
+    [
+        "calculated_client",
+        "founder",
+        "refresh_web",
+        "native_i18n_environment",
+        "secret_key_factory",
+    ],
 )
 def test_native_fixture_preserves_test_runner_environment(
     request, monkeypatch, fixture_name
