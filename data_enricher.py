@@ -265,7 +265,7 @@ def get_coordinates_from_address(address_string):
     print(f"[GEO] Suche Koordinaten für: '{address_string}'")
     params = {"searchText": address_string, "type": "locations", "limit": 1}
     try:
-        response = requests.get(GEO_API_URL, params=params)
+        response = requests.get(GEO_API_URL, params=params, timeout=5)
         response.raise_for_status()
         results = response.json().get("results", [])
         if not results:
