@@ -1881,7 +1881,7 @@ def test_profile_swallows_an_unclosed_markup_opening(monkeypatch):
     monkeypatch.setattr(data_enricher.requests, "get", MagicMock(return_value=response))
     captured = {}
 
-    def fake_get(url, params=None):
+    def fake_get(url, params=None, timeout=None):
         captured["search"] = params["searchText"]
         return response
 
