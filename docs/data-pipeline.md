@@ -102,6 +102,39 @@ Behaviour worth knowing:
 - The connector resumes the control-channel TLS session on the data channel,
   which managed FTPS endpoints usually require.
 
+### Container upgrade permissions
+
+The container runs as UID/GID `10001`. The image gives that user write access
+to `/data` and the default SDAT directory `/app/data/sdat`. Mounting an existing
+volume or bind mount hides the image's ownership at that path. Existing
+root-owned SDAT files and tenant directories need an ownership update before
+the service can write to them.
+
+For the repository's `docker-compose.yml`, stop the application and build the
+new image, then update its dedicated `flask_data` volume with a one-off root
+container:
+
+```bash
+docker compose stop flask
+docker compose build flask
+docker compose run --rm --no-deps --user 0:0 --entrypoint sh flask \
+  -c 'chown -R 10001:10001 /data && chmod -R u+rwX /data'
+```
+
+Check write access as the image's service user, then start the application:
+
+```bash
+docker compose run --rm --no-deps --entrypoint sh flask \
+  -c 'test "$(id -u)" = 10001 && probe=$(mktemp -d /data/.openleg-permissions.XXXXXX) && rmdir "$probe"'
+docker compose up -d flask
+```
+
+These commands update only the application data volume mounted at `/data`.
+For a bind mount or another `SWISSELDEX_SDAT_DIR`, apply the ownership and owner
+write permissions to that data root and its existing tenant directories.
+The application source stays owned by root. The normal service runs as UID
+`10001`.
+
 ### Scheduled fetch and import
 
 The application can run the same fetch and import path once a day per tenant.
