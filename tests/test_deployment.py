@@ -136,6 +136,31 @@ class TestDockerfile:
     def test_gthread_workers(self):
         assert "gthread" in self.content
 
+    def test_the_server_runs_as_a_non_root_user(self):
+        """Trivy DS-0002: the final stage must drop root before gunicorn starts."""
+        instructions = [
+            line.split(None, 1)
+            for line in self.content.splitlines()
+            if line and not line[0].isspace() and not line.startswith("#")
+        ]
+        users = [i for i, parts in enumerate(instructions) if parts[0] == "USER"]
+        cmd = next(i for i, parts in enumerate(instructions) if parts[0] == "CMD")
+
+        assert users, "Dockerfile never sets USER"
+        last_user = users[-1]
+        assert last_user < cmd
+        assert instructions[last_user][1].strip() not in {"root", "0", "0:0"}
+        assert not any(parts[0] == "RUN" for parts in instructions[last_user:cmd])
+
+    def test_the_service_user_has_a_writable_home(self):
+        """Gunicorn's control server writes under $HOME; without one it logs
+        Permission denied at every start."""
+        logical = self.content.replace("\\\n", " ")
+        useradd = next(line for line in logical.splitlines() if "useradd" in line)
+
+        assert "--create-home" in useradd
+        assert "--no-create-home" not in useradd
+
     def test_explicitly_upgrades_cve_vulnerable_build_deps(self):
         """Issue #307: Trivy blocked vendored jaraco.context and wheel.
 

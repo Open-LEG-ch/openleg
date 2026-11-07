@@ -222,6 +222,14 @@ can otherwise create sockets without a socket syscall. The runner probes the
 filter in a separate process before starting PostgreSQL. Expected worker startup
 dependency failures return a generic unavailable page without private diagnostics.
 
+Worker response I/O and readiness waits use a finite 90-second budget so the
+monthly metering exercise can finish on a modest host. A duplicate start waits
+up to 95 seconds for the same allocation instead of creating another village.
+If that wait expires while the original startup continues, retrying reuses its
+allocation once ready.
+An unresponsive worker still returns unavailable; workspace capacity, upload
+bounds, inactivity expiry and maximum lifetime are unchanged.
+
 Mail is captured locally. The browser's content security policy permits only
 same-origin resources and blocks external forms and frames. The sandbox uses
 local assets and no analytics. Signatures and VNB responses use local synthetic

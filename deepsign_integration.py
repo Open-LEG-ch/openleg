@@ -15,6 +15,11 @@ API_URL = os.environ.get("DEEPSIGN_API_URL", "https://api.deepsign.ch/v1").strip
 API_KEY = os.environ.get("DEEPSIGN_API_KEY", "").strip()
 WEBHOOK_SECRET = os.environ.get("DEEPSIGN_WEBHOOK_SECRET", "").strip()
 
+# (connect, read) seconds. Without a timeout a hung DeepSign API holds the
+# worker until gunicorn's own timeout kills it. Uploads carry a PDF, so the
+# read budget is generous.
+REQUEST_TIMEOUT = (5, 30)
+
 
 def sign_webhook_payload(body: bytes) -> str:
     """HMAC-SHA256 hex signature over the raw webhook body."""
@@ -54,6 +59,7 @@ def upload_document(pdf_bytes, filename, title):
         headers=_headers(),
         files={"file": (filename, pdf_bytes, "application/pdf")},
         data={"title": title},
+        timeout=REQUEST_TIMEOUT,
     )
     if resp.status_code not in (200, 201):
         raise RuntimeError(f"DeepSign upload failed ({resp.status_code}): {resp.text}")
@@ -73,6 +79,7 @@ def request_signatures(document_id, signers):
         f"{API_URL}/documents/{document_id}/signatures",
         headers=_headers(),
         json={"signers": signers, "signature_type": "AES"},
+        timeout=REQUEST_TIMEOUT,
     )
     if resp.status_code not in (200, 201):
         raise RuntimeError(
@@ -107,6 +114,7 @@ def get_signing_status(document_id):
     resp = requests.get(
         f"{API_URL}/documents/{document_id}",
         headers=_headers(),
+        timeout=REQUEST_TIMEOUT,
     )
     if resp.status_code != 200:
         raise RuntimeError(
