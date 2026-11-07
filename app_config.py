@@ -141,6 +141,25 @@ def validated_trusted_proxy_hops(value):
     raise ValueError("OPENLEG_TRUSTED_PROXY_HOPS must be 0 or 1")
 
 
+# Values published in .env.example and SECURITY.md. Anyone can read them, so a
+# session or operator webhook signed with one of them is forgeable.
+PLACEHOLDER_SECRET_KEYS = frozenset(
+    {"your-secret-key-here", "generate-a-strong-random-key-here"}
+)
+
+
+def validated_secret_key(value):
+    """Return SECRET_KEY, or refuse a value copied from the published examples."""
+    key_text = (
+        value.decode("utf-8", errors="replace")
+        if isinstance(value, (bytes, bytearray))
+        else str(value)
+    )
+    if key_text.strip() in PLACEHOLDER_SECRET_KEYS:
+        raise ValueError("SECRET_KEY is a documented placeholder; set a random value")
+    return value
+
+
 def build_config(env=None, overrides=None):
     """The mapping create_app hands to Flask, from the environment and overrides.
 
@@ -197,6 +216,7 @@ def build_config(env=None, overrides=None):
         ):
             config["SESSION_COOKIE_SECURE"] = True
 
+    config["SECRET_KEY"] = validated_secret_key(config["SECRET_KEY"])
     config["TRUSTED_PROXY_HOPS"] = validated_trusted_proxy_hops(
         config["TRUSTED_PROXY_HOPS"]
     )
