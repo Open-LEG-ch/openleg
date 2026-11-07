@@ -226,3 +226,24 @@ def test_access_request_is_limited_to_five_attempts_per_minute(monkeypatch):
     ]
 
     assert [response.status_code for response in responses] == [200] * 5 + [429]
+
+
+def test_normal_municipality_keeps_production_invitation_and_contract_contact(
+    app_module, monkeypatch
+):
+    """Sandbox presentation changes leave ordinary municipality actions available."""
+    import municipality
+
+    row = {"id": 7, "name": "Baden", "subdomain": "baden"}
+    monkeypatch.setattr(municipality.db, "get_municipality", lambda **_: row)
+    monkeypatch.setattr(municipality.db, "get_stats", lambda **_: {})
+    client = app_module.web.test_client()
+    with client.session_transaction() as state:
+        state["municipality_id"] = 7
+    page = client.get("/gemeinde/dashboard?lang=de-CH")
+    assert page.status_code == 200
+    assert 'value="https://baden.openleg.ch?lang=de-CH"' in page.text
+    assert 'href="mailto:hallo@openleg.ch?' in page.text
+    assert (
+        "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert." not in page.text
+    )

@@ -1,0 +1,45 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _('LEG-Archiv ausprobieren') }} · OpenLEG</title>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('LEG-Archiv ausprobieren') }}</h1>
+  <p class="mt-4">{{ _('SIMULATION SONNWIL: Sie exportieren nur erfundene Daten Ihrer LEG. Die Wiederherstellung verwendet eine neue Datenbank mit eigenem Produktprozess. Sie benötigt einen freien Dorfplatz und bleibt an dieses Quelldorf gebunden.') }}</p>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('1. Umfang prüfen und herunterladen') }}</h2>
+    <p class="mt-3">{{ _('Das Archiv umfasst die deklarierten LEG-Datensätze: Mitgliedschaft, Dokumente und Unterschriftsbelege, Mess- und Quellenbelege, Rechnungen, Zahlungen, Fragen und Prüfverlauf. Live-Zugangsschlüssel, ausstehende Webhook-Zustellungen, private Geräte und Telemetrie sowie Betriebseinstellungen bleiben ausgeschlossen. Die Wiederherstellung sendet keine historischen E-Mails oder Webhooks und überträgt keine vollständige Installation.') }}</p>
+    <p class="mt-3">{{ _('Für Rechnungen und Quellenbelege führen Sie zuerst die Messdaten- und Abrechnungsübung durch. Für Gründungsbelege wählen Sie danach die selbst gegründete LEG. Das Archiv zeigt nur tatsächlich vorhandene Datensätze.') }}</p>
+    {% for community in communities %}<p class="mt-3"><a href="/leg/community/{{ community.community_id }}/archive" class="font-semibold underline">{{ _('Erfundenes LEG-Archiv herunterladen') }}: {{ community.name }}</a></p>{% endfor %}
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('2. Neues Ziel prüfen und wiederherstellen') }}</h2>
+    <p class="mt-3">{{ _('Die Vorprüfung nimmt einen neuen Export direkt aus Ihrem Quelldorf. Die folgende Wiederherstellung verwendet genau diesen gespeicherten Stand. Ihre Browser-Anmeldung und die normale LEG-Administration werden bei jedem Befehl erneut geprüft. Es wird kein Plattform-Schlüssel angezeigt.') }}</p>
+    <form method="post" action="{{ prefix }}/sandbox/archive/prepare" class="mt-4 grid gap-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="archive-community">{{ _('Quell-LEG') }}</label>
+      <select id="archive-community" name="community_id" class="min-w-0 rounded-lg border px-3 py-2">{% for community in communities %}<option value="{{ community.community_id }}"{% if state and state.community_id == community.community_id %} selected{% endif %}>{{ community.name }}</option>{% endfor %}</select>
+      <label for="archive-variant">{{ _('Prüfdatei') }}</label><select id="archive-variant" name="variant" class="rounded-lg border px-3 py-2"><option value="current">{{ _('Unveränderter Export') }}</option><option value="damaged">{{ _('Beschädigtes Manifest simulieren') }}</option></select>
+      <button class="rounded-lg bg-brand px-4 py-2 font-semibold text-white">{{ _('Export aufnehmen und Ziel vorprüfen') }}</button>
+    </form>
+    {% if state %}
+    {% if state.result %}
+    {% if state.result.restored %}<p class="mt-4" role="status">{{ _('Der gespeicherte Stand ist im privaten Ziel wiederhergestellt.') }}</p>
+    {% elif state.result.conflicts %}<p class="mt-4" role="alert">{{ _('Konflikt: Der vorhandene Zielstand wurde nicht überschrieben.') }}</p>
+    {% elif not state.result.valid %}<p class="mt-4" role="alert">{{ _('Archiv abgelehnt. Es wurden keine Datensätze importiert.') }}</p>
+    {% else %}<p class="mt-4" role="status">{{ _('Vorprüfung erfolgreich. Das Ziel wurde noch nicht verändert.') }}</p>{% endif %}
+    <pre id="archive-result" class="mt-4 whitespace-pre-wrap break-all rounded-lg border border-line p-4">{{ state.result|tojson(indent=2) }}</pre>
+    {% endif %}
+    {% if destination_available %}
+    <p class="mt-3 break-all">{{ _('Privates Ziel') }}: <span id="archive-destination">{{ state.destination }}</span></p>
+    <form method="post" action="{{ prefix }}/sandbox/archive/restore" class="mt-4 grid gap-3"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="community_id" value="{{ state.community_id }}"><label class="flex gap-2"><input type="checkbox" name="confirm" value="restore" required><span>{{ _('Ich stelle diesen geprüften Stand im privaten Ziel wieder her.') }}</span></label><button class="rounded-lg border border-line px-4 py-2">{{ _('Gespeicherten Stand wiederherstellen') }}</button></form>
+    {% if state.restored %}<form method="post" action="{{ prefix }}/sandbox/archive/open" class="mt-4"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="community_id" value="{{ state.community_id }}"><button class="rounded-lg border border-line px-4 py-2">{{ _('Wiederhergestellte LEG öffnen') }}</button></form>{% endif %}
+    {% else %}<p class="mt-3" role="alert">{{ _('Das Ziel ist abgelaufen. Nehmen Sie den Export für ein neues Ziel erneut auf.') }}</p>{% endif %}
+    <form method="post" action="{{ prefix }}/sandbox/archive/discard" class="mt-4 grid gap-3"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="community_id" value="{{ state.community_id }}"><label class="flex gap-2"><input type="checkbox" name="confirm" value="discard" required><span>{{ _('Ich verwerfe das private Ziel und seinen gespeicherten Export.') }}</span></label><button class="rounded-lg border border-line px-4 py-2">{{ _('Ziel verwerfen') }}</button></form>
+    {% endif %}
+  </section>
+  <section class="mt-8 rounded-lg border border-line p-6">
+    <h2 class="text-xl font-semibold">{{ _('3. Wiederholung und Ablehnung vergleichen') }}</h2>
+    <p class="mt-3">{{ _('Wiederholen Sie die Wiederherstellung unverändert: Es entstehen keine doppelten Datensätze. Öffnen Sie dann das Ziel und ändern Sie im eigenen Energieprofil den Jahresverbrauch. Kehren Sie über «Zum Quelldorf» zurück und stellen Sie denselben gespeicherten Stand erneut her. Die Vorprüfung zeigt den Konflikt, ohne ihn zu überschreiben. Die Quelle bleibt unverändert.') }}</p>
+    <p class="mt-3">{{ _('Wählen Sie anschliessend das beschädigte Manifest und nehmen Sie den Export erneut auf. Die Prüfung und Wiederherstellung lehnen den falschen Hash ab. Verwerfen Sie das Ziel und beginnen Sie mit einem unveränderten Export neu. Verwerfen, Zurücksetzen oder Ablaufen des Quelldorfs entfernt auch das Ziel und alle Archivdateien.') }}</p>
+  </section>
+</div>
+{% endblock %}
