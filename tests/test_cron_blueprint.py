@@ -7,6 +7,7 @@ route, and the operator surface was split off the same way in #271.
 """
 
 import ast
+import hmac
 from pathlib import Path
 from unittest.mock import patch
 
@@ -174,3 +175,42 @@ def test_invoice_query_reminders_marks_each_due_case(application, monkeypatch):
     assert response.status_code == 200
     assert response.get_json() == {"reminded": 2}
     assert marked == [(7, "system"), (9, "system")]
+
+
+def test_cron_secret_in_the_query_string_is_refused(application):
+    """Query strings land in access logs, so the secret only counts as a header."""
+    secret = application.config["CRON_SECRET"]
+    with patch("cron.operator_api.dispatch_pending_webhooks") as dispatch:
+        response = application.test_client().post(
+            f"/api/cron/process-operator-webhooks?secret={secret}"
+        )
+
+    assert response.status_code == 403
+    dispatch.assert_not_called()
+
+
+@pytest.mark.parametrize("supplied", ["", "wrong", "test-secre", "test-secretX"])
+def test_a_wrong_cron_secret_header_is_refused(application, supplied):
+    with patch("cron.operator_api.dispatch_pending_webhooks") as dispatch:
+        response = application.test_client().post(
+            "/api/cron/process-operator-webhooks",
+            headers={"X-Cron-Secret": supplied},
+        )
+
+    assert response.status_code == 403
+    dispatch.assert_not_called()
+
+
+def test_cron_secret_comparison_is_constant_time(application):
+    with (
+        patch("cron.hmac.compare_digest", wraps=hmac.compare_digest) as cmp,
+        patch("cron.operator_api.dispatch_pending_webhooks") as dispatch,
+    ):
+        dispatch.return_value = {"attempted": 0, "delivered": 0, "failed": 0}
+        response = application.test_client().post(
+            "/api/cron/process-operator-webhooks",
+            headers={"X-Cron-Secret": application.config["CRON_SECRET"]},
+        )
+
+    assert response.status_code == 200
+    cmp.assert_called_once()
