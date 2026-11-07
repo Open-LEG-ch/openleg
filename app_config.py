@@ -152,7 +152,7 @@ def validated_secret_key(value):
     """Return SECRET_KEY, or refuse a value copied from the published examples."""
     key_text = (
         value.decode("utf-8", errors="replace")
-        if isinstance(value, bytes)
+        if isinstance(value, (bytes, bytearray))
         else str(value)
     )
     if key_text.strip() in PLACEHOLDER_SECRET_KEYS:
