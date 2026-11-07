@@ -363,8 +363,9 @@ def admin_clients():
     admin_token = os.getenv("ADMIN_TOKEN", "").strip()
     if not admin_token:
         return jsonify({"error": "not found"}), 404
-    token = request.headers.get("X-Admin-Token") or request.args.get("token") or ""
-    if token != admin_token:
+    # Header only: a ?token= query string would be written to the access log.
+    token = request.headers.get("X-Admin-Token") or ""
+    if not hmac.compare_digest(token.encode("utf-8"), admin_token.encode("utf-8")):
         return jsonify({"error": "forbidden"}), 403
 
     status_filter = request.args.get("status")
