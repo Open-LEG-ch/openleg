@@ -119,7 +119,7 @@ class TestOutboundTimeouts:
         calls = mock_requests.post.call_args_list + mock_requests.get.call_args_list
         assert len(calls) == 3
         for call in calls:
-            assert call.kwargs.get("timeout") == deepsign_integration.REQUEST_TIMEOUT
+            assert call.kwargs.get("timeout") == (5, 30)
 
     def test_a_timed_out_deepsign_call_raises(self, mock_requests):
         import requests
