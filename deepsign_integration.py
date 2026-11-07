@@ -24,12 +24,12 @@ def sign_webhook_payload(body: bytes) -> str:
 def verify_webhook_signature(body: bytes, signature: str) -> bool:
     """Check a webhook signature.
 
-    Without a configured DEEPSIGN_WEBHOOK_SECRET the check is a no-op so
-    local development keeps working; with a secret set, unsigned or wrongly
-    signed requests are rejected.
+    Fails closed: without a configured DEEPSIGN_WEBHOOK_SECRET no request can
+    be verified, so every request is rejected. Set a secret for local
+    development too; unsigned or wrongly signed requests are always rejected.
     """
     if not WEBHOOK_SECRET:
-        return True
+        return False
     if not signature:
         return False
     return hmac.compare_digest(sign_webhook_payload(body), signature)
