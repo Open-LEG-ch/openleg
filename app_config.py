@@ -150,7 +150,12 @@ PLACEHOLDER_SECRET_KEYS = frozenset(
 
 def validated_secret_key(value):
     """Return SECRET_KEY, or refuse a value copied from the published examples."""
-    if str(value).strip() in PLACEHOLDER_SECRET_KEYS:
+    key_text = (
+        value.decode("utf-8", errors="replace")
+        if isinstance(value, bytes)
+        else str(value)
+    )
+    if key_text.strip() in PLACEHOLDER_SECRET_KEYS:
         raise ValueError("SECRET_KEY is a documented placeholder; set a random value")
     return value
 

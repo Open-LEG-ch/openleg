@@ -280,6 +280,27 @@ def test_a_placeholder_secret_key_override_is_refused():
         app_config.build_config({}, {"SECRET_KEY": "your-secret-key-here"})
 
 
+@pytest.mark.parametrize(
+    "key",
+    [
+        b"your-secret-key-here",
+        b"generate-a-strong-random-key-here",
+        b"  your-secret-key-here  ",
+    ],
+)
+def test_a_placeholder_secret_key_in_bytes_is_refused(key):
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        app_config.build_config({}, {"SECRET_KEY": key})
+
+
+def test_a_real_binary_secret_key_is_preserved():
+    key = b"\x00\xff\xfe-synthetic-random-key"
+
+    config = app_config.build_config({}, {"SECRET_KEY": key})
+
+    assert config["SECRET_KEY"] == key
+
+
 def test_a_configured_secret_key_is_kept():
     config = app_config.build_config({"SECRET_KEY": "a-real-random-key"})
 
@@ -314,6 +335,21 @@ def test_the_app_refuses_to_start_with_a_placeholder_secret_key():
             {
                 "TESTING": True,
                 "SECRET_KEY": "your-secret-key-here",
+                "RATELIMIT_STORAGE_URI": "memory://",
+            },
+            load_environment=False,
+            check_database=False,
+        )
+
+
+def test_the_app_refuses_to_start_with_a_placeholder_secret_key_in_bytes():
+    import app as app_module
+
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        app_module.create_app(
+            {
+                "TESTING": True,
+                "SECRET_KEY": b"your-secret-key-here",
                 "RATELIMIT_STORAGE_URI": "memory://",
             },
             load_environment=False,
