@@ -449,6 +449,10 @@ msgstr "1. Émettre et envoyer les factures"
 msgid "1. Teilnehmer"
 msgstr "1. Participants"
 
+#: templates/sandbox/archive.html:8
+msgid "1. Umfang prüfen und herunterladen"
+msgstr "1. Vérifier le contenu et télécharger"
+
 #: templates/datenschutz.html:27
 msgid "1. Verantwortliche Stelle"
 msgstr "1. Responsable du traitement"
@@ -489,6 +493,10 @@ msgstr "2. Télécharger et importer les relevés"
 msgid "2. Nachbarn finden"
 msgstr "2. Trouver des voisins"
 
+#: templates/sandbox/archive.html:14
+msgid "2. Neues Ziel prüfen und wiederherstellen"
+msgstr "2. Vérifier une nouvelle destination et restaurer"
+
 #: templates/datenschutz.html:33
 msgid "2. Verarbeitete Daten"
 msgstr "2. Données traitées"
@@ -528,6 +536,10 @@ msgstr "3. Base légale"
 #: templates/sandbox/operator.html:29
 msgid "3. Signierte Zustellung und Wiederholung prüfen"
 msgstr "3. Vérifier la livraison signée et sa reprise"
+
+#: templates/sandbox/archive.html:40
+msgid "3. Wiederholung und Ablehnung vergleichen"
+msgstr "3. Comparer la répétition et le refus"
 
 #: templates/sandbox/billing.html:32
 msgid "3. Zustellen und als Mitglied prüfen"
@@ -1339,6 +1351,10 @@ msgstr ""
 "Architecture, chaîne de données, périmètre des dépôts et auto-hébergement de l’infrastructure "
 "libre OpenLEG."
 
+#: templates/sandbox/archive.html:27
+msgid "Archiv abgelehnt. Es wurden keine Datensätze importiert."
+msgstr "Archive refusée. Aucun enregistrement n’a été importé."
+
 #: templates/fuer_gemeinden.html:77 templates/leg_gruenden.html:212
 msgid "Art. 17d und 17e StromVG"
 msgstr "Articles 17d et 17e LApEl"
@@ -1686,7 +1702,7 @@ msgstr "Copier la commande"
 msgid "Befehl kopiert."
 msgstr "Commande copiée."
 
-#: templates/sandbox/home.html:62
+#: templates/sandbox/home.html:67
 msgid ""
 "Beginnen Sie als Gründerin mit einer neuen LEG. Laden Sie zwei Haushalte ein, bestätigen Sie die "
 "Teilnahme und prüfen Sie die Vertragsentwürfe. Simulieren Sie die Unterschriften und die Antwort "
@@ -1697,7 +1713,7 @@ msgstr ""
 "gestionnaire de réseau. Activez la CEL uniquement avec un justificatif de démarrage fictif "
 "distinct."
 
-#: templates/sandbox/home.html:54
+#: templates/sandbox/home.html:59
 msgid ""
 "Beginnen Sie mit einem neuen erfundenen Haushalt. Bestätigen Sie ihn im Postfach und melden Sie "
 "sich mit einem Zugangslink an. Ändern Sie danach das Energieprofil und berechnen Sie die "
@@ -1878,6 +1894,10 @@ msgstr "Exploitation limitée de la CEL"
 #: templates/datenschutz.html:73
 msgid "Beschwerderecht bei einer Aufsichtsbehörde"
 msgstr "Droit de déposer une réclamation auprès d’une autorité de surveillance"
+
+#: templates/sandbox/archive.html:20
+msgid "Beschädigtes Manifest simulieren"
+msgstr "Simuler un manifeste endommagé"
 
 #: templates/gemeinde/profil.html:132
 msgid "Bestehende LEG eintragen"
@@ -2443,6 +2463,20 @@ msgstr "Les frais de facturation définis dans la règle dépassent les limites 
 msgid "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
 msgstr "Le dossier d’inscription peut être préparé une fois que toutes les signatures sont complètes."
 
+#: templates/sandbox/archive.html:9
+msgid ""
+"Das Archiv umfasst die deklarierten LEG-Datensätze: Mitgliedschaft, Dokumente und "
+"Unterschriftsbelege, Mess- und Quellenbelege, Rechnungen, Zahlungen, Fragen und Prüfverlauf. "
+"Live-Zugangsschlüssel, ausstehende Webhook-Zustellungen, private Geräte und Telemetrie sowie "
+"Betriebseinstellungen bleiben ausgeschlossen. Die Wiederherstellung sendet keine historischen "
+"E-Mails oder Webhooks und überträgt keine vollständige Installation."
+msgstr ""
+"L’archive couvre les données déclarées de la CEL : adhésions, documents et preuves de signature, "
+"mesures et sources, factures, paiements, questions et historique. Les clés d’accès actives, "
+"livraisons webhook en attente, appareils et télémétrie privés ainsi que les paramètres "
+"d’exploitation sont exclus. La restauration n’envoie aucun ancien e-mail ou webhook et ne "
+"transfère pas une installation complète."
+
 #: templates/fuer_gemeinden.html:37
 msgid "Das Dashboard zeigt, was für die Aktivierung noch fehlt."
 msgstr "le tableau de bord indique ce qui manque encore pour l’activation."
@@ -2504,6 +2538,10 @@ msgstr "Le modèle de répartition de la règle de facturation n'est pas valide.
 #: dashboard.py:1046
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr "La double validation n’a pas pu être modifiée."
+
+#: templates/sandbox/archive.html:35
+msgid "Das Ziel ist abgelaufen. Nehmen Sie den Export für ein neues Ziel erneut auf."
+msgstr "La destination a expiré. Reprenez l’export pour créer une nouvelle destination."
 
 #: store/formation_activation.py:161
 msgid "Das bestätigte Startdatum liegt noch in der Zukunft."
@@ -2999,6 +3037,10 @@ msgstr "L'entrée de paiement ne contient pas de montant valide."
 #: municipality.py:167
 msgid "Der Zugangslink ist ungültig oder bereits verwendet."
 msgstr "Le lien d’accès est invalide ou a déjà été utilisé."
+
+#: templates/sandbox/archive.html:25
+msgid "Der gespeicherte Stand ist im privaten Ziel wiederhergestellt."
+msgstr "L’état enregistré a été restauré dans la destination privée."
 
 #: sandbox_billing.py:57
 msgid "Der gewöhnliche Abrechnungslauf hat diesen Entwurf abgelehnt. Prüfen Sie Richtlinie und Quelle."
@@ -3584,6 +3626,18 @@ msgstr ""
 "Les projets de contrats ne contiennent pas tous les participants actuels. Générez de nouveaux "
 "projets."
 
+#: templates/sandbox/archive.html:15
+msgid ""
+"Die Vorprüfung nimmt einen neuen Export direkt aus Ihrem Quelldorf. Die folgende "
+"Wiederherstellung verwendet genau diesen gespeicherten Stand. Ihre Browser-Anmeldung und die "
+"normale LEG-Administration werden bei jedem Befehl erneut geprüft. Es wird kein Plattform-"
+"Schlüssel angezeigt."
+msgstr ""
+"La vérification prend un nouvel export directement dans votre village source. La restauration "
+"suivante utilise exactement cet état enregistré. Chaque commande vérifie à nouveau votre "
+"connexion et vos droits habituels d’administration de la CEL. Aucune clé de plateforme n’est "
+"affichée."
+
 #: billing_policy.py:230
 msgid "Die Zahlungsfrist der Richtlinie ist ungültig."
 msgstr "Les conditions de paiement de la règle de facturation sont invalides."
@@ -3635,7 +3689,7 @@ msgstr ""
 "La langue des e-mails et l'état de la clé enregistrés sont conservés lorsque vous changez de "
 "compte."
 
-#: sandbox_seed.py:45 sandbox_worker.py:103
+#: sandbox_seed.py:45 sandbox_worker.py:110
 msgid "Die gespeicherten Angaben erscheinen nach dem Neuladen."
 msgstr "Les informations enregistrées apparaissent après le rechargement."
 
@@ -3938,6 +3992,14 @@ msgid ""
 msgstr ""
 "Ce village a été fermé ou réinitialisé. Cet onglet ne peut plus enregistrer de modifications. "
 "Ouvrez votre village actuel ou recommencez."
+
+#: templates/sandbox/archive_destination.html:5
+msgid ""
+"Dieses Ziel gehört zu Ihrem Quelldorf. Dort können Sie es verwerfen oder einen neuen Export "
+"prüfen. Ein Reset oder das Ablaufen des Quelldorfs entfernt beide Kopien."
+msgstr ""
+"Cette destination appartient à votre village source. Vous pouvez l’y supprimer ou vérifier un "
+"nouvel export. La réinitialisation ou l’expiration du village source supprime les deux copies."
 
 #: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
 msgid "Dieses Übungsdorf ist abgelaufen"
@@ -4643,7 +4705,7 @@ msgstr ""
 "Profil énergétique et potentiel CEL de %(name)s : tarifs électriques, exploitation du potentiel "
 "solaire et score de transition énergétique."
 
-#: sandbox_seed.py:27 sandbox_worker.py:97
+#: sandbox_seed.py:27 sandbox_worker.py:104
 msgid "Energieprofil ändern"
 msgstr "Modifier le profil énergétique"
 
@@ -4744,6 +4806,10 @@ msgstr "Télécharger le contrat d'adhésion fictif"
 msgid "Erfundenen Startbeleg herunterladen"
 msgstr "Télécharger le justificatif de démarrage fictif"
 
+#: templates/sandbox/archive.html:11 templates/sandbox/archive_destination.html:6
+msgid "Erfundenes LEG-Archiv herunterladen"
+msgstr "Télécharger l’archive fictive de la CEL"
+
 #: templates/sandbox/formation.html:40
 msgid "Ergebnis simulieren"
 msgstr "Simuler le résultat"
@@ -4756,7 +4822,7 @@ msgstr "Résultat de l'accès à distance"
 msgid "Ergänzen Sie Ihren Stromverbrauch"
 msgstr "Complétez votre consommation électrique"
 
-#: templates/sandbox/home.html:55
+#: templates/sandbox/home.html:60
 msgid ""
 "Erlauben Sie die Anzeige in der Nachbarschaft. Wechseln Sie zu einem anderen Haushalt und "
 "vergleichen Sie Anzahl und Kontaktliste. Kontaktangaben erscheinen erst nach beidseitiger "
@@ -4898,6 +4964,20 @@ msgstr "Source exacte du GRD déterminante, écart par rapport au modèle indiqu
 #: templates/utility/dashboard.html:15
 msgid "Expired"
 msgstr "Expiré"
+
+#: templates/sandbox/archive.html:21
+msgid "Export aufnehmen und Ziel vorprüfen"
+msgstr "Prendre un export et vérifier la destination"
+
+#: templates/sandbox/home.html:53
+msgid ""
+"Exportieren Sie als Robin die Betriebs-LEG oder als Mira die selbst gegründete LEG. Prüfen Sie "
+"eine neue private Kopie, stellen Sie das Archiv wieder her und vergleichen Sie Wiederholung, "
+"Konflikt und beschädigtes Manifest."
+msgstr ""
+"En tant que Robin, exportez la CEL en exploitation, ou en tant que Mira, celle que vous avez "
+"créée. Vérifiez une nouvelle copie privée, restaurez l’archive et comparez une répétition, un "
+"conflit et un manifeste endommagé."
 
 #: templates/index.html:302
 msgid "Fairer Vergleich nach Kanton, Grösse und Dichte"
@@ -5097,7 +5177,7 @@ msgstr "Progression :"
 msgid "Frage senden"
 msgstr "Envoyer une question"
 
-#: templates/sandbox/home.html:56
+#: templates/sandbox/home.html:61
 msgid ""
 "Fragen Sie einen Kontakt an und wählen Sie die freizugebenden Angaben. Im Postfach sehen Sie, "
 "welcher Haushalt benachrichtigt wurde. Wechseln Sie zu dessen Konto und nehmen Sie die Anfrage an"
@@ -5273,6 +5353,16 @@ msgstr "Pour les personnes qui créent une CEL"
 #: templates/index.html:190
 msgid "Für Netzbetreiber und Integrationspartner"
 msgstr "Pour les gestionnaires de réseau et les partenaires d’intégration"
+
+#: templates/sandbox/archive.html:10
+msgid ""
+"Für Rechnungen und Quellenbelege führen Sie zuerst die Messdaten- und Abrechnungsübung durch. Für"
+" Gründungsbelege wählen Sie danach die selbst gegründete LEG. Das Archiv zeigt nur tatsächlich "
+"vorhandene Datensätze."
+msgstr ""
+"Pour disposer de factures et de preuves de source, effectuez d’abord les exercices de mesures et "
+"de facturation. Pour les preuves de constitution, choisissez ensuite la CEL que vous avez créée. "
+"L’archive ne contient que les données réellement présentes."
 
 #: templates/how-it-works.html:120
 msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um"
@@ -5918,6 +6008,10 @@ msgstr "Événements de paiement enregistrés"
 msgid "Gespeicherte Übergabe herunterladen"
 msgstr "Télécharger le transfert enregistré"
 
+#: templates/sandbox/archive.html:33
+msgid "Gespeicherten Stand wiederherstellen"
+msgstr "Restaurer l’état enregistré"
+
 #: templates/advisories.html:70
 msgid "Gespeicherter Stand:"
 msgstr "Statut enregistré :"
@@ -6071,7 +6165,7 @@ msgstr "Création"
 msgid "Gründung als Arbeitsfolge"
 msgstr "Les étapes de création"
 
-#: templates/sandbox/home.html:63
+#: templates/sandbox/home.html:68
 msgid "Gründung ausprobieren"
 msgstr "Essayer la création d'une CEL"
 
@@ -6196,7 +6290,7 @@ msgstr "Exclusion de responsabilité"
 msgid "Hallo,"
 msgstr "Bonjour,"
 
-#: sandbox_seed.py:23 sandbox_worker.py:92 templates/contact_requests.html:70
+#: sandbox_seed.py:23 sandbox_worker.py:99 templates/contact_requests.html:70
 #: templates/dashboard.html:83 templates/gemeinde/dashboard.html:36
 #: templates/gemeinde/dashboard.html:40 templates/sandbox/telemetry.html:25
 msgid "Haushalt"
@@ -6204,7 +6298,7 @@ msgid_plural "Haushalte"
 msgstr[0] "ménage"
 msgstr[1] "ménages"
 
-#: templates/sandbox/home.html:53 templates/sandbox/home.html:58 templates/sandbox/onboarding.html:2
+#: templates/sandbox/home.html:58 templates/sandbox/home.html:63 templates/sandbox/onboarding.html:2
 #: templates/sandbox/onboarding.html:5 templates/sandbox/onboarding.html:19
 msgid "Haushalt anmelden"
 msgstr "Inscrire un ménage"
@@ -6408,6 +6502,14 @@ msgstr "Je souhaite supprimer ce village et recommencer avec le modèle choisi."
 msgid "Ich möchte dieses Dorf und alle Übungsdaten löschen."
 msgstr "Je souhaite supprimer ce village et toutes ses données d'essai."
 
+#: templates/sandbox/archive.html:33
+msgid "Ich stelle diesen geprüften Stand im privaten Ziel wieder her."
+msgstr "Je restaure cet état vérifié dans la destination privée."
+
+#: templates/sandbox/archive.html:36
+msgid "Ich verwerfe das private Ziel und seinen gespeicherten Export."
+msgstr "Je supprime la destination privée et son export enregistré."
+
 #: templates/sandbox/metering.html:55
 msgid "Ich ziehe diese Quelle ausdrücklich zurück, bevor ich die Korrektur importiere."
 msgstr "Je retire explicitement cette source avant d'importer la correction."
@@ -6456,7 +6558,7 @@ msgstr "Votre village d'essai"
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Votre gestionnaire de réseau fictif est actif et n'a pas encore de clé API."
 
-#: sandbox_worker.py:98
+#: sandbox_worker.py:105
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr "Votre nouveau ménage est confirmé."
 
@@ -6630,7 +6732,7 @@ msgstr "Vos habitudes de consommation, en journée ou en soirée"
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr "Votre consommation annuelle approximative en kWh (indiquée sur la facture d’électricité)"
 
-#: templates/sandbox/home.html:57
+#: templates/sandbox/home.html:62
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
 "bestätigen. Danach sind das Profil und seine Freigaben entfernt. Alte Zugangslinks gewähren "
@@ -7390,6 +7492,10 @@ msgstr "Cliquez sur « Exporter CSV »"
 msgid "Klären Sie Mitglieder, Verträge, Netzbetreiber und Abrechnung."
 msgstr "Clarifiez les membres, les contrats, le gestionnaire de réseau et la facturation."
 
+#: templates/sandbox/archive.html:26
+msgid "Konflikt: Der vorhandene Zielstand wurde nicht überschrieben."
+msgstr "Conflit : l’état existant de la destination n’a pas été remplacé."
+
 #: templates/gemeinde/profil.html:122
 msgid "Konkrete Massnahmen"
 msgstr "Mesures concrètes"
@@ -7438,7 +7544,7 @@ msgid "Konto nicht verfügbar"
 msgstr "Compte indisponible"
 
 #: templates/sandbox/account_unavailable.html:8 templates/sandbox/banner.html:5
-#: templates/sandbox/billing.html:34 templates/sandbox/home.html:51 templates/sandbox/payments.html:61
+#: templates/sandbox/billing.html:34 templates/sandbox/home.html:56 templates/sandbox/payments.html:61
 #: templates/sandbox/questions.html:11 templates/sandbox/telemetry.html:20
 msgid "Konto wechseln"
 msgstr "Changer de compte"
@@ -7641,7 +7747,7 @@ msgid "LEG gesetzlich möglich"
 msgstr "Les CEL sont autorisées par la loi"
 
 #: sandbox_seed.py:49 templates/index.html:68 templates/index.html:162 templates/leg_gruenden.html:24
-#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:61
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:66
 msgid "LEG gründen"
 msgstr "Créer une CEL"
 
@@ -7702,6 +7808,11 @@ msgstr "Informations CEL de l’EBL"
 #: templates/leg_gruenden.html:103
 msgid "LEG-Angaben von Primeo Energie"
 msgstr "Informations CEL de Primeo Energie"
+
+#: templates/sandbox/archive.html:2 templates/sandbox/archive.html:5 templates/sandbox/home.html:52
+#: templates/sandbox/home.html:54
+msgid "LEG-Archiv ausprobieren"
+msgstr "Essayer l’archive de la CEL"
 
 #: templates/index.html:160
 msgid "LEG-Betreiber"
@@ -8986,7 +9097,7 @@ msgstr "Créer une nouvelle clé"
 msgid "Neuenburg"
 msgstr "Neuchâtel"
 
-#: sandbox_worker.py:91
+#: sandbox_worker.py:98
 msgid "Neuer Haushalt"
 msgstr "Nouveau ménage"
 
@@ -10000,6 +10111,14 @@ msgstr "Un réseau privé pour vos voisins"
 msgid "Privates Ops-Repo"
 msgstr "Dépôt privé d’exploitation"
 
+#: templates/sandbox/archive_destination.html:4
+msgid "Privates Wiederherstellungsziel"
+msgstr "Destination privée de restauration"
+
+#: templates/sandbox/archive.html:32
+msgid "Privates Ziel"
+msgstr "Destination privée"
+
 #: templates/sandbox/entry.html:8
 msgid ""
 "Probieren Sie OpenLEG mit erfundenen Haushalten aus. Ihre Änderungen bleiben in Ihrem eigenen "
@@ -10096,6 +10215,10 @@ msgstr "Répartition proportionnelle à la consommation"
 #: templates/leg_billing_policy.html:112
 msgid "Präfix"
 msgstr "préfixe"
+
+#: templates/sandbox/archive.html:20
+msgid "Prüfdatei"
+msgstr "Fichier à vérifier"
 
 #: templates/advisories.html:64
 msgid "Prüfdatum Ihrer Quelle"
@@ -10263,6 +10386,10 @@ msgstr "Enregistrer la batterie de quartier"
 msgid "Quartierakku-Anteil"
 msgstr "Part de la batterie de quartier"
 
+#: templates/sandbox/archive.html:18
+msgid "Quell-LEG"
+msgstr "CEL source"
+
 #: templates/self_host.html:80
 msgid "Quellcode auf GitHub"
 msgstr "Code source sur GitHub"
@@ -10274,6 +10401,10 @@ msgstr "Documents sources"
 #: templates/leg_billing.html:60
 msgid "Quelldokumente:"
 msgstr "Documents sources :"
+
+#: templates/sandbox/archive_destination.html:8
+msgid "Quelldorf verwalten"
+msgstr "Gérer le village source"
 
 #: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38 templates/sandbox/payments.html:42
 #: templates/telemetry_dashboard.html:52 templates/telemetry_dashboard.html:126
@@ -10786,6 +10917,16 @@ msgid ""
 msgstr ""
 "SIMULATION SONNWIL : septembre 2026, sans batterie. Tous les prix, mesures et factures sont "
 "fictifs. Aucun paiement n’est dû."
+
+#: templates/sandbox/archive.html:6
+msgid ""
+"SIMULATION SONNWIL: Sie exportieren nur erfundene Daten Ihrer LEG. Die Wiederherstellung "
+"verwendet eine neue Datenbank mit eigenem Produktprozess. Sie benötigt einen freien Dorfplatz und"
+" bleibt an dieses Quelldorf gebunden."
+msgstr ""
+"SIMULATION SONNWIL : vous exportez uniquement les données fictives de votre CEL. La restauration "
+"utilise une nouvelle base de données avec son propre processus. Elle nécessite une place libre et"
+" reste liée à ce village source."
 
 #: templates/leg_gruenden.html:147
 msgid "Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen."
@@ -12062,6 +12203,10 @@ msgstr "Demander un accompagnement"
 msgid "Unterzeichnet"
 msgstr "Signé"
 
+#: templates/sandbox/archive.html:20
+msgid "Unveränderter Export"
+msgstr "Export inchangé"
+
 #: dashboard.py:266 dashboard.py:267
 msgid "Unvollständig"
 msgstr "Incomplet"
@@ -12537,6 +12682,10 @@ msgstr ""
 msgid "Vorlage"
 msgstr "Modèle"
 
+#: templates/sandbox/archive.html:28
+msgid "Vorprüfung erfolgreich. Das Ziel wurde noch nicht verändert."
+msgstr "Vérification réussie. La destination n’a pas encore été modifiée."
+
 #: templates/index.html:624
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr "Les suggestions ne sont pas disponibles. Vous pouvez quand même vérifier l’adresse."
@@ -12892,6 +13041,22 @@ msgstr ""
 msgid "Wie wir diesen Wert herleiten"
 msgstr "Comment cette valeur est calculée"
 
+#: templates/sandbox/archive.html:34
+msgid "Wiederhergestellte LEG öffnen"
+msgstr "Ouvrir la CEL restaurée"
+
+#: templates/sandbox/archive.html:41
+msgid ""
+"Wiederholen Sie die Wiederherstellung unverändert: Es entstehen keine doppelten Datensätze. "
+"Öffnen Sie dann das Ziel und ändern Sie im eigenen Energieprofil den Jahresverbrauch. Kehren Sie "
+"über «Zum Quelldorf» zurück und stellen Sie denselben gespeicherten Stand erneut her. Die "
+"Vorprüfung zeigt den Konflikt, ohne ihn zu überschreiben. Die Quelle bleibt unverändert."
+msgstr ""
+"Répétez la restauration sans modification : aucun doublon n’est créé. Ouvrez ensuite la "
+"destination et modifiez la consommation annuelle de votre profil énergétique. Revenez par « "
+"Retour au village source » et restaurez à nouveau le même état enregistré. La vérification "
+"signale le conflit sans le remplacer. La source reste inchangée."
+
 #: templates/emails/day_0_welcome.html:6 templates/emails/day_0_welcome.html:33
 #, python-format
 msgid "Willkommen bei %(platform_name)s"
@@ -13125,6 +13290,18 @@ msgstr ""
 "refusés et retirez la source originale avant de charger une correction. Essayez aussi un échec de"
 " récupération planifiée et sa relance."
 
+#: templates/sandbox/archive.html:42
+msgid ""
+"Wählen Sie anschliessend das beschädigte Manifest und nehmen Sie den Export erneut auf. Die "
+"Prüfung und Wiederherstellung lehnen den falschen Hash ab. Verwerfen Sie das Ziel und beginnen "
+"Sie mit einem unveränderten Export neu. Verwerfen, Zurücksetzen oder Ablaufen des Quelldorfs "
+"entfernt auch das Ziel und alle Archivdateien."
+msgstr ""
+"Choisissez ensuite le manifeste endommagé et reprenez l’export. La vérification et la "
+"restauration refusent l’empreinte incorrecte. Supprimez la destination et recommencez avec un "
+"export inchangé. La suppression, la réinitialisation ou l’expiration du village source supprime "
+"aussi la destination et tous les fichiers d’archive."
+
 #: templates/meter_upload.html:54
 msgid "Wählen Sie den gewünschten Zeitraum"
 msgstr "Sélectionnez la période souhaitée"
@@ -13271,6 +13448,10 @@ msgid ""
 "Korrektur."
 msgstr "Retirez d'abord explicitement la source originale acceptée. Importez ensuite la correction."
 
+#: templates/sandbox/archive.html:36
+msgid "Ziel verwerfen"
+msgstr "Supprimer la destination"
+
 #: templates/gemeinde/profil.html:122
 msgid "Ziel:"
 msgstr "Objectif :"
@@ -13345,6 +13526,10 @@ msgstr "Aller au contenu"
 #: templates/gemeinde/profil.html:132
 msgid "Zum LEG-Check"
 msgstr "Vérifier le potentiel CEL"
+
+#: templates/sandbox/archive_destination.html:7 templates/sandbox/banner.html:8
+msgid "Zum Quelldorf"
+msgstr "Retour au village source"
 
 #: templates/pricing.html:126
 msgid "Zum Schnellstart"
@@ -14017,7 +14202,7 @@ msgstr "» est toujours d'actualité."
 msgid "Ändern"
 msgstr "Modifier"
 
-#: sandbox_seed.py:44 sandbox_worker.py:100
+#: sandbox_seed.py:44 sandbox_worker.py:107
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr "Modifiez la consommation ou la puissance photovoltaïque dans le profil énergétique."
 
@@ -14444,3 +14629,7 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 #~ "Ouvrez votre tableau de bord, modifiez la "
 #~ "consommation annuelle et enregistrez. Rechargez la page"
 #~ " pour voir la nouvelle valeur."
+
+#: templates/gemeinde/dashboard.html:97
+msgid "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."
+msgstr "Les demandes de contrat à OpenLEG sont désactivées dans le village d'essai."

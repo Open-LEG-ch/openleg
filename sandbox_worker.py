@@ -33,6 +33,13 @@ def create_worker():
     from sandbox_seed import ACCOUNTS, seed_village
     from translation_markers import gettext_noop as _N
 
+    if (
+        os.environ.get("OPENLEG_SANDBOX_RESTORE_SOURCE")
+        and not (directory / "fixture.json").exists()
+    ):
+        raise RuntimeError(
+            "restore destination identity unavailable; reset source required"
+        )
     seed_identities = seed_village(db, directory)
     web = create_app(
         {
@@ -112,6 +119,7 @@ def create_worker():
         return None, None
 
     def sign_in(key):
+        """Sign in an available fictional account using current registration proofs."""
         account = ACCOUNTS[key]
         if account.get("building_id"):
             profile = db.get_building(account["building_id"])
@@ -123,11 +131,14 @@ def create_worker():
                 )
             logins.sign_in("dashboard_building_id", account["building_id"])
         elif key == "utility":
+            if not db.get_utility_client("sonnwil-utility"):
+                abort(410)
             logins.sign_in("utility_client_id", "sonnwil-utility")
         else:
-            logins.sign_in(
-                "municipality_id", db.get_municipality(bfs_number=999999)["id"]
-            )
+            municipality = db.get_municipality(bfs_number=999999)
+            if not municipality:
+                abort(410)
+            logins.sign_in("municipality_id", municipality["id"])
         return account["destination"]
 
     @web.context_processor
@@ -138,6 +149,7 @@ def create_worker():
             "private_page": True,
             "sandbox_account": account,
             "sandbox_account_key": _key,
+            "sandbox_restore_source": os.environ.get("OPENLEG_SANDBOX_RESTORE_SOURCE"),
         }
 
     @web.get("/sandbox/enter")
@@ -149,15 +161,20 @@ def create_worker():
 
     @web.get("/sandbox/accounts")
     def accounts():
+        """List available fictional accounts, omitting staff roles in restored workers."""
         session.setdefault("sandbox_csrf", secrets.token_urlsafe(32))
+        available = {
+            key: account
+            for key, account in ACCOUNTS.items()
+            if (
+                seeded_household(db.get_building(account["building_id"]))
+                if account.get("building_id")
+                else not os.environ.get("OPENLEG_SANDBOX_RESTORE_SOURCE")
+            )
+        }
         return render_template(
             "sandbox/accounts.html",
-            accounts={
-                key: account
-                for key, account in ACCOUNTS.items()
-                if not account.get("building_id")
-                or seeded_household(db.get_building(account["building_id"]))
-            },
+            accounts=available,
             csrf_token=session["sandbox_csrf"],
         )
 
@@ -211,6 +228,9 @@ def create_worker():
     from sandbox_formation import install
 
     install(web)
+    from sandbox_archive import install as install_archive
+
+    install_archive(web, logins, active_account)
     return web
 
 

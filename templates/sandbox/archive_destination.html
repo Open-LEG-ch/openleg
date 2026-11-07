@@ -1,0 +1,10 @@
+{% extends "product_base.html" %}
+{% block content %}
+<div class="mx-auto max-w-3xl px-4 py-12">
+  <h1 class="text-3xl font-bold">{{ _('Privates Wiederherstellungsziel') }}</h1>
+  <p class="mt-4">{{ _('Dieses Ziel gehört zu Ihrem Quelldorf. Dort können Sie es verwerfen oder einen neuen Export prüfen. Ein Reset oder das Ablaufen des Quelldorfs entfernt beide Kopien.') }}</p>
+  {% if community_id %}<a href="{{ destination_prefix }}/leg/community/{{ community_id }}/archive" class="mt-4 block font-semibold underline">{{ _('Erfundenes LEG-Archiv herunterladen') }}</a>{% endif %}
+  <a href="{{ source_prefix }}/sandbox/archive" class="mt-4 inline-block font-semibold underline">{{ _('Zum Quelldorf') }}</a>
+  <a href="{{ source_prefix }}/sandbox/manage" class="mt-4 block font-semibold underline">{{ _('Quelldorf verwalten') }}</a>
+</div>
+{% endblock %}

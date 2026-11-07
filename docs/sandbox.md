@@ -184,7 +184,8 @@ are never adopted as proof of the original fictional accounts.
 
 Retirement waits for an in-flight request before stopping its worker and
 removing its database, role and working directory. Mail, uploads, documents,
-webhook captures, caches and restore destinations belong under that directory.
+webhook captures and caches belong under that directory. Linked restore
+destinations own separate directories under the scratch root and retire first.
 Failed cleanup stays inactive, reserves its capacity and records a bounded
 three-attempt retry. Restarting the gateway reclaims its old processes and
 scratch storage. It never resumes old sessions. This prototype provides no
@@ -351,3 +352,46 @@ telemetry view also requires an explicit share and Lea's neighbour consent.
 Revocation removes access on the next read. Private equipment details and notice
 acknowledgement remain owner-only. Telemetry stays separate from E66 evidence,
 billing periods and issued invoice snapshots.
+
+## Community archive exercise
+
+Robin can export the operating LEG after the metering, billing, payment and
+question exercises. Mira can export a newly formed LEG with its original PDFs,
+participant manifests and signature receipts. The normal administrator export
+returns format 3, with its actual declared datasets and a synthetic filename
+and manifest marker. Versions 1 and 2 remain readable with their older coverage.
+
+Preview takes a fresh server-side export, creates an empty destination with the
+same schema, and runs the ordinary archive dry-run. Restore uses that exact
+private snapshot and the ordinary transactional restore engine. Each command
+rechecks the source's current confirmed administrator and CSRF token. The gateway
+supplies installation authority only for this linked scratch database; it never
+exposes a platform token or changes the production restore endpoint. Users cannot
+upload an edited archive through this exercise. The damaged-manifest choice
+changes only a declared hash to demonstrate refusal, not provenance authentication.
+
+The destination has its own database, owner, worker, cookies, signing key and
+private directory. It occupies one of the existing workspace slots. Its directory
+is a separately owned sibling under the scratch root, linked to the source's
+lifecycle. Source retirement collects targets after in-flight operations finish;
+expired sources cannot allocate new targets. A destination cannot reset itself
+into an independent village. Its management page returns to the source, where
+it can be discarded or the whole village can be reset. Startup crash recovery
+reclaims every scratch directory without reviving either copy.
+
+Open the restored LEG to compare normal invoice and source views. Repeating the
+same snapshot imports no duplicate records. Change the restored account's energy
+profile, return to the source and retry: the ordinary validator reports a conflict
+without overwriting the target. A damaged manifest also imports nothing. Native
+coverage injects a late invoice constraint failure and verifies that earlier
+profile, community and billing inserts all roll back. A separate native journey
+restores three actual participant receipts and original PDFs, then completes a
+normal VNB submission against those restored records.
+
+Snapshots are bounded to 50 MiB and stored with mode 0600 inside the source
+worker's private directory. Explicit destination discard removes the snapshot;
+source reset, discard and expiry remove both copies and their runtime files.
+Live API credentials, pending webhooks, owner-only equipment and telemetry,
+contact grants and deployment settings remain outside the archive. Restoring
+never dispatches historical mail or webhooks. This exercise covers declared
+community data, not complete deployment portability; broader facts remain #612.
