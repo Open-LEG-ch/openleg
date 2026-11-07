@@ -9,6 +9,7 @@ be added here by accident. The operator surface moved out of ``app.py`` the same
 way in #271.
 """
 
+import hmac
 import logging
 from datetime import UTC, datetime
 
@@ -32,10 +33,16 @@ cron_bp = Blueprint("cron", __name__)
 
 
 def _require_cron_secret():
-    """Cron endpoints fail closed: no CRON_SECRET configured means no access."""
-    secret = request.headers.get("X-Cron-Secret") or request.args.get("secret") or ""
+    """Cron endpoints fail closed: no CRON_SECRET configured means no access.
+
+    The secret is read from the X-Cron-Secret header only. A query string would
+    be written to the access log, so ?secret= is never accepted.
+    """
+    secret = request.headers.get("X-Cron-Secret") or ""
     configured = current_app.config["CRON_SECRET"]
-    if not configured or secret != configured:
+    if not configured or not hmac.compare_digest(
+        secret.encode("utf-8"), configured.encode("utf-8")
+    ):
         log_security_event("CRON_ACCESS_DENIED", "Invalid cron secret", "WARNING")
         abort(403)
 
