@@ -1,14 +1,22 @@
 # Community archive
 
-The LEG dashboard exports `openleg-community-archive/2` JSON. The reader also
-accepts the exact version 1 dataset contract. Older installations reject
-version 2; upgrade the destination before importing a version 2 archive.
+The LEG dashboard exports `openleg-community-archive/3` JSON. The reader also
+accepts the exact version 1 and version 2 dataset contracts. Older installations
+reject version 3; upgrade the destination before importing a version 3 archive.
 Export requires a confirmed LEG administrator session. Dry-run and HTTP restore
 require that session and CSRF protection. HTTP restore writes also require
 platform administrator authentication; send the credential in `X-Admin-Token`.
 Dry-run checks archive consistency, not VNB provenance or restore authority.
 Trusted installation operators can use the low-level restore function.
 Protect the file as private personal, metering and financial data.
+
+Version 3 adds the community's participant signature receipts. It preserves
+their reviewed bundle fingerprints, signer references, provider, original
+evidence and timestamps. Document participant manifests retain literal JSON
+values. Signature references must belong to archived members. Version 1 and 2
+imports retain their declared older coverage without fabricating receipts.
+Hashes check consistency; they do not authenticate an archive's claimed
+signatures or establish their provenance.
 
 The manifest declares the datasets and their SHA-256 hashes. The archive covers
 those datasets; it does not include every private operations ledger. Binary

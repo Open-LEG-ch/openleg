@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Public contracts for the LEG operational archive (#601)."""
 
+import hashlib
 import io
 import json
 from datetime import UTC, datetime
@@ -120,6 +121,7 @@ def tagged_data():
 
 
 def test_representative_archive_round_trip_preserves_records_and_identifiers():
+    """A representative restore preserves records and their original identifiers."""
     source = MemoryArchiveStore({"leg-1": representative_data()})
 
     archive = community_archive.export_community_archive("leg-1", store=source)
@@ -130,13 +132,73 @@ def test_representative_archive_round_trip_preserves_records_and_identifiers():
     restored = community_archive.restore_community_archive(archive, store=target)
 
     payload = json.loads(archive)
-    assert payload["manifest"]["schema_version"] == "openleg-community-archive/2"
+    assert payload["manifest"]["schema_version"] == "openleg-community-archive/3"
     assert payload["manifest"]["units"]["energy"] == "kWh"
     assert payload["manifest"]["time_zones"] == ["Europe/Zurich", "UTC"]
     assert dry_run == {"valid": True, "errors": [], "conflicts": []}
     assert restored == {"valid": True, "errors": [], "conflicts": [], "restored": True}
     for name, rows in representative_data().items():
         assert target.restored[name] == rows
+
+
+def test_archive_preserves_formation_receipts_and_immutable_participant_manifest():
+    data = representative_data()
+    data["leg_documents"][0]["participant_manifest"] = [{"building_id": "house-1"}]
+    receipt = {
+        "community_id": "leg-1",
+        "bundle_fingerprint": "a" * 64,
+        "building_id": "house-1",
+        "provider": "synthetic-local",
+        "evidence": b"SIMULATION signed bundle",
+        "created_at": datetime(2026, 11, 5, tzinfo=UTC),
+    }
+    data["leg_signature_receipts"] = [receipt]
+    source = MemoryArchiveStore({"leg-1": data})
+    encoded = community_archive.export_community_archive("leg-1", store=source)
+    payload = json.loads(encoded)
+    assert payload["manifest"]["schema_version"] == "openleg-community-archive/3"
+    assert "leg_signature_receipts" in payload["datasets"]
+    target = MemoryArchiveStore()
+    assert community_archive.restore_community_archive(encoded, store=target)[
+        "restored"
+    ]
+    assert target.restored["leg_signature_receipts"] == [receipt]
+    assert target.restored["leg_documents"] == data["leg_documents"]
+
+
+def test_version_two_archive_keeps_its_exact_dataset_contract():
+    encoded = community_archive.export_community_archive(
+        "leg-1", store=MemoryArchiveStore({"leg-1": representative_data()})
+    )
+    payload = json.loads(encoded)
+    payload["manifest"]["schema_version"] = community_archive.PREVIOUS_SCHEMA_VERSION
+    payload["datasets"].pop("leg_signature_receipts")
+    payload["manifest"]["hashes"].pop("leg_signature_receipts")
+    target = MemoryArchiveStore()
+    assert community_archive.restore_community_archive(
+        json.dumps(payload), store=target
+    )["restored"]
+    assert "leg_signature_receipts" not in target.restored
+    payload["datasets"]["leg_signature_receipts"] = []
+    payload["manifest"]["hashes"]["leg_signature_receipts"] = (
+        "sha256:" + hashlib.sha256(b"[]").hexdigest()
+    )
+    target = MemoryArchiveStore()
+    assert not community_archive.restore_community_archive(
+        json.dumps(payload), store=target
+    )["valid"]
+    assert target.restore_calls == 0
+
+
+def test_foreign_formation_signature_is_refused_before_export():
+    data = representative_data()
+    data["leg_signature_receipts"] = [
+        {"building_id": "foreign", "bundle_fingerprint": "a" * 64}
+    ]
+    with pytest.raises(community_archive.ArchiveError, match="Operational record"):
+        community_archive.export_community_archive(
+            "leg-1", store=MemoryArchiveStore({"leg-1": data})
+        )
 
 
 def test_dry_run_rejects_hash_mismatch_without_mutation():

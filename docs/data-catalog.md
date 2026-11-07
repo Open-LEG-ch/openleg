@@ -192,9 +192,10 @@ it.
 
 - **Interface:** confirmed LEG administrators use the private
   `/leg/community/<community_id>/archive` controls to export, validate, and
-  restore `openleg-community-archive/2` JSON (legacy version 1 imports remain supported).
+  restore `openleg-community-archive/3` JSON (exact version 1 and 2 imports remain supported).
 - **Contents:** the selected community, its member profiles and consent
-  metadata, formation and signed documents, correspondence and attachments,
+  metadata, formation and signed documents with participant manifests and
+  signature receipts, correspondence and attachments,
   metering mappings and readings, billing policies and periods, line items,
   immutable invoices, delivery/correction records and lifecycle events,
   accepted VNB sources and withdrawals, VNB handover/mutation evidence, payment
