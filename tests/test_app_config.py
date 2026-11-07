@@ -8,9 +8,16 @@ guard `PUBLIC_SITE_URL` (which templates interpolate into links) were reachable
 only through the factory.
 """
 
+import os
+import subprocess
+import sys
+from pathlib import Path
+from unittest.mock import patch
+
 import pytest
 
 import app_config
+from tests.native_environment import isolated_environment as native_environment
 
 
 def _env(**overrides):
@@ -335,12 +342,18 @@ def test_no_flask_import_is_needed_to_build_a_config():
     assert "flask" not in imported
 
 
-def test_the_app_refuses_to_start_with_a_placeholder_secret_key():
-    """The guard runs on the real factory path, not only in build_config."""
-    import app as app_module
+@pytest.fixture
+def secret_key_factory():
+    with patch.dict(os.environ, native_environment({}), clear=True):
+        import app as app_module
 
+        yield app_module.create_app
+
+
+def test_the_app_refuses_to_start_with_a_placeholder_secret_key(secret_key_factory):
+    """The guard runs on the real factory path, not only in build_config."""
     with pytest.raises(ValueError, match="SECRET_KEY"):
-        app_module.create_app(
+        secret_key_factory(
             {
                 "TESTING": True,
                 "SECRET_KEY": "your-secret-key-here",
@@ -354,11 +367,11 @@ def test_the_app_refuses_to_start_with_a_placeholder_secret_key():
 @pytest.mark.parametrize(
     "key", [b"your-secret-key-here", bytearray(b"your-secret-key-here")]
 )
-def test_the_app_refuses_to_start_with_a_placeholder_secret_key_in_bytes(key):
-    import app as app_module
-
+def test_the_app_refuses_to_start_with_a_placeholder_secret_key_in_bytes(
+    key, secret_key_factory
+):
     with pytest.raises(ValueError, match="SECRET_KEY"):
-        app_module.create_app(
+        secret_key_factory(
             {
                 "TESTING": True,
                 "SECRET_KEY": key,
@@ -369,10 +382,8 @@ def test_the_app_refuses_to_start_with_a_placeholder_secret_key_in_bytes(key):
         )
 
 
-def test_the_app_starts_with_a_real_secret_key():
-    import app as app_module
-
-    application = app_module.create_app(
+def test_the_app_starts_with_a_real_secret_key(secret_key_factory):
+    application = secret_key_factory(
         {
             "TESTING": True,
             "SECRET_KEY": "a-real-random-key",
@@ -383,3 +394,43 @@ def test_the_app_starts_with_a_real_secret_key():
     )
 
     assert application.config["SECRET_KEY"] == "a-real-random-key"
+
+
+def test_factory_secret_key_cases_ignore_inherited_application_settings(tmp_path):
+    environment = {
+        **native_environment({}),
+        "PERMANENT_SESSION_LIFETIME": "foreign-setting",
+        "BABEL_DEFAULT_LOCALE": "unsupported-host-locale",
+        "PUBLIC_SITE_URL": "not-an-origin",
+        "OPENLEG_TRUSTED_PROXY_HOPS": "2",
+        "UNRECOGNIZED_HOST_SETTING": "must-not-leak",
+        "PYTEST_ADDOPTS": "",
+        "PYTHONDONTWRITEBYTECODE": "1",
+    }
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/test_app_config.py::test_the_app_refuses_to_start_with_a_placeholder_secret_key",
+            "tests/test_app_config.py::test_the_app_refuses_to_start_with_a_placeholder_secret_key_in_bytes",
+            "tests/test_app_config.py::test_the_app_starts_with_a_real_secret_key",
+            "-q",
+            "--tb=short",
+            "-o",
+            "addopts=",
+            "-o",
+            f"cache_dir={tmp_path / 'cache'}",
+            f"--basetemp={tmp_path / 'temp'}",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+    output = result.stdout + result.stderr
+    assert result.returncode == 0, output
+    assert "skipped" not in output.lower(), output
