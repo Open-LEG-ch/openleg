@@ -225,6 +225,8 @@ dependency failures return a generic unavailable page without private diagnostic
 Worker response I/O and readiness waits use a finite 90-second budget so the
 monthly metering exercise can finish on a modest host. A duplicate start waits
 up to 95 seconds for the same allocation instead of creating another village.
+If that wait expires while the original startup continues, retrying reuses its
+allocation once ready.
 An unresponsive worker still returns unavailable; workspace capacity, upload
 bounds, inactivity expiry and maximum lifetime are unchanged.
 

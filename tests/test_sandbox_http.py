@@ -76,6 +76,7 @@ def _enter(client):
 def test_gateway_delivers_a_worker_response_after_the_old_thirty_second_limit(
     village, tmp_path, monkeypatch, delay, budget, expected_status
 ):
+    """Deliver a slow result while keeping a stalled peer bounded and private."""
     from sandbox_runtime import WORKER_TIMEOUT_SECONDS
 
     client = village.test_client()
@@ -92,6 +93,7 @@ def test_gateway_delivers_a_worker_response_after_the_old_thirty_second_limit(
         listener.listen(1)
 
         def respond_after_monthly_import():
+            """Return one complete HTTP result after the controlled work delay."""
             with listener.accept()[0] as channel:
                 channel.recv(65536)
                 time.sleep(delay)
@@ -568,6 +570,7 @@ def test_duplicate_start_for_one_visitor_reserves_one_workspace(village):
 
 @pytest.mark.integration
 def test_duplicate_start_waits_for_a_legitimate_slow_worker(village, monkeypatch):
+    """Concurrent starts reuse one allocation even beyond the old wait limit."""
     first = village.test_client()
     page = first.get("/sandbox")
     duplicate = village.test_client()
@@ -576,6 +579,7 @@ def test_duplicate_start_waits_for_a_legitimate_slow_worker(village, monkeypatch
     original = subprocess.Popen
 
     def pause_worker(*args, **kwargs):
+        """Hold the started worker until both owner requests are waiting."""
         process = original(*args, **kwargs)
         if "sandbox_worker:application" in args[0]:
             provisioning.set()

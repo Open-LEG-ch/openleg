@@ -164,6 +164,7 @@ class LocalPostgres:
 
 class UnixConnection(http.client.HTTPConnection):
     def __init__(self, path, *, timeout=None):
+        """Use a bounded worker wait, or a readiness probe's remaining budget."""
         super().__init__(
             "localhost", timeout=WORKER_TIMEOUT_SECONDS if timeout is None else timeout
         )
@@ -262,10 +263,10 @@ class Villages:
         initial_persona="resident",
         restore_parent=None,
     ):
+        """Allocate one bounded workspace per owner and preserve parent lifetime."""
         # Child allocation runs under its source's reentrant operation lock.
         # Reaping here could synchronously retire that source before linking
         # the child. The reaper owns expiry; reject stale parents atomically.
-        """Allocate a bounded workspace while preserving owner and restore-parent lifetime."""
         if not restore_parent:
             self.reap()
         with self.lock:
