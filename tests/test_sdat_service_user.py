@@ -82,9 +82,35 @@ def _image_tree(tmp_path, writable):
         for parent in (app / relative).parents
         if app in parent.parents
     ]
-    for directory in readonly:
-        directory.chmod(0o555)
+    try:
+        for directory in readonly:
+            directory.chmod(0o555)
+    except BaseException:
+        for directory in readonly:
+            directory.chmod(0o755)
+        raise
     return app, readonly
+
+
+def test_image_tree_restores_permissions_when_setup_is_interrupted(
+    tmp_path, monkeypatch
+):
+    app = tmp_path / "app"
+    chmod = Path.chmod
+
+    def interrupt_after_chmod(directory, mode):
+        chmod(directory, mode)
+        if directory == app and mode == 0o555:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(Path, "chmod", interrupt_after_chmod)
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            _image_tree(tmp_path, [Path("data/sdat")])
+
+        assert app.stat().st_mode & 0o777 == 0o755
+    finally:
+        chmod(app, 0o755)
 
 
 def _scheduled_run(app, monkeypatch):
