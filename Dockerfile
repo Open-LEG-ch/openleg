@@ -36,14 +36,16 @@ RUN test -f /app/app.py \
     && test -f /app/templates/dashboard.html \
     && test -f /app/static/css/openleg.css
 
-# Run the server unprivileged (trivy DS-0002). The app writes nothing under
-# /app at runtime; /data stays owned by the service user for fresh volumes, and
-# the home directory gives gunicorn's control server somewhere to write.
+# Run the server unprivileged (trivy DS-0002). The application source stays
+# owned by root. The service user owns /data for fresh volumes and /app/data,
+# where the documented default SWISSELDEX_SDAT_DIR=data/sdat stores scheduled
+# SDAT downloads. The home directory gives gunicorn's control server somewhere
+# to write.
 RUN groupadd --system --gid 10001 openleg \
     && useradd --system --uid 10001 --gid openleg --create-home --home-dir /var/lib/openleg \
        --shell /usr/sbin/nologin openleg \
-    && mkdir -p /data \
-    && chown openleg:openleg /data
+    && mkdir -p /data /app/data/sdat \
+    && chown openleg:openleg /data /app/data /app/data/sdat
 
 USER openleg
 
