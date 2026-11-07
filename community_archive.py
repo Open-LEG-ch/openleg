@@ -112,6 +112,12 @@ def restore_community_archive(archive: bytes | str, *, dry_run=False, store=None
             "conflicts": [],
         }
     version = manifest.get("schema_version")
+    if not isinstance(version, str):
+        return {
+            "valid": False,
+            "errors": ["Unsupported schema version"],
+            "conflicts": [],
+        }
     if version not in {LEGACY_SCHEMA_VERSION, PREVIOUS_SCHEMA_VERSION, SCHEMA_VERSION}:
         errors.append("Unsupported schema version")
     hashes = manifest.get("hashes")

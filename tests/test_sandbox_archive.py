@@ -2,6 +2,7 @@
 """A visitor restores a real archive into an isolated disposable destination."""
 
 import html
+import io
 import json
 import re
 import signal
@@ -295,6 +296,33 @@ def test_failed_preflight_hides_old_result_and_preserves_restored_destination(vi
     opened = _command(client, prefix, "open")
     assert opened.status_code == 303 and opened.location.startswith(destination)
     assert client.get(opened.location, follow_redirects=True).status_code == 200
+
+
+@pytest.mark.parametrize("version", [[], {}], ids=["list", "dictionary"])
+def test_uploaded_archive_rejects_nonstring_versions_without_mutation(village, version):
+    """Malformed version uploads return validation errors and preserve source records."""
+    client = village.test_client()
+    prefix, _ = _start(client, "administrator")
+    path = prefix + "/leg/community/" + COMMUNITY + "/archive"
+    exported = client.get(path)
+    assert exported.status_code == 200
+    payload = exported.json
+    payload["manifest"]["schema_version"] = version
+    guide = client.get(prefix + "/sandbox/archive")
+    response = client.post(
+        path + "/dry-run",
+        data={
+            "csrf_token": _csrf(guide),
+            "archive": (io.BytesIO(json.dumps(payload).encode()), "malformed.json"),
+        },
+    )
+    assert response.status_code == 400
+    assert response.json == {
+        "valid": False,
+        "errors": ["Unsupported schema version"],
+        "conflicts": [],
+    }
+    assert client.get(path).json["datasets"] == exported.json["datasets"]
 
 
 def test_archive_commands_recheck_role_csrf_and_do_not_grant_platform_authority(
