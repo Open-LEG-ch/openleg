@@ -20,10 +20,6 @@
 
     <div class="bg-white rounded-lg shadow-md p-6">
         <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">{{ _('Building ID') }}</label>
-            <input type="text" id="building-id" placeholder="{{ _('Ihre Building ID') }}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand focus:outline-hidden">
-        </div>
-        <div class="mb-4">
             <label class="block text-sm font-medium mb-2">{{ _('CSV-Datei') }}</label>
             <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-brand-light transition-colors cursor-pointer" id="drop-zone">
                 <input type="file" id="csv-file" accept=".csv" class="hidden">
@@ -40,6 +36,7 @@
                 <label class="flex items-start gap-2"><input type="radio" name="tier" value="2" class="mt-1"> <div><strong>{{ _('Stufe 2:') }}</strong> {{ _('Anonymisiert für Forschung freigeben') }}</div></label>
                 <label class="flex items-start gap-2"><input type="radio" name="tier" value="3" class="mt-1"> <div><strong>{{ _('Stufe 3:') }}</strong> {{ _('Aggregierte Auswertung für Energieversorger freigeben') }}</div></label>
             </div>
+            <label class="flex items-start gap-2 mt-3"><input type="checkbox" id="consent-confirmed" class="mt-1"> <span>{{ _('Ich bestätige die ausgewählte Datenschutzstufe.') }}</span></label>
         </div>
 
         <button id="btn-upload" class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-brand-dark disabled:opacity-50" disabled>{{ _('Daten hochladen') }}</button>
@@ -82,18 +79,16 @@ function showFileName() {
 }
 
 btnUpload.addEventListener('click', async function() {
-    const bid = document.getElementById('building-id').value.trim();
     const file = fileInput.files[0];
     const tier = document.querySelector('input[name="tier"]:checked').value;
-    if (!bid) { alert({{ _('Bitte Building ID eingeben.')|tojson }}); return; }
     if (!file) return;
     this.disabled = true;
     this.textContent = {{ _('Lade hoch...')|tojson }};
     const text = await file.text();
     try {
         const res = await fetch('/api/meter-data/upload', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({building_id: bid, csv_content: text, tier: parseInt(tier)})
+            method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': {{ csrf_token|tojson }}},
+            body: JSON.stringify({csv_content: text, tier: parseInt(tier), consent_confirmed: document.getElementById('consent-confirmed').checked})
         });
         const data = await res.json();
         const resultDiv = document.getElementById('upload-result');

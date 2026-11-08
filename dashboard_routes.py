@@ -78,7 +78,9 @@ def _require_dashboard_session():
 
 
 def _require_dashboard_csrf():
-    submitted = request.form.get("csrf_token", "")
+    submitted = request.headers.get("X-CSRF-Token") or request.form.get(
+        "csrf_token", ""
+    )
     if not isinstance(submitted, str) or not submitted.isascii():
         abort(400)
     expected = _dashboard_csrf_token()

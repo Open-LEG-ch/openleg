@@ -655,8 +655,11 @@ def confirm_coverage_interest(token):
 def api_meter_data_upload():
     import meter_data
 
-    data = request.json or {}
-    building_id = data.get("building_id", "").strip()
+    building_id = dashboard_routes._require_dashboard_session()
+    dashboard_routes._require_dashboard_csrf()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        abort(400)
     csv_content = data.get("csv_content", "")
 
     try:
@@ -675,14 +678,16 @@ def api_meter_data_upload():
         if not building:
             return jsonify({"error": _("Gebäude nicht gefunden.")}), 404
 
-        # Save consent tier
-        db.save_data_consent(
+        if data.get("consent_confirmed") is True and not db.save_data_consent(
             building_id,
             tier=tier,
             share_municipality=True,
             share_research=(tier >= 2),
             share_providers=(tier >= 3),
-        )
+        ):
+            return jsonify(
+                {"error": _("Server-Fehler beim Verarbeiten der Messdaten.")}
+            ), 503
 
         return jsonify(meter_data.ingest_file(building_id, csv_content))
     except Exception:
@@ -694,7 +699,10 @@ def api_meter_data_upload():
 
 @main_bp.route("/meter-upload")
 def meter_upload_page():
-    return render_city_template("meter_upload.html")
+    dashboard_routes._require_dashboard_session()
+    return render_city_template(
+        "meter_upload.html", csrf_token=dashboard_routes._dashboard_csrf_token()
+    )
 
 
 # --- Unsubscribe ---

@@ -212,7 +212,7 @@ def test_formation_single_missing_neighbor_is_singular(localized_app):
     [
         (
             "meter_upload.html",
-            {"site_url": "http://localhost"},
+            {"site_url": "http://localhost", "csrf_token": "synthetic-csrf"},
             ["les voisins et la commune"],
             ["les voisins et la communauté"],
         ),
