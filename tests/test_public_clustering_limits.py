@@ -56,3 +56,9 @@ def test_clustering_accepts_the_maximum_valid_batch(app_module):
     )
     assert response.status_code == 200
     assert response.json == {"clusters": [], "count": 0}
+
+
+@pytest.mark.parametrize("body", [[], [1], "invalid", 1])
+def test_clustering_rejects_non_object_json(app_module, body):
+    response = app_module.web.test_client().post("/api/v1/leg/cluster", json=body)
+    assert response.status_code == 400

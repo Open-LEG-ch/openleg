@@ -14527,3 +14527,11 @@ msgstr "Einladung zur LEG"
 
 msgid "Ich bestätige die ausgewählte Datenschutzstufe."
 msgstr "Ich bestätige die ausgewählte Datenschutzstufe."
+
+#: templates/admin/login.html
+msgid "Admin-Zugang"
+msgstr "Admin-Zugang"
+
+#: templates/admin/login.html
+msgid "Anmeldung fehlgeschlagen."
+msgstr "Anmeldung fehlgeschlagen."

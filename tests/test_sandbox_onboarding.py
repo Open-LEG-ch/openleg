@@ -423,7 +423,7 @@ def test_invalid_deletion_links_do_not_retire_the_current_household_login(villag
             (%s,'sonnwil-resident','unsubscribe',CURRENT_TIMESTAMP-INTERVAL '1 second',NULL),
             (%s,'sonnwil-resident','unsubscribe',CURRENT_TIMESTAMP+INTERVAL '1 hour',CURRENT_TIMESTAMP),
             (%s,'sonnwil-resident','verify',CURRENT_TIMESTAMP+INTERVAL '1 hour',NULL)""",
-            tokens[:3],
+            tuple(action_token.digest(token) for token in tokens[:3]),
         )
     for token in ["not-a-uuid", *tokens]:
         assert anonymous.post(prefix + "/unsubscribe/" + token).status_code == 404

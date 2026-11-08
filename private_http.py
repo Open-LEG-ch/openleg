@@ -26,7 +26,7 @@ _PRIVATE_PATH_PREFIXES = (
     "/confirm/",
     "/interest/confirm/",
     "/unsubscribe/",
-    "/admin/vnb-calculated-values",
+    "/admin/",
     "/api/operator/",
     "/api/telemetry/",
     "/api/equipment/",

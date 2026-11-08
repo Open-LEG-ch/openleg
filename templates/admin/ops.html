@@ -11,6 +11,7 @@
   <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
     <h1 class="text-2xl font-bold">{{ _('Ops Dashboard') }}</h1>
     {% include 'partials/language_switcher.html' %}
+    <form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit">{{ _('Abmelden') }}</button></form>
     <span class="text-xs text-gray-500">{{ _('Private operator view') }}</span>
   </div>
 
@@ -141,9 +142,11 @@
               </td>
               <td class="px-4 py-3 text-right">
                 <form method="post" action="/admin/registry/{{ entry.id }}/approve" class="inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                   <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Freischalten') }}</button>
                 </form>
                 <form method="post" action="/admin/registry/{{ entry.id }}/reject" class="inline ml-2">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                   <input type="hidden" name="reason" value="">
                   <button type="submit" class="bg-red-800 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Ablehnen') }}</button>
                 </form>

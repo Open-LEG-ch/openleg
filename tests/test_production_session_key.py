@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Production processes require an explicit durable session signing key."""
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 
+import psycopg2.extensions
 import pytest
 
 import app_config
@@ -58,7 +60,10 @@ def test_explicit_testing_can_run_without_a_production_key():
 def test_wsgi_startup_refuses_an_unconfigured_production_key(interest_database, key):
     with interest_database.get_connection() as connection:
         assert connection.get_dsn_parameters()["dbname"].startswith("openleg_interest_")
-        database_url = connection.dsn
+        database_url = psycopg2.extensions.make_dsn(
+            os.environ["DATABASE_URL"],
+            dbname=connection.get_dsn_parameters()["dbname"],
+        )
     environment = isolated_environment(
         _TEST_ENVIRONMENT
         | {

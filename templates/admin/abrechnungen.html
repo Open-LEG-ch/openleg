@@ -27,6 +27,7 @@
       <nav aria-label="{{ _('Abrechnungsperioden') }}" class="grid gap-2">
         {% for period in periods %}
         <form method="post" action="{{ url_for('admin.admin_billing_workspace') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="period_id" value="{{ period.id }}">
           <button type="submit"
            class="w-full rounded-2xl border px-4 py-3 text-left transition-colors {{ 'border-brand bg-brand text-white' if selected.id == period.id else 'border-line bg-white hover:border-sage' }}"

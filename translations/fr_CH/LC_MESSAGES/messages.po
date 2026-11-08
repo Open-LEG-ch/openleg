@@ -14639,3 +14639,11 @@ msgstr "Invitation à la CEL"
 
 msgid "Ich bestätige die ausgewählte Datenschutzstufe."
 msgstr "Je confirme le niveau de protection des données sélectionné."
+
+#: templates/admin/login.html
+msgid "Admin-Zugang"
+msgstr "Accès administrateur"
+
+#: templates/admin/login.html
+msgid "Anmeldung fehlgeschlagen."
+msgstr "Échec de la connexion."
