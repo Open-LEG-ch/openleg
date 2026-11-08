@@ -169,6 +169,7 @@ def _credential_row(**overrides):
         "updated_at": "2026-01-01T08:00:00+00:00",
         "webhook_url": None,
         "token_hash": "hash-created",
+        "webhook_secret": "olwhsec_synthetic-persisted-secret",
     }
     row.update(overrides)
     return row
@@ -189,6 +190,7 @@ def _delivery_row(**overrides):
         "payload": {"status": "prepared"},
         "occurred_at": "2026-01-01T08:00:00+00:00",
         "webhook_url": "https://hooks.example.net/ingest",
+        "webhook_secret": "olwhsec_test-delivery-secret",
     }
     row.update(overrides)
     return row
@@ -344,7 +346,7 @@ def test_dispatch_signs_canonical_body_and_headers_for_the_delivery(
             separators=(",", ":"),
         ).encode()
     )
-    secret = operator_api._webhook_secret("client-1", "webhook-test-key")
+    secret = "olwhsec_test-delivery-secret"
     assert operator_api.verify_webhook_signature(
         body, headers["OpenLEG-Signature"], secret
     )

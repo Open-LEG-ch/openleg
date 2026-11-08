@@ -1652,6 +1652,10 @@ def create_tables():
                 ALTER TABLE operator_api_clients
                     ADD COLUMN IF NOT EXISTS webhook_secret_version INTEGER NOT NULL DEFAULT 1
             """)
+            cur.execute("""
+                ALTER TABLE operator_api_clients
+                    ADD COLUMN IF NOT EXISTS webhook_secret TEXT
+            """)
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_operator_clients_community ON operator_api_clients(community_id)"
             )

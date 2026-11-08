@@ -21,7 +21,10 @@ from tests.native_environment import isolated_environment as native_environment
 
 
 def _env(**overrides):
-    base = {"APP_BASE_URL": "http://localhost:5003"}
+    base = {
+        "APP_BASE_URL": "http://localhost:5003",
+        "SECRET_KEY": "synthetic-config-key-with-32-characters",
+    }
     base.update(overrides)
     return base
 
