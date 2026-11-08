@@ -64,7 +64,8 @@ services:
       - web
 
   caddy:
-    image: caddy:latest
+    # Resolve a reviewed update with: docker buildx imagetools inspect caddy:<version>-alpine
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
     container_name: openleg-caddy
     restart: always
     mem_limit: 128m
