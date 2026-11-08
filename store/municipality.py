@@ -63,11 +63,46 @@ def get_municipality_by_admin_email(email: str) -> dict | None:
 
 
 def save_municipality(
-    bfs_number, name, kanton="ZH", dso_name=None, population=None, subdomain=None
+    bfs_number,
+    name,
+    kanton="ZH",
+    dso_name=None,
+    population=None,
+    subdomain=None,
+    *,
+    admin_email=None,
 ):
+    """Save public metadata, or atomically claim an unowned pending municipality."""
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
+                if admin_email is not None:
+                    cur.execute(
+                        """
+                        INSERT INTO municipalities
+                            (bfs_number, name, kanton, dso_name, population, subdomain,
+                             admin_email, onboarding_status)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, 'registered')
+                        ON CONFLICT (bfs_number) DO UPDATE SET
+                            admin_email = EXCLUDED.admin_email,
+                            onboarding_status = 'registered',
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE municipalities.admin_email IS NULL
+                            AND municipalities.onboarding_status = 'pending'
+                        RETURNING id
+                        """,
+                        (
+                            bfs_number,
+                            name,
+                            kanton,
+                            dso_name,
+                            population,
+                            subdomain,
+                            admin_email,
+                        ),
+                    )
+                    row = cur.fetchone()
+                    return row["id"] if row else None
                 cur.execute(
                     """
                     INSERT INTO municipalities (bfs_number, name, kanton, dso_name, population, subdomain)

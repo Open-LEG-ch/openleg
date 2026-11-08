@@ -85,16 +85,16 @@ def register():
         dso_name=None,
         population=population,
         subdomain=subdomain,
+        admin_email=normalized,
     )
 
     if muni_id:
-        db.update_municipality_status(int(bfs), "registered", admin_email=normalized)
         db.track_event("municipality_registered", data={"bfs": bfs, "name": name})
         return jsonify(
             {"success": True, "municipality_id": muni_id, "subdomain": subdomain}
         )
 
-    return jsonify({"error": _("Registrierung fehlgeschlagen.")}), 500
+    return jsonify({"error": _("Registrierung fehlgeschlagen.")}), 409
 
 
 ONBOARDING_STATUS_LABELS = {
