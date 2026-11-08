@@ -865,6 +865,7 @@ dashboard_routes.register_dashboard_routes(
 # --- Referral System ---
 @main_bp.route("/api/referral/stats/<building_id>")
 def api_referral_stats(building_id):
+    building_id = dashboard_routes._require_dashboard_session()
     stats = db.get_referral_stats(building_id)
     referral_code = db.get_referral_code(building_id)
     return jsonify(
@@ -886,10 +887,14 @@ def api_referral_stats(building_id):
 def api_referral_leaderboard():
     city_id = g.tenant.get("territory") if hasattr(g, "tenant") else None
     leaderboard = db.get_referral_leaderboard(limit=10, city_id=city_id)
-    for entry in leaderboard:
-        street = entry.get("street", "")
-        entry["display_name"] = street[:15] + "..." if len(street) > 15 else street
-    return jsonify({"leaderboard": leaderboard})
+    return jsonify(
+        {
+            "leaderboard": [
+                {"rank": rank, "referral_count": entry["referral_count"]}
+                for rank, entry in enumerate(leaderboard, 1)
+            ]
+        }
+    )
 
 
 @main_bp.route("/api/stats/public")
@@ -942,13 +947,24 @@ def api_calculate_savings():
 @main_bp.route("/api/formation/optimize", methods=["POST"])
 def api_formation_optimize():
     """LEG optimization endpoint."""
-    data = request.json or {}
-    building_id = data.get("building_id", "").strip()
-    if not building_id:
-        return jsonify({"error": _("building_id required")}), 400
-
+    building_id = dashboard_routes._require_dashboard_session()
     clusters = formation_wizard.get_formable_clusters(building_id)
-    return jsonify({"clusters": clusters})
+    return jsonify(
+        {
+            "clusters": [
+                {
+                    "potential_members": cluster["potential_members"],
+                    "nearby_buildings": [
+                        {"distance": neighbour["distance"]}
+                        for neighbour in cluster["nearby_buildings"]
+                    ],
+                    "radius_meters": cluster["radius_meters"],
+                    "ready_to_form": cluster["ready_to_form"],
+                }
+                for cluster in clusters
+            ]
+        }
+    )
 
 
 @main_bp.route("/api/formation/financial-model", methods=["POST"])

@@ -16,6 +16,13 @@ PRIVATE_RESPONSE_HEADERS = {
 
 # Token-bearing and member-only surfaces are private with or without a session.
 _PRIVATE_PATH_PREFIXES = (
+    "/utility/access/",
+    "/utility/login",
+    "/utility/logout",
+    "/api/meter-data/upload",
+    "/meter-upload",
+    "/api/formation/optimize",
+    "/api/referral/stats/",
     "/confirm/",
     "/interest/confirm/",
     "/unsubscribe/",

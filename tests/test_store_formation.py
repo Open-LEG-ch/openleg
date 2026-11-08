@@ -619,7 +619,7 @@ def test_fetch_nearby_consenting_neighbours_pins_location_and_boundary_params(
     assert location_params == ("searcher",)
 
     list_sql, list_params = cur.executed[1]
-    assert "HAVING distance <= %s" in list_sql
+    assert "WHERE distance <= %s" in list_sql
     assert list_params == (47.4736, 8.3060, 47.4736, "searcher", 150)
 
 
