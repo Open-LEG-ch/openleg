@@ -23,6 +23,14 @@
       <p class="font-semibold text-ink mb-1">{{ _(error) }}</p>
       <p class="text-sm text-ink-muted">{{ _('Prüfen Sie Ihren Zugangslink oder öffnen Sie die') }} <a href="/leg/dashboard/demo" class="text-brand underline">{{ _('Demo-Ansicht') }}</a>.</p>
     </div>
+    {% elif invitation_id|default(false) %}
+    <section class="bg-paper border rounded-xl p-8">
+      <h1 class="text-2xl font-bold mb-4">{{ _('Einladung zur LEG') }}</h1>
+      <form method="post" action="/leg/community/{{ invitation_id|urlencode }}/confirm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="bg-brand text-white rounded-lg px-4 py-2">{{ _('Teilnahme bestätigen') }}</button>
+      </form>
+    </section>
     {% else %}
     <header class="mb-8">
       <p class="text-sm font-semibold text-brand mb-2">{{ _('LEG-Dashboard') }}</p>

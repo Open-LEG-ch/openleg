@@ -473,17 +473,16 @@ def fetch_nearby_consenting_neighbours(
 
             cur.execute(
                 """
-                    SELECT
+                    SELECT * FROM (SELECT
                         b.building_id,
                         b.address,
-                        b.email,
                         b.lat,
                         b.lon,
-                        (6371000 * acos(
+                        (6371000 * acos(LEAST(1, GREATEST(-1,
                             cos(radians(%s)) * cos(radians(b.lat)) *
                             cos(radians(b.lon) - radians(%s)) +
                             sin(radians(%s)) * sin(radians(b.lat))
-                        )) as distance
+                        )))) as distance
                     FROM buildings b
                     INNER JOIN consents c ON b.building_id = c.building_id
                     WHERE b.verified = TRUE
@@ -494,7 +493,7 @@ def fetch_nearby_consenting_neighbours(
                         WHERE cm.building_id = b.building_id
                         AND cm.status IN ('confirmed', 'invited')
                     )
-                    HAVING distance <= %s
+                    ) nearby WHERE distance <= %s
                     ORDER BY distance
                 """,
                 (user["lat"], user["lon"], user["lat"], building_id, radius_meters),

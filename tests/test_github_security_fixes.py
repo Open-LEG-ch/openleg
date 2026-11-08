@@ -165,8 +165,12 @@ def test_check_potential_does_not_expose_exception_text(full_app_module, monkeyp
 def test_meter_data_upload_malformed_tier_returns_json_error(full_app_module):
     app_module = full_app_module
     client = app_module.web.test_client()
+    from tests.test_dashboard_access_routes import _set_session
+
+    _set_session(client, "b-123")
     resp = client.post(
         "/api/meter-data/upload",
+        headers={"X-CSRF-Token": "csrf-secret"},
         json={"building_id": "b-123", "csv_content": "x", "tier": "not-an-int"},
     )
 
@@ -187,9 +191,18 @@ def test_meter_data_upload_get_building_error_is_generic(full_app_module, monkey
     )
 
     client = app_module.web.test_client()
+    from tests.test_dashboard_access_routes import _set_session
+
+    _set_session(client, "b-123")
     resp = client.post(
         "/api/meter-data/upload",
-        json={"building_id": "b-123", "csv_content": "x", "tier": 1},
+        headers={"X-CSRF-Token": "csrf-secret"},
+        json={
+            "building_id": "b-123",
+            "csv_content": "x",
+            "tier": 1,
+            "consent_confirmed": True,
+        },
     )
 
     assert resp.status_code == 500
@@ -210,9 +223,18 @@ def test_meter_data_upload_save_consent_error_is_generic(full_app_module, monkey
     )
 
     client = app_module.web.test_client()
+    from tests.test_dashboard_access_routes import _set_session
+
+    _set_session(client, "b-123")
     resp = client.post(
         "/api/meter-data/upload",
-        json={"building_id": "b-123", "csv_content": "x", "tier": 1},
+        headers={"X-CSRF-Token": "csrf-secret"},
+        json={
+            "building_id": "b-123",
+            "csv_content": "x",
+            "tier": 1,
+            "consent_confirmed": True,
+        },
     )
 
     assert resp.status_code == 500
@@ -233,9 +255,18 @@ def test_meter_data_upload_does_not_expose_exception_text(full_app_module, monke
     )
 
     client = app_module.web.test_client()
+    from tests.test_dashboard_access_routes import _set_session
+
+    _set_session(client, "b-123")
     resp = client.post(
         "/api/meter-data/upload",
-        json={"building_id": "b-123", "csv_content": "x", "tier": 1},
+        headers={"X-CSRF-Token": "csrf-secret"},
+        json={
+            "building_id": "b-123",
+            "csv_content": "x",
+            "tier": 1,
+            "consent_confirmed": True,
+        },
     )
 
     assert resp.status_code == 500

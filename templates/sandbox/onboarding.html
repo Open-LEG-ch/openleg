@@ -26,4 +26,4 @@
   </div>
 </div>
 {% endblock %}
-{% block scripts %}<script src="/static/js/sandbox_onboarding.js" defer></script>{% endblock %}
+{% block scripts %}<script src="/static/js/sandbox_onboarding.js" defer nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>{% endblock %}

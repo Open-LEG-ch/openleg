@@ -22,7 +22,7 @@ ALLOWED_ATTRIBUTES: dict[str, list[str]] = {}
 
 
 def log_security_event(event_type, details, level="INFO"):
-    ip = request.access_route[0] if request.access_route else request.remote_addr
+    ip = request.remote_addr
     ip = str(ip or "").replace("\r", "").replace("\n", "")
     log_message = f"[SECURITY] {event_type} | IP: {ip} | {details}"
     if level == "WARNING":

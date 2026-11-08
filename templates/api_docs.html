@@ -40,8 +40,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/api_reference.js"></script>
-<script>
+<script src="/static/js/api_reference.js" nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
+<script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
 const spec = {
     openapi: "3.0.3",
     info: {

@@ -16,7 +16,7 @@
 {% block head_extra %}
 {% if true %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
 {% endif %}
 <script type="application/ld+json">
   {
@@ -39,8 +39,8 @@
   }
 </script>
 {% if ga4_id %}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
-<script>
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}" nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
+<script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
@@ -521,10 +521,10 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="/static/js/landing_segments.js"></script>
-  <script src="/static/js/install_console.js"></script>
+  <script src="/static/js/landing_segments.js" nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
+  <script src="/static/js/install_console.js" nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
 
-  <script>
+  <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
   // Map (Leaflet kommt von einem CDN; der Funnel muss auch ohne Karte funktionieren)
   let map = null;
   if (typeof L !== 'undefined') {

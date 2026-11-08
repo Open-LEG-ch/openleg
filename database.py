@@ -399,12 +399,14 @@ from store.token import (  # noqa: F401
 )
 from store.utility import (  # noqa: F401
     clear_utility_magic_token,
+    consume_utility_access_token,
     consume_utility_magic_token,
     get_all_utility_clients,
     get_utility_client,
     get_utility_client_by_email,
     get_utility_client_by_magic_token,
     get_utility_client_stats,
+    save_utility_access_token,
     save_utility_client,
     set_utility_magic_token,
     update_utility_client_api_key,

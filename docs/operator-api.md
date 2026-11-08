@@ -10,12 +10,18 @@ detaillierten Vertrag mit allen Endpunkten beschreibt
 
 Eine bestätigte LEG-Administration erstellt, liest, rotiert und widerruft
 Credentials unter `/leg/community/{community_id}/operator-api/credentials`.
-Der API-Token und das Webhook-Signing-Secret werden nur bei der Erstellung
-angezeigt. OpenLEG speichert vom API-Token ausschließlich den SHA-256-Hash. Das
-Signing-Secret wird unabhängig davon aus dem Instanzschlüssel und der stabilen
-Client-ID abgeleitet und bleibt bei einer Tokenrotation gleich. Rotation macht
-den bisherigen Token sofort ungültig; Widerruf wird
-bei der nächsten HTTP-Anfrage geprüft.
+Der API-Token und das Webhook-Signing-Secret werden bei der Erstellung und
+Rotation einmal angezeigt. OpenLEG speichert vom API-Token ausschliesslich den
+SHA-256-Hash. Das Signing-Secret wird zufällig erzeugt und separat in der
+Datenbank gespeichert. Ein Wechsel des Sitzungsschlüssels verändert es nicht.
+Eine Credential-Rotation ersetzt Token und Signing-Secret. Der Empfänger muss
+das neue Signing-Secret übernehmen. Widerruf wird bei der nächsten HTTP-Anfrage
+geprüft.
+
+Bestehende Credentials ohne gespeichertes Signing-Secret zeigen
+`webhook_requires_rotation: true`. Ihre Webhooks bleiben bis zur expliziten
+Rotation gesperrt. OpenLEG ändert einen bereits installierten Empfängerschlüssel
+nicht stillschweigend.
 
 Capabilities sind explizit: `formation.read`, `formation.mutate`,
 `membership.read`, `membership.mutate`, `metering.read`, `metering.mutate`,

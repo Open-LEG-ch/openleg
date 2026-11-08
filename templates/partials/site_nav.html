@@ -41,7 +41,7 @@
     </div>
   </div>
 </nav>
-<script>
+<script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
   document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('mobile-menu-toggle');
     const menu = document.getElementById('mobile-menu');

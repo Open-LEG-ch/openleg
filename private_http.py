@@ -16,10 +16,17 @@ PRIVATE_RESPONSE_HEADERS = {
 
 # Token-bearing and member-only surfaces are private with or without a session.
 _PRIVATE_PATH_PREFIXES = (
+    "/utility/access/",
+    "/utility/login",
+    "/utility/logout",
+    "/api/meter-data/upload",
+    "/meter-upload",
+    "/api/formation/optimize",
+    "/api/referral/stats/",
     "/confirm/",
     "/interest/confirm/",
     "/unsubscribe/",
-    "/admin/vnb-calculated-values",
+    "/admin/",
     "/api/operator/",
     "/api/telemetry/",
     "/api/equipment/",
@@ -93,8 +100,10 @@ def apply_private_response_headers(response):
             response.headers[header] = value
         # Inline product scripts/styles remain usable, but no third-party URL
         # can receive this page's token, even if a future template adds one.
+        nonce = getattr(request, "csp_nonce", None)
+        script_nonce = f" 'nonce-{nonce}'" if nonce else ""
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+            f"default-src 'self'; script-src 'self'{script_nonce}; "
             "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
             "font-src 'self' data:; connect-src 'self'; form-action 'self'; "
             "frame-src 'none'; object-src 'none'; base-uri 'self'"

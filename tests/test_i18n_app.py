@@ -84,13 +84,21 @@ def test_check_potential_translates_error_but_preserves_reason(
 
 
 def test_meter_upload_validation_is_french(public_client, monkeypatch):
-    invalid = public_client.post("/api/meter-data/upload?lang=fr-CH", json={"tier": 8})
+    from tests.test_dashboard_access_routes import _set_session
+
+    _set_session(public_client, "one")
+    invalid = public_client.post(
+        "/api/meter-data/upload?lang=fr-CH",
+        json={"tier": 8},
+        headers={"X-CSRF-Token": "csrf-secret"},
+    )
     assert invalid.status_code == 400
     assert invalid.json == {"error": "tier doit valoir 1, 2 ou 3."}
     monkeypatch.setattr(app.db, "get_building", lambda *args: {"building_id": "one"})
     monkeypatch.setattr(app.db, "save_data_consent", MagicMock())
     response = public_client.post(
         "/api/meter-data/upload?lang=fr-CH",
+        headers={"X-CSRF-Token": "csrf-secret"},
         json={"building_id": "one", "csv_content": "not-a-meter-file"},
     )
     assert response.status_code == 200

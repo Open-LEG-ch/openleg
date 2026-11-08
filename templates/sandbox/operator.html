@@ -34,5 +34,5 @@
     {% for capture in captures %}<article class="mt-4 rounded-lg border border-line p-3" data-capture="{{ capture.delivery_id }}"><h3 class="font-semibold">{{ _('Empfangene Signatur prüfen') }}</h3><p class="mt-2 break-all">{{ capture.delivery_id }} · {{ capture.attempt }}</p><p class="mt-2">{{ _('Signatur gültig') }}: {{ capture.verified }} · HTTP {{ capture.response_status }}</p><code class="mt-2 block break-all">{{ capture.signature }}</code><pre class="mt-3 whitespace-pre-wrap break-all">{{ capture.body }}</pre></article>{% endfor %}
   </section>
 </div>
-<script src="/static/js/sandbox_operator.js" defer></script>
+<script src="/static/js/sandbox_operator.js" defer nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
 {% endblock %}

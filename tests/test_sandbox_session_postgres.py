@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 
+import action_token
 from sandbox_sessions import VillageSessions
 from tests import test_community_create_postgres
 from tests.test_dashboard_access_routes import _set_session
@@ -62,7 +63,7 @@ def test_token_expiring_after_route_lookup_preserves_profile_and_login(
         with db.get_connection() as connection, connection.cursor() as cursor:
             cursor.execute(
                 "UPDATE tokens SET expires_at=CURRENT_TIMESTAMP-INTERVAL '1 hour' WHERE token=%s",
-                (value,),
+                (action_token.digest(value),),
             )
         return record
 

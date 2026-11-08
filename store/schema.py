@@ -638,6 +638,18 @@ def create_tables():
                 )
             """)
 
+            cur.execute(
+                "ALTER TABLE utility_clients ADD COLUMN IF NOT EXISTS magic_link_token_hash VARCHAR(64)"
+            )
+            # Pre-upgrade utility links expire at migration. They never grant a
+            # session through the new path callback or its digest column.
+            cur.execute(
+                "UPDATE utility_clients SET magic_link_token=NULL, magic_link_expires_at=NULL WHERE magic_link_token IS NOT NULL"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_utility_magic_token_hash ON utility_clients(magic_link_token_hash)"
+            )
+
             # Open LEG registry: self-submitted, human-moderated directory of
             # Swiss LEGs, independent of which platform (if any) formed them.
             # See docs/leg-registry.md for the product contract.
@@ -1652,6 +1664,10 @@ def create_tables():
                 ALTER TABLE operator_api_clients
                     ADD COLUMN IF NOT EXISTS webhook_secret_version INTEGER NOT NULL DEFAULT 1
             """)
+            cur.execute("""
+                ALTER TABLE operator_api_clients
+                    ADD COLUMN IF NOT EXISTS webhook_secret TEXT
+            """)
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_operator_clients_community ON operator_api_clients(community_id)"
             )
@@ -2212,5 +2228,17 @@ def create_tables():
                       SELECT 1 FROM invoices i WHERE i.billing_period_id = p.id
                   )
             """)
+
+            for table, column in (
+                ("tokens", "token"),
+                ("coverage_requests", "verification_token"),
+                ("leg_registry", "verification_token"),
+                ("leg_registry", "claim_token"),
+            ):
+                cur.execute(f"""
+                    UPDATE {table}
+                    SET {column} = 'sha256$' || encode(sha256(convert_to({column}, 'UTF8')), 'hex')
+                    WHERE {column} IS NOT NULL AND {column} NOT LIKE 'sha256$%'
+                """)
 
             logger.info("[DB] Tables and indexes created successfully")

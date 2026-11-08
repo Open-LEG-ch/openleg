@@ -83,5 +83,5 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="/static/js/install_console.js"></script>
+  <script src="/static/js/install_console.js" nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
 {% endblock %}

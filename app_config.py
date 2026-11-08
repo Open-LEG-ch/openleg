@@ -216,6 +216,20 @@ def build_config(env=None, overrides=None):
         ):
             config["SESSION_COOKIE_SECURE"] = True
 
+    production = env.get("FLASK_ENV", "").strip().lower() == "production" or config[
+        "APP_BASE_URL"
+    ].startswith("https://")
+    if production and not config.get("TESTING"):
+        configured_key = (overrides or {}).get("SECRET_KEY", env.get("SECRET_KEY"))
+        if (
+            not isinstance(configured_key, str)
+            or len(configured_key.strip()) < 32
+            or configured_key.strip() in PLACEHOLDER_SECRET_KEYS
+        ):
+            raise ValueError(
+                "Production requires an explicit SECRET_KEY of at least 32 characters"
+            )
+
     config["SECRET_KEY"] = validated_secret_key(config["SECRET_KEY"])
     config["TRUSTED_PROXY_HOPS"] = validated_trusted_proxy_hops(
         config["TRUSTED_PROXY_HOPS"]

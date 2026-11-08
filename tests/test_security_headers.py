@@ -153,7 +153,12 @@ class TestSessionCookieFlags:
     def test_config_defaults_are_the_intended_posture(self):
         import app_config
 
-        config = app_config.build_config({"APP_BASE_URL": "https://openleg.ch"})
+        config = app_config.build_config(
+            {
+                "APP_BASE_URL": "https://openleg.ch",
+                "SECRET_KEY": "synthetic-cookie-key-with-32-characters",
+            }
+        )
         assert config["SESSION_COOKIE_HTTPONLY"] is True
         assert config["SESSION_COOKIE_SAMESITE"] == "Lax"
         assert config["SESSION_COOKIE_SECURE"] is True
@@ -162,7 +167,11 @@ class TestSessionCookieFlags:
         import app_config
 
         config = app_config.build_config(
-            {"APP_BASE_URL": "https://openleg.ch", "SESSION_COOKIE_SECURE": "false"}
+            {
+                "APP_BASE_URL": "https://openleg.ch",
+                "SESSION_COOKIE_SECURE": "false",
+                "SECRET_KEY": "synthetic-cookie-key-with-32-characters",
+            }
         )
         assert config["SESSION_COOKIE_SECURE"] is False
 

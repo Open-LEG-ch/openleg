@@ -58,7 +58,7 @@ def _new_secret(prefix: str) -> str:
 def _webhook_secret(
     client_id: str, signing_key: str | None = None, version: int = 1
 ) -> str:
-    """Derive an independent stable secret from the instance key and client ID."""
+    """Reproduce legacy secrets; live credentials use stored random secrets."""
     key = signing_key or current_app.config["SECRET_KEY"]
     # Version 1 was issued before secret rotation existed. Preserve its exact
     # derivation so an upgrade does not invalidate installed webhook receivers.
@@ -491,7 +491,12 @@ def _safe_credential(row):
         "last_used_at",
         "webhook_url",
     }
-    return {key: value for key, value in row.items() if key in allowed}
+    return {
+        **{key: value for key, value in row.items() if key in allowed},
+        "webhook_requires_rotation": bool(
+            row.get("webhook_url") and not row.get("webhook_secret")
+        ),
+    }
 
 
 @operator_api_bp.post("/leg/community/<community_id>/operator-api/credentials")
@@ -536,9 +541,7 @@ def create_credential(community_id):
         token_hash,
         webhook_url,
     )
-    webhook_secret = _webhook_secret(
-        row["id"], version=row.get("webhook_secret_version", 1)
-    )
+    webhook_secret = row["webhook_secret"]
     return jsonify(
         credential=_safe_credential(row),
         token=token,
@@ -574,9 +577,7 @@ def rotate_credential(community_id, client_id):
         jsonify(
             credential=_safe_credential(row),
             token=token,
-            webhook_secret=_webhook_secret(
-                row["id"], version=row.get("webhook_secret_version", 1)
-            ),
+            webhook_secret=row["webhook_secret"],
         )
         if row
         else _error("Credential not found", 404)
@@ -702,6 +703,7 @@ def dispatch_pending_webhooks(
         if (
             row.get("status") != "processing"
             or row.get("schema_version") != EVENT_SCHEMA_VERSION
+            or not row.get("webhook_secret")
         ):
             db.record_webhook_attempt(
                 row["delivery_id"],
@@ -732,11 +734,7 @@ def dispatch_pending_webhooks(
             "OpenLEG-Delivery": row["delivery_id"],
             "OpenLEG-Signature": sign_webhook(
                 body,
-                _webhook_secret(
-                    row["client_id"],
-                    signing_key,
-                    row.get("webhook_secret_version", 1),
-                ),
+                row["webhook_secret"],
             ),
         }
         try:

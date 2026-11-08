@@ -1,0 +1,29 @@
+{% extends "product_base.html" %}
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-12">
+  <h1 class="text-2xl font-bold mb-6">{{ _('OpenLEG Admin: Ops') }}</h1>
+  <form id="admin-login">
+    <label for="admin-credential">{{ _('Admin-Zugang') }}</label>
+    <input id="admin-credential" type="password" autocomplete="current-password" required class="w-full border rounded p-3 my-4">
+    <button type="submit" class="bg-brand text-white rounded px-4 py-3">{{ _('Einloggen') }}</button>
+    <p id="login-error" role="alert" hidden>{{ _('Anmeldung fehlgeschlagen.') }}</p>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+document.getElementById('admin-login').addEventListener('submit', async event => {
+    event.preventDefault();
+    const credential = document.getElementById('admin-credential');
+    const token = credential.value;
+    credential.value = '';
+    try {
+        const response = await fetch('/admin/session', {
+            method: 'POST', headers: {'X-Admin-Token': token}, credentials: 'same-origin'
+        });
+        if (response.ok) { window.location.assign('/admin/ops'); return; }
+    } catch (_error) { /* Show the same error for denied and unavailable requests. */ }
+    document.getElementById('login-error').hidden = false;
+});
+</script>
+{% endblock %}

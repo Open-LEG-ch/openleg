@@ -537,7 +537,7 @@ def test_ordinary_captured_magic_login_retires_the_prior_persona_cookie(village)
     )
     inbox = client.get(prefix + "/sandbox/inbox")
     link = unescape(
-        re.search(r'href="(' + prefix + r'/utility/login\?[^\"]+)"', inbox.text).group(
+        re.search(r'href="(' + prefix + r'/utility/access/[^\"]+)"', inbox.text).group(
             1
         )
     )
@@ -549,8 +549,17 @@ def test_ordinary_captured_magic_login_retires_the_prior_persona_cookie(village)
     client.set_cookie("openleg_product", old_cookie, path=prefix)
     assert client.get(prefix + "/dashboard/export").status_code == 401
     client.set_cookie("openleg_product", current_cookie, path=prefix)
-    assert client.get(prefix + "/utility/settings").status_code == 200
-    assert client.get(prefix + "/utility/logout").status_code == 302
+    settings = client.get(prefix + "/utility/settings")
+    assert settings.status_code == 200
+    dashboard = client.get(prefix + "/utility/dashboard")
+    assert dashboard.status_code == 200
+    assert client.get(prefix + "/utility/logout").status_code == 405
+    assert (
+        client.post(
+            prefix + "/utility/logout", data={"csrf_token": _csrf(dashboard)}
+        ).status_code
+        == 302
+    )
     client.set_cookie("openleg_product", current_cookie, path=prefix)
     assert client.get(prefix + "/utility/dashboard").status_code == 302
 
@@ -590,7 +599,7 @@ def test_missing_server_binding_refuses_writes_without_changing_community(villag
             "utility",
             "/utility/login",
             "sonnwil-utility@example.org",
-            "/utility/login?",
+            "/utility/access/",
             "Kim Muster",
         ),
         (

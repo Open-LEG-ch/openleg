@@ -77,9 +77,9 @@ def _transport(mode):
         context = db.get_operator_webhook_delivery_context(COMMUNITY, delivery_id)
         if not context:
             return 404
-        secret = operator_api._webhook_secret(
-            context["client_id"], version=context["webhook_secret_version"]
-        )
+        secret = context.get("webhook_secret")
+        if not secret:
+            return 401
         signature = headers.get("OpenLEG-Signature", "")
         verified = operator_api.verify_webhook_signature(body, signature, secret)
         status = (503 if mode == "fail" else 204) if verified else 401

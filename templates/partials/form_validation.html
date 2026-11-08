@@ -13,4 +13,4 @@
   'chooseFile': _('Datei auswählen'),
   'noFile': _('Keine Datei ausgewählt')
 }|tojson }}</script>
-<script src="/static/js/form_validation.js" defer></script>
+<script src="/static/js/form_validation.js" defer nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """One-time GRD links across concurrent, real PostgreSQL requests."""
 
+import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from threading import Barrier
@@ -31,7 +32,9 @@ def seed(db):
         "synthetic-grid", "Synthetic grid", "grid@example.invalid"
     )
     assert db.update_utility_client_status("synthetic-grid", "active")
-    assert db.set_utility_magic_token("synthetic-grid", "synthetic-original", 900)
+    assert db.set_utility_magic_token(
+        "synthetic-grid", "synthetic-original-login-token-000001", 900
+    )
 
 
 def test_two_concurrent_requests_create_exactly_one_session(
@@ -56,7 +59,7 @@ def test_two_concurrent_requests_create_exactly_one_session(
 
     def login(_):
         client = web.test_client()
-        response = client.get("/utility/login?token=synthetic-original")
+        response = client.get("/utility/access/synthetic-original-login-token-000001")
         with client.session_transaction() as session:
             return response.status_code, session.get("utility_client_id"), response.text
 
@@ -93,26 +96,42 @@ def test_two_concurrent_requests_create_exactly_one_session(
 def test_replaced_and_expired_links_cannot_clear_current_token(interest_database):
     db = interest_database
     seed(db)
-    assert db.set_utility_magic_token("synthetic-grid", "synthetic-replacement", 900)
-    client = make_web().test_client()
-    assert client.get("/utility/login?token=synthetic-original").status_code == 200
-    assert (
-        db.get_utility_client("synthetic-grid")["magic_link_token"]
-        == "synthetic-replacement"
+    assert db.set_utility_magic_token(
+        "synthetic-grid", "synthetic-replacement-login-token-0001", 900
     )
-    assert client.get("/utility/login?token=synthetic-replacement").status_code == 302
-    assert db.get_utility_client("synthetic-grid")["magic_link_token"] is None
-    assert db.set_utility_magic_token("synthetic-grid", "synthetic-expired", -1)
+    client = make_web().test_client()
+    assert (
+        client.get("/utility/access/synthetic-original-login-token-000001").status_code
+        == 200
+    )
+    assert (
+        db.get_utility_client("synthetic-grid")["magic_link_token_hash"]
+        == hashlib.sha256(b"synthetic-replacement-login-token-0001").hexdigest()
+    )
+    assert (
+        client.get("/utility/access/synthetic-replacement-login-token-0001").status_code
+        == 302
+    )
+    assert db.get_utility_client("synthetic-grid")["magic_link_token_hash"] is None
+    assert db.set_utility_magic_token(
+        "synthetic-grid", "synthetic-expired-login-token-000001", -1
+    )
     other = make_web().test_client()
-    assert other.get("/utility/login?token=synthetic-expired").status_code == 200
+    assert (
+        other.get("/utility/access/synthetic-expired-login-token-000001").status_code
+        == 200
+    )
     with other.session_transaction() as session:
         assert "utility_client_id" not in session
     assert (
-        db.get_utility_client("synthetic-grid")["magic_link_token"]
-        == "synthetic-expired"
+        db.get_utility_client("synthetic-grid")["magic_link_token_hash"]
+        == hashlib.sha256(b"synthetic-expired-login-token-000001").hexdigest()
     )
     # A rejected token does not log out an already authenticated account.
-    assert client.get("/utility/login?token=synthetic-expired").status_code == 200
+    assert (
+        client.get("/utility/access/synthetic-expired-login-token-000001").status_code
+        == 200
+    )
     with client.session_transaction() as session:
         assert session["utility_client_id"] == "synthetic-grid"
 
@@ -130,8 +149,11 @@ def test_concurrent_replacement_survives_an_older_waiting_request(
     real_connection = db.get_connection
     with real_connection() as blocker, blocker.cursor() as cur:
         cur.execute(
-            "UPDATE utility_clients SET magic_link_token = %s WHERE client_id = %s",
-            ("synthetic-replacement", "synthetic-grid"),
+            "UPDATE utility_clients SET magic_link_token_hash = %s WHERE client_id = %s",
+            (
+                hashlib.sha256(b"synthetic-replacement-login-token-0001").hexdigest(),
+                "synthetic-grid",
+            ),
         )
 
         @contextmanager
@@ -143,7 +165,8 @@ def test_concurrent_replacement_survives_an_older_waiting_request(
         monkeypatch.setattr(db, "get_connection", worker_connection)
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(
-                web.test_client().get, "/utility/login?token=synthetic-original"
+                web.test_client().get,
+                "/utility/access/synthetic-original-login-token-000001",
             )
             assert entered.wait(timeout=10)
             # Observe a real row-lock wait, not a sleep-based approximation.
@@ -161,6 +184,6 @@ def test_concurrent_replacement_survives_an_older_waiting_request(
             blocker.commit()
             assert future.result(timeout=10).status_code == 200
     assert (
-        db.get_utility_client("synthetic-grid")["magic_link_token"]
-        == "synthetic-replacement"
+        db.get_utility_client("synthetic-grid")["magic_link_token_hash"]
+        == hashlib.sha256(b"synthetic-replacement-login-token-0001").hexdigest()
     )

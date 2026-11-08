@@ -132,7 +132,7 @@
             <p class="text-sm text-ink-muted mt-1 mb-3">{{ _('Je mehr Haushalte mitmachen, desto schneller startet Ihre LEG. Teilen Sie den Link in der Nachbarschaft.') }}</p>
             <div class="flex gap-2">
               <label for="ref-link" class="sr-only">{{ _('Einladungslink') }}</label>
-              <input type="text" readonly value="{{ referral_link|localized_url }}" id="ref-link" class="w-full min-w-0 border border-line rounded-lg px-3 py-2 text-sm bg-paper" onclick="this.select()">
+              <input type="text" readonly value="{{ referral_link|localized_url }}" id="ref-link" class="w-full min-w-0 border border-line rounded-lg px-3 py-2 text-sm bg-paper" >
               <button type="button" id="copy-ref" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark shrink-0">{{ _('Kopieren') }}</button>
               <span id="copy-ref-status" role="status" class="sr-only"></span>
             </div>
@@ -268,7 +268,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
   const solarSelect = document.getElementById('has-solar');
   const pvField = document.getElementById('pv-field');
   if (solarSelect && pvField) {
@@ -330,5 +330,6 @@
       }
     });
   }
+document.getElementById('ref-link')?.addEventListener('click', function() { this.select(); });
 </script>
 {% endblock %}

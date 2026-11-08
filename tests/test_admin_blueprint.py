@@ -149,7 +149,7 @@ class TestGuardsStayFailClosed:
 
         assert compare.call_count == 2
         record = caplog.records[-1].message
-        assert "IP: 198.51.100.4FORGED |" in record
+        assert "IP: 127.0.0.1 |" in record
         assert "203.0.113.8" not in record
         assert "\r" not in record and "\n" not in record
 
@@ -296,8 +296,8 @@ class TestGuardsStayFailClosed:
         }
         with patch.object(admin.billing_workspace, "load", return_value=workspace):
             response = app_with_tokens.app.test_client().get(
-                "/admin/abrechnungen?token=admin-token",
-                headers={"Accept": "text/html"},
+                "/admin/abrechnungen",
+                headers={"Accept": "text/html", "X-Admin-Token": "admin-token"},
             )
 
         html = response.get_data(as_text=True)
@@ -326,8 +326,8 @@ class TestGuardsStayFailClosed:
         ) as load:
             response = app_with_tokens.app.test_client().post(
                 "/admin/abrechnungen",
-                data={"token": "admin-token", "period_id": "42"},
-                headers={"Accept": "text/html"},
+                data={"period_id": "42"},
+                headers={"Accept": "text/html", "X-Admin-Token": "admin-token"},
             )
 
         assert response.status_code == 200
@@ -340,7 +340,8 @@ class TestGuardsStayFailClosed:
 
         with patch.object(admin.billing_workspace, "load") as load:
             response = app_with_tokens.app.test_client().get(
-                "/admin/abrechnungen?token=admin-token&period_id=invalid"
+                "/admin/abrechnungen?period_id=invalid",
+                headers={"X-Admin-Token": "admin-token"},
             )
 
         assert response.status_code == 404
@@ -355,7 +356,8 @@ class TestGuardsStayFailClosed:
             admin.billing_workspace, "load", side_effect=TypeError("programming bug")
         ):
             response = app_with_tokens.app.test_client().get(
-                "/admin/abrechnungen?token=admin-token&period_id=42"
+                "/admin/abrechnungen?period_id=42",
+                headers={"X-Admin-Token": "admin-token"},
             )
 
         assert response.status_code == 500
@@ -371,7 +373,7 @@ class TestGuardsStayFailClosed:
             side_effect=app_with_tokens.db.BillingStoreError("offline"),
         ):
             response = app_with_tokens.app.test_client().get(
-                "/admin/abrechnungen?token=admin-token"
+                "/admin/abrechnungen", headers={"X-Admin-Token": "admin-token"}
             )
 
         assert response.status_code == 503
@@ -398,8 +400,8 @@ class TestGuardsStayFailClosed:
             return_value={"empty": True, "periods": [], "selected": None},
         ):
             response = app_with_tokens.app.test_client().get(
-                "/admin/abrechnungen?token=admin-token",
-                headers={"Accept": "text/html"},
+                "/admin/abrechnungen",
+                headers={"Accept": "text/html", "X-Admin-Token": "admin-token"},
             )
 
         html = response.get_data(as_text=True)

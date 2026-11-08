@@ -5,6 +5,8 @@ import io
 import json
 import os
 import re
+import secrets
+import time
 from decimal import Decimal
 from math import isfinite
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -14,10 +16,12 @@ from flask import (
     Blueprint,
     Response,
     abort,
+    current_app,
     jsonify,
     redirect,
     render_template,
     request,
+    session,
 )
 
 import agentmail_event
@@ -27,6 +31,7 @@ import e66_evidence
 import leg_registry
 import sdat_ingestion
 import vnb_calculated_values
+from security_extensions import limiter
 from security_utils import log_security_event
 
 try:
@@ -72,19 +77,86 @@ _E66_ERROR_CODES = {
 }
 
 
+# Browser grants cover only the operator pages and moderation forms, never APIs.
+_ADMIN_BROWSER_ENDPOINTS = frozenset(
+    {
+        "admin.admin_ops",
+        "admin.admin_billing_workspace",
+        "admin.admin_registry_approve",
+        "admin.admin_registry_reject",
+        "admin.admin_logout",
+    }
+)
+_ADMIN_SESSION_SECONDS = 900
+
+
+def _admin_fingerprint(token):
+    key = current_app.secret_key
+    if isinstance(key, str):
+        key = key.encode("utf-8")
+    return hmac.new(key, token.encode("utf-8"), "sha256").hexdigest()
+
+
+def _grant_admin_browser(token):
+    session["admin_auth"] = _admin_fingerprint(token)
+    session["admin_expires"] = time.time() + _ADMIN_SESSION_SECONDS
+    session["admin_csrf"] = secrets.token_urlsafe(32)
+
+
 def require_admin():
     admin_token = os.getenv("ADMIN_TOKEN", "").strip()
     if not admin_token:
         abort(404)
-    token = (
-        request.headers.get("X-Admin-Token")
-        or request.args.get("token")
-        or request.form.get("token")
-        or ""
-    )
-    if not hmac.compare_digest(token.encode("utf-8"), admin_token.encode("utf-8")):
-        log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", "WARNING")
-        abort(403)
+    if "token" in request.args or "token" in request.form:
+        abort(400)
+    token = request.headers.get("X-Admin-Token") or ""
+    if hmac.compare_digest(token.encode("utf-8"), admin_token.encode("utf-8")):
+        if request.endpoint in _ADMIN_BROWSER_ENDPOINTS:
+            _grant_admin_browser(admin_token)
+        return
+    if not token and request.endpoint in _ADMIN_BROWSER_ENDPOINTS:
+        proof = session.get("admin_auth", "")
+        expires = session.get("admin_expires", 0)
+        if (
+            isinstance(proof, str)
+            and isinstance(expires, (int, float))
+            and time.time() < expires
+            and hmac.compare_digest(proof, _admin_fingerprint(admin_token))
+        ):
+            if request.method not in ("GET", "HEAD", "OPTIONS"):
+                csrf = session.get("admin_csrf", "")
+                submitted = request.form.get("csrf_token", "")
+                if not csrf or not hmac.compare_digest(
+                    submitted.encode("utf-8"), csrf.encode("utf-8")
+                ):
+                    abort(403)
+            return
+    log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", "WARNING")
+    abort(403)
+
+
+@admin_bp.route("/admin/login")
+def admin_login():
+    if not os.getenv("ADMIN_TOKEN", "").strip():
+        abort(404)
+    return render_template("admin/login.html")
+
+
+@admin_bp.route("/admin/session", methods=["POST"])
+@limiter.limit("5 per minute")
+def admin_session():
+    # A custom credential header cannot be submitted by a cross-origin HTML form.
+    require_admin()
+    _grant_admin_browser(os.environ["ADMIN_TOKEN"].strip())
+    return redirect("/admin/ops")
+
+
+@admin_bp.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    require_admin()
+    for key in ("admin_auth", "admin_expires", "admin_csrf"):
+        session.pop(key, None)
+    return redirect("/admin/login")
 
 
 def require_internal_token():
@@ -348,7 +420,15 @@ def admin_export():
             writer = csv.DictWriter(output, fieldnames=buildings[0].keys())
             writer.writeheader()
             for row in buildings:
-                writer.writerow(row)
+                writer.writerow(
+                    {
+                        key: "'" + value
+                        if isinstance(value, str)
+                        and value.lstrip().startswith(("=", "+", "-", "@"))
+                        else value
+                        for key, value in row.items()
+                    }
+                )
         response = Response(output.getvalue(), mimetype="text/csv")
         response.headers["Content-Disposition"] = (
             "attachment; filename=openleg_export.csv"
@@ -448,7 +528,9 @@ def admin_ops():
         },
     }
     if "text/html" in (request.headers.get("Accept") or ""):
-        return render_template("admin/ops.html", **response)
+        return render_template(
+            "admin/ops.html", csrf_token=session["admin_csrf"], **response
+        )
     return Response(
         json.dumps(response, default=str),
         mimetype="application/json",
@@ -472,6 +554,7 @@ def admin_billing_workspace():
         abort(503)
     return render_template(
         "admin/abrechnungen.html",
+        csrf_token=session["admin_csrf"],
         **workspace,
         contact_email=os.getenv("ADMIN_EMAIL", "hallo@openleg.ch"),
     )
@@ -481,8 +564,7 @@ def admin_billing_workspace():
 def admin_registry_approve(entry_id):
     require_admin()
     db.update_registry_entry_moderation(entry_id, "published", "")
-    admin_token = os.getenv("ADMIN_TOKEN", "").strip()
-    return redirect(f"/admin/ops?token={admin_token}")
+    return redirect("/admin/ops")
 
 
 @admin_bp.route("/admin/registry/<int:entry_id>/reject", methods=["POST"])
@@ -490,8 +572,7 @@ def admin_registry_reject(entry_id):
     require_admin()
     reason = (request.form.get("reason") or "").strip()
     db.update_registry_entry_moderation(entry_id, "rejected", reason)
-    admin_token = os.getenv("ADMIN_TOKEN", "").strip()
-    return redirect(f"/admin/ops?token={admin_token}")
+    return redirect("/admin/ops")
 
 
 @admin_bp.route("/api/email/stats")

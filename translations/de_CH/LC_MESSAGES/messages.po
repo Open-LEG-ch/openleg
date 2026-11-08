@@ -14521,3 +14521,17 @@ msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 #: templates/gemeinde/dashboard.html:97
 msgid "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."
 msgstr "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."
+
+msgid "Einladung zur LEG"
+msgstr "Einladung zur LEG"
+
+msgid "Ich bestätige die ausgewählte Datenschutzstufe."
+msgstr "Ich bestätige die ausgewählte Datenschutzstufe."
+
+#: templates/admin/login.html
+msgid "Admin-Zugang"
+msgstr "Admin-Zugang"
+
+#: templates/admin/login.html
+msgid "Anmeldung fehlgeschlagen."
+msgstr "Anmeldung fehlgeschlagen."

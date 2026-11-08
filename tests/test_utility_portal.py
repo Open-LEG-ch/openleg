@@ -85,14 +85,14 @@ def test_magic_link_follows_the_apps_configured_base_url():
 
     with (
         app.app_context(),
-        patch.object(utility_portal.db, "set_utility_magic_token"),
+        patch.object(utility_portal.db, "save_utility_access_token", return_value=True),
         patch.object(utility_portal, "send_email") as send_email,
     ):
         utility_portal._send_magic_link("client-1", "person@example.ch")
 
     send_email.assert_called_once()
     _to, _subject, body = send_email.call_args[0]
-    assert "https://from-config.example/utility/login?token=" in body
+    assert "https://from-config.example/utility/access/" in body
 
 
 def test_register_page_renders_the_apps_configured_base_url():

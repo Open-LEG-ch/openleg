@@ -12,6 +12,8 @@ import logging
 import uuid
 from collections.abc import Callable
 
+import action_token
+
 logger = logging.getLogger(__name__)
 
 
@@ -61,7 +63,7 @@ def save_token(
                         token_type = EXCLUDED.token_type,
                         expires_at = EXCLUDED.expires_at
                 """,
-                (token, building_id, token_type, ttl_seconds),
+                (action_token.digest(token), building_id, token_type, ttl_seconds),
             )
             return True
     except Exception as e:
@@ -80,7 +82,7 @@ def get_token(token: str) -> dict | None:
                     AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                     AND used_at IS NULL
                 """,
-                (token,),
+                (action_token.digest(token),),
             )
             row = cur.fetchone()
             if row:
@@ -102,7 +104,7 @@ def use_token(token: str) -> bool:
                       AND used_at IS NULL
                       AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                 """,
-                (token,),
+                (action_token.digest(token),),
             )
             return cur.rowcount > 0
     except Exception as e:
@@ -133,7 +135,7 @@ def create_coverage_deletion_tokens(email: str) -> list[str]:
                         VALUES (%s, %s, 'unsubscribe',
                                 CURRENT_TIMESTAMP + INTERVAL '1 hour')
                     """,
-                    (token, record["request_id"]),
+                    (action_token.digest(token), record["request_id"]),
                 )
                 tokens.append(token)
             return tokens
@@ -157,7 +159,7 @@ def get_deletion_recipient_locale(token: str, email: str) -> str | None:
                       AND (t.expires_at IS NULL OR t.expires_at > CURRENT_TIMESTAMP)
                       AND LOWER(TRIM(COALESCE(b.email, c.email))) = LOWER(TRIM(%s))
                 """,
-                (token, email),
+                (action_token.digest(token), email),
             )
             record = cur.fetchone()
             return record["preferred_locale"] if record else None
@@ -185,7 +187,7 @@ def confirm_profile_deletion(
                       AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                     FOR UPDATE
                 """,
-                (token,),
+                (action_token.digest(token),),
             )
             row = cur.fetchone()
             if not row:
@@ -229,7 +231,10 @@ def confirm_building_interest(token: str) -> dict | None:
     """
     try:
         with _get_connection() as conn, conn.cursor() as cur:
-            cur.execute("SELECT building_id FROM tokens WHERE token = %s", (token,))
+            cur.execute(
+                "SELECT building_id FROM tokens WHERE token = %s",
+                (action_token.digest(token),),
+            )
             row = cur.fetchone()
             if not row:
                 return None
@@ -260,7 +265,11 @@ def confirm_building_interest(token: str) -> dict | None:
                       AND used_at IS NULL
                       AND (expires_at IS NULL OR expires_at > clock_timestamp())
                 """,
-                (token, building_id, building["verification_revision"]),
+                (
+                    action_token.digest(token),
+                    building_id,
+                    building["verification_revision"],
+                ),
             )
             if cur.rowcount != 1:
                 return None

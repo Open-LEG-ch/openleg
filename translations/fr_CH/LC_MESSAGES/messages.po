@@ -14633,3 +14633,17 @@ msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la créati
 #: templates/gemeinde/dashboard.html:97
 msgid "Vertragsanfragen an OpenLEG sind im Übungsdorf deaktiviert."
 msgstr "Les demandes de contrat à OpenLEG sont désactivées dans le village d'essai."
+
+msgid "Einladung zur LEG"
+msgstr "Invitation à la CEL"
+
+msgid "Ich bestätige die ausgewählte Datenschutzstufe."
+msgstr "Je confirme le niveau de protection des données sélectionné."
+
+#: templates/admin/login.html
+msgid "Admin-Zugang"
+msgstr "Accès administrateur"
+
+#: templates/admin/login.html
+msgid "Anmeldung fehlgeschlagen."
+msgstr "Échec de la connexion."

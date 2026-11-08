@@ -4,6 +4,7 @@
 import json
 import logging
 
+import action_token
 from locale_policy import require_recipient_locale
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ def save_coverage_request(
                     bfs_number,
                     json.dumps(roles),
                     has_solar,
-                    verification_token,
+                    action_token.digest(verification_token),
                     canonical_locale,
                 ),
             )
@@ -85,7 +86,7 @@ def verify_coverage_request(token):
                   AND token_expires_at > CURRENT_TIMESTAMP
                 RETURNING email, bfs_number, municipality_name
                 """,
-                (token,),
+                (action_token.digest(token),),
             )
             row = cur.fetchone()
             return dict(row) if row else None

@@ -178,9 +178,14 @@ def test_stale_account_token_cannot_modify_the_next_signed_in_client(portal, pat
     old_token = _csrf(client)
     owner = db.get_utility_client("owner")
     before_login = db.get_utility_client("other")
-    assert client.get("/utility/logout").status_code == 302
-    assert db.set_utility_magic_token("other", "fictional-other-login", 900)
-    login = client.get("/utility/login?token=fictional-other-login")
+    assert (
+        client.post("/utility/logout", data={"csrf_token": old_token}).status_code
+        == 302
+    )
+    assert db.set_utility_magic_token(
+        "other", "fictional-other-login-token-000001", 900
+    )
+    login = client.get("/utility/access/fictional-other-login-token-000001")
     assert login.status_code == 302
     other = db.get_utility_client("other")
     assert other["api_key_hash"] == before_login["api_key_hash"]

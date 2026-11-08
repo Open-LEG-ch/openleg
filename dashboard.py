@@ -234,6 +234,15 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     )
     if not member:
         return {"error": _N("Kein Zugriff."), "community": None}
+    if member.get("status") == "invited":
+        return {
+            "error": None,
+            "community": None,
+            "invitation_id": community_id,
+            "is_admin": False,
+        }
+    if member.get("status") != "confirmed":
+        return {"error": _N("Kein Zugriff."), "community": None}
 
     vnb_exchange_available = db.is_db_available()
     if vnb_exchange_available:
@@ -1233,7 +1242,10 @@ def leg_document_for_member(doc_id: int, building_id: str):
     status = formation_wizard.get_community_status(doc["community_id"], building_id)
     if not status:
         return None
-    is_member = any(m["building_id"] == building_id for m in status["members"] or [])
+    is_member = any(
+        m["building_id"] == building_id and m.get("status") == "confirmed"
+        for m in status["members"] or []
+    )
     return doc if is_member else None
 
 
@@ -1248,10 +1260,11 @@ def leg_log_correspondence(
     attachment_filename: str = "",
     attachment_data: bytes | None = None,
 ) -> dict:
-    """Append a ledger entry; any confirmed or invited member may log."""
+    """Append a ledger entry for a confirmed member."""
     status = formation_wizard.get_community_status(community_id, building_id)
     if not status or not any(
-        m["building_id"] == building_id for m in status["members"] or []
+        m["building_id"] == building_id and m.get("status") == "confirmed"
+        for m in status["members"] or []
     ):
         return {"error": _N("Kein Zugriff.")}
 
@@ -1286,7 +1299,8 @@ def leg_correspondence_attachment(
     """Return a correspondence attachment only to a current LEG member."""
     status = formation_wizard.get_community_status(community_id, building_id)
     if not status or not any(
-        member["building_id"] == building_id for member in status["members"] or []
+        member["building_id"] == building_id and member.get("status") == "confirmed"
+        for member in status["members"] or []
     ):
         return None
     return db.get_correspondence_attachment(entry_id, community_id)

@@ -78,7 +78,9 @@ def _require_dashboard_session():
 
 
 def _require_dashboard_csrf():
-    submitted = request.form.get("csrf_token", "")
+    submitted = request.headers.get("X-CSRF-Token") or request.form.get(
+        "csrf_token", ""
+    )
     if not isinstance(submitted, str) or not submitted.isascii():
         abort(400)
     expected = _dashboard_csrf_token()
@@ -469,7 +471,12 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         data = None
         if upload and upload.filename:
             data = upload.read(2 * 1024 * 1024 + 1)
-            if len(data) > 2 * 1024 * 1024 or upload.mimetype != "application/pdf":
+            if (
+                len(data) > 2 * 1024 * 1024
+                or upload.mimetype != "application/pdf"
+                or not upload.filename.lower().endswith(".pdf")
+                or not data.startswith(b"%PDF-")
+            ):
                 abort(400)
             filename = upload.filename
         result = dashboard_module.member_open_invoice_query(

@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
     document.getElementById('login-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const errEl = document.getElementById('form-error');

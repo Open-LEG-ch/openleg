@@ -54,7 +54,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
 const searchInput = document.getElementById('municipality-search');
 const searchResults = document.getElementById('search-results');
 const selectedBfs = document.getElementById('selected-bfs');

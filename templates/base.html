@@ -16,7 +16,7 @@
   {% include 'partials/site_footer.html' %}
   {% block scripts %}{% endblock %}
   {% if matomo_site_id and not private_page %}
-  <script>
+  <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
     window._paq = window._paq || [];
     window._paq.push(['disableCookies']);
     window._paq.push(['setDoNotTrack', true]);
@@ -25,7 +25,7 @@
     window._paq.push(['setTrackerUrl', 'https://stats.openleg.ch/matomo.php']);
     window._paq.push(['setSiteId', '{{ matomo_site_id }}']);
   </script>
-  <script src="https://stats.openleg.ch/matomo.js" async defer></script>
+  <script src="https://stats.openleg.ch/matomo.js" async defer nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
   {% endif %}
 {% include 'partials/form_validation.html' %}
 </body>

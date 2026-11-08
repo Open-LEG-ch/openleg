@@ -90,7 +90,7 @@
               <span class="font-bold text-ink">{{ _("Ausgewählt:") }}</span>
               <span id="selected-name" class="ml-2 text-ink-muted"></span>
             </div>
-            <button onclick="clearMunicipality()" class="text-red-600 hover:text-red-800 text-sm font-semibold">{{ _("Ändern") }}</button>
+            <button type="button" id="clear-municipality" class="text-red-600 hover:text-red-800 text-sm font-semibold">{{ _("Ändern") }}</button>
           </div>
         </div>
       </section>
@@ -110,7 +110,7 @@
             step="100"
             value="4500"
             class="range-slider focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
-            oninput="updateConsumption(this.value)"
+
           />
           <div class="flex justify-between text-xs text-ink-muted mt-1">
             <span>{{ _("1'000 kWh") }}</span>
@@ -138,7 +138,7 @@
             step="5"
             value="60"
             class="range-slider focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
-            oninput="updateProduction(this.value)"
+
           />
           <div class="flex justify-between text-xs text-ink-muted mt-1">
             <span>0%</span>
@@ -166,7 +166,7 @@
       <div class="text-center mb-10">
         <button
           id="calculate-btn"
-          onclick="calculateSavings()"
+
           class="bg-brand text-white px-12 py-4 rounded-lg text-lg font-bold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:bg-slate-200 disabled:text-slate-600 disabled:cursor-not-allowed"
           disabled
         >
@@ -313,7 +313,7 @@
 {% endblock %}
 
 {% block scripts %}
-  <script>
+  <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
     let selectedBfs = null;
     let municipalityData = null;
 
@@ -515,5 +515,9 @@
         resultsDiv.classList.add('hidden');
       }
     });
-  </script>
+  document.getElementById('clear-municipality').addEventListener('click', clearMunicipality);
+document.getElementById('consumption').addEventListener('input', function() { updateConsumption(this.value); });
+document.getElementById('production').addEventListener('input', function() { updateProduction(this.value); });
+document.getElementById('calculate-btn').addEventListener('click', calculateSavings);
+</script>
 {% endblock %}

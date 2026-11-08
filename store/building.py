@@ -9,6 +9,7 @@ import logging
 import time
 from datetime import UTC, datetime
 
+import action_token
 from locale_policy import require_recipient_locale
 
 logger = logging.getLogger(__name__)
@@ -147,7 +148,12 @@ def save_building(
                             CURRENT_TIMESTAMP + (%s * INTERVAL '1 second')
                         )
                     """,
-                    (verification_token, building_id, revision, token_ttl_seconds),
+                    (
+                        action_token.digest(verification_token),
+                        building_id,
+                        revision,
+                        token_ttl_seconds,
+                    ),
                 )
 
             # Save consents
