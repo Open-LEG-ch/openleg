@@ -6,6 +6,7 @@ No auth required. Rate limited. CORS enabled.
 """
 
 import logging
+import math
 
 from flask import Blueprint, g, jsonify, render_template, request
 
@@ -17,11 +18,16 @@ import public_data
 import ranking as ranking_module
 import registry_intake
 from cantons import SWISS_CANTONS
-from security_extensions import RATE_LIMIT_ANONYMOUS_READ, limiter
+from security_extensions import (
+    RATE_LIMIT_ANONYMOUS_READ,
+    RATE_LIMIT_CALCULATOR,
+    limiter,
+)
 
 logger = logging.getLogger(__name__)
 
 public_api_bp = Blueprint("public_api", __name__, url_prefix="/api/v1")
+MAX_CLUSTER_BUILDINGS = 300
 
 # Oeffentliche API-Leseflaechen (#524): anonyme Browse-Klasse, grosszuegig
 # fuer Menschen und geteilte Frontends, eng genug fuer Missbrauchsmuster.
@@ -400,12 +406,25 @@ def leg_value_gap():
 
 
 @public_api_bp.route("/leg/cluster", methods=["POST"])
+@limiter.limit(RATE_LIMIT_CALCULATOR, override_defaults=False)
 def leg_cluster():
     """Cluster buildings for LEG formation."""
-    data = request.json or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "A buildings list is required"}), 400
     buildings = data.get("buildings", [])
-    if not buildings or len(buildings) < 2:
+    if not isinstance(buildings, list) or len(buildings) < 2:
         return jsonify({"error": "At least 2 buildings required"}), 400
+    if len(buildings) > MAX_CLUSTER_BUILDINGS:
+        return jsonify({"error": "At most 300 buildings allowed"}), 413
+    for building in buildings:
+        if not isinstance(building, dict) or any(
+            type(building.get(key)) not in (int, float)
+            or not -bound <= building[key] <= bound
+            or not math.isfinite(building[key])
+            for key, bound in (("lat", 90), ("lon", 180))
+        ):
+            return jsonify({"error": "Each building needs valid lat, lon"}), 400
 
     try:
         import pandas as pd
