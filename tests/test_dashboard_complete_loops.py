@@ -195,7 +195,11 @@ def test_correspondence_rejects_non_pdf_attachment(monkeypatch):
     monkeypatch.setattr(
         dashboard.formation_wizard,
         "get_community_status",
-        lambda *_args: {"members": [{"building_id": "b-admin", "role": "admin"}]},
+        lambda *_args: {
+            "members": [
+                {"building_id": "b-admin", "role": "admin", "status": "confirmed"}
+            ]
+        },
     )
     save = MagicMock()
     monkeypatch.setattr(dashboard.db, "log_correspondence", save)
@@ -219,7 +223,7 @@ def test_correspondence_rejects_empty_selected_pdf(monkeypatch):
     monkeypatch.setattr(
         dashboard.formation_wizard,
         "get_community_status",
-        lambda *_args: {"members": [{"building_id": "b-admin"}]},
+        lambda *_args: {"members": [{"building_id": "b-admin", "status": "confirmed"}]},
     )
     save = MagicMock()
     monkeypatch.setattr(dashboard.db, "log_correspondence", save)
@@ -252,7 +256,7 @@ def test_correspondence_attachment_requires_community_membership(monkeypatch):
     monkeypatch.setattr(
         dashboard.formation_wizard,
         "get_community_status",
-        lambda *_args: {"members": [{"building_id": "b-admin"}]},
+        lambda *_args: {"members": [{"building_id": "b-admin", "status": "confirmed"}]},
     )
 
     assert dashboard.leg_correspondence_attachment(4, "c0ffee", "stranger") is None
