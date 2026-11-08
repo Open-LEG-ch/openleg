@@ -140,10 +140,10 @@
                 {% endif %}
               </td>
               <td class="px-4 py-3 text-right">
-                <form method="post" action="/admin/registry/{{ entry.id }}/approve?token={{ request.args.get('token', '') }}" class="inline">
+                <form method="post" action="/admin/registry/{{ entry.id }}/approve" class="inline">
                   <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Freischalten') }}</button>
                 </form>
-                <form method="post" action="/admin/registry/{{ entry.id }}/reject?token={{ request.args.get('token', '') }}" class="inline ml-2">
+                <form method="post" action="/admin/registry/{{ entry.id }}/reject" class="inline ml-2">
                   <input type="hidden" name="reason" value="">
                   <button type="submit" class="bg-red-800 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Ablehnen') }}</button>
                 </form>

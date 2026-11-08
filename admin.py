@@ -76,12 +76,9 @@ def require_admin():
     admin_token = os.getenv("ADMIN_TOKEN", "").strip()
     if not admin_token:
         abort(404)
-    token = (
-        request.headers.get("X-Admin-Token")
-        or request.args.get("token")
-        or request.form.get("token")
-        or ""
-    )
+    if "token" in request.args or "token" in request.form:
+        abort(400)
+    token = request.headers.get("X-Admin-Token") or ""
     if not hmac.compare_digest(token.encode("utf-8"), admin_token.encode("utf-8")):
         log_security_event("ADMIN_ACCESS_DENIED", "Invalid admin token", "WARNING")
         abort(403)
@@ -481,8 +478,7 @@ def admin_billing_workspace():
 def admin_registry_approve(entry_id):
     require_admin()
     db.update_registry_entry_moderation(entry_id, "published", "")
-    admin_token = os.getenv("ADMIN_TOKEN", "").strip()
-    return redirect(f"/admin/ops?token={admin_token}")
+    return redirect("/admin/ops")
 
 
 @admin_bp.route("/admin/registry/<int:entry_id>/reject", methods=["POST"])
@@ -490,8 +486,7 @@ def admin_registry_reject(entry_id):
     require_admin()
     reason = (request.form.get("reason") or "").strip()
     db.update_registry_entry_moderation(entry_id, "rejected", reason)
-    admin_token = os.getenv("ADMIN_TOKEN", "").strip()
-    return redirect(f"/admin/ops?token={admin_token}")
+    return redirect("/admin/ops")
 
 
 @admin_bp.route("/api/email/stats")
