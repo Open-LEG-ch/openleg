@@ -26,6 +26,7 @@ from flask import (
     url_for,
 )
 
+import access_token
 import database as db
 import security_utils
 from email_localization import gettext, recipient_locale
@@ -168,30 +169,34 @@ def register():
 @utility_bp.route("/login", methods=["GET"])
 def login_page():
     registered = request.args.get("registered")
-    token = request.args.get("token")
-
-    # Handle magic link callback
-    if token:
-        client = db.consume_utility_magic_token(token)
-        if client:
-            session["utility_client_id"] = client["client_id"]
-            session.permanent = True
-            if client["status"] == "pending":
-                db.update_utility_client_status(client["client_id"], "active")
-            return redirect(url_for("utility.dashboard"))
-        return render_template(
-            "utility/login.html",
-            error=_("Ungültiger oder abgelaufener Login-Link."),
-            site_url=_site_url(),
-            tenant=getattr(g, "tenant", {}),
-        )
-
     return render_template(
         "utility/login.html",
         registered=registered,
         site_url=_site_url(),
         tenant=getattr(g, "tenant", {}),
     )
+
+
+@utility_bp.route("/access/<token>")
+def login_access(token):
+    client_id = access_token.consume(access_token.UTILITY, db, token)
+    client = db.get_utility_client(client_id) if client_id else None
+    if not client:
+        return render_template(
+            "utility/login.html",
+            error=_("Ungültiger oder abgelaufener Login-Link."),
+            site_url=_site_url(),
+            tenant=getattr(g, "tenant", {}),
+        )
+    locale = normalize_locale(session.get("locale"))
+    session.clear()
+    if locale:
+        session["locale"] = locale
+    session["utility_client_id"] = client_id
+    session.permanent = True
+    if client["status"] == "pending":
+        db.update_utility_client_status(client_id, "active")
+    return redirect(url_for("utility.dashboard"))
 
 
 @utility_bp.route("/login", methods=["POST"])
@@ -219,9 +224,15 @@ def login_submit():
     return jsonify({"success": True, "message": _("Login-Link per E-Mail gesendet.")})
 
 
-@utility_bp.route("/logout")
+@utility_bp.route("/logout", methods=["POST"])
+@require_utility_auth
 def logout():
-    session.pop("utility_client_id", None)
+    _require_credential_csrf()
+    db.clear_utility_magic_token(g.utility_client["client_id"])
+    locale = normalize_locale(session.get("locale"))
+    session.clear()
+    if locale:
+        session["locale"] = locale
     return redirect(url_for("utility.login_page"))
 
 
@@ -379,14 +390,17 @@ def admin_clients():
 
 def _send_magic_link(client_id: str, email: str):
     """Generate and send a magic login link."""
-    token = secrets.token_urlsafe(48)
-    db.set_utility_magic_token(client_id, token, MAGIC_LINK_TTL)
+    token = access_token.issue(
+        access_token.UTILITY, db, client_id, ttl_seconds=MAGIC_LINK_TTL
+    )
+    if not token:
+        return False
 
     locale = recipient_locale(
         db.get_utility_client(client_id), email, email_field="contact_email"
     )
     login_url = localized_url(
-        f"{_site_url()}/utility/login?token={token}", locale=locale
+        access_token.access_url(access_token.UTILITY, _site_url(), token), locale=locale
     )
     subject = gettext("OpenLEG: Ihr Login-Link", locale=locale)
     body = gettext(

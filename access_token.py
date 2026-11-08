@@ -67,6 +67,15 @@ MUNICIPALITY = AccessTokenKind(
     normalize_subject=_normalize_municipality_id,
 )
 
+UTILITY = AccessTokenKind(
+    name="utility",
+    subject_key="client_id",
+    save_name="save_utility_access_token",
+    consume_name="consume_utility_access_token",
+    url_path="utility/access",
+    normalize_subject=_normalize_building_id,
+)
+
 
 def _is_valid_token(raw_token: str) -> bool:
     return bool(_URLSAFE_TOKEN_RE.fullmatch(raw_token))

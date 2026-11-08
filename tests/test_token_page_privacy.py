@@ -66,17 +66,19 @@ def test_private_redirect_is_also_protected(web, monkeypatch):
 
     monkeypatch.setattr(
         database,
-        "get_utility_client_by_magic_token",
+        "get_utility_client",
         lambda token: {"client_id": "synthetic-client", "status": "active"},
     )
     monkeypatch.setattr(database, "clear_utility_magic_token", lambda client_id: None)
     monkeypatch.setattr(
         database,
-        "consume_utility_magic_token",
+        "consume_utility_access_token",
         lambda token: {"client_id": "synthetic-client", "status": "active"},
         raising=False,
     )
-    response = web.test_client().get("/utility/login?token=synthetic-token")
+    response = web.test_client().get(
+        "/utility/access/synthetic-utility-login-token-000001"
+    )
     assert response.status_code == 302
     assert response.headers["Cache-Control"] == "no-store"
     assert response.headers["Referrer-Policy"] == "no-referrer"

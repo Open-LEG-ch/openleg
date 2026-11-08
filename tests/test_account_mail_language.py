@@ -84,7 +84,9 @@ def test_utility_mail_uses_persisted_preference(web, monkeypatch, stored, expect
         "get_utility_client",
         lambda _: {"contact_email": "contact@example.ch", "preferred_locale": stored},
     )
-    monkeypatch.setattr(utility_portal.db, "set_utility_magic_token", MagicMock())
+    monkeypatch.setattr(
+        utility_portal.db, "save_utility_access_token", MagicMock(return_value=True)
+    )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(utility_portal, "send_email", send)
     with web.test_request_context("/utility/login?lang=fr"):
@@ -120,7 +122,9 @@ def test_public_login_cannot_override_recipient_language(web, monkeypatch):
     }
     monkeypatch.setattr(utility_portal.db, "get_utility_client_by_email", lambda _: row)
     monkeypatch.setattr(utility_portal.db, "get_utility_client", lambda _: row)
-    monkeypatch.setattr(utility_portal.db, "set_utility_magic_token", MagicMock())
+    monkeypatch.setattr(
+        utility_portal.db, "save_utility_access_token", MagicMock(return_value=True)
+    )
     send = MagicMock(return_value=True)
     save = MagicMock()
     monkeypatch.setattr(utility_portal, "send_email", send)
@@ -140,7 +144,9 @@ def test_unbound_utility_address_uses_german(web, monkeypatch):
         "get_utility_client",
         lambda _: {"contact_email": "other@example.ch", "preferred_locale": "fr_CH"},
     )
-    monkeypatch.setattr(utility_portal.db, "set_utility_magic_token", MagicMock())
+    monkeypatch.setattr(
+        utility_portal.db, "save_utility_access_token", MagicMock(return_value=True)
+    )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(utility_portal, "send_email", send)
     with web.test_request_context("/?lang=fr"):

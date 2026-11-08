@@ -18,7 +18,7 @@ _IDENTITIES = ("dashboard_building_id", "municipality_id", "utility_client_id")
 _EXCHANGES = {
     "main.dashboard_access_exchange": ("dashboard_building_id", "/dashboard"),
     "municipality.access_exchange": ("municipality_id", "/gemeinde/dashboard"),
-    "utility.login_page": ("utility_client_id", "/utility/dashboard"),
+    "utility.login_access": ("utility_client_id", "/utility/dashboard"),
 }
 
 

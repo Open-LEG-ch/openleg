@@ -11,6 +11,7 @@ legacy callers.
 
 import logging
 
+import access_token
 from locale_policy import require_recipient_locale
 
 logger = logging.getLogger(__name__)
@@ -117,9 +118,9 @@ def get_utility_client_by_magic_token(token: str) -> dict | None:
                 cur.execute(
                     """
                     SELECT * FROM utility_clients
-                    WHERE magic_link_token = %s AND magic_link_expires_at > CURRENT_TIMESTAMP
+                    WHERE magic_link_token_hash = %s AND magic_link_expires_at > CURRENT_TIMESTAMP
                 """,
-                    (token,),
+                    (access_token._hash_token(token),),
                 )
                 row = cur.fetchone()
                 return dict(row) if row else None
@@ -129,6 +130,11 @@ def get_utility_client_by_magic_token(token: str) -> dict | None:
 
 
 def consume_utility_magic_token(token: str) -> dict | None:
+    """Consume a raw link without persisting its bearer value."""
+    return consume_utility_access_token(access_token._hash_token(token))
+
+
+def consume_utility_access_token(token_hash: str) -> dict | None:
     """Consume the exact unexpired link in one PostgreSQL statement.
 
     Concurrent updates recheck the token predicate after waiting for the row
@@ -139,13 +145,13 @@ def consume_utility_magic_token(token: str) -> dict | None:
             cur.execute(
                 """
                 UPDATE utility_clients
-                SET magic_link_token = NULL, magic_link_expires_at = NULL,
+                SET magic_link_token = NULL, magic_link_token_hash = NULL, magic_link_expires_at = NULL,
                     last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-                WHERE magic_link_token = %s
+                WHERE magic_link_token_hash = %s
                     AND magic_link_expires_at > CURRENT_TIMESTAMP
                 RETURNING *
                 """,
-                (token,),
+                (token_hash,),
             )
             row = cur.fetchone()
             return dict(row) if row else None
@@ -155,6 +161,15 @@ def consume_utility_magic_token(token: str) -> dict | None:
 
 
 def set_utility_magic_token(client_id: str, token: str, ttl_seconds: int = 900) -> bool:
+    """Store only the digest of a raw utility login token."""
+    return save_utility_access_token(
+        access_token._hash_token(token), client_id, ttl_seconds
+    )
+
+
+def save_utility_access_token(
+    token_hash: str, client_id: str, ttl_seconds: int = 900
+) -> bool:
     """Set a magic link token for a utility client (default 15min TTL)."""
     try:
         with _get_connection() as conn:
@@ -162,12 +177,12 @@ def set_utility_magic_token(client_id: str, token: str, ttl_seconds: int = 900) 
                 cur.execute(
                     """
                     UPDATE utility_clients
-                    SET magic_link_token = %s,
+                    SET magic_link_token = NULL, magic_link_token_hash = %s,
                         magic_link_expires_at = CURRENT_TIMESTAMP + INTERVAL '%s seconds',
                         updated_at = CURRENT_TIMESTAMP
                     WHERE client_id = %s
                 """,
-                    (token, ttl_seconds, client_id),
+                    (token_hash, ttl_seconds, client_id),
                 )
                 return cur.rowcount > 0
     except Exception as e:
@@ -176,16 +191,17 @@ def set_utility_magic_token(client_id: str, token: str, ttl_seconds: int = 900) 
 
 
 def clear_utility_magic_token(client_id: str) -> bool:
-    """Clear magic link token after use and update last_login_at."""
+    """Revoke outstanding login links without recording a new login."""
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
                     UPDATE utility_clients
-                    SET magic_link_token = NULL, magic_link_expires_at = NULL,
-                        last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                    SET magic_link_token = NULL, magic_link_token_hash = NULL, magic_link_expires_at = NULL,
+                        updated_at = CURRENT_TIMESTAMP
                     WHERE client_id = %s
+                        AND (magic_link_token IS NOT NULL OR magic_link_token_hash IS NOT NULL)
                 """,
                     (client_id,),
                 )
