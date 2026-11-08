@@ -2229,4 +2229,16 @@ def create_tables():
                   )
             """)
 
+            for table, column in (
+                ("tokens", "token"),
+                ("coverage_requests", "verification_token"),
+                ("leg_registry", "verification_token"),
+                ("leg_registry", "claim_token"),
+            ):
+                cur.execute(f"""
+                    UPDATE {table}
+                    SET {column} = 'sha256$' || encode(sha256(convert_to({column}, 'UTF8')), 'hex')
+                    WHERE {column} IS NOT NULL AND {column} NOT LIKE 'sha256$%'
+                """)
+
             logger.info("[DB] Tables and indexes created successfully")

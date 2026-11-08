@@ -87,7 +87,9 @@ def test_get_token_uses_database_connection_seam(monkeypatch):
     info = store_token.get_token("t1")
     assert info == {"token": "t1", "building_id": "b1"}
     assert "FROM tokens" in cur.executed[0][0]
-    assert cur.executed[0][1] == ("t1",)
+    assert cur.executed[0][1] == (
+        "sha256$628b49d96dcde97a430dd4f597705899e09a968f793491e4b704cae33a40dc02",
+    )
 
 
 def test_use_token_reports_rowcount(monkeypatch):
@@ -101,7 +103,9 @@ def test_use_token_reports_rowcount(monkeypatch):
     query, params = cur.executed[0]
     assert "used_at IS NULL" in query
     assert "expires_at > CURRENT_TIMESTAMP" in query
-    assert params == ("missing",)
+    assert params == (
+        "sha256$ffa63583dfa6706b87d284b86b0d693a161e4840aad2c5cf6b5d27c3b9621f7d",
+    )
 
 
 def test_delete_tokens_filters_by_type(monkeypatch):
@@ -123,4 +127,9 @@ def test_save_token_wires_params(monkeypatch):
     assert "INSERT INTO tokens" in query
     assert "(%s * INTERVAL '1 second')" in query
     assert "INTERVAL '%s seconds'" not in query
-    assert params == ("t1", "b1", "unsubscribe", 3600)
+    assert params == (
+        "sha256$628b49d96dcde97a430dd4f597705899e09a968f793491e4b704cae33a40dc02",
+        "b1",
+        "unsubscribe",
+        3600,
+    )

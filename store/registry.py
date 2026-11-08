@@ -14,6 +14,7 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 
 import logging
 
+import action_token
 from locale_policy import require_recipient_locale
 
 logger = logging.getLogger(__name__)
@@ -221,7 +222,7 @@ def set_registry_claim_token(
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = %s
                 """,
-                (token, ttl_seconds, entry_id),
+                (action_token.digest(token), ttl_seconds, entry_id),
             )
             return cur.rowcount > 0
     except Exception as e:
@@ -239,7 +240,7 @@ def get_registry_entry_by_claim_token(token: str) -> dict | None:
                     SELECT * FROM leg_registry
                     WHERE claim_token = %s AND claim_token_expires_at > CURRENT_TIMESTAMP
                 """,
-                    (token,),
+                    (action_token.digest(token),),
                 )
                 row = cur.fetchone()
                 return dict(row) if row else None
@@ -263,7 +264,7 @@ def set_registry_verification_token(
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = %s
                 """,
-                (token, ttl_seconds, entry_id),
+                (action_token.digest(token), ttl_seconds, entry_id),
             )
             return cur.rowcount > 0
     except Exception as e:
@@ -281,7 +282,7 @@ def get_registry_entry_by_verification_token(token: str) -> dict | None:
                     WHERE verification_token = %s
                         AND verification_token_expires_at > CURRENT_TIMESTAMP
                 """,
-                (token,),
+                (action_token.digest(token),),
             )
             row = cur.fetchone()
             return dict(row) if row else None

@@ -5,6 +5,7 @@ import uuid
 
 import pytest
 
+import action_token
 import database as db
 from tests import test_interest_postgres
 from tests.test_interest_postgres import (
@@ -152,7 +153,7 @@ def test_link_expiring_while_waiting_for_building_lock_is_rejected(
         with race.original_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 "UPDATE tokens SET expires_at = clock_timestamp() WHERE token = %s",
-                (token,),
+                (action_token.digest(token),),
             )
         registration.release.set()
         assert race.finish(registration) is True

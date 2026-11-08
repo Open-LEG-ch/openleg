@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 import pytest
 
+import action_token
 import database as db
 from tests import test_interest_confirmation_routes, test_interest_postgres
 
@@ -93,11 +94,12 @@ def test_deletion_language_is_bound_to_the_active_token_and_mailbox(
             if failure == "expired":
                 cursor.execute(
                     "UPDATE tokens SET expires_at = NOW() - INTERVAL '1 second' WHERE token = %s",
-                    (token,),
+                    (action_token.digest(token),),
                 )
             else:
                 cursor.execute(
-                    "UPDATE tokens SET used_at = NOW() WHERE token = %s", (token,)
+                    "UPDATE tokens SET used_at = NOW() WHERE token = %s",
+                    (action_token.digest(token),),
                 )
     assert db.get_deletion_recipient_locale(token, email) is None
 

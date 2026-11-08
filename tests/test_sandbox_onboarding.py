@@ -14,6 +14,7 @@ import psycopg2
 import pytest
 from psycopg2.extensions import make_dsn
 
+import action_token
 from sandbox_seed import SEED_VERSION
 from tests import test_sandbox_http
 from tests.test_sandbox_personas import _reload_worker, _start, _switch
@@ -533,7 +534,7 @@ def _delete_while_token_is_locked(gateway, client, deletion):
         with blocker.cursor() as cursor:
             cursor.execute(
                 "SELECT token FROM tokens WHERE token = %s FOR UPDATE",
-                (deletion.rsplit("/", 1)[1],),
+                (action_token.digest(deletion.rsplit("/", 1)[1]),),
             )
         with ThreadPoolExecutor(max_workers=1) as executor:
             pending = executor.submit(client.post, deletion)
@@ -592,7 +593,8 @@ def test_unavailable_login_binding_blocks_deletion_without_consuming_its_token(v
             )
             assert cursor.fetchone() == (True,)
             cursor.execute(
-                "SELECT token FROM tokens WHERE token=%s", (deletion.rsplit("/", 1)[1],)
+                "SELECT token FROM tokens WHERE token=%s",
+                (action_token.digest(deletion.rsplit("/", 1)[1]),),
             )
             assert cursor.fetchone() is not None
     finally:
@@ -632,7 +634,7 @@ def test_expired_confirmation_and_access_links_require_fresh_captured_mail(villa
     ):
         cursor.execute(
             "UPDATE tokens SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 second' WHERE token = %s",
-            (expired.rsplit("/", 1)[1],),
+            (action_token.digest(expired.rsplit("/", 1)[1]),),
         )
     assert client.get(expired).status_code == 404
     assert client.get(prefix + "/dashboard/export").status_code == 401

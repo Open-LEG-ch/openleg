@@ -87,6 +87,7 @@ pytest_add_cli_args_test_selection = [
 # tests import has to be listed here or they cannot even be collected.
 also_copy = [
     "access_token.py",
+    "action_token.py",
     "admin.py",
     "advisories.py",
     "advisory_routes.py",
