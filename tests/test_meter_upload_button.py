@@ -2,9 +2,9 @@
 """Execute the rendered upload script through file and consent changes."""
 
 import json
-import re
 import shutil
 import subprocess
+from html.parser import HTMLParser
 
 from tests import security_review_fixtures
 from tests.test_dashboard_access_routes import _set_session
@@ -12,18 +12,33 @@ from tests.test_dashboard_access_routes import _set_session
 app_module = security_review_fixtures.app_module
 
 
+class _Scripts(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.inside_script = False
+        self.sources = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "script":
+            self.inside_script = True
+
+    def handle_endtag(self, tag):
+        if tag == "script":
+            self.inside_script = False
+
+    def handle_data(self, data):
+        if self.inside_script:
+            self.sources.append(data)
+
+
 def test_upload_requires_both_a_file_and_consent(app_module):
     client = app_module.web.test_client()
     _set_session(client, "synthetic-building")
     response = client.get("/meter-upload")
     assert response.status_code == 200
-    script = next(
-        source
-        for source in re.findall(
-            r"<script[^>]*>(.*?)</script>", response.text, re.DOTALL
-        )
-        if "const dropZone" in source
-    )
+    parsed = _Scripts()
+    parsed.feed(response.text)
+    script = next(source for source in parsed.sources if "const dropZone" in source)
     node = shutil.which("node")
     assert node, "Node is required to verify the rendered upload behaviour"
     harness = r"""
