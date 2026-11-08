@@ -111,7 +111,7 @@
         <p class="text-center text-sm text-gray-500 mt-6">{{ _("Bereits registriert?") }} <a href="/utility/login" class="text-gray-700 hover:underline">{{ _("Einloggen") }}</a></p>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
     document.getElementById('register-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const errEl = document.getElementById('form-error');

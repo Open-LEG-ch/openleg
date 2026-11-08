@@ -36,13 +36,13 @@
             </form>
             <div class="flex flex-wrap gap-2">
                 <label for="verzeichnis-kanton" class="sr-only">{{ _("Kanton filtern") }}</label>
-                <select id="verzeichnis-kanton" onchange="updateFilter('kanton', this.value)" class="min-w-0 flex-1 basis-36 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <select id="verzeichnis-kanton"  class="min-w-0 flex-1 basis-36 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
                     {% for code, label in canton_options %}
                     <option value="{{ code }}" {{ 'selected' if kanton == code }}>{{ _(label) }}</option>
                     {% endfor %}
                 </select>
                 <label for="verzeichnis-sort" class="sr-only">{{ _("Sortieren nach") }}</label>
-                <select id="verzeichnis-sort" onchange="updateFilter('sort', this.value)" class="min-w-0 flex-1 basis-36 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <select id="verzeichnis-sort"  class="min-w-0 flex-1 basis-36 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
                     <option value="pv_score_pct" {{ 'selected' if sort == 'pv_score_pct' }}>{{ _("Solarnutzung") }}</option>
                     <option value="energy_transition_score" {{ 'selected' if sort == 'energy_transition_score' }}>{{ _("Energiewende-Score") }}</option>
                     <option value="leg_value_gap_chf" {{ 'selected' if sort == 'leg_value_gap_chf' }}>{{ _("LEG-Ersparnis") }}</option>
@@ -52,13 +52,15 @@
                 </select>
             </div>
 
-            <script>
+            <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
             function updateFilter(key, value) {
               const params = new URLSearchParams(window.location.search);
               params.set(key, value);
               window.location.href = '?' + params.toString();
             }
-            </script>
+            document.getElementById('verzeichnis-kanton').addEventListener('change', function() { updateFilter('kanton', this.value); });
+document.getElementById('verzeichnis-sort').addEventListener('change', function() { updateFilter('sort', this.value); });
+</script>
         </div>
 
         {% if not interest_available %}

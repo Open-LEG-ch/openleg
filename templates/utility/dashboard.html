@@ -159,7 +159,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
     document.getElementById('gen-key-btn').addEventListener('click', async function() {
         if (!confirm({{ _("Neuen API-Schlüssel erstellen? Der alte wird ungültig.")|tojson }})) return;
         try {

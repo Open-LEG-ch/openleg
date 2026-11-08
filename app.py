@@ -1120,7 +1120,6 @@ def create_app(config=None, *, load_environment=True, check_database=True):
             "default-src": "'self'",
             "script-src": [
                 "'self'",
-                "'unsafe-inline'",
                 "https://unpkg.com",
                 "https://cdn.jsdelivr.net",
                 "https://www.googletagmanager.com",
@@ -1143,7 +1142,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
                 "https://stats.openleg.ch",
             ],
         },
-        content_security_policy_nonce_in=None,
+        content_security_policy_nonce_in=["script-src"],
     )
     logger.info("Security features enabled")
 

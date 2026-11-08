@@ -133,7 +133,7 @@
           <p class="text-sm text-ink-muted mb-3">{{ _("Teilen Sie diesen Link auf Ihrer Website, im Mitteilungsblatt oder per E-Mail. Interessierte Haushalte melden sich direkt an.") }}</p>
           <div class="flex gap-2">
             <label for="invite-link" class="sr-only">{{ _("Einladungslink") }}</label>
-            <input type="text" id="invite-link" value="{{ invite_url }}" class="w-full min-w-0 border border-line rounded-lg px-3 py-2 text-sm bg-paper" readonly onclick="this.select()">
+            <input type="text" id="invite-link" value="{{ invite_url }}" class="w-full min-w-0 border border-line rounded-lg px-3 py-2 text-sm bg-paper" readonly >
             <button type="button" id="copy-invite" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand shrink-0">{{ _("Kopieren") }}</button>
             <span id="copy-invite-status" role="status" class="sr-only"></span>
           </div>
@@ -172,7 +172,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
   const copyInvite = document.getElementById('copy-invite');
   const inviteLink = document.getElementById('invite-link');
   const copyInviteStatus = document.getElementById('copy-invite-status');
@@ -189,5 +189,6 @@
       setTimeout(() => { copyInvite.textContent = {{ _("Kopieren")|tojson }}; if (copyInviteStatus) copyInviteStatus.textContent = ''; }, 2000);
     });
   }
+document.getElementById('invite-link')?.addEventListener('click', function() { this.select(); });
 </script>
 {% endblock %}

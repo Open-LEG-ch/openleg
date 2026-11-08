@@ -57,7 +57,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('csv-file');
 const chooseFile = document.getElementById('choose-file');

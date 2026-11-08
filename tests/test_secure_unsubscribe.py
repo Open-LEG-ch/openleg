@@ -1,27 +1,30 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Security contracts for mailbox-confirmed profile deletion (#291)."""
 
+import re
 from unittest.mock import MagicMock
 
 import pytest
 
 from tests.test_app_organic_routes import _disable_rate_limit_hooks
+from tests.test_i18n import _synthetic_environment
 
 
 @pytest.fixture
 def app_module():
-    import app as imported_app
+    with _synthetic_environment():
+        import app as imported_app
 
-    web = imported_app.create_app(
-        {
-            "TESTING": True,
-            "SECRET_KEY": "unsubscribe-test-key",
-            "APP_BASE_URL": "http://localhost:5003",
-            "RATELIMIT_STORAGE_URI": "memory://",
-        },
-        load_environment=False,
-        check_database=False,
-    )
+        web = imported_app.create_app(
+            {
+                "TESTING": True,
+                "SECRET_KEY": "unsubscribe-test-key",
+                "APP_BASE_URL": "http://localhost:5003",
+                "RATELIMIT_STORAGE_URI": "memory://",
+            },
+            load_environment=False,
+            check_database=False,
+        )
     hooks = _disable_rate_limit_hooks(web)
     try:
         yield imported_app, web
@@ -72,7 +75,18 @@ def test_post_response_does_not_reveal_if_email_exists(app_module, monkeypatch):
     monkeypatch.setattr(imported_app.db, "save_token", lambda *_args, **_kwargs: True)
     known = client.post("/unsubscribe", data={"email": "known@example.ch"})
 
-    assert unknown.get_data(as_text=True) == known.get_data(as_text=True)
+    bodies, nonces = [], []
+    for response in (unknown, known):
+        assert response.status_code == 200
+        nonce = re.search(
+            r"'nonce-([^']+)'", response.headers["Content-Security-Policy"]
+        ).group(1)
+        nonces.append(nonce)
+        bodies.append(
+            response.get_data(as_text=True).replace(f'nonce="{nonce}"', 'nonce=""')
+        )
+    assert nonces[0] != nonces[1]
+    assert bodies[0] == bodies[1]
 
 
 def test_token_requires_unsubscribe_type(app_module, monkeypatch):

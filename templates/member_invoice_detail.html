@@ -34,7 +34,7 @@
     <a href="/dashboard/invoices" class="text-brand hover:underline font-semibold focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Zurück zu meinen Rechnungen') }}</a>
     <div class="flex gap-2">
       <a href="/dashboard/invoices/{{ invoice.id }}/pdf" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Als PDF herunterladen') }}</a>
-      <button type="button" onclick="window.print()" class="border border-line px-4 py-2 rounded-lg font-semibold hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Drucken') }}</button>
+      <button type="button" id="invoice-print" class="border border-line px-4 py-2 rounded-lg font-semibold hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Drucken') }}</button>
     </div>
   </div>
 
@@ -231,4 +231,9 @@
     </form>
   </section>
 </div>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
+document.getElementById('invoice-print')?.addEventListener('click', () => window.print());
+</script>
 {% endblock %}
