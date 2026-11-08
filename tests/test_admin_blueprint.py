@@ -149,7 +149,7 @@ class TestGuardsStayFailClosed:
 
         assert compare.call_count == 2
         record = caplog.records[-1].message
-        assert "IP: 198.51.100.4FORGED |" in record
+        assert "IP: 127.0.0.1 |" in record
         assert "203.0.113.8" not in record
         assert "\r" not in record and "\n" not in record
 
