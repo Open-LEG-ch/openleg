@@ -345,7 +345,15 @@ def admin_export():
             writer = csv.DictWriter(output, fieldnames=buildings[0].keys())
             writer.writeheader()
             for row in buildings:
-                writer.writerow(row)
+                writer.writerow(
+                    {
+                        key: "'" + value
+                        if isinstance(value, str)
+                        and value.lstrip().startswith(("=", "+", "-", "@"))
+                        else value
+                        for key, value in row.items()
+                    }
+                )
         response = Response(output.getvalue(), mimetype="text/csv")
         response.headers["Content-Disposition"] = (
             "attachment; filename=openleg_export.csv"
