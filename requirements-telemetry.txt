@@ -1,2 +1,2 @@
 # Optional dependency for the local selected-topic MQTT subscriber.
-paho-mqtt==2.1.0
+paho-mqtt==2.2.0
