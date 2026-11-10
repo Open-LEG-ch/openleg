@@ -2515,3 +2515,76 @@ def test_pdf_payment_term_uses_the_frozen_day_count(monkeypatch, payment_days, p
 
     assert view["policy_payment_days"] == payment_days
     assert phrase in parser.parts
+
+
+@pytest.mark.parametrize(
+    "value", [None, "broken", "NaN", "sNaN", "Infinity", "-Infinity"]
+)
+@pytest.mark.parametrize("field", ["gross_chf", "net_chf", "vat_chf"])
+def test_member_invoice_invalid_money_keeps_its_error(monkeypatch, field, value):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    row[field] = value
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError, match="gültigen"):
+        member_invoices.detail_view(42, "building-session")
+
+
+@pytest.mark.parametrize(
+    "amount,display",
+    [
+        ("0", "0.00"),
+        ("-12.34", "-12.34"),
+        ("2.665", "2.67"),
+        ("-2.665", "-2.67"),
+        ("999999999999999999.12", "999999999999999999.12"),
+    ],
+)
+def test_member_invoice_money_keeps_half_up_display(monkeypatch, amount, display):
+    from decimal import Decimal
+
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    credit = amount.startswith("-")
+    row["policy_snapshot"].update(
+        internal_price_chf_per_kwh="1", vat_mode="none", vat_rate_pct="0"
+    )
+    row["line_items_snapshot"] = [
+        {
+            "participant_id": "building-session",
+            "item_type": "producer_credit" if credit else "consumer_charge",
+            "quantity_kwh": str(Decimal(amount).copy_abs()),
+            "unit_price_chf_per_kwh": "1",
+            "amount_chf": amount,
+        }
+    ]
+    row.update(net_chf=display, gross_chf=display, vat_chf="0", vat_rate_pct="0")
+    original = copy.deepcopy(row)
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    view = member_invoices.detail_view(42, "building-session")
+
+    assert view["credits" if credit else "charges"][0]["display_amount_chf"] == display
+    assert view["display_gross_chf"] == display
+    assert row == original
+
+
+@pytest.mark.parametrize("field", ["gross_chf", "net_chf", "vat_chf"])
+def test_member_invoice_absent_money_keeps_its_error(monkeypatch, field):
+    import member_invoices
+
+    row = copy.deepcopy(INVOICE_ROW)
+    del row[field]
+    monkeypatch.setattr(
+        member_invoices.db, "get_invoice_for_participant", lambda *_: row
+    )
+
+    with pytest.raises(member_invoices.MemberInvoiceDataError, match="gültigen"):
+        member_invoices.detail_view(42, "building-session")

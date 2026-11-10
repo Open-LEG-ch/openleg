@@ -5,7 +5,7 @@ import json
 import logging
 import math
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
@@ -27,6 +27,7 @@ import vnb_exchange
 from email_localization import gettext
 from i18n import localized_url
 from locale_policy import resolve_locale
+from money_display import InvalidMoneyAmount, format_amount
 from translation_markers import gettext_noop as _N
 
 logger = logging.getLogger(__name__)
@@ -206,12 +207,9 @@ def _battery_view(config: dict, members: list) -> dict:
 
 def _money_display(value) -> str:
     try:
-        amount = Decimal(str(value))
-    except (InvalidOperation, ValueError):
-        return "0.00"
-    if not amount.is_finite():
-        return "0.00"
-    return f"{amount:.2f}"
+        return format_amount(value)
+    except InvalidMoneyAmount:
+        return _N("Unlesbar")
 
 
 def leg_overview(community_id: str, building_id: str) -> dict:
@@ -450,12 +448,9 @@ def _display_gross_chf(invoice: dict) -> tuple[str, bool]:
     fail-closed honesty without failing the whole workspace closed.
     """
     try:
-        amount = Decimal(str(invoice.get("gross_chf")))
-    except (InvalidOperation, ValueError):
-        return "Unlesbar", True
-    if not amount.is_finite():
-        return "Unlesbar", True
-    return f"{amount:.2f}", False
+        return format_amount(invoice.get("gross_chf")), False
+    except InvalidMoneyAmount:
+        return _N("Unlesbar"), True
 
 
 def leg_billing_workspace_view(

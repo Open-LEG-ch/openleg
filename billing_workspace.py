@@ -7,6 +7,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
 
 import database as db
+from money_display import InvalidMoneyAmount, format_amount
 from translation_markers import gettext_noop as _N
 
 # Perioden sind halboffene Zürcher Kalendermonate, gespeichert in UTC.
@@ -57,6 +58,13 @@ def _decimal_text(value, places, scale=Decimal(1)):
         return format(Decimal(0), f".{places}f")
 
 
+def _money_text(value, places=2, scale=Decimal(1)):
+    try:
+        return format_amount(value, places, scale=scale, rounding=ROUND_HALF_UP)
+    except InvalidMoneyAmount:
+        return _N("Unlesbar")
+
+
 def _display_line_item(item):
     """Add exact, preformatted display fields to a persisted line item."""
     result = _normalise(item)
@@ -66,12 +74,12 @@ def _display_line_item(item):
         else None
     )
     result["display_unit_price_rp"] = (
-        _decimal_text(item.get("unit_price_chf_per_kwh"), 2, Decimal(100))
+        _money_text(item.get("unit_price_chf_per_kwh"), 2, Decimal(100))
         if item.get("unit_price_chf_per_kwh") is not None
         else None
     )
-    result["display_amount_chf"] = _decimal_text(
-        item.get("amount_chf", 0),
+    result["display_amount_chf"] = _money_text(
+        item.get("amount_chf"),
         6 if item.get("item_type") == "rounding_adjustment" else 2,
     )
     return result
@@ -221,7 +229,7 @@ def _detail_model(period):
             "participant_id": participant_id,
             "direct_solar_kwh": _decimal_text(values.get("direct_solar_kwh"), 3),
             "battery_kwh": _decimal_text(values.get("battery_kwh"), 3),
-            "value_chf": _decimal_text(values.get("value_chf"), 2),
+            "value_chf": _money_text(values.get("value_chf")),
         }
         for participant_id, values in sorted(raw_attribution.items())
         if isinstance(participant_id, str) and isinstance(values, dict)
@@ -245,8 +253,8 @@ def _detail_model(period):
             "production_kwh": _decimal_text(period.get("total_production_kwh", 0), 2),
             "allocated_kwh": _decimal_text(period.get("total_allocated_kwh", 0), 2),
             "surplus_kwh": _decimal_text(period.get("total_surplus_kwh", 0), 2),
-            "network_discount_chf": _decimal_text(
-                period.get("total_network_discount_chf", 0), 2
+            "network_discount_chf": _money_text(
+                period.get("total_network_discount_chf"), 2
             ),
         },
         tariff={
@@ -314,12 +322,9 @@ def _rate(value):
     if value is None:
         return _N("Nicht angegeben")
     try:
-        rate_rp = Decimal(str(value)) * 100
-        if not rate_rp.is_finite():
-            return _N("Nicht angegeben")
-        rounded = rate_rp.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        return f"{rounded:.2f} Rp./kWh"
-    except (ArithmeticError, TypeError, ValueError):
+        rounded = format_amount(value, scale=Decimal(100), rounding=ROUND_HALF_UP)
+        return f"{rounded} Rp./kWh"
+    except InvalidMoneyAmount:
         return _N("Nicht angegeben")
 
 

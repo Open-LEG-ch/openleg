@@ -30,6 +30,7 @@ import document_generator
 from document_generator import render_document_template
 from i18n import format_period_label
 from i18n import gettext as _
+from money_display import InvalidMoneyAmount, finite_decimal, format_amount
 from translation_markers import gettext_noop
 
 _ITEM_TYPE_LABELS = {
@@ -76,12 +77,9 @@ def _require_json_list(value, message: str) -> list:
 
 def _require_finite_decimal(value, message: str) -> Decimal:
     try:
-        amount = Decimal(str(value))
-    except (ArithmeticError, TypeError, ValueError):
+        return finite_decimal(value)
+    except InvalidMoneyAmount:
         raise MemberInvoiceDataError(message) from None
-    if not amount.is_finite():
-        raise MemberInvoiceDataError(message)
-    return amount
 
 
 def _require_date_text(value, message: str) -> str:
@@ -133,9 +131,8 @@ def _require_positive_id(value, message: str) -> int:
 def _decimal_text(value: Decimal, places: int, scale: Decimal = Decimal(1)) -> str:
     """Format an already-validated finite decimal with half-up rounding."""
     try:
-        quantum = Decimal(1).scaleb(-places)
-        return format((value * scale).quantize(quantum, rounding=ROUND_HALF_UP), "f")
-    except ArithmeticError as exc:
+        return format_amount(value, places, scale=scale, rounding=ROUND_HALF_UP)
+    except InvalidMoneyAmount as exc:
         raise MemberInvoiceDataError("Ein Betrag der Rechnung ist ungültig.") from exc
 
 
