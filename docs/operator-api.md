@@ -74,7 +74,7 @@ endet im Status `delivered`.
 Administrationen sehen Zustellversuche unter
 `/leg/community/{community_id}/operator-api/deliveries`. Einen endgültig
 fehlgeschlagenen Versuch können sie über
-`POST …/deliveries/{delivery_id}/retry` kontrolliert erneut freigeben.
+`POST …/deliveries/{delivery_id}/retry` kontrolliert erneut freigeben. Die Zustellung erhält danach erneut bis zu fünf Versuche.
 
 ## Handelnde Person oder Anwendung
 

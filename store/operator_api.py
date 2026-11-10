@@ -313,7 +313,7 @@ def retry_delivery(community_id, delivery_id):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """UPDATE operator_webhook_deliveries d SET status='retry', claim_id=NULL,
-                      next_attempt_at=CURRENT_TIMESTAMP
+                      attempt_count=0, next_attempt_at=CURRENT_TIMESTAMP
                FROM operator_events e WHERE e.event_id=d.event_id
                  AND e.community_id=%s AND d.delivery_id=%s AND d.status='failed'
                RETURNING d.delivery_id,d.status,d.attempt_count""",
