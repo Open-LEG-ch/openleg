@@ -7,7 +7,26 @@ import json
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 import operator_api
+
+
+@pytest.fixture(autouse=True)
+def confirmed_credential_creator():
+    with patch(
+        "operator_api.formation_wizard.get_community_status",
+        return_value={
+            "members": [
+                {
+                    "building_id": CLIENT["created_by"],
+                    "role": "admin",
+                    "status": "confirmed",
+                }
+            ]
+        },
+    ):
+        yield
 
 
 def test_existing_webhook_secret_survives_upgrade_until_rotation():
@@ -180,6 +199,7 @@ def _delivery_row(**overrides):
         "delivery_id": "delivery-1",
         "claim_id": "claim-1",
         "client_id": "client-1",
+        "created_by": "admin-a",
         "status": "processing",
         "schema_version": "operator-event/1",
         "attempt_count": 0,
@@ -282,9 +302,7 @@ def test_credential_lifecycle_shows_secrets_once_and_cuts_access_on_revoke(
     assert rotated_body["token"] != body["token"]
 
     def lookup_active(token_hash):
-        return (
-            {**CLIENT, "token_hash": token_hash} if token_hash == rotated_hash else None
-        )
+        return {**row, "token_hash": token_hash} if token_hash == rotated_hash else None
 
     lookup.side_effect = lookup_active
     stale = client.get(

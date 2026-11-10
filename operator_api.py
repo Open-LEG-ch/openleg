@@ -161,6 +161,8 @@ def require_operator(capability):
                 return _error("Resource not found", 404)
             if capability not in set(client.get("capabilities") or []):
                 return _error("Capability denied", 403)
+            if not _admin_for(community_id, client["created_by"]):
+                return _error("Forbidden", 403)
             if not db.claim_operator_api_usage(
                 client["id"], request.path, int(client["rate_limit_per_hour"])
             ):
@@ -642,13 +644,16 @@ def confirm_payment_match(community_id, entry_id):
 
 
 def _admin_for(community_id: str, building_id: str | None) -> bool:
+    return bool(_administrator_authority(community_id, building_id))
+
+
+def _administrator_authority(community_id: str, building_id: str | None) -> bool | None:
+    """Return the member's administrator authority, or None when unknown."""
     status = formation_wizard.get_community_status(community_id, building_id)
+    if status is None:
+        return None
     member = next(
-        (
-            row
-            for row in (status or {}).get("members", [])
-            if row["building_id"] == building_id
-        ),
+        (row for row in status.get("members", []) if row["building_id"] == building_id),
         None,
     )
     return bool(
@@ -794,6 +799,18 @@ def rotate_credential(community_id, client_id):
         return _error("Forbidden", 403)
     if not _require_csrf():
         return _error("Invalid CSRF token", 400)
+    credential = next(
+        (
+            row
+            for row in db.list_operator_api_clients(community_id)
+            if row["id"] == client_id
+        ),
+        None,
+    )
+    if not credential:
+        return _error("Credential not found", 404)
+    if credential["created_by"] != session.get("dashboard_building_id"):
+        return _error("Forbidden", 403)
     token = _new_secret("olk_")
     token_hash = _token_hash(token)
     try:
@@ -930,10 +947,28 @@ def dispatch_pending_webhooks(
     claim = {"max_attempts": max_attempts, "limit": batch_size}
     if community_id is not None:
         claim["community_id"] = community_id
+    authority = {}
     for row in db.get_pending_webhook_deliveries(**claim):
         totals["attempted"] += 1
+        identity = (row["community_id"], row.get("created_by"))
+        if identity not in authority:
+            authority[identity] = _administrator_authority(*identity)
+        if authority[identity] is None:
+            # Community status is unavailable; this is transient, not a loss
+            # of authority, so keep the delivery within its retry budget.
+            retryable = row["attempt_count"] + 1 < max_attempts
+            db.record_webhook_attempt(
+                row["delivery_id"],
+                claim_id=row["claim_id"],
+                status="retry" if retryable else "failed",
+                response_status=0,
+                retryable=retryable,
+            )
+            totals["failed"] += 1
+            continue
         if (
-            row.get("status") != "processing"
+            not authority[identity]
+            or row.get("status") != "processing"
             or row.get("schema_version") != EVENT_SCHEMA_VERSION
             or not row.get("webhook_secret")
         ):

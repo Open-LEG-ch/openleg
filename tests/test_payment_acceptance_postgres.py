@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from decimal import Decimal
 from threading import Barrier
+from unittest.mock import patch
 
 import pytest
 from flask import Flask
@@ -51,7 +52,19 @@ def payment_client(billing_database):
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.register_blueprint(operator_api.operator_api_bp)
-    return app
+    with patch(
+        "operator_api.formation_wizard.get_community_status",
+        return_value={
+            "members": [
+                {
+                    "building_id": "operator-a",
+                    "role": "admin",
+                    "status": "confirmed",
+                }
+            ]
+        },
+    ):
+        yield app
 
 
 def _invoice(invoice_number="LEG-PAYMENT-1"):
