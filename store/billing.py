@@ -1185,7 +1185,8 @@ def confirm_payment(
             "UPDATE bank_statement_entries SET invoice_id=%s,match_decision='matched' WHERE id=%s",
             (invoice_id, entry_id),
         )
-        lifecycle_key = f"operator:{key}"
+        # Invoice identity is shared with dashboard payment transitions.
+        lifecycle_key = "paid"
         _finalize_bank_payment(
             cur, invoice, entry, community_id, actor_id, lifecycle_key
         )

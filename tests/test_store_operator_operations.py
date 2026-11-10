@@ -251,7 +251,7 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         None,
         "BANK-1",
         date(2026, 9, 1),
-        "operator:key-12",
+        "paid",
     )
     assert "previous_state, new_state" in " ".join(
         next(
