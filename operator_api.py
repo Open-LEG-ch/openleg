@@ -614,7 +614,9 @@ def confirm_payment_match(community_id, entry_id):
         dry_run = parse_dry_run(request.args, payload)
     except ValueError:
         return _error("Invalid dry_run option", 400, ErrorCode.INVALID_REQUEST)
-    if not isinstance(payload.get("invoice_id"), int):
+    invoice_id = payload.get("invoice_id")
+    # bool is an int subclass; true must not confirm invoice 1.
+    if not isinstance(invoice_id, int) or isinstance(invoice_id, bool):
         return _error(
             "Invalid payment confirmation",
             400,
