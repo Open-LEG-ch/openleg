@@ -353,3 +353,11 @@ def test_leg_battery_costs_translate_unreadable_money_markers(web, lang, marker)
             )
         )
     assert body == f"{marker}|{marker}"
+
+
+@pytest.mark.parametrize("lang", ["de-CH", "fr-CH"])
+def test_leg_demo_battery_costs_render_one_currency_prefix(web, lang):
+    body = unescape(web.test_client().get("/leg/dashboard/demo?lang=" + lang).text)
+    assert "CHF 960.00" in body
+    assert "CHF 120.00" in body
+    assert "CHF CHF" not in body

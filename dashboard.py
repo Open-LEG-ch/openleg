@@ -1359,13 +1359,13 @@ def leg_demo_overview() -> dict:
         "community": _with_german_labels(community),
         "battery": {
             "capacity_display": "45 kWh",
-            "annual_cost_display": "CHF 960.00",
+            "annual_cost_display": "960.00",
             "shares": [
                 {
                     "building_id": "demo-building",
                     "address": "Musterweg 1, 5400 Baden",
                     "share_display": "12.5 %",
-                    "cost_display": "CHF 120.00",
+                    "cost_display": "120.00",
                 }
             ],
         },
