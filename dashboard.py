@@ -194,13 +194,15 @@ def _battery_view(config: dict, members: list) -> dict:
             "building_id": building_id,
             "address": addresses.get(building_id, building_id),
             "share_display": f"{share} %",
-            "cost_display": f"CHF {_money_display(quartierakku.cost_share_chf(config['annual_cost_chf'], share))}",
+            "cost_display": _money_display(
+                quartierakku.cost_share_chf(config["annual_cost_chf"], share)
+            ),
         }
         for building_id, share in sorted(config["shares"].items())
     ]
     return {
         "capacity_display": f"{config['capacity_kwh']} kWh",
-        "annual_cost_display": f"CHF {_money_display(config['annual_cost_chf'])}",
+        "annual_cost_display": _money_display(config["annual_cost_chf"]),
         "shares": shares,
     }
 

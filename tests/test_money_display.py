@@ -14,7 +14,7 @@ def test_dashboard_battery_money_is_unreadable(value):
         {"annual_cost_chf": value, "capacity_kwh": 10, "shares": {}}, []
     )
 
-    assert view["annual_cost_display"] == "CHF Unlesbar"
+    assert view["annual_cost_display"] == "Unlesbar"
 
 
 @pytest.mark.parametrize(
@@ -34,7 +34,7 @@ def test_dashboard_battery_money_keeps_context_rounding(value, display):
         {"annual_cost_chf": value, "capacity_kwh": 10, "shares": {}}, []
     )
 
-    assert view["annual_cost_display"] == f"CHF {display}"
+    assert view["annual_cost_display"] == display
 
 
 def test_format_amount_rejects_values_that_exceed_billing_precision():

@@ -62,7 +62,7 @@
         ] %}
         <div class="bg-white p-4 sm:p-5">
           <dt class="text-xs text-ink-muted">{{ _(label) }}</dt>
-          <dd class="mt-1 font-mono text-xl font-bold tabular-nums">{{ value }} <span class="text-xs font-normal text-ink-muted">{{ unit }}</span></dd>
+          <dd class="mt-1 font-mono text-xl font-bold tabular-nums">{{ _(value) }} <span class="text-xs font-normal text-ink-muted">{{ unit }}</span></dd>
         </div>
         {% endfor %}
       </dl>
@@ -110,7 +110,7 @@
         <div class="mt-4 overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-paper-deep text-left text-xs text-ink-muted"><tr><th class="px-4 py-3">{{ _('Teilnehmer') }}</th><th class="px-4 py-3 text-right">{{ _('Direkte Solarenergie') }}</th><th class="px-4 py-3 text-right">{{ _('Batterieenergie') }}</th><th class="px-4 py-3 text-right">{{ _('Wert') }}</th></tr></thead>
-            <tbody class="divide-y divide-line">{% for item in selected.battery_attribution %}<tr><td class="px-4 py-3 font-mono">{{ item.participant_id }}</td><td class="px-4 py-3 text-right font-mono">{{ item.direct_solar_kwh }} kWh</td><td class="px-4 py-3 text-right font-mono">{{ item.battery_kwh }} kWh</td><td class="px-4 py-3 text-right font-mono">{{ item.value_chf }} CHF</td></tr>{% endfor %}</tbody>
+            <tbody class="divide-y divide-line">{% for item in selected.battery_attribution %}<tr><td class="px-4 py-3 font-mono">{{ item.participant_id }}</td><td class="px-4 py-3 text-right font-mono">{{ item.direct_solar_kwh }} kWh</td><td class="px-4 py-3 text-right font-mono">{{ item.battery_kwh }} kWh</td><td class="px-4 py-3 text-right font-mono">{{ _(item.value_chf) }} CHF</td></tr>{% endfor %}</tbody>
           </table>
         </div>
       </section>
@@ -132,10 +132,10 @@
         <div class="mt-3 hidden overflow-x-auto rounded-2xl border border-line bg-white md:block">
           <table class="w-full text-sm">
             <thead class="bg-paper-deep text-left text-xs text-ink-muted"><tr><th class="px-4 py-3">{{ _('Teilnehmer') }}</th><th class="px-4 py-3 text-right">{{ _('Menge') }}</th><th class="px-4 py-3 text-right">{{ _('Preis') }}</th><th class="px-4 py-3 text-right">{{ _('Betrag') }}</th></tr></thead>
-            <tbody class="divide-y divide-line">{% for item in items %}<tr><td class="px-4 py-3 font-mono">{{ item.participant_id }}</td><td class="px-4 py-3 text-right font-mono tabular-nums">{{ item.display_quantity_kwh if item.quantity_kwh is not none else '-' }}{% if item.quantity_kwh is not none %} kWh{% endif %}</td><td class="px-4 py-3 text-right font-mono tabular-nums">{{ item.display_unit_price_rp if item.unit_price_chf_per_kwh is not none else '-' }}{% if item.unit_price_chf_per_kwh is not none %} {{ _('Rp./kWh') }}{% endif %}</td><td class="px-4 py-3 text-right font-mono font-semibold tabular-nums">CHF {{ item.display_amount_chf }}</td></tr>{% endfor %}</tbody>
+            <tbody class="divide-y divide-line">{% for item in items %}<tr><td class="px-4 py-3 font-mono">{{ item.participant_id }}</td><td class="px-4 py-3 text-right font-mono tabular-nums">{{ item.display_quantity_kwh if item.quantity_kwh is not none else '-' }}{% if item.quantity_kwh is not none %} kWh{% endif %}</td><td class="px-4 py-3 text-right font-mono tabular-nums">{{ _(item.display_unit_price_rp) if item.unit_price_chf_per_kwh is not none else '-' }}{% if item.unit_price_chf_per_kwh is not none %} {{ _('Rp./kWh') }}{% endif %}</td><td class="px-4 py-3 text-right font-mono font-semibold tabular-nums">CHF {{ _(item.display_amount_chf) }}</td></tr>{% endfor %}</tbody>
           </table>
         </div>
-        <ul class="mt-3 grid gap-3 md:hidden">{% for item in items %}<li class="rounded-2xl border border-line bg-white p-4"><div class="flex items-start justify-between gap-4"><code class="break-all text-xs">{{ item.participant_id }}</code><strong class="shrink-0 font-mono tabular-nums">CHF {{ item.display_amount_chf }}</strong></div><p class="mt-3 text-xs text-ink-muted">{% if item.quantity_kwh is not none %}{{ item.display_quantity_kwh }} {{ _('kWh ·') }} {{ item.display_unit_price_rp }} {{ _('Rp./kWh') }}{% else %}{{ _('Ausgleich der Preisrundung') }}{% endif %}</p></li>{% endfor %}</ul>
+        <ul class="mt-3 grid gap-3 md:hidden">{% for item in items %}<li class="rounded-2xl border border-line bg-white p-4"><div class="flex items-start justify-between gap-4"><code class="break-all text-xs">{{ item.participant_id }}</code><strong class="shrink-0 font-mono tabular-nums">CHF {{ _(item.display_amount_chf) }}</strong></div><p class="mt-3 text-xs text-ink-muted">{% if item.quantity_kwh is not none %}{{ item.display_quantity_kwh }} {{ _('kWh ·') }} {{ _(item.display_unit_price_rp) }} {{ _('Rp./kWh') }}{% else %}{{ _('Ausgleich der Preisrundung') }}{% endif %}</p></li>{% endfor %}</ul>
         {% else %}<p class="mt-3 rounded-2xl border border-dashed border-line p-5 text-sm text-ink-muted">{{ _('Keine Positionen in dieser Kategorie.') }}</p>{% endif %}
       </section>
       {% endfor %}
