@@ -31,6 +31,7 @@ def webhook_boundary(app):
         "occurred_at": "2026-01-01T08:00:00+00:00",
         "webhook_url": "https://hooks.example.net/ingest",
         "webhook_secret": "olwhsec_test",
+        "created_by": "building-1",
     }
     with (
         patch(

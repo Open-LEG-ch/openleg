@@ -3,6 +3,7 @@
 
 import hashlib
 from datetime import date
+from unittest.mock import patch
 
 import pytest
 from flask import Flask
@@ -48,7 +49,15 @@ def payment_client(interest_database):
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.register_blueprint(operator_api.operator_api_bp)
-    return app
+    with patch(
+        "operator_api.formation_wizard.get_community_status",
+        return_value={
+            "members": [
+                {"building_id": "operator-a", "role": "admin", "status": "confirmed"}
+            ]
+        },
+    ):
+        yield app
 
 
 def test_dashboard_replay_recognizes_operator_payment(payment_client):
