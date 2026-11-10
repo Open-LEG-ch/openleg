@@ -14,7 +14,7 @@ import ssl
 import urllib.error
 from datetime import UTC, date, datetime
 from functools import wraps
-from ipaddress import ip_address
+from ipaddress import IPv4Address, ip_address, ip_network
 from urllib.parse import urlparse
 
 from flask import (
@@ -868,6 +868,24 @@ def retry_webhook_delivery(community_id, delivery_id):
     return jsonify(delivery=delivery) if delivery else _error("Delivery not found", 404)
 
 
+def _is_public_webhook_address(value):
+    """Check embedded destinations before the interpreter's general IP policy."""
+    address = ip_address(value)
+    if address.version == 6:
+        if address.teredo is not None:
+            return all(ipv4.is_global for ipv4 in address.teredo)
+        if address.sixtofour is not None:
+            return address.sixtofour.is_global
+        if address.is_site_local:
+            return False
+        if address in ip_network("::/96") or address in ip_network("64:ff9b::/96"):
+            return IPv4Address(int(address) & 0xFFFFFFFF).is_global
+    # Python's is_global already checks mapped IPv4 and rejects all of
+    # 64:ff9b:1::/48. Keep that local-use NAT64 prefix rejected: its configured
+    # translation prefix length cannot be inferred from the address alone.
+    return address.is_global
+
+
 def _public_webhook_addresses(url):
     parsed = urlparse(url)
     if parsed.scheme != "https" or not parsed.hostname:
@@ -883,7 +901,7 @@ def _public_webhook_addresses(url):
         return ()
     return (
         tuple(sorted(addresses))
-        if addresses and all(ip_address(value).is_global for value in addresses)
+        if addresses and all(_is_public_webhook_address(value) for value in addresses)
         else ()
     )
 
