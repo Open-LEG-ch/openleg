@@ -203,3 +203,22 @@ also_copy = [
     "vnb_exchange.py",
     "wsgi.py",
 ]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openleg-ctl"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["PyYAML==6.0.3", "jsonschema==4.26.0"]
+
+[project.scripts]
+openleg-ctl = "openleg_ctl:main"
+
+[tool.setuptools]
+packages = ["openleg_ctl"]
+
+[tool.setuptools.data-files]
+"share/openleg" = ["docs/openapi/operator-v1.yaml"]

@@ -323,3 +323,8 @@ required `idempotency_key`, and optional boolean `dry_run`. Its annotations are
 `readOnlyHint: false`, `destructiveHint: true`, `idempotentHint: true`.
 Agent credentials retain their actor snapshot in the payment lifecycle record
 and transactional events. Invoice totals and snapshots remain unchanged.
+
+## Command-line client
+
+[openleg-ctl](openleg-ctl.md) provides contract-generated read commands and VNB
+previews, with JSON output and stable error codes. It cannot submit writes.
