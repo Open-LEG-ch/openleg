@@ -15,6 +15,46 @@ web = test_i18n.web
 
 
 @pytest.mark.parametrize(
+    "server_zone,value,expected",
+    [
+        (
+            "Pacific/Kiritimati",
+            datetime(2026, 11, 6, 0, 30, tzinfo=UTC).replace(tzinfo=None),
+            "November 6, 2026",
+        ),
+        (
+            "America/Adak",
+            datetime(2026, 11, 6, 23, 30, tzinfo=UTC).replace(tzinfo=None),
+            "November 6, 2026",
+        ),
+        (
+            "Pacific/Kiritimati",
+            datetime(2026, 11, 5, 23, 30, tzinfo=UTC),
+            "November 6, 2026",
+        ),
+        (
+            "America/Adak",
+            datetime(2026, 11, 6, 23, 30, tzinfo=UTC),
+            "November 7, 2026",
+        ),
+    ],
+)
+def test_rendered_dates_ignore_server_zone_for_naive_timestamps(
+    web, monkeypatch, server_zone, value, expected
+):
+    web.config["SITE_RELEASE_ENABLED"] = True
+    try:
+        with monkeypatch.context() as environment:
+            environment.setenv("TZ", server_zone)
+            time.tzset()
+            with web.test_request_context("/leg-verzeichnis?lang=en"):
+                rendered = render_template_string("{{ value|datelabel }}", value=value)
+            assert rendered == expected
+    finally:
+        time.tzset()
+
+
+@pytest.mark.parametrize(
     "choice,language", [("de", "de-CH"), ("en", "en"), ("fr", "fr-CH"), ("it", "it-CH")]
 )
 def test_release_supports_four_explicit_choices_without_moving_private_urls(
@@ -139,43 +179,3 @@ def test_sitemap_excludes_draft_languages_and_private_routes(web):
     assert all(
         "/verein/mitglied" not in url and "/vorstand" not in url for url in locations
     )
-
-
-@pytest.mark.parametrize(
-    "server_zone,value,expected",
-    [
-        (
-            "Pacific/Kiritimati",
-            datetime(2026, 11, 6, 0, 30, tzinfo=UTC).replace(tzinfo=None),
-            "November 6, 2026",
-        ),
-        (
-            "America/Adak",
-            datetime(2026, 11, 6, 23, 30, tzinfo=UTC).replace(tzinfo=None),
-            "November 6, 2026",
-        ),
-        (
-            "Pacific/Kiritimati",
-            datetime(2026, 11, 5, 23, 30, tzinfo=UTC),
-            "November 6, 2026",
-        ),
-        (
-            "America/Adak",
-            datetime(2026, 11, 6, 23, 30, tzinfo=UTC),
-            "November 7, 2026",
-        ),
-    ],
-)
-def test_rendered_dates_ignore_server_zone_for_naive_timestamps(
-    web, monkeypatch, server_zone, value, expected
-):
-    web.config["SITE_RELEASE_ENABLED"] = True
-    try:
-        with monkeypatch.context() as environment:
-            environment.setenv("TZ", server_zone)
-            time.tzset()
-            with web.test_request_context("/leg-verzeichnis?lang=en"):
-                rendered = render_template_string("{{ value|datelabel }}", value=value)
-            assert rendered == expected
-    finally:
-        time.tzset()

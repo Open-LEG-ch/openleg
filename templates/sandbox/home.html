@@ -16,7 +16,7 @@
   <p class="mt-4">{{ _('Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an.') }}</p>
   {% endif %}
   {% if not sandbox_account or sandbox_account.building_id %}
-  <p class="mt-4">{{ _('Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen Sie ihn im Postfach dieses Übungsdorfs.', email=sandbox_account.email if sandbox_account else 'sonnwil-resident@example.org') }}</p>
+  <p class="mt-4">{{ _('Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an und öffnen Sie ihn im Postfach dieses Demodorfs.', email=sandbox_account.email if sandbox_account else 'sonnwil-resident@example.org') }}</p>
   {% endif %}
   <section class="mt-8 rounded-lg border border-line p-6">
     <h2 class="text-xl font-semibold">{{ _('Messdaten importieren') }}</h2>

@@ -1,0 +1,49 @@
+{
+  "generated": "2026-11-07",
+  "tool": "built-in image_gen",
+  "export": "cwebp 1.3.2, quality 86, alpha quality 100, method 6; original dimensions",
+  "assets": [
+    {
+      "asset": "apartments.webp",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 272518,
+      "sha256": "5acdd2db92961006f9885d8c2e736c378e5508db7f20e6312d293bf83113f77a"
+    },
+    {
+      "asset": "bungalow.webp",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 186956,
+      "sha256": "2fa438c53939e6fbb7cc0b6999d9a4051c32615354db3903245c70b1c930e63c"
+    },
+    {
+      "asset": "ground.webp",
+      "width": 1706,
+      "height": 922,
+      "bytes": 122456,
+      "sha256": "ec43823e3a10c4e2ee81909441bd23f51bcdad68bcd2fdf3cba473e697b98840"
+    },
+    {
+      "asset": "house.webp",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 256894,
+      "sha256": "0e08957a45fac2b5f6271b46f84a1983a57468572bc5561816f2c4e79552366e"
+    },
+    {
+      "asset": "tree.webp",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 455736,
+      "sha256": "66e148249c0ac0d726fdfec985976a0652de1ea66935a66c322640748d162151"
+    },
+    {
+      "asset": "workshop.webp",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 193364,
+      "sha256": "dfb2266f828cf50e881e480ae66490e55e63c7c1911150d8ad0630b45954f26b"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 {% extends 'release/page.html' %}
+{% set page_scene = 'apartments' %}
 {% set page_title = _('Dokumente und Quellen') if request.path == '/dokumente' else _('Begriffe rund um Ihre LEG') if request.path.endswith('/glossar') else _('LEG, ZEV und vZEV einordnen') if request.path.endswith('/strommodelle') else _('Wissen für die nächsten Schritte') %}
 {% set page_description = _('Verstehen, vorbereiten und betreiben: Hier finden Sie Erklärungen, Arbeitsunterlagen und die Quellen hinter den Aussagen.') %}
 {% block document %}

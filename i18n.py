@@ -31,8 +31,8 @@ from translation_markers import gettext_noop
 SUPPORTED_LOCALES = {"de_CH": "Deutsch", "fr_CH": "Français"}
 RELEASE_LOCALES = {
     "de_CH": "Deutsch",
-    "en": "English",
     "fr_CH": "Français",
+    "en": "English",
     "it_CH": "Italiano",
 }
 

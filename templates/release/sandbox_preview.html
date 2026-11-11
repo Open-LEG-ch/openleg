@@ -1,0 +1,25 @@
+{# Entry to the separate practice village. Rendered only when OPENLEG_SANDBOX_URL is configured. #}
+{% set practice_roles = [
+  ('resident', _('Privathaushalt'), _('Energieprofil ändern')),
+  ('founder', _('LEG-Gründung'), _('Eine neue LEG gründen')),
+  ('administrator', _('LEG-Administration'), _('Mitglieder und LEG-Einstellungen verwalten')),
+  ('municipality', _('Gemeindeverwaltung'), _('Interesse ansehen und Oberflächensprache ändern')),
+  ('utility', _('Netzbetreiber'), _('E-Mail-Sprache und API-Zugang verwalten')),
+] %}
+<section class="release-practice" aria-labelledby="practice-village-title">
+  <div class="release-practice-intro">
+    <p class="release-practice-place">{{ _('Demodorf Sonnwil') }}</p>
+    <h3 id="practice-village-title">{{ _('Die Software selbst ausprobieren.') }}</h3>
+    <p>{{ _('Wählen Sie ein erfundenes Konto und arbeiten Sie in Ihrem eigenen Demodorf. Sie brauchen keine Anmeldung und keine persönlichen Angaben.') }}</p>
+    <a class="release-button release-button-primary" href="{{ sandbox_url|localized_url }}">{{ _('Demodorf öffnen') }}</a>
+    <p class="release-practice-note">{{ _('Erfundene Daten. E-Mails, Dokumente und Zahlungen sind Simulationen. Das Dorf wird nach spätestens einer Stunde gelöscht.') }}</p>
+  </div>
+  <div class="release-practice-roles">
+    <p class="release-practice-label" id="practice-roles-label">{{ _('Mit einer Rolle beginnen') }}</p>
+    <ul aria-labelledby="practice-roles-label">
+      {% for key, role, task in practice_roles %}
+      <li><a href="{{ (sandbox_url ~ '?konto=' ~ key ~ '#konto-' ~ key)|localized_url }}"><strong>{{ role }}</strong><span>{{ task }}</span></a></li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>

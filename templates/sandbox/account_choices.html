@@ -1,9 +1,25 @@
-    <fieldset class="mb-6 space-y-3">
+    {% set account_groups = [
+      (_('Haushalte'), ['resident', 'producer']),
+      (_('LEG gründen und betreiben'), ['founder', 'administrator', 'operator']),
+      (_('Gemeinde und Netzbetreiber'), ['municipality', 'utility']),
+    ] %}
+    {% set grouped_keys = account_groups | map(attribute=1) | sum(start=[]) %}
+    <fieldset class="sandbox-accounts mb-6 space-y-3">
       <legend class="mb-3 text-xl font-semibold">{{ _('Fiktives Konto wählen') }}</legend>
-      {% for key, account in accounts.items() %}
-      <label class="flex gap-3 rounded-lg border border-line bg-white p-4">
+      {% for title, keys in account_groups + [(_('Weitere Konten'), accounts.keys() | reject('in', grouped_keys) | list)] %}
+      {% set keys = keys | select('in', accounts) | list %}
+      {% if keys %}
+      <div class="sandbox-account-group">
+      <p class="sandbox-account-group-title text-sm font-semibold text-ink-muted">{{ title }}</p>
+      <div class="sandbox-account-grid">
+      {% for key in keys %}{% set account = accounts[key] %}
+      <label id="konto-{{ key }}" class="sandbox-account flex gap-3 rounded-lg border border-line bg-white p-4">
         <input type="radio" name="persona" value="{{ key }}" {% if key == (sandbox_account_key or 'resident') %}checked{% endif %} required>
-        <span><strong>{{ account.name }}</strong> · {{ _(account.role) }}<br><span>{{ account.scope }}</span><br><span class="text-sm text-ink-muted">{{ _(account.scenario) }}</span></span>
+        <span class="sandbox-account-text"><span class="sandbox-account-role">{{ _(account.role) }}</span><strong class="sandbox-account-task">{{ _(account.scenario) }}</strong><span class="sandbox-account-who text-sm text-ink-muted">{{ account.name }} · {{ account.scope }}</span></span>
       </label>
+      {% endfor %}
+      </div>
+      </div>
+      {% endif %}
       {% endfor %}
     </fieldset>

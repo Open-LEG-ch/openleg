@@ -184,12 +184,15 @@
 }
 
 @layer components {
-  a:focus-visible,
-  button:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible,
-  summary:focus-visible {
+  /* Legacy focus ring. The release theme (html[data-site-release]) uses the
+     3 px cobalt ring from site_release.css; a layered !important here would
+     override it. */
+  html:not([data-site-release]) a:focus-visible,
+  html:not([data-site-release]) button:focus-visible,
+  html:not([data-site-release]) input:focus-visible,
+  html:not([data-site-release]) select:focus-visible,
+  html:not([data-site-release]) textarea:focus-visible,
+  html:not([data-site-release]) summary:focus-visible {
     outline: 2px solid #2563eb !important;
     outline-offset: 2px !important;
   }

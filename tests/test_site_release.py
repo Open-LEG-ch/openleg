@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The complete site is opt-in; drafting does not invent a founded Verein."""
 
+import re
+
 import pytest
 
 from tests import test_i18n
@@ -42,6 +44,8 @@ def test_verified_formation_metadata_updates_public_status_and_join_link(web):
     )
     response = web.test_client().get("/verein")
     assert "noch nicht gegründet" not in response.text
+    assert "Der Verein wurde am 1. Januar 2026 gegründet" in response.text
+    assert "Sitz in Obersiggenthal" in response.text
     assert 'href="/verein/beitreten"' not in response.text
     assert 'href="mailto:hallo@openleg.ch"' in response.text
     assert 'href="/statuten.pdf"' in response.text
@@ -96,10 +100,10 @@ def test_release_home_explains_tasks_and_keeps_real_address_intake(web, monkeypa
     response = client.get("/")
     assert response.status_code == 200
     assert response.text.count("<h1") == 1
-    assert "Eine LEG gründen und betreiben." in response.text
+    assert "Solarstrom im Quartier teilen. Eine LEG gründen." in response.text
     assert 'href="/leg-gruenden"' in response.text
-    assert 'href="#registrieren"' in response.text
-    assert 'width="1706" height="922"' in response.text
+    assert 'class="release-home"' in response.text
+    assert 'viewBox="0 0 900 730"' in response.text
     for identifier in (
         "registrieren",
         "address-input",
@@ -113,3 +117,54 @@ def test_release_home_explains_tasks_and_keeps_real_address_intake(web, monkeypa
     with client.session_transaction() as session:
         session["dashboard_building_id"] = "existing-resident"
     assert client.get("/").headers["Location"] == "/dashboard"
+
+
+def _release_home(web, monkeypatch):
+    import database
+    import homepage_view_model
+
+    web.config["SITE_RELEASE_ENABLED"] = True
+    monkeypatch.setattr(
+        database, "get_stats", lambda city_id=None: {"total_buildings": 0}
+    )
+    monkeypatch.setattr(homepage_view_model, "ranking_extremes", lambda: ([], [], 0))
+    return web.test_client()
+
+
+def test_practice_village_is_not_offered_without_a_configured_service(web, monkeypatch):
+    client = _release_home(web, monkeypatch)
+    web.jinja_env.globals["sandbox_url"] = ""
+    for path in ("/", "/software"):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert "release-practice" not in response.text
+        assert "/sandbox" not in response.text
+    assert 'href="/dashboard/demo"' in client.get("/").text
+
+
+def test_practice_village_links_each_role_to_its_preselected_account(web, monkeypatch):
+    from sandbox_seed import ACCOUNTS
+
+    client = _release_home(web, monkeypatch)
+    web.jinja_env.globals["sandbox_url"] = "https://sonnwil.example.org/sandbox"
+    home = client.get("/").text
+    assert 'href="https://sonnwil.example.org/sandbox"' in home
+    assert 'class="release-practice"' not in home
+    for path in ("/software",):
+        text = client.get(path).text
+        assert text.count('class="release-practice"') == 1
+        assert 'href="https://sonnwil.example.org/sandbox"' in text
+        roles = re.findall(r'sandbox\?konto=([a-z]+)#konto-\1"', text)
+        assert roles == [
+            "resident",
+            "founder",
+            "administrator",
+            "municipality",
+            "utility",
+        ]
+        assert set(roles) <= set(ACCOUNTS)
+    french = client.get("/software?lang=fr-CH").text
+    assert (
+        'href="https://sonnwil.example.org/sandbox?konto=founder&amp;lang=fr-CH#konto-founder"'
+        in french
+    )

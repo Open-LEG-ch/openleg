@@ -1,0 +1,51 @@
+{# Complete, independently rendered assets. Coordinates belong to the composition. #}
+{% macro piece(kind, x, y, size) -%}
+<image href="/static/images/release/components/{{ kind }}.webp" x="{{ x }}" y="{{ y }}" width="{{ size }}" height="{{ size }}" />
+{%- endmacro %}
+
+{% macro walkway(path) -%}
+<path d="{{ path }}" fill="none" stroke="#d9d0c1" stroke-width="32" stroke-linecap="round" />
+<path d="{{ path }}" fill="none" stroke="#eee7db" stroke-width="28" stroke-linecap="round" />
+{%- endmacro %}
+
+{% macro building(view='homes') -%}
+<div class="release-building release-building-{{ view }}" aria-hidden="true">
+  <svg viewBox="0 0 720 580" width="720" height="580" focusable="false">
+    {% if view == 'apartments' %}
+      {{ piece('tree', 475, 270, 210) }}
+      {{ piece('apartments', 70, 0, 550) }}
+      {{ piece('tree', 10, 340, 170) }}
+    {% elif view == 'workshop' %}
+      {{ piece('tree', 490, 140, 215) }}
+      {{ piece('workshop', 15, 0, 660) }}
+    {% else %}
+      {{ piece('tree', 460, 110, 170) }}
+      {{ piece('house', 240, 30, 380) }}
+      {{ piece('bungalow', 10, 180, 430) }}
+      {{ piece('tree', 555, 340, 140) }}
+    {% endif %}
+  </svg>
+</div>
+{%- endmacro %}
+
+{% macro neighbourhood() -%}
+<svg class="release-neighbourhood-scene" viewBox="0 0 1706 922" width="1706" height="922" role="img" aria-label="{{ _('Fiktives Quartier mit Wohnhäusern, einem Mehrfamilienhaus, einer Werkstatt und Bäumen. Die Solardächer zeigen die Idee der gemeinsamen Stromnutzung.') }}" focusable="false">
+  <image href="/static/images/release/components/ground.webp" x="0" y="0" width="1706" height="922" />
+  {{ walkway('M 720 365 C 745 465 715 520 785 575 L 825 610 C 865 650 835 720 860 800') }}
+  {{ walkway('M 495 480 L 755 570 Q 825 595 890 560 L 1140 465') }}
+  {{ piece('tree', 700, 120, 180) }}
+  {{ piece('apartments', 200, -15, 550) }}
+  {{ piece('tree', 1035, 215, 190) }}
+  {{ piece('house', 760, 100, 370) }}
+  {{ piece('tree', 1460, 320, 190) }}
+  {{ piece('workshop', 1090, 235, 510) }}
+  {{ piece('tree', 80, 375, 180) }}
+  {{ piece('house', 170, 355, 330) }}
+  {{ piece('tree', 480, 460, 160) }}
+  {{ piece('house', 485, 435, 320) }}
+  {{ piece('tree', 840, 420, 170) }}
+  {{ piece('bungalow', 865, 440, 460) }}
+  {{ piece('tree', 1250, 510, 180) }}
+  {{ piece('tree', 740, 675, 140) }}
+</svg>
+{%- endmacro %}

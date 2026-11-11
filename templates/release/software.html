@@ -1,4 +1,5 @@
 {% extends 'release/page.html' %}
+{% set page_scene = 'workshop' %}
 {% set page_title = _('Von Messdaten zur geprüften Abrechnung.') %}
 {% set page_description = _('OpenLEG unterstützt Ihre LEG bei Beteiligten, Dokumenten, Messdaten und Rechnungen. Die verantwortlichen Personen prüfen die Grundlagen und geben die Ergebnisse frei.') %}
 {% block document %}
@@ -19,5 +20,6 @@
   </tbody></table></div>
   <p class="release-source">{{ _('Grundlage: öffentlicher Quellcode und technische Dokumentation. Prüfen Sie die verwendete Release-Version vor dem Einsatz.') }} <a href="https://github.com/Open-LEG-ch/openleg#readme">README</a></p>
 </section>
-<section class="release-document-section release-two-column"><div><h2>{{ _('Ihre LEG bleibt verantwortlich') }}</h2><p>{{ _('Ihre Gemeinschaft bestimmt die Vertretung, die internen Regeln und den Betreiber. OpenLEG übernimmt keine automatische Anmeldung beim Netzbetreiber und verspricht keine Anbindung an jeden Anbieter.') }}</p></div><div><h2>{{ _('Den nächsten Schritt wählen') }}</h2><div class="release-actions"><a class="release-button release-button-primary" href="{{ '/leg/dashboard/demo'|localized_url }}">{{ _('Mit Beispieldaten ausprobieren') }}</a><a class="release-button" href="{{ '/self-host'|localized_url }}">{{ _('Selbst betreiben') }}</a></div><p class="release-prose"><a href="{{ '/pricing'|localized_url }}">{{ _('Kosten und Betriebsaufgaben ansehen') }}</a> · <a href="{{ '/open-source'|localized_url }}">{{ _('Quellcode und Lizenz') }}</a></p></div></section>
+{% if sandbox_url %}<div class="release-practice-document">{% include 'release/sandbox_preview.html' %}</div>{% endif %}
+<section class="release-document-section release-two-column"><div><h2>{{ _('Ihre LEG bleibt verantwortlich') }}</h2><p>{{ _('Ihre Gemeinschaft bestimmt die Vertretung, die internen Regeln und den Betreiber. OpenLEG übernimmt keine automatische Anmeldung beim Netzbetreiber und verspricht keine Anbindung an jeden Anbieter.') }}</p></div><div><h2>{{ _('Den nächsten Schritt wählen') }}</h2><div class="release-actions"><a class="release-button{{ '' if sandbox_url else ' release-button-primary' }}" href="{{ '/leg/dashboard/demo'|localized_url }}">{{ _('Mit Beispieldaten ausprobieren') }}</a><a class="release-button" href="{{ '/self-host'|localized_url }}">{{ _('Selbst betreiben') }}</a></div><p class="release-prose"><a href="{{ '/pricing'|localized_url }}">{{ _('Kosten und Betriebsaufgaben ansehen') }}</a> · <a href="{{ '/open-source'|localized_url }}">{{ _('Quellcode und Lizenz') }}</a></p></div></section>
 {% endblock %}

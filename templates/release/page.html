@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% from 'release/illustrations.html' import building with context %}
 {% from 'partials/page_meta.html' import page_meta with context %}
 {% block meta %}{{ page_meta(title=page_title + ' | OpenLEG', description=page_description, path=request.path, site_url=site_url) }}{% endblock %}
 {% block content %}
 <div class="release-container release-document">
-  <header class="release-document-header"><h1>{{ page_title }}</h1><p class="release-lead">{{ page_description }}</p></header>
+  <header class="release-document-header{{ ' has-building' if page_scene else '' }}"><div><h1>{{ page_title }}</h1><p class="release-lead">{{ page_description }}</p></div>{% if page_scene %}{{ building(page_scene) }}{% endif %}</header>
   {% block document %}{% endblock %}
 </div>
 {% endblock %}
