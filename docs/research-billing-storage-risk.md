@@ -54,6 +54,13 @@ Native reports, coverage data/JSON, complexity JSON and hashed test logs remain
 in those external directories. Dependency versions are also preserved in
 `/tmp/openleg-861-py311-versions.txt`. No generated evidence was edited.
 
+The producer is the maintainer's local `crap-analysis` skill, which is not
+in a public repository. `CRAP_ANALYSIS_SKILL_DIR` points at that checkout.
+It has no version tag, so the scripts are pinned by SHA-256:
+`run_python.py` 13c37546641c268994962c02f11a912936b6eb1aab1a66b9a676c8ed496344ed
+and `crap_score.py` 437f7b22fe1cbd79a916caab1d271d30177b45d58644272bca2bde8d24da574c.
+The evidence schema is `crap-native-evidence/v2`.
+
 Disk-sync durability was disabled only on this disposable cluster. These runs
 do not establish crash durability. Two discarded attempts exposed setup errors:
 Python 3.12.3 failed translation extraction, and an ASCII cluster rejected
