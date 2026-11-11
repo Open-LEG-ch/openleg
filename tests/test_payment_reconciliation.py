@@ -80,6 +80,7 @@ def test_non_exact_payments_remain_reviewable(overrides, expected):
         "is_reversal": False,
         "credit_debit_indicator": "CRDT",
         "booking_status": "BOOK",
+        "amount_basis": "entry",
         **overrides,
     }
     invoices = [
@@ -102,6 +103,7 @@ def test_only_a_unique_reference_amount_currency_and_delivered_state_matches():
         "is_reversal": False,
         "credit_debit_indicator": "CRDT",
         "booking_status": "BOOK",
+        "amount_basis": "entry",
     }
     invoice = {
         "id": 42,
@@ -235,6 +237,7 @@ def _bank_entry(**overrides):
         "is_reversal": False,
         "credit_debit_indicator": "CRDT",
         "booking_status": "BOOK",
+        "amount_basis": "entry",
     }
     entry.update(overrides)
     return entry
@@ -458,3 +461,108 @@ def test_unbooked_credit_cannot_match_a_delivered_invoice(status):
         payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
         == "mismatch"
     )
+
+
+def test_instructed_chf_amount_cannot_replace_booked_eur_credit():
+    xml = CAMT_053.replace(
+        b'<Amt Ccy="CHF">120.50</Amt>', b'<Amt Ccy="EUR">110.00</Amt>'
+    )
+    details = b'<AmtDtls><InstdAmt><Amt Ccy="CHF">120.50</Amt></InstdAmt><TxAmt><Amt Ccy="EUR">110.00</Amt></TxAmt></AmtDtls>'
+    xml = xml.replace(b"</Refs>", b"</Refs>" + details)
+    entry = asdict(payment_reconciliation.parse_statement(xml).entries[0])
+    assert (entry["amount"], entry["currency"]) == (Decimal("110.00"), "EUR")
+    assert (
+        payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
+        == "mismatch"
+    )
+
+
+@pytest.mark.parametrize("amounts", [("60.00", "60.50"), ("60.00", "60.00")])
+def test_batch_amounts_must_reconcile_with_booked_total(amounts):
+    first = f'<TxDtls><Amt Ccy="CHF">{amounts[0]}</Amt></TxDtls>'
+    second = f'<TxDtls><Amt Ccy="CHF">{amounts[1]}</Amt></TxDtls>'
+    import re
+
+    xml = re.sub(
+        b"<TxDtls>.*?</TxDtls>", (first + second).encode(), CAMT_053, flags=re.DOTALL
+    )
+    if amounts == ("60.00", "60.50"):
+        entries = payment_reconciliation.parse_statement(xml).entries
+        assert [entry.amount for entry in entries] == [
+            Decimal("60.00"),
+            Decimal("60.50"),
+        ]
+    else:
+        with pytest.raises(payment_reconciliation.StatementError):
+            payment_reconciliation.parse_statement(xml)
+
+
+def test_payment_without_trustworthy_amount_evidence_cannot_match():
+    entry = _bank_entry()
+    entry.pop("amount_basis", None)
+    assert (
+        payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
+        == "mismatch"
+    )
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [
+        '<Amt Ccy="EUR">120.50</Amt>',
+        '<Amt Ccy="CHF">120.50</Amt><Amt Ccy="CHF">120.50</Amt>',
+        '<Amt Ccy="CHF">120.50</Amt><CdtDbtInd>DBIT</CdtDbtInd>',
+    ],
+)
+def test_inconsistent_transaction_cannot_override_single_entry(extra):
+    xml = CAMT_053.replace(b"</Refs>", b"</Refs>" + extra.encode())
+    with pytest.raises(payment_reconciliation.StatementError):
+        payment_reconciliation.parse_statement(xml)
+
+
+def test_schema_valid_conversion_fixture_uses_account_credit():
+    from pathlib import Path
+
+    xml = (Path(__file__).parent / "fixtures" / "camt054_eur_credit.xml").read_bytes()
+    entry = asdict(payment_reconciliation.parse_statement(xml).entries[0])
+    assert (entry["amount"], entry["currency"]) == (Decimal("110.00"), "EUR")
+    assert entry["amount_basis"] == "entry"
+    assert (
+        payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
+        == "mismatch"
+    )
+
+
+def test_sub_cent_amount_is_not_silently_rounded_by_storage():
+    xml = CAMT_053.replace(b"120.50", b"120.501")
+    with pytest.raises(payment_reconciliation.StatementError):
+        payment_reconciliation.parse_statement(xml)
+
+
+@pytest.mark.parametrize(
+    "first,second,entry_extra",
+    [
+        ('<Amt Ccy="EUR">60.00</Amt>', '<Amt Ccy="CHF">60.50</Amt>', ""),
+        ('<Amt Ccy="CHF">60.00</Amt>', '<Amt Ccy="CHF">60.50</Amt>', "<Chrgs/>"),
+        ('<Amt Ccy="CHF">60.00</Amt>', '<Amt Ccy="CHF">60.50</Amt>', "<ChrgsInf/>"),
+        ('<Amt Ccy="CHF">60.00</Amt>', "", ""),
+        (
+            '<Amt Ccy="CHF">60.00</Amt>',
+            '<AmtDtls><TxAmt><Amt Ccy="CHF">60.50</Amt></TxAmt></AmtDtls>',
+            "",
+        ),
+        (
+            '<Amt Ccy="CHF">60.00</Amt>',
+            '<Amt Ccy="CHF">60.50</Amt><CdtDbtInd>DBIT</CdtDbtInd>',
+            "",
+        ),
+    ],
+)
+def test_unsupported_batch_amounts_are_refused(first, second, entry_extra):
+    import re
+
+    details = f"<TxDtls>{first}</TxDtls><TxDtls>{second}</TxDtls>".encode()
+    xml = re.sub(b"<TxDtls>.*?</TxDtls>", details, CAMT_053, flags=re.DOTALL)
+    xml = xml.replace(b"<NtryDtls>", entry_extra.encode() + b"<NtryDtls>")
+    with pytest.raises(payment_reconciliation.StatementError):
+        payment_reconciliation.parse_statement(xml)

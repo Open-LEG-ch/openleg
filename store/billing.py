@@ -1197,7 +1197,7 @@ def _statement_import_result(cur, import_id, *, duplicate):
                 SELECT entry_reference, booking_date, amount, currency,
                payment_reference, is_reversal, credit_debit_indicator,
                match_decision, invoice_id,
-               decided_at, booking_status
+               decided_at, amount_basis, booking_status
         FROM bank_statement_entries
         WHERE statement_import_id = %s ORDER BY id
         """,
@@ -1300,8 +1300,8 @@ def reconcile_bank_statement(
                         statement_import_id, community_id, invoice_id,
                         entry_reference, booking_date, amount, currency,
                         payment_reference, is_reversal, credit_debit_indicator,
-                        match_decision, booking_status
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        match_decision, amount_basis, booking_status
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         import_id,
@@ -1315,6 +1315,7 @@ def reconcile_bank_statement(
                         entry["is_reversal"],
                         entry["credit_debit_indicator"],
                         decision,
+                        entry.get("amount_basis"),
                         entry.get("booking_status"),
                     ),
                 )

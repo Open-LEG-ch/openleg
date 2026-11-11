@@ -36,6 +36,7 @@ class PaymentEntry:
     is_reversal: bool
     credit_debit_indicator: str
     booking_status: str | None = None
+    amount_basis: str | None = None
 
 
 @dataclass(frozen=True)
@@ -88,11 +89,11 @@ def _booking_status(entry):
     return (code.text or "").strip() or None
 
 
-def _amount(element, fallback):
-    candidates = _children(element, "Amt")
-    amount_element = candidates[0] if candidates else fallback
-    if amount_element is None:
+def _amount(element):
+    candidates = [child for child in element if _local(child) == "Amt"]
+    if len(candidates) != 1:
         raise StatementError(_N("Der Zahlungseintrag enthält keinen Betrag."))
+    amount_element = candidates[0]
     try:
         amount = Decimal((amount_element.text or "").strip())
     except InvalidOperation as error:
@@ -104,6 +105,14 @@ def _amount(element, fallback):
     currency = (amount_element.attrib.get("Ccy") or "").strip().upper()
     if len(currency) != 3:
         raise StatementError(_N("Der Zahlungseintrag enthält keine gültige Währung."))
+    try:
+        stored_amount = amount.quantize(Decimal("0.01"))
+    except InvalidOperation as error:
+        raise StatementError(
+            _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
+        ) from error
+    if amount != stored_amount:
+        raise StatementError(_N("Der Zahlungseintrag enthält keinen gültigen Betrag."))
     return amount, currency
 
 
@@ -130,7 +139,6 @@ def parse_statement(content: bytes) -> Statement:
     statement_reference = _text(containers[0], "Id")
     entries = []
     for entry_number, entry in enumerate(_children(root, "Ntry"), start=1):
-        fallback_amount = next(iter(_children(entry, "Amt")), None)
         booking_elements = _children(entry, "BookgDt")
         if not booking_elements:
             raise StatementError(
@@ -150,10 +158,45 @@ def parse_statement(content: bytes) -> Statement:
                 _N("Der Zahlungseintrag enthält keine gültige Richtung.")
             )
         transactions = _children(entry, "TxDtls") or [entry]
+        booked_amount, booked_currency = _amount(entry)
+        for transaction in transactions:
+            directions = [
+                child for child in transaction if _local(child) == "CdtDbtInd"
+            ]
+            if directions and (
+                len(directions) != 1
+                or (directions[0].text or "").strip() != credit_debit_indicator
+            ):
+                raise StatementError(
+                    _N("Der Zahlungseintrag enthält keine gültige Richtung.")
+                )
+            if len(transactions) == 1 and transaction is not entry:
+                direct_amounts = [
+                    child for child in transaction if _local(child) == "Amt"
+                ]
+                if direct_amounts and _amount(transaction) != (
+                    booked_amount,
+                    booked_currency,
+                ):
+                    raise StatementError(
+                        _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
+                    )
+        if len(transactions) > 1:
+            details = [_amount(transaction) for transaction in transactions]
+            if (
+                any(currency != booked_currency for _, currency in details)
+                or sum(amount for amount, _ in details) != booked_amount
+                or _children(entry, "Chrgs")
+                or _children(entry, "ChrgsInf")
+            ):
+                raise StatementError(
+                    _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
+                )
         for transaction_number, transaction in enumerate(transactions, start=1):
-            amount, currency = _amount(
-                transaction, fallback_amount if len(transactions) == 1 else None
-            )
+            if len(transactions) == 1:
+                amount, currency = _amount(entry)
+            else:
+                amount, currency = _amount(transaction)
             payment_reference = _text(transaction, "Ref", "Ustrd", "EndToEndId")
             entry_reference = _text(transaction, "AcctSvcrRef", "NtryRef")
             if not entry_reference:
@@ -170,6 +213,9 @@ def parse_statement(content: bytes) -> Statement:
                     is_reversal=reversal,
                     credit_debit_indicator=credit_debit_indicator,
                     booking_status=_booking_status(entry),
+                    amount_basis="entry"
+                    if len(transactions) == 1
+                    else "reconciled_batch",
                 )
             )
     if not entries:
@@ -222,6 +268,8 @@ def payment_eligibility(entry, invoice):
     invoice_amount = Decimal(str(invoice["gross_chf"]))
     entry_amount = Decimal(str(entry["amount"]))
     if entry.get("booking_status") != "BOOK":
+        return "mismatch"
+    if entry.get("amount_basis") not in {"entry", "reconciled_batch"}:
         return "mismatch"
     if entry["credit_debit_indicator"] != "CRDT" or entry["currency"] != "CHF":
         return "mismatch"
