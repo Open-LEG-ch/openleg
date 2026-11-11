@@ -184,3 +184,48 @@ dashboard CSRF token. They can inspect delivery attempts at
 `/leg/community/{community_id}/operator-api/deliveries` and retry a failed
 delivery at `/{delivery_id}/retry`. The cron worker dispatches pending events
 through `POST /api/cron/process-operator-webhooks`, protected by `CRON_SECRET`.
+
+## MCP reads
+
+The opt-in sidecar generates one read-only tool for each GET operation in the
+OpenAPI contract. Names use snake_case operation IDs; the existing
+`list_billing_periods` name remains the alias for `listPeriods`.
+Tool metadata records the operation ID and its required capability. Descriptions
+and input schemas come from the contract. Formation and membership reads have
+no pagination or status filter. Formation returns at most the latest 20 cases;
+membership returns at most the latest 100. Older cases cannot be fetched through
+these reads.
+
+Read `openleg://communities/{community_id}/summary` through the advertised
+resource template. Its sections are:
+
+- `formation`: the state of the latest submission by `created_at`, or
+  `no submission`; requires `formation.read`.
+- `open_invoice_cases`: cases with status `open` or `acknowledged`;
+  requires `cases.read`.
+- `latest_billing_period`: the period with the latest `period_end`, or null;
+  requires `billing.read`.
+
+The sidecar follows all collection pages before computing a section. A denied
+or failed source, including a failure on a later page, returns
+`available: false` and a `reason` for that section. It never returns a partial
+section as complete. Resource reads use the caller's credential on every
+upstream request and consume its normal API request budget. Data fields come
+only from the read projections above.
+
+Tool results preserve external text as data and add `untrusted_fields`, a list
+of JSON pointers identifying values that must not be followed as instructions.
+This marker is present in both structured and textual MCP content:
+
+- Formation `response_status` and `failure_code` can come from VNB adapter
+  responses. Membership `response_status` can come from the same source.
+- `next_action` currently comes from adapter/domain decisions; both case
+  collections conservatively mark it untrusted as well.
+- Calculated-delivery `diagnostics` contains validation output about VNB input.
+  The entire value is conservatively marked, including nested text.
+
+Null or absent values need no marker. States, IDs, timestamps, amounts and
+counts are structured domain data, not VNB instructions. Case messages,
+response evidence and package bytes are excluded by the operator projection.
+The summary copies no VNB response text: it uses formation state and the
+billing/case projections.

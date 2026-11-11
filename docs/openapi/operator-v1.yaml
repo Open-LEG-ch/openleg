@@ -10,6 +10,8 @@ security:
 paths:
   /api/operator/v1/communities/{community_id}/formation:
     get:
+      description: Returns the latest 20 submission cases, newest first, with no pagination
+        and no status filter. Older cases cannot be fetched through this read.
       operationId: listFormations
       x-openleg-capability: formation.read
       parameters:
@@ -40,6 +42,8 @@ paths:
           $ref: '#/components/responses/Error429'
   /api/operator/v1/communities/{community_id}/membership-mutations:
     get:
+      description: Returns the latest 100 mutation cases, newest first, with no pagination
+        and no status filter. Older cases cannot be fetched through this read.
       operationId: listMemberships
       x-openleg-capability: membership.read
       parameters:
@@ -151,6 +155,8 @@ paths:
         join and exit derive facts from the LEG record.
   /api/operator/v1/communities/{community_id}/metering/jobs:
     get:
+      description: Filter by exact status; omit status for all states. Use limit (1-100,
+        default 50) and the opaque cursor returned as next_cursor; null ends pagination.
       operationId: listJobs
       x-openleg-capability: metering.read
       parameters:
@@ -180,6 +186,8 @@ paths:
           $ref: '#/components/responses/Error429'
   /api/operator/v1/communities/{community_id}/metering/calculated-deliveries:
     get:
+      description: Filter by exact status; omit status for all states. Use limit (1-100,
+        default 50) and the opaque cursor returned as next_cursor; null ends pagination.
       operationId: listCalculatedDeliverys
       x-openleg-capability: metering.read
       parameters:
@@ -209,6 +217,8 @@ paths:
           $ref: '#/components/responses/Error429'
   /api/operator/v1/communities/{community_id}/billing/periods:
     get:
+      description: Filter by exact status; omit status for all states. Use limit (1-100,
+        default 50) and the opaque cursor returned as next_cursor; null ends pagination.
       operationId: listPeriods
       x-openleg-capability: billing.read
       parameters:
@@ -238,6 +248,8 @@ paths:
           $ref: '#/components/responses/Error429'
   /api/operator/v1/communities/{community_id}/billing/invoices:
     get:
+      description: Filter by exact status; omit status for all states. Use limit (1-100,
+        default 50) and the opaque cursor returned as next_cursor; null ends pagination.
       operationId: listInvoices
       x-openleg-capability: billing.read
       parameters:
@@ -267,6 +279,8 @@ paths:
           $ref: '#/components/responses/Error429'
   /api/operator/v1/communities/{community_id}/billing/cases:
     get:
+      description: Filter by exact status; omit status for all states. Use limit (1-100,
+        default 50) and the opaque cursor returned as next_cursor; null ends pagination.
       operationId: listCases
       x-openleg-capability: cases.read
       parameters:
@@ -296,6 +310,8 @@ paths:
           $ref: '#/components/responses/Error429'
   /api/operator/v1/communities/{community_id}/payments/matches:
     get:
+      description: Filter by exact status; omit status for all states. Use limit (1-100,
+        default 50) and the opaque cursor returned as next_cursor; null ends pagination.
       operationId: listPayments
       x-openleg-capability: payments.read
       parameters:

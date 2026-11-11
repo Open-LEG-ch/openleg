@@ -41,8 +41,7 @@ def test_contract_tool(monkeypatch):
     async def check():
         async with app.router.lifespan_context(app), session(app) as sdk:
             result = await sdk.list_tools()
-            assert [t.name for t in result.tools] == ["list_billing_periods"]
-            tool = result.tools[0]
+            tool = next(t for t in result.tools if t.name == "list_billing_periods")
             spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
             op = spec["paths"][
                 "/api/operator/v1/communities/{community_id}/billing/periods"
@@ -407,19 +406,27 @@ def test_operator_origin_accepts_scheme_host_port(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "body",
+    ("tool", "path", "body"),
     [
-        {"items": {}, "next_cursor": None},
-        {"items": None, "next_cursor": None},
-        {"items": "not-an-array", "next_cursor": None},
-        {"items": 1, "next_cursor": None},
-        {"items": [], "next_cursor": 1},
-        {"items": [], "next_cursor": False},
-        {"items": [], "next_cursor": []},
-        {"items": [], "next_cursor": {}},
+        *(
+            ("list_billing_periods", "billing/periods", body)
+            for body in (
+                {"items": {}, "next_cursor": None},
+                {"items": None, "next_cursor": None},
+                {"items": "not-an-array", "next_cursor": None},
+                {"items": 1, "next_cursor": None},
+                {"items": [], "next_cursor": 1},
+                {"items": [], "next_cursor": False},
+                {"items": [], "next_cursor": []},
+                {"items": [], "next_cursor": {}},
+            )
+        ),
+        ("list_formations", "formation", {"submissions": {}}),
+        ("list_memberships", "membership-mutations", {"mutations": "none"}),
     ],
 )
-def test_malformed_upstream_page(monkeypatch, body):
+def test_malformed_upstream_page(monkeypatch, tool, path, body):
+    """Every read tool refuses an operator page whose fields have the wrong type."""
     from flask import Flask, jsonify
 
     from mcp_sidecar.server import create_app
@@ -427,8 +434,8 @@ def test_malformed_upstream_page(monkeypatch, body):
 
     upstream = Flask(__name__)
 
-    @upstream.get("/api/operator/v1/communities/one/billing/periods")
-    def periods():
+    @upstream.get(f"/api/operator/v1/communities/one/{path}")
+    def page():
         return jsonify(body)
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
@@ -441,9 +448,7 @@ def test_malformed_upstream_page(monkeypatch, body):
                 app.router.lifespan_context(app),
                 session(app, {"Authorization": "Bearer olk_test"}) as sdk,
             ):
-                result = await sdk.call_tool(
-                    "list_billing_periods", {"community_id": "one"}
-                )
+                result = await sdk.call_tool(tool, {"community_id": "one"})
                 assert result.isError
                 assert result.content[0].text == "operator_unavailable"
                 assert result.structuredContent is None
