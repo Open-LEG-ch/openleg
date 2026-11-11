@@ -89,14 +89,49 @@ def _booking_status(entry):
     return (code.text or "").strip() or None
 
 
-def _validate_batch_details(entry):
+def _account_currency(container):
+    accounts = [child for child in container if _local(child) == "Acct"]
+    if not accounts:
+        return None
+    if len(accounts) != 1:
+        raise StatementError(_N("Der Zahlungseintrag enthält keine gültige Währung."))
+    currencies = [child for child in accounts[0] if _local(child) == "Ccy"]
+    if not currencies:
+        return None
+    value = (currencies[0].text or "").strip().upper()
+    if (
+        len(currencies) != 1
+        or len(value) != 3
+        or not value.isascii()
+        or not value.isalpha()
+    ):
+        raise StatementError(_N("Der Zahlungseintrag enthält keine gültige Währung."))
+    return value
+
+
+def _validate_batch_details(entry, entry_direction):
     """Do not mistake an incomplete batch's total for an individual payment."""
+    declared = False
     for group in entry:
         if _local(group) != "NtryDtls":
             continue
         batches = [child for child in group if _local(child) == "Btch"]
         if not batches:
             continue
+        declared = True
+        directions = [
+            child
+            for batch in batches
+            for child in batch
+            if _local(child) == "CdtDbtInd"
+        ]
+        if directions and (
+            len(directions) != 1
+            or (directions[0].text or "").strip() != entry_direction
+        ):
+            raise StatementError(
+                _N("Der Zahlungseintrag enthält keine gültige Richtung.")
+            )
         counts = [
             child for batch in batches for child in batch if _local(child) == "NbOfTxs"
         ]
@@ -114,9 +149,22 @@ def _validate_batch_details(entry):
                 _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
             )
 
+        totals = [child for child in batches[0] if _local(child) == "TtlAmt"]
+        if totals:
+            total_amount, total_currency = _amount(batches[0], "TtlAmt")
+            amounts = [_amount(transaction) for transaction in transactions]
+            if (
+                any(currency != total_currency for _, currency in amounts)
+                or sum(amount for amount, _ in amounts) != total_amount
+            ):
+                raise StatementError(
+                    _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
+                )
+    return declared
 
-def _amount(element):
-    candidates = [child for child in element if _local(child) == "Amt"]
+
+def _amount(element, tag="Amt"):
+    candidates = [child for child in element if _local(child) == tag]
     if len(candidates) != 1:
         raise StatementError(_N("Der Zahlungseintrag enthält keinen Betrag."))
     amount_element = candidates[0]
@@ -164,7 +212,13 @@ def parse_statement(content: bytes) -> Statement:
         raise StatementError(_N("Der Kontoauszug enthält keinen Auszug."))
     statement_reference = _text(containers[0], "Id")
     entries = []
-    for entry_number, entry in enumerate(_children(root, "Ntry"), start=1):
+    scoped_entries = []
+    for container in containers:
+        account_currency = _account_currency(container)
+        scoped_entries.extend(
+            (entry, account_currency) for entry in container if _local(entry) == "Ntry"
+        )
+    for entry_number, (entry, account_currency) in enumerate(scoped_entries, start=1):
         booking_elements = _children(entry, "BookgDt")
         if not booking_elements:
             raise StatementError(
@@ -183,9 +237,14 @@ def parse_statement(content: bytes) -> Statement:
             raise StatementError(
                 _N("Der Zahlungseintrag enthält keine gültige Richtung.")
             )
-        _validate_batch_details(entry)
+        declared_batch = _validate_batch_details(entry, credit_debit_indicator)
         transactions = _children(entry, "TxDtls") or [entry]
+        is_batch = declared_batch or len(transactions) > 1
         booked_amount, booked_currency = _amount(entry)
+        if account_currency is not None and account_currency != booked_currency:
+            raise StatementError(
+                _N("Der Zahlungseintrag enthält keine gültige Währung.")
+            )
         for transaction in transactions:
             directions = [
                 child for child in transaction if _local(child) == "CdtDbtInd"
@@ -197,7 +256,7 @@ def parse_statement(content: bytes) -> Statement:
                 raise StatementError(
                     _N("Der Zahlungseintrag enthält keine gültige Richtung.")
                 )
-            if len(transactions) == 1 and transaction is not entry:
+            if not is_batch and transaction is not entry:
                 direct_amounts = [
                     child for child in transaction if _local(child) == "Amt"
                 ]
@@ -208,7 +267,7 @@ def parse_statement(content: bytes) -> Statement:
                     raise StatementError(
                         _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
                     )
-        if len(transactions) > 1:
+        if is_batch:
             details = [_amount(transaction) for transaction in transactions]
             if (
                 any(currency != booked_currency for _, currency in details)
@@ -220,7 +279,7 @@ def parse_statement(content: bytes) -> Statement:
                     _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
                 )
         for transaction_number, transaction in enumerate(transactions, start=1):
-            if len(transactions) == 1:
+            if not is_batch:
                 amount, currency = _amount(entry)
             else:
                 amount, currency = _amount(transaction)
@@ -240,9 +299,7 @@ def parse_statement(content: bytes) -> Statement:
                     is_reversal=reversal,
                     credit_debit_indicator=credit_debit_indicator,
                     booking_status=_booking_status(entry),
-                    amount_basis="entry"
-                    if len(transactions) == 1
-                    else "reconciled_batch",
+                    amount_basis="reconciled_batch" if is_batch else "entry",
                 )
             )
     if not entries:

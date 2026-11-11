@@ -536,3 +536,60 @@ def test_reconciled_chf_batch_pays_each_invoice_once(payment_client):
     } == {"reconciled_batch"}
     assert replay["duplicate"] is True
     assert len(_events("invoice.paid")) == 2
+
+
+@pytest.mark.parametrize(
+    "batch,currency,direct_amount,charges,accepted",
+    [
+        ("<NbOfTxs>1</NbOfTxs><CdtDbtInd>DBIT</CdtDbtInd>", None, True, "", False),
+        ("<NbOfTxs>1</NbOfTxs>", None, False, "", False),
+        ("<NbOfTxs>1</NbOfTxs>", None, True, "<Chrgs/>", False),
+        ('<NbOfTxs>1</NbOfTxs><TtlAmt Ccy="CHF">8.00</TtlAmt>', None, True, "", False),
+        ("", "EUR", False, "", False),
+        (
+            '<NbOfTxs>1</NbOfTxs><TtlAmt Ccy="CHF">9.67</TtlAmt><CdtDbtInd>CRDT</CdtDbtInd>',
+            "CHF",
+            True,
+            "",
+            True,
+        ),
+    ],
+)
+def test_contradictory_bank_metadata_cannot_create_a_payment(
+    payment_client, batch, currency, direct_amount, charges, accepted
+):
+    import payment_reconciliation
+    from sandbox_payment_fixtures import fixture
+
+    _invoice()
+    xml = fixture(
+        {"id": 1, "gross_chf": "9.67", "invoice_number": "LEG-PAYMENT-1"},
+        "exact",
+        "054",
+    )
+    if batch:
+        xml = xml.replace(
+            b"<NtryDtls>", b"<NtryDtls><Btch>" + batch.encode() + b"</Btch>"
+        )
+    if currency:
+        xml = xml.replace(b"</Acct>", f"<Ccy>{currency}</Ccy></Acct>".encode())
+    if direct_amount:
+        xml = xml.replace(b"</Refs>", b'</Refs><Amt Ccy="CHF">9.67</Amt>')
+    if charges:
+        xml = xml.replace(b"<NtryDtls>", charges.encode() + b"<NtryDtls>")
+    if accepted:
+        result = payment_reconciliation.import_statement(
+            COMMUNITY, "operator-a", "metadata.xml", xml, db
+        )
+        assert result["entries"][0]["match_decision"] == "matched"
+        assert len(_events("invoice.paid")) == 1
+    else:
+        with pytest.raises(payment_reconciliation.StatementError):
+            payment_reconciliation.import_statement(
+                COMMUNITY, "operator-a", "metadata.xml", xml, db
+            )
+        assert db.list_bank_statement_entries(COMMUNITY) == []
+        assert _events("invoice.paid") == _events("payment.match.confirmed") == []
+        invoice = db.get_invoices_for_participant("member-building")[0]
+        assert invoice["lifecycle_state"] == "delivered"
+        assert invoice["gross_chf"] == Decimal("9.67")

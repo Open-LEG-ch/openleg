@@ -580,8 +580,83 @@ def test_complete_declared_single_payment_retains_booked_amount():
     xml = CAMT_053.replace(
         b"<NtryDtls>", b"<NtryDtls><Btch><NbOfTxs>1</NbOfTxs></Btch>"
     )
+    xml = xml.replace(b"</Refs>", b'</Refs><Amt Ccy="CHF">120.50</Amt>')
     entry = asdict(payment_reconciliation.parse_statement(xml).entries[0])
     assert (
         payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
         == "matched"
     )
+
+
+@pytest.mark.parametrize("direction,accepted", [("CRDT", True), ("DBIT", False)])
+def test_declared_batch_direction_cannot_contradict_credit(direction, accepted):
+    batch = (
+        f"<Btch><NbOfTxs>1</NbOfTxs><CdtDbtInd>{direction}</CdtDbtInd></Btch>".encode()
+    )
+    xml = CAMT_053.replace(b"<NtryDtls>", b"<NtryDtls>" + batch)
+    xml = xml.replace(b"</Refs>", b'</Refs><Amt Ccy="CHF">120.50</Amt>')
+    if accepted:
+        entry = asdict(payment_reconciliation.parse_statement(xml).entries[0])
+        assert (
+            payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
+            == "matched"
+        )
+    else:
+        with pytest.raises(payment_reconciliation.StatementError):
+            payment_reconciliation.parse_statement(xml)
+
+
+@pytest.mark.parametrize("kind", ["053", "054"])
+@pytest.mark.parametrize("account_currency", ["CHF", "EUR"])
+def test_optional_account_currency_must_agree_with_booked_currency(
+    kind, account_currency
+):
+    from pathlib import Path
+
+    xml = (Path(__file__).parent / "fixtures" / "camt054_eur_credit.xml").read_bytes()
+    xml = xml.replace(b"<Ccy>EUR</Ccy>", f"<Ccy>{account_currency}</Ccy>".encode())
+    if kind == "053":
+        xml = (
+            xml.replace(b"camt.054", b"camt.053")
+            .replace(b"BkToCstmrDbtCdtNtfctn", b"BkToCstmrStmt")
+            .replace(b"Ntfctn>", b"Stmt>")
+        )
+    if account_currency == "EUR":
+        entry = payment_reconciliation.parse_statement(xml).entries[0]
+        assert (entry.amount, entry.currency) == (Decimal("110.00"), "EUR")
+    else:
+        with pytest.raises(payment_reconciliation.StatementError):
+            payment_reconciliation.parse_statement(xml)
+
+
+@pytest.mark.parametrize("extra", ["", "<Chrgs/>", "<ChrgsInf/>"])
+def test_declared_single_transaction_batch_needs_its_own_amount(extra):
+    xml = CAMT_053.replace(
+        b"<NtryDtls>", b"<NtryDtls><Btch><NbOfTxs>1</NbOfTxs></Btch>"
+    )
+    xml = xml.replace(b"<NtryDtls>", extra.encode() + b"<NtryDtls>")
+    if extra:
+        xml = xml.replace(b"</Refs>", b'</Refs><Amt Ccy="CHF">120.50</Amt>')
+    with pytest.raises(payment_reconciliation.StatementError):
+        payment_reconciliation.parse_statement(xml)
+
+
+@pytest.mark.parametrize(
+    "total,currency,accepted",
+    [("120.50", "CHF", True), ("100.00", "CHF", False), ("120.50", "EUR", False)],
+)
+def test_declared_batch_total_must_agree_with_transaction_amounts(
+    total, currency, accepted
+):
+    batch = f'<Btch><NbOfTxs>1</NbOfTxs><TtlAmt Ccy="{currency}">{total}</TtlAmt></Btch>'.encode()
+    xml = CAMT_053.replace(b"<NtryDtls>", b"<NtryDtls>" + batch)
+    xml = xml.replace(b"</Refs>", b'</Refs><Amt Ccy="CHF">120.50</Amt>')
+    if accepted:
+        entry = asdict(payment_reconciliation.parse_statement(xml).entries[0])
+        assert (
+            payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
+            == "matched"
+        )
+    else:
+        with pytest.raises(payment_reconciliation.StatementError):
+            payment_reconciliation.parse_statement(xml)

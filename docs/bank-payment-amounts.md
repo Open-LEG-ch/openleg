@@ -4,12 +4,15 @@ A single-transaction entry uses its direct `Ntry/Amt` amount and currency.
 Amounts under `AmtDtls` describe instructions, interbank amounts, or values
 before charges. They cannot replace the booked account credit. If a direct
 `TxDtls/Amt` is supplied for that single transaction, it must agree with the
-entry amount and currency. A conflicting transaction direction is rejected.
+entry amount and currency. When `Acct/Ccy` is present, it must agree with the
+entry currency. Conflicting transaction or batch directions are rejected.
 
 A declared batch must provide a valid `Btch/NbOfTxs` count matching its
 transaction details. Incomplete breakdowns cannot use the entry total as one
-payment. A batch requires one direct `TxDtls/Amt` per transaction. All amounts must use
-the entry currency and sum exactly to `Ntry/Amt`. Batch charges and mixed
+payment. A declared batch, including one with a single transaction, requires
+one direct `TxDtls/Amt` per transaction. All amounts must use the entry currency
+and sum exactly to `Ntry/Amt`. An optional `Btch/TtlAmt` must agree with its
+transaction amounts and currency. Batch charges and mixed
 credit/debit directions are unsupported and cause the statement to be rejected.
 A missing transaction amount never falls back to the batch total. These are
 conservative supported cases, not a general currency-conversion policy.
@@ -19,8 +22,11 @@ Imports persist `amount_basis` as `entry` or `reconciled_batch`. Automatic
 matching and reviewed confirmation require this evidence. The schema upgrade
 leaves old rows NULL and never repairs historical amounts or payment events.
 Reviewable old entries require a new bank statement parsed by the fixed
-importer. Replaying identical bytes returns the old import result and cannot
-make its amounts trusted. Existing manual payment recording is unchanged.
+importer. Identical bytes return the old import result only if they still parse.
+A file newly rejected by the corrected parser raises `StatementError` before the
+fingerprint lookup; its earlier audit record remains unchanged. Obtain a new
+supported bank statement with trustworthy booked evidence. Import does not
+repair or backfill old evidence. Existing manual payment recording is unchanged.
 
 The field meanings come from SIX's [Swiss Payment Standards 2025, sections
 3.3 and the C/D-level amount definitions](https://www.six-group.com/dam/download/banking-services/standardization/sps/ig-cash-management-sps-2025-en.pdf).
