@@ -226,7 +226,8 @@ def get_pending_deliveries(max_attempts=5, limit=100, *, community_id=None):
                      JOIN operator_api_clients c ON c.id=d.client_id
                     WHERE (d.status IN ('pending','retry') OR
                            (d.status='processing' AND d.claimed_at < CURRENT_TIMESTAMP - INTERVAL '15 minutes'))
-                      AND d.attempt_count<%s AND c.active=TRUE
+                      AND (d.attempt_count<%s OR d.status='retry')
+                      AND c.active=TRUE
                       AND d.next_attempt_at<=CURRENT_TIMESTAMP
                       AND e.schema_version='operator-event/1'
                       {scope}
@@ -313,7 +314,7 @@ def retry_delivery(community_id, delivery_id):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """UPDATE operator_webhook_deliveries d SET status='retry', claim_id=NULL,
-                      attempt_count=0, next_attempt_at=CURRENT_TIMESTAMP
+                      next_attempt_at=CURRENT_TIMESTAMP
                FROM operator_events e WHERE e.event_id=d.event_id
                  AND e.community_id=%s AND d.delivery_id=%s AND d.status='failed'
                RETURNING d.delivery_id,d.status,d.attempt_count""",

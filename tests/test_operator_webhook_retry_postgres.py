@@ -98,3 +98,5 @@ def test_an_exhausted_delivery_rearmed_by_an_administrator_is_delivered(
     assert received == [failed["delivery_id"]]
     assert totals == {"attempted": 1, "delivered": 1, "failed": 0}
     assert after["status"] == "delivered"
+    # Re-arming grants one more attempt and keeps the attempt history.
+    assert after["attempt_count"] == 6
