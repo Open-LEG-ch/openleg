@@ -180,6 +180,39 @@ def test_http_renewal_creates_once_and_sends_the_bound_year(membership, monkeypa
     assert "1. Juni 2026" in bodies[1] and "1. Juli 2026" in bodies[1]
 
 
+@pytest.mark.parametrize(
+    "failure,expected_status", [("revoked", 409), ("storage", 503)]
+)
+def test_renewal_handles_changes_after_initial_authorization(
+    membership, monkeypatch, failure, expected_status
+):
+    import database
+    from store import verein
+
+    monkeypatch.setattr(
+        verein, "now_utc", lambda: datetime(2026, 11, 7, 12, tzinfo=UTC)
+    )
+    client, _mail, store, reviewer_id, _path = _accepted(membership)
+    csrf = _csrf(client, "/verein/vorstand/antraege")
+
+    def change_state_before_renewal():
+        if failure == "revoked":
+            store.revoke_reviewer(reviewer_id)
+        else:
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute("DROP TABLE verein_members CASCADE")
+        return datetime(2027, 11, 7, 12, tzinfo=UTC)
+
+    monkeypatch.setattr(verein, "now_utc", change_state_before_renewal)
+    result = client.post(
+        "/verein/vorstand/beitraege/erneuern", data={"csrf_token": csrf}
+    )
+    assert result.status_code == expected_status
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS count FROM verein_dues")
+        assert cur.fetchone()["count"] == 1
+
+
 def test_period_from_another_member_cannot_receive_payment(membership):
     client, _mail, store, _reviewer_id, path = _accepted(membership)
     with client.session_transaction() as session:

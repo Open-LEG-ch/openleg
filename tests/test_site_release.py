@@ -63,7 +63,7 @@ def test_private_release_preview_explains_pending_formation(web):
     response = web.test_client().get("/verein")
     assert response.status_code == 200
     assert "Verein openLEG Schweiz" in response.text
-    assert "Baden" in response.text
+    assert "Obersiggenthal" in response.text
     assert "noch nicht gegründet" in response.text
     assert "20. Oktober 2026" not in response.text
     assert "CHF 50" in response.text

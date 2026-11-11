@@ -163,3 +163,46 @@ provider's CHF 98 payout and a CHF 100 bank transfer do not increase income.
 CHF 50 pending is separate. With CHF 3,000 reserve, CHF 200 restricted and
 CHF 120 general commitments, spendable bank funds are CHF 928. These values are
 fictional test evidence, not actual association balances.
+
+## Bank transfer and Swiss QR donations
+
+`/verein/vorstand/zahlungsempfaenger` prepares a recipient for independent review.
+Use the Verein's actual ordinary CH/LI IBAN and bank-confirmed account holder,
+public structured address and unstructured donation message. Keep bank ownership
+and address-publication evidence private. This route supports CHF with `NON`,
+without a structured reference; QR-IBANs are refused. It does not collect bank
+credentials, open an account, execute payments or create membership.
+
+A private QR draft lets the second reviewer check the exact generated data with
+the bank before activation. Its PDF is marked as a draft. Actual QR validation
+and independent approval evidence are required at approval, so missing QR proof
+does not prevent preparing a draft for that validation. An IBAN checksum does
+not establish account ownership. Newly prepared versions do not change existing
+instructions; only a different active reviewer can approve the latest version.
+
+`/verein/spenden` displays readable recipient details and an optional amount.
+Payment information also requires actual formation and configured controller,
+contact address and privacy version. Without these facts or an approved active
+recipient, no account or QR is exposed. No production fixture is created.
+Changes require a new reviewed version. Withdrawing the current recipient needs
+a reason and immediately removes collection instructions; older accounts never
+reactivate automatically. Stale file URLs cannot silently select a newer account.
+Pages and files use no-store. Already saved payment documents are outside cache
+revocation; communicate actual account changes through the approved process.
+
+Browser success/return parameters do not establish payment, settle dues or admit
+members. Match actual incoming source records separately. Recognition of donors
+requires separate opt-in; financial reporting uses redacted sources. This route
+makes no tax-deductibility claim. Mandatory TWINT onboarding and settlement are
+separate launch dependencies; these bank instructions do not authorise a partial
+bank-only public launch.
+
+The generator follows the CHF subset of [SIX IG 2.4](https://www.six-group.com/dam/download/banking-services/standardization/qr-bill/ig-qr-bill-v2.4-en.pdf),
+which leaves CHF technical requirements unchanged from 2.3. It uses restricted
+UTF-8, binary QR encoding at level M, a 46 mm symbol, a 7 mm SIX recognition mark
+and a 5 mm quiet border. Dense payloads that cannot retain the minimum module
+size are refused. Online instructions show readable data; the A4 PDF places the
+210 × 105 mm payment part and receipt at the bottom, with cut guidance and blank
+payer/amount fields where needed. Use the prescribed four-language headings and
+permitted Liberation Sans font. Independent decoding and actual bank validation
+remain distinct checks. No real transfer is initiated by preparing these files.

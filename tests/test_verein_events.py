@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Actual occurrences, private drafting and stable calendar identity."""
 
+import re
+
 import pytest
 
 from tests import test_verein_membership
@@ -111,9 +113,22 @@ def test_event_access_and_notes_require_actual_board_publication(
     calendar = client.get(path + ".ics?lang=en")
     assert b"public-registration" not in calendar.data
     assert b"Approved plain notes" not in calendar.data
-    events.withdraw_notes(
-        token, identifier, "Correction requested by participant", version=2
+    editor = client.get("/verein/vorstand/treffen")
+    assert re.search(
+        r'<button\b[^>]*value="withdraw"[^>]*\bformnovalidate(?:\s|>)', editor.text
     )
+    withdrawn = client.post(
+        "/verein/vorstand/treffen/" + identifier + "/notizen",
+        data={
+            "csrf_token": test_verein_membership._csrf(
+                client, "/verein/vorstand/treffen"
+            ),
+            "action": "withdraw",
+            "version": "2",
+            "evidence": "Correction requested by participant",
+        },
+    )
+    assert withdrawn.status_code == 303
     assert "Approved plain notes" not in client.get(path).text
     assert client.post("/verein/vorstand/treffen").status_code == 403
     store.logout(token)
