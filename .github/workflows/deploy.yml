@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main, "codex/site-**"]
 
+# Keep only the newest run for each PR, without cancelling other stack layers.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -58,6 +63,7 @@ jobs:
 
       - name: Run tests
         env:
+          PYTEST_ADDOPTS: "--durations=30 -o faulthandler_timeout=120"
           DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
           OPENLEG_TEST_VEREIN_DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
           OPENLEG_TEST_FORECAST_REDIS_URL: redis://127.0.0.1:6379/15
