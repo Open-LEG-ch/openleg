@@ -68,7 +68,7 @@ Commands:
   red       Run one targeted pytest node (expected to fail during red phase)
   green     Run one targeted pytest node (expected to pass after implementation)
   refactor  Re-run one targeted pytest node during cleanup
-  gate      Run full regression gates (pytest + ruff checks)
+  gate      Run full regression gates (pytest + ruff + strict mypy checks)
   mutants   Run mutmut over the scope declared in pyproject.toml
 EOF
 }
@@ -98,6 +98,7 @@ case "${command}" in
   gate)
     py_cmd="$(python_cmd || true)"
     require_pinned_ruff
+    bash "${script_dir}/strict_mypy.sh"
     pytest tests/ -q
     "${py_cmd}" -m ruff check .
     "${py_cmd}" -m ruff format --check .

@@ -9,14 +9,28 @@ outside the policy value domains of ``billing_policy`` is refused with
 :class:`BillingApprovalError`.
 """
 
+from __future__ import annotations
+
 import logging
 import re
+from collections.abc import Callable, Mapping, Sequence
+from contextlib import AbstractContextManager
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
+from typing import cast
 from zoneinfo import ZoneInfo
 
 import billing_policy
 import quartierakku
+from billing_types import (
+    BatteryConfig,
+    BatterySnapshot,
+    BillingConnection,
+    BillingCursor,
+    InvoiceSnapshot,
+    LineItem,
+    Period,
+)
 from store import billing as billing_store
 
 logger = logging.getLogger(__name__)
@@ -41,12 +55,12 @@ class BillingApprovalError(RuntimeError):
     """A billing draft is incomplete, unreconciled, malformed, or not approvable."""
 
 
-def today():
+def today() -> date:
     """Return the current Swiss local date for default issue dates."""
     return datetime.now(ZoneInfo("Europe/Zurich")).date()
 
 
-def _json_safe(value):
+def _json_safe(value: object) -> object:
     """Convert decimals and temporals so snapshots survive JSONB unchanged."""
     if isinstance(value, Decimal):
         return str(value)
@@ -59,7 +73,7 @@ def _json_safe(value):
     return value
 
 
-def _as_decimal(value):
+def _as_decimal(value: object) -> Decimal:
     """Parse a numeric value; anything unparseable becomes NaN (refused)."""
     try:
         return Decimal(str(value))
@@ -67,7 +81,7 @@ def _as_decimal(value):
         return Decimal("NaN")
 
 
-def _require_issue_date(issue_date):
+def _require_issue_date(issue_date: object) -> date:
     """Accept a plain date; refuse datetimes, strings, numbers, and bools."""
     if issue_date is None:
         return today()
@@ -80,7 +94,7 @@ def _require_issue_date(issue_date):
     return issue_date
 
 
-def _parse_temporal(value, message):
+def _parse_temporal(value: object, message: str) -> date:
     """Parse a date, datetime, or ISO string; refuse everything else."""
     if isinstance(value, (datetime, date)):
         return value
@@ -95,7 +109,7 @@ def _parse_temporal(value, message):
     raise BillingApprovalError(message)
 
 
-def _require_order(start, end, message):
+def _require_order(start: date, end: date, message: str) -> None:
     """Require start before or at end; refuse incomparable time bases."""
     try:
         ordered = start <= end
@@ -107,7 +121,7 @@ def _require_order(start, end, message):
         raise BillingApprovalError(message)
 
 
-def _require_increasing_window(period):
+def _require_increasing_window(period: Period) -> tuple[date, date]:
     """Require a valid, strictly increasing billing window."""
     start = _parse_temporal(
         period.get("period_start"), "Der Periodenbeginn ist ungültig."
@@ -121,7 +135,7 @@ def _require_increasing_window(period):
     return start, end
 
 
-def _require_fingerprint(value):
+def _require_fingerprint(value: object) -> str:
     """Require the SHA-256 hex shape billing_runner persists."""
     if not isinstance(value, str) or not _FINGERPRINT_PATTERN.fullmatch(value):
         raise BillingApprovalError(
@@ -130,16 +144,16 @@ def _require_fingerprint(value):
     return value
 
 
-def _require_source_document_ids(value):
+def _require_source_document_ids(value: object) -> list[str]:
     """Require a non-empty list of non-empty source document id strings."""
     if not isinstance(value, (list, tuple)) or not value:
         raise BillingApprovalError("Der Abrechnungsentwurf hat keine Quelldokumente.")
     if any(not isinstance(item, str) or not item.strip() for item in value):
         raise BillingApprovalError("Ein Quelldokument hat eine ungültige ID.")
-    return list(value)
+    return cast(list[str], list(value))
 
 
-def _require_finite_decimal(value, message):
+def _require_finite_decimal(value: object, message: str) -> Decimal:
     """Require one value to parse as a finite decimal; return it."""
     number = _as_decimal(value)
     if not number.is_finite():
@@ -148,8 +162,13 @@ def _require_finite_decimal(value, message):
 
 
 def _validated_difference(
-    node, vnb_key, engine_key, difference_key, *, vnb_basis=False
-):
+    node: Mapping[str, object],
+    vnb_key: str,
+    engine_key: str,
+    difference_key: str,
+    *,
+    vnb_basis: bool = False,
+) -> Decimal:
     """Require the documented model gap at six-decimal persisted precision.
 
     Legacy billing requires a zero gap and prices the engine quantity. An
@@ -177,8 +196,12 @@ def _validated_difference(
 
 
 def _require_canonical_reconciliation(
-    reconciliation, consumption_kwh, production_kwh, *, vnb_basis=False
-):
+    reconciliation: object,
+    consumption_kwh: Mapping[str, Decimal],
+    production_kwh: Mapping[str, Decimal],
+    *,
+    vnb_basis: bool = False,
+) -> None:
     """Require the complete reconcile_with_vnb evidence, cross-checked.
 
     Canonical contract: top-level vnb/engine totals for allocation and
@@ -262,7 +285,9 @@ def _require_canonical_reconciliation(
         ) from None
 
 
-def _validated_line_item(item, internal_price, settlement_fee):
+def _validated_line_item(
+    item: object, internal_price: Decimal, settlement_fee: Decimal
+) -> tuple[str, str, Decimal, Decimal | None]:
     """Require one line item's exact shape and money; return the values.
 
     Validates the dict structure, the participant id (a non-empty string
@@ -308,7 +333,7 @@ def _validated_line_item(item, internal_price, settlement_fee):
             raise BillingApprovalError(
                 "Der Rundungsausgleich darf höchstens 6 Dezimalstellen haben."
             )
-        return participant_id, item_type, amount, None
+        return participant_id, cast(str, item_type), amount, None
     if item_type == "battery_cost_share":
         if (
             item.get("quantity_kwh") is not None
@@ -325,7 +350,7 @@ def _validated_line_item(item, internal_price, settlement_fee):
             raise BillingApprovalError(
                 "Der Quartierakku-Anteil darf höchstens 6 Dezimalstellen haben."
             )
-        return participant_id, item_type, amount, None
+        return participant_id, cast(str, item_type), amount, None
     quantity = _require_finite_decimal(
         item.get("quantity_kwh"),
         "Eine Abrechnungsposition hat keine gültige Menge.",
@@ -357,12 +382,15 @@ def _validated_line_item(item, internal_price, settlement_fee):
         raise BillingApprovalError(
             "Der Betrag einer Abrechnungsposition entspricht nicht Menge mal Preis."
         )
-    return participant_id, item_type, amount, quantity
+    return participant_id, cast(str, item_type), amount, quantity
 
 
 def _require_rounding_adjustment(
-    producer_ids, rounding_items, non_rounding_total, max_rounding_abs
-):
+    producer_ids: Sequence[str],
+    rounding_items: Sequence[LineItem],
+    non_rounding_total: Decimal,
+    max_rounding_abs: Decimal,
+) -> None:
     """Require the exact rounding adjustment the billed totals imply.
 
     With producer credits present, the balanced case forbids any rounding
@@ -426,7 +454,9 @@ def _require_rounding_adjustment(
             )
 
 
-def _require_wellformed_line_items(line_items, internal_price, settlement_fee):
+def _require_wellformed_line_items(
+    line_items: object, internal_price: Decimal, settlement_fee: Decimal
+) -> tuple[Sequence[LineItem], dict[str, Decimal], dict[str, Decimal]]:
     """Fail closed on anything but the exact shapes the billing engine emits.
 
     Consumer charges and producer credits carry a finite non-negative
@@ -452,8 +482,8 @@ def _require_wellformed_line_items(line_items, internal_price, settlement_fee):
         raise BillingApprovalError(
             "Die Abrechnungspositionen haben eine ungültige Struktur."
         )
-    consumption_kwh = {}
-    production_kwh = {}
+    consumption_kwh: dict[str, Decimal] = {}
+    production_kwh: dict[str, Decimal] = {}
     settlement_quantities = {}
     battery_items = []
     rounding_items = []
@@ -473,6 +503,8 @@ def _require_wellformed_line_items(line_items, internal_price, settlement_fee):
         elif item_type == "battery_cost_share":
             battery_items.append(item)
         else:
+            # The validator returns a quantity for every energy/fee line.
+            quantity = cast(Decimal, quantity)
             item_key = (participant_id, item_type)
             if item_key in seen_non_rounding_keys:
                 raise BillingApprovalError(
@@ -582,8 +614,12 @@ def _require_wellformed_line_items(line_items, internal_price, settlement_fee):
 
 
 def _require_battery_energy_snapshot(
-    battery_snapshot, battery, consumption_kwh, production_kwh, internal_price
-):
+    battery_snapshot: BatterySnapshot,
+    battery: BatteryConfig,
+    consumption_kwh: Mapping[str, Decimal],
+    production_kwh: Mapping[str, Decimal],
+    internal_price: Decimal,
+) -> None:
     """Reconcile the frozen source attribution with approved energy lines."""
     participant_id = battery["participant_id"]
     energy = battery_snapshot.get("energy")
@@ -593,7 +629,9 @@ def _require_battery_energy_snapshot(
             "Die Energieaufteilung des Quartierakkus ist unvollständig."
         )
 
-    def quantity(container, key, *, signed=False):
+    def quantity(
+        container: Mapping[str, object], key: str, *, signed: bool = False
+    ) -> Decimal:
         value = _as_decimal(container.get(key))
         if (
             not value.is_finite()
@@ -656,8 +694,12 @@ def _require_battery_energy_snapshot(
 
 
 def _require_battery_cost_shares(
-    period, community_id, line_items, consumption_kwh, production_kwh
-):
+    period: Period,
+    community_id: str,
+    line_items: Sequence[LineItem],
+    consumption_kwh: Mapping[str, Decimal],
+    production_kwh: Mapping[str, Decimal],
+) -> None:
     """Require the battery cost shares the frozen asset config implies.
 
     A draft without a battery snapshot may carry no battery lines. With one,
@@ -745,12 +787,15 @@ def _require_battery_cost_shares(
     )
 
 
-def _exceeds_precision(value, places):
+def _exceeds_precision(value: Decimal, places: int) -> bool:
     """Return whether a finite decimal carries more than ``places`` decimals."""
-    return -value.as_tuple().exponent > places
+    # All callers check finiteness before inspecting the integer exponent.
+    return -cast(int, value.as_tuple().exponent) > places
 
 
-def _require_valid_policy(policy, period_start, community_id):
+def _require_valid_policy(
+    policy: object, period_start: date, community_id: str
+) -> tuple[Decimal, int, Decimal, Decimal]:
     """Require every invoice-relevant policy field inside its domain.
 
     The value domains come from ``billing_policy`` so approval applies exactly
@@ -774,7 +819,9 @@ def _require_valid_policy(policy, period_start, community_id):
     )
 
 
-def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None):
+def prepare_invoice_snapshots(
+    period: object, issue_date: object = None, *, calculated_values: object = None
+) -> list[InvoiceSnapshot]:
     """Build one immutable invoice snapshot per billed participant.
 
     Fails closed with :class:`BillingApprovalError` unless the period is a
@@ -785,6 +832,8 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
     issue_date = _require_issue_date(issue_date)
     if not isinstance(period, dict) or period.get("status") != "draft":
         raise BillingApprovalError("Nur ein Entwurf kann freigegeben werden.")
+    # Describe the persisted row; the checks below still validate untrusted values.
+    period = cast(Period, period)
     community_id = period.get("community_id")
     if not isinstance(community_id, str) or not community_id.strip():
         raise BillingApprovalError(
@@ -840,7 +889,7 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
 
     policy = period["billing_policy_snapshot"]
     due_date = issue_date + timedelta(days=payment_days)
-    provenance = {
+    provenance: dict[str, object] = {
         "input_fingerprint": period["input_fingerprint"],
         "source_document_ids": _json_safe(list(source_document_ids)),
         "reconciliation": _json_safe(
@@ -853,7 +902,7 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
         "period_start": _json_safe(period.get("period_start")),
         "period_end": _json_safe(period.get("period_end")),
     }
-    snapshots = []
+    snapshots: list[InvoiceSnapshot] = []
     for participant_id in sorted({item["participant_id"] for item in line_items}):
         items = [
             item for item in line_items if item.get("participant_id") == participant_id
@@ -869,7 +918,7 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
         ).get(participant_id)
         if vnb_basis:
             participant_provenance["reconciliation"] = {
-                **provenance["reconciliation"],
+                **cast(dict[str, object], provenance["reconciliation"]),
                 "precision_policy": {
                     key: value
                     for key, value in reconciliation["precision_policy"].items()
@@ -879,8 +928,29 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
         if reconciliation.get("source_evidence"):
             source = reconciliation["source_evidence"]
             metadata = source["metadata"]
+            public_metadata: dict[str, object] = {
+                key: cast(Mapping[str, object], metadata)[key]
+                for key in (
+                    "document_status",
+                    "evidence_sha256",
+                    "sender_id",
+                    "receiver_id",
+                    "document_created_at",
+                    "vnb_community_id",
+                    "precision",
+                    "quality_policy",
+                    "channel_balance_policy",
+                    "products",
+                )
+                if key in metadata
+            }
+            public_metadata["mappings"] = [
+                mapping
+                for mapping in metadata["mappings"]
+                if mapping["building_id"] == participant_id
+            ]
             participant_provenance["reconciliation"] = {
-                **participant_provenance["reconciliation"],
+                **cast(dict[str, object], participant_provenance["reconciliation"]),
                 "per_participant": {
                     key: value
                     for key, value in reconciliation["per_participant"].items()
@@ -894,36 +964,16 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
                     if key == participant_id
                 },
                 "source_evidence": {
-                    **source,
-                    "metadata": {
-                        **{
-                            key: metadata[key]
-                            for key in (
-                                "document_status",
-                                "evidence_sha256",
-                                "sender_id",
-                                "receiver_id",
-                                "document_created_at",
-                                "vnb_community_id",
-                                "precision",
-                                "quality_policy",
-                                "channel_balance_policy",
-                                "products",
-                            )
-                            if key in metadata
-                        },
-                        "mappings": [
-                            mapping
-                            for mapping in metadata["mappings"]
-                            if mapping["building_id"] == participant_id
-                        ],
-                    },
+                    **cast(Mapping[str, object], source),
+                    "metadata": public_metadata,
                 },
             }
-        audit = participant_provenance["reconciliation"].get("engine_audit")
+        audit = cast(dict[str, object], participant_provenance["reconciliation"]).get(
+            "engine_audit"
+        )
         if isinstance(audit, dict):
             participant_provenance["reconciliation"] = {
-                **participant_provenance["reconciliation"],
+                **cast(dict[str, object], participant_provenance["reconciliation"]),
                 "engine_audit": {
                     key: (
                         {participant_id: value[participant_id]}
@@ -986,7 +1036,7 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
                 "gross_chf": net + vat,
                 "issue_date": issue_date,
                 "due_date": due_date,
-                "policy_snapshot": _json_safe(policy),
+                "policy_snapshot": cast(dict[str, object], _json_safe(policy)),
                 "provenance_snapshot": participant_provenance,
                 "input_fingerprint": period["input_fingerprint"],
                 "source_document_ids": _json_safe(list(source_document_ids)),
@@ -998,10 +1048,10 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
 def approve_billing_period(
     period_id: int,
     community_id: str,
-    issue_date=None,
+    issue_date: date | None = None,
     *,
     approver_id: str | None = None,
-) -> list[dict]:
+) -> list[dict[str, object]]:
     """Issue immutable invoices for one reconciled draft period, atomically.
 
     The exact active community row is locked first, so invoice numbering is
@@ -1017,10 +1067,14 @@ def approve_billing_period(
     """
     import database
 
+    # The legacy pool context manager supplies the DB-API transaction boundary.
+    connection = cast(
+        Callable[[], AbstractContextManager[BillingConnection]], database.get_connection
+    )
     if issue_date is None:
         issue_date = today()
     try:
-        with database.get_connection() as conn, conn.cursor() as cur:
+        with connection() as conn, conn.cursor() as cur:
             community_row = billing_store.lock_active_billing_community(
                 cur, community_id
             )
@@ -1032,7 +1086,7 @@ def approve_billing_period(
             row = billing_store.lock_billing_period(cur, period_id, community_id)
             if not row:
                 raise BillingApprovalError("Billing period not found")
-            period = dict(row)
+            period = cast(Period, dict(row))
             status = period.get("status")
             if status == "issued":
                 invoices = billing_store.list_period_invoices(cur, period_id)
@@ -1107,7 +1161,7 @@ def approve_billing_period(
         raise billing_store.BillingStoreError("Could not approve billing period") from e
 
 
-def _next_invoice_sequence(invoice_numbers):
+def _next_invoice_sequence(invoice_numbers: Sequence[str | None]) -> int:
     """Continue numbering after the largest existing numeric suffix."""
     sequence = 0
     for invoice_number in invoice_numbers:
@@ -1117,7 +1171,7 @@ def _next_invoice_sequence(invoice_numbers):
     return sequence + 1
 
 
-def _require_original_registrations(cur, period):
+def _require_original_registrations(cur: BillingCursor, period: Period) -> None:
     """Refuse issuance if any frozen participant registration has changed."""
     registrations = period["reconciliation"].get("participant_registrations")
     participants = {item["participant_id"] for item in period["line_items"]}

@@ -12,11 +12,14 @@ Every invalid choice is refused with a German diagnostic: OpenLEG never
 guesses money-path inputs.
 """
 
+from __future__ import annotations
+
 import re
 from calendar import isleap
 from datetime import date, datetime, time
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
+from billing_types import BatteryConfig
 from i18n import gettext as _
 from translation_markers import gettext_noop as _N
 
@@ -75,7 +78,7 @@ def _within_places(value, places=2):
     return value.is_finite() and -value.as_tuple().exponent <= places
 
 
-def validate_battery_config(config) -> dict:
+def validate_battery_config(config: object) -> BatteryConfig:
     """Validate and normalize one stored battery config, failing closed."""
     if not isinstance(config, dict):
         raise InvalidBatteryConfig(_N("Der Quartierakku hat keine gültigen Angaben."))
