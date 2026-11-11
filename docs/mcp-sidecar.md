@@ -39,3 +39,25 @@ there is no stored session credential. Keep tokens out of tool arguments.
 This is a development tracer, not production agent access. It has no database
 access, writes, OAuth, or additional tools. OAuth replacement is tracked in
 #847; production enablement belongs in `openleg-ops` after the readiness gate.
+
+## Host and Origin validation
+
+DNS-rebinding protection is always enabled. Configure comma-separated allow-lists
+with `OPENLEG_MCP_ALLOWED_HOSTS` and `OPENLEG_MCP_ALLOWED_ORIGINS`. Whitespace
+around entries is ignored; an empty list prevents startup. Setting either
+variable replaces its defaults.
+
+The default hosts are `localhost` and `127.0.0.1`, each without a port or with
+port `8000` or `8081`. Default origins are `http://localhost` and
+`http://127.0.0.1` with port `8000`, `8081` or `6274` (MCP Inspector).
+The Compose overlay restricts hosts to port `8081` and origins to ports
+`8081` and `6274`. Caddy forwards the client's Host header to the sidecar.
+
+For a different proxy address or Inspector port, list its exact host and origin,
+including the port. Origins include the scheme and have no trailing slash.
+These settings describe incoming MCP requests; `OPENLEG_OPERATOR_ORIGIN`
+continues to select the upstream operator API.
+
+The SDK rejects an unlisted Host with 421 and an unlisted Origin with 403.
+A missing Origin is accepted for non-browser clients, as supported by the SDK;
+Host validation still applies. The literal Origin `null` is rejected.

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Stateless MCP transport; credentials belong to individual HTTP requests."""
 
+import copy
 import json
 import logging
 import os
@@ -15,6 +16,7 @@ from jsonschema import Draft202012Validator
 from mcp import types
 from mcp.server.lowlevel import Server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
 from starlette.routing import Route
 
@@ -28,12 +30,29 @@ def redact_transport_logs():
 
     def factory(*args, **kwargs):
         record = previous(*args, **kwargs)
-        record.msg = re.sub(r"olk_[A-Za-z0-9_-]+", "[redacted]", record.getMessage())
-        record.args = ()
+        # Render a copy so exception caching and message interpolation leave
+        # unrelated records untouched. Flatten only credential-bearing records,
+        # including exception chains and stack info, before handlers format them.
+        rendered = logging.Formatter().format(copy.copy(record))
+        redacted = re.sub(r"olk_[A-Za-z0-9_-]+", "[redacted]", rendered)
+        if redacted != rendered:
+            record.msg = redacted
+            record.args = ()
+            record.exc_info = None
+            record.exc_text = None
+            record.stack_info = None
         return record
 
     factory.openleg_redaction = True
     logging.setLogRecordFactory(factory)
+
+
+def allowlist(name, default):
+    values = [value.strip() for value in os.environ.get(name, default).split(",")]
+    values = [value for value in values if value]
+    if not values:
+        raise ValueError(f"{name} must not be empty")
+    return values
 
 
 def operation():
@@ -139,7 +158,25 @@ def create_app():
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
             return error("operator_unavailable")
 
-    manager = StreamableHTTPSessionManager(server, stateless=True, json_response=True)
+    manager = StreamableHTTPSessionManager(
+        server,
+        stateless=True,
+        json_response=True,
+        security_settings=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=allowlist(
+                "OPENLEG_MCP_ALLOWED_HOSTS",
+                "localhost,127.0.0.1,localhost:8000,127.0.0.1:8000,"
+                "localhost:8081,127.0.0.1:8081",
+            ),
+            allowed_origins=allowlist(
+                "OPENLEG_MCP_ALLOWED_ORIGINS",
+                "http://localhost:8000,http://127.0.0.1:8000,"
+                "http://localhost:8081,http://127.0.0.1:8081,"
+                "http://localhost:6274,http://127.0.0.1:6274",
+            ),
+        ),
+    )
 
     @asynccontextmanager
     async def lifespan(app):

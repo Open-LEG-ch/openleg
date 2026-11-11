@@ -8,6 +8,8 @@ services:
     environment:
       OPENLEG_MCP_ENABLED: ${OPENLEG_MCP_ENABLED:-false}
       OPENLEG_OPERATOR_ORIGIN: http://flask:5000
+      OPENLEG_MCP_ALLOWED_HOSTS: localhost:8081,127.0.0.1:8081
+      OPENLEG_MCP_ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081,http://localhost:6274,http://127.0.0.1:6274
     networks: [web]
     depends_on: [flask]
   mcp-proxy:

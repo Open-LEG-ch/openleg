@@ -219,6 +219,11 @@ def test_local_packaging_is_opt_in():
     assert env == {
         "OPENLEG_MCP_ENABLED": "${OPENLEG_MCP_ENABLED:-false}",
         "OPENLEG_OPERATOR_ORIGIN": "http://flask:5000",
+        "OPENLEG_MCP_ALLOWED_HOSTS": "localhost:8081,127.0.0.1:8081",
+        "OPENLEG_MCP_ALLOWED_ORIGINS": (
+            "http://localhost:8081,http://127.0.0.1:8081,"
+            "http://localhost:6274,http://127.0.0.1:6274"
+        ),
     }
     assert (
         "mcp" not in yaml.safe_load(Path("docker-compose.yml").read_text())["services"]
@@ -227,3 +232,145 @@ def test_local_packaging_is_opt_in():
     assert "handle /mcp" in Path("Caddyfile.mcp").read_text()
     assert "-r requirements-mcp.txt" in Path("requirements-dev.txt").read_text()
     assert "mcp" not in Path("requirements.txt").read_text()
+
+
+@pytest.mark.parametrize(
+    "host,origin,status",
+    [
+        ("attacker.example", "http://localhost:6274", 421),
+        ("localhost:8081", "http://attacker.example", 403),
+        ("localhost:8081", "null", 403),
+        ("localhost:8081", "http://localhost:8081", 200),
+        ("localhost:8081", "http://localhost:6274", 200),
+        ("localhost:8081", None, 200),
+    ],
+)
+@pytest.mark.parametrize("custom_proxy", [False, True])
+def test_transport_header_validation(monkeypatch, host, origin, status, custom_proxy):
+    from mcp_sidecar.server import create_app
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    # Use the actual local proxy configuration, including Inspector's origin.
+    config = yaml.safe_load(Path("compose.mcp.yml").read_text())
+    for name, value in config["services"]["mcp"]["environment"].items():
+        if name.startswith("OPENLEG_MCP_ALLOWED_"):
+            if custom_proxy:
+                value = value.replace("localhost", "proxy.example")
+            monkeypatch.setenv(name, value)
+    if custom_proxy:
+        host = host.replace("localhost", "proxy.example")
+        if origin is not None:
+            origin = origin.replace("localhost", "proxy.example")
+    app = create_app()
+
+    async def check():
+        headers = {"Host": host, "Accept": "application/json, text/event-stream"}
+        if origin is not None:
+            headers["Origin"] = origin
+        async with (
+            app.router.lifespan_context(app),
+            httpx.AsyncClient(transport=httpx.ASGITransport(app=app)) as client,
+        ):
+            response = await client.post(
+                "http://localhost:8081/mcp",
+                headers=headers,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2025-03-26",
+                        "capabilities": {},
+                        "clientInfo": {"name": "test", "version": "1"},
+                    },
+                },
+            )
+            assert response.status_code == status
+            if status == 200:
+                assert response.json()["result"]["serverInfo"]["name"] == "openleg-mcp"
+
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize(
+    "name", ["OPENLEG_MCP_ALLOWED_HOSTS", "OPENLEG_MCP_ALLOWED_ORIGINS"]
+)
+@pytest.mark.parametrize("value", ["", " , , "])
+def test_empty_transport_allowlist_refuses_start(monkeypatch, name, value):
+    from mcp_sidecar.server import create_app
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv(name, value)
+    with pytest.raises(ValueError, match=name):
+        create_app()
+
+
+def test_exception_and_stack_logs_redact_tokens(monkeypatch):
+    import io
+    import logging
+
+    from mcp_sidecar.server import redact_transport_logs
+
+    # Restore the factory after this test, including on the pre-fix failure.
+    monkeypatch.setattr(logging, "_logRecordFactory", logging.getLogRecordFactory())
+    redact_transport_logs()
+    output = io.StringIO()
+    handler = logging.StreamHandler(output)
+    handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    logger = logging.getLogger("sidecar-diagnostic")
+    monkeypatch.setattr(logger, "handlers", [handler])
+    monkeypatch.setattr(logger, "propagate", False)
+    monkeypatch.setattr(logger, "disabled", False)
+    token = "olk_synthetic_exception_secret"
+    try:
+        raise ValueError("upstream failed with " + token)
+    except ValueError:
+        logger.exception("request failed")
+    # Exercise stack_info independently of the exception path.
+    record = logger.makeRecord(
+        logger.name,
+        logging.ERROR,
+        __file__,
+        1,
+        "stack diagnostic",
+        (),
+        None,
+        sinfo="Stack (most recent call last):\n  " + token,
+    )
+    logger.handle(record)
+    rendered = output.getvalue()
+    assert token not in rendered
+    assert "ValueError: upstream failed with [redacted]" in rendered
+    assert "Traceback (most recent call last):" in rendered
+    assert "ERROR sidecar-diagnostic: request failed" in rendered
+    assert "Stack (most recent call last):\n  [redacted]" in rendered
+
+
+def test_redaction_preserves_unrelated_record_semantics(monkeypatch):
+    import logging
+    import sys
+
+    from mcp_sidecar.server import redact_transport_logs
+
+    monkeypatch.setattr(logging, "_logRecordFactory", logging.getLogRecordFactory())
+    redact_transport_logs()
+    logger = logging.getLogger("unrelated")
+    try:
+        raise ValueError("ordinary diagnostic")
+    except ValueError:
+        exception = sys.exc_info()
+        record = logger.makeRecord(
+            logger.name,
+            logging.ERROR,
+            __file__,
+            1,
+            "failed %s",
+            ("request",),
+            exception,
+            sinfo="ordinary stack",
+        )
+    assert record.msg == "failed %s"
+    assert record.args == ("request",)
+    assert record.exc_info is exception
+    assert record.exc_text is None
+    assert record.stack_info == "ordinary stack"
