@@ -719,3 +719,61 @@ def test_unpublished_wrong_quarter_does_not_reserve_sources(membership):
     assert _publish(client, stale).status_code == 409
     assert client.get("/verein/finanzen/2026-Q2.json").status_code == 404
     assert client.get("/verein/finanzen/2026-Q3.json").status_code == 200
+
+
+def test_publication_checks_sources_even_when_continuity_passes(membership):
+    """A prepared correction cannot steal a later published quarter's sources."""
+    from store import verein_finance
+    from verein_finance import FinanceInputError
+
+    client, store = _setup(membership)
+    earlier = _prepare(client, _earlier_quarter())
+    _other_reviewer(client, store)
+    assert _publish(client, earlier).status_code == 303
+
+    def add_balanced_sources(data, month):
+        def add(rows):
+            receipt = (
+                rows[1].copy()
+                if len(rows) > 1
+                else list(csv.reader(io.StringIO(_data()["bookings"])))[1]
+            )
+            receipt[0:5] = [
+                "later-receipt",
+                f"2026-{month}-02",
+                "receipt",
+                "bank-private",
+                "general",
+            ]
+            receipt[7] = "10.00"
+            refund = receipt.copy()
+            refund[0], refund[2], refund[8] = "later-refund", "refund", "refund"
+            rows.extend([receipt, refund])
+
+        return _change(data, "bookings", add)
+
+    correction = add_balanced_sources(_earlier_quarter(), "04")
+    correction["correction_reason"] = "Add balanced source records"
+    corrected = _prepare(client, correction)
+    following = _prepare(client, add_balanced_sources(_quiet_following_quarter(), "07"))
+    client.post(
+        "/verein/vorstand/login",
+        data={
+            "csrf_token": test_verein_membership._csrf(
+                client, "/verein/vorstand/login"
+            ),
+            "email": "reviewer@example.org",
+            "password": "correct-horse-battery-staple",
+        },
+    )
+    assert _publish(client, following).status_code == 303
+    with client.session_transaction() as session:
+        token = session["verein_session"]
+    identifier = corrected.rsplit("/", 1)[1]
+    # Check continuity independently so another guard cannot mask this regression.
+    report = verein_finance.for_review(token, identifier)
+    with store.transaction_cursor() as cur:
+        verein_finance._continuity(cur, report["private_input"])
+    with pytest.raises(FinanceInputError) as rejected:
+        verein_finance.publish(token, identifier, "Checked original source records")
+    assert rejected.value.field == "bookings"
