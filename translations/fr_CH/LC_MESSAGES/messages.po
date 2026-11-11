@@ -17375,6 +17375,9 @@ msgstr "✓ Créer une communauté électrique"
 msgid "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 msgstr "✓ Vue d’ensemble des inscriptions et de l’avancement de la création"
 
+msgid "Demodorf öffnen"
+msgstr "Ouvrir la démo"
+
 #. Draft translation; native language and domain review pending.
 #: billing_workspace.py:65 dashboard.py:213 dashboard.py:214 dashboard.py:453
 #: dashboard.py:455
