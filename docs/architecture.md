@@ -65,6 +65,7 @@ without code changes.
 | `site_bp` | `site_release.py` | Public association, software, knowledge and participation destinations |
 | `verein_bp` | `verein_routes.py` | `/verein` membership and private board administration |
 | `events_bp` | `verein_event_routes.py` | `/veranstaltungen`, `/verein/vorstand/treffen` |
+| `finance_bp` | `verein_finance_routes.py` | `/verein/finanzen`, `/verein/vorstand/finanzen` |
 
 The three association/site blueprints require `SITE_RELEASE_ENABLED`. They remain
 registered when disabled so the public route contract is stable; requests return

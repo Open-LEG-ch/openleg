@@ -12434,11 +12434,6 @@ msgstr "NPA"
 msgid "PLZ range e.g. 8000-8999"
 msgstr "Plage de NPA, p. ex. 8000-8999"
 
-#. Draft translation; native language and domain review pending.
-#: document_generator.py:160
-msgid "PV-Anlage:"
-msgstr "Système PV:"
-
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
 msgstr "Puissance PV DC (kWc, en option)"

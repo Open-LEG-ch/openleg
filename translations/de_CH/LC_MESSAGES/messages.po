@@ -11958,10 +11958,6 @@ msgstr "PLZ"
 msgid "PLZ range e.g. 8000-8999"
 msgstr "PLZ-Bereich, z. B. 8000-8999"
 
-#: document_generator.py:160
-msgid "PV-Anlage:"
-msgstr "PV-Anlage:"
-
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
 msgstr "PV-DC-Leistung (kWp, optional)"

@@ -342,6 +342,11 @@ def test_terminated_owner_sees_actual_reason_and_date(membership, monkeypatch):
 def test_termination_appeal_preserves_sent_history_and_allows_fresh_reminder(
     membership, monkeypatch
 ):
+    from store import verein
+
+    monkeypatch.setattr(
+        verein, "now_utc", lambda: datetime(2026, 11, 7, 12, tzinfo=UTC)
+    )
     client, _mail, store, _reviewer_id, path = _accepted(membership)
     from datetime import timedelta
 

@@ -31,6 +31,7 @@ BLUEPRINTS = {
     "site_bp": "site_release.py",
     "verein_bp": "verein_routes.py",
     "events_bp": "verein_event_routes.py",
+    "finance_bp": "verein_finance_routes.py",
 }
 
 
