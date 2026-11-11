@@ -13,12 +13,46 @@ Collections are available below
 - `GET /billing/periods`, `/billing/invoices`, and `/billing/cases`
 - `GET /payments/matches`
 
-Collections accept `status`, `limit` (1–100), and an opaque `cursor`; responses
-contain `items` and `next_cursor`. Replaying a mutation with the same
+Metering, billing, and payment collections accept `status`, `limit` (1–100),
+and an opaque `cursor`; responses contain `items` and `next_cursor`. Replaying a mutation with the same
 `Idempotency-Key` and the same payload returns the stored result with
-`replayed: true`; reusing a key with a different payload is a `409` conflict. Operational projections exclude source
-evidence, invoice snapshots, participant identifiers, attachments, messages,
-and bank-account data.
+`replayed: true`; reusing a key with a different payload is a `409` conflict.
+
+Read items expose only the fields listed below. Fields absent from a store row
+are omitted; null values remain null. New store columns are not exposed
+automatically.
+
+| Read resource | Item fields |
+| --- | --- |
+| `GET /formation` (`submissions`) | `case_id`, `community_id`, `adapter_key`, `contract_version`, `state`, `next_action`, `response_status`, `retryable`, `failure_code`, `created_at`, `delivered_at`, `acknowledged_at` |
+| `GET /membership-mutations` (`mutations`) | `case_id`, `mutation_id`, `community_id`, `mutation_type`, `effective_date`, `source_agreement_id`, `state`, `next_action`, `response_status`, `created_at`, `updated_at` |
+| `GET /metering/jobs` | `id`, `territory`, `started_at`, `finished_at`, `status`, `attempts`, `downloaded_files`, `imported_files`, `imported_readings`, `error_code` |
+| `GET /metering/calculated-deliveries` | `id`, `contract_version`, `format_version`, `transport`, `community_id`, `period_start`, `period_end`, `status`, `diagnostics`, `record_count`, `received_at` |
+| `GET /billing/periods` | `id`, `community_id`, `period_start`, `period_end`, `total_production_kwh`, `total_allocated_kwh`, `total_surplus_kwh`, `total_network_discount_chf`, `status` |
+| `GET /billing/invoices` | `id`, `invoice_number`, `gross_chf`, `issue_date`, `due_date`, `lifecycle_state` |
+| `GET /billing/cases` | `id`, `invoice_id`, `category`, `status`, `created_at`, `updated_at` |
+| `GET /payments/matches` | `id`, `invoice_id`, `entry_reference`, `booking_date`, `amount`, `currency`, `payment_reference`, `is_reversal`, `match_decision` |
+
+Formation and membership reads return `submissions` and `mutations`,
+respectively, without pagination fields. Operators correlate membership reads
+using `mutation_id`; `participant_id` is not returned. Source evidence,
+invoice snapshots, participant records, attachments, and messages are excluded.
+Payment metadata includes amount, currency, booking date, and entry/payment
+references. No read projection returns bank-account details: IBAN, account
+holder, account number, debtor name, or debtor address.
+
+Dashboard reads use the administrator's session at
+`/leg/community/{community_id}/operator-api`:
+
+| Read resource | Item fields |
+| --- | --- |
+| `GET /credentials` (`credentials`) | `id`, `community_id`, `name`, `capabilities`, `rate_limit_per_hour`, `active`, `created_at`, `updated_at`, `last_used_at`, `webhook_url`, `webhook_requires_rotation` |
+| `GET /deliveries` (`deliveries`) | `delivery_id`, `status`, `attempt_count`, `response_status`, `next_attempt_at`, `last_attempt_at`, `event_id`, `event_type`, `aggregate_id`, `occurred_at` |
+
+Credential listing also requires the dashboard CSRF token.
+`webhook_requires_rotation` is derived from the presence of a webhook URL
+without a stored signing secret. Credential lists never return tokens, token
+hashes, or signing secrets.
 
 Mutations require an `Idempotency-Key` of 1–128 characters:
 
