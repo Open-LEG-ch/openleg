@@ -18,6 +18,8 @@ import re
 from datetime import timedelta
 from urllib.parse import urlsplit
 
+import release_identity
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_APP_BASE_URL = "http://localhost:5003"
@@ -243,6 +245,13 @@ def build_config(env=None, overrides=None):
         },
     }
 
+    for key in (
+        "OPENLEG_RELEASE_TAG",
+        "OPENLEG_RELEASE_SHA",
+        "OPENLEG_RELEASE_IMAGE_DIGEST",
+    ):
+        config[key] = env.get(key, "")
+
     if overrides:
         config.update(overrides)
         if "APP_BASE_URL" in overrides and "SITE_URL" not in overrides:
@@ -277,4 +286,5 @@ def build_config(env=None, overrides=None):
     if isinstance(locale, str):
         config["BABEL_DEFAULT_LOCALE"] = locale.strip() or "de_CH"
 
+    config["RELEASE_IDENTITY"] = release_identity.from_config(config)
     return config

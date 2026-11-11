@@ -41,6 +41,7 @@ import interest_confirmation
 import interest_intake
 import private_http
 import registration
+import release_identity
 import release_mode
 import security_utils
 import site_release
@@ -1118,6 +1119,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
     i18n.init_app(application)
     application.context_processor(private_http.template_context)
     application.context_processor(site_release.template_context)
+    application.context_processor(release_identity.template_context)
     verein_commands.init_app(application)
 
     public_site_base = app_config.validated_public_site_url(

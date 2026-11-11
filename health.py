@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Health check blueprint for OpenLEG."""
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, current_app, jsonify
 
 import database as db
 
@@ -10,7 +10,8 @@ health_bp = Blueprint("health", __name__)
 
 @health_bp.route("/health")
 def health():
-    status = {"status": "healthy"}
+    identity = current_app.config.get("RELEASE_IDENTITY")
+    status = {"status": "healthy", "release": identity.as_dict() if identity else None}
 
     # Check DB
     try:
