@@ -2,6 +2,7 @@
 """Usage retention and hourly budgets through HTTP and PostgreSQL."""
 
 import hashlib
+from unittest.mock import patch
 
 import pytest
 from flask import Flask
@@ -11,6 +12,20 @@ from tests import test_interest_postgres
 
 interest_database = test_interest_postgres.interest_database
 pytestmark = pytest.mark.integration
+
+
+@pytest.fixture(autouse=True)
+def confirmed_credential_creator():
+    """Dispatch delivers only for credentials whose creator is still an admin."""
+    with patch(
+        "operator_api.formation_wizard.get_community_status",
+        return_value={
+            "members": [
+                {"building_id": "admin-1", "role": "admin", "status": "confirmed"}
+            ]
+        },
+    ):
+        yield
 
 
 def test_request_prunes_only_its_expired_usage_and_preserves_budget(interest_database):
