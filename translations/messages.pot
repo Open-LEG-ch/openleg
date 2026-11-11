@@ -13398,3 +13398,10 @@ msgstr ""
 
 msgid "Wer handelt mit diesem Schlüssel?"
 msgstr ""
+
+#: templates/sandbox/operator.html:12
+msgid ""
+"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
+"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
+"Bestätigung ist derzeit noch nicht verfügbar."
+msgstr ""

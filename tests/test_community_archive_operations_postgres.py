@@ -235,6 +235,7 @@ def test_operating_records_and_api_replay_survive_clean_restore(
             headers={"X-CSRF-Token": "archive-csrf"},
             json={
                 "name": "New destination client",
+                "actor_kind": "service",
                 "capabilities": [
                     "cases.read",
                     "cases.mutate",

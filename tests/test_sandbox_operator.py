@@ -271,3 +271,55 @@ def test_console_and_local_sink_recheck_role_csrf_scope_and_callback(
     monkeypatch.delenv("OPENLEG_SANDBOX_WORKER", raising=False)
     with pytest.raises(RuntimeError, match="requires a village worker"):
         sandbox_operator.install(Flask(__name__))
+
+
+@pytest.mark.parametrize(
+    "language,guidance",
+    [
+        (
+            "de-CH",
+            (
+                "Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). "
+                "Ein Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. "
+                "Diese Bestätigung ist derzeit noch nicht verfügbar."
+            ),
+        ),
+        (
+            "fr-CH",
+            (
+                "Pour les étapes de soumission, choisissez Personne (human) ou Service (service). "
+                "Une clé d’agent est refusée sans confirmation humaine. "
+                "Cette confirmation n’est pas encore disponible."
+            ),
+        ),
+    ],
+)
+def test_console_explains_which_actor_can_complete_the_exercise(
+    village, language, guidance
+):
+    client = village.test_client()
+    prefix, _ = _start(client, "administrator")
+    page = client.get(prefix + "/sandbox/operator?lang=" + language)
+    assert page.status_code == 200
+    assert guidance in page.text
+
+
+def test_french_console_translates_existing_credential_actor_labels(village):
+    from html import unescape
+
+    client = village.test_client()
+    prefix, _ = _start(client, "administrator")
+    for kind in ("human", "service", "agent"):
+        assert (
+            _credential(client, prefix, actor_kind=kind, name=kind).status_code == 201
+        )
+    page = client.get(prefix + "/sandbox/operator?lang=fr-CH")
+    assert page.status_code == 200
+    for kind, label in (
+        ("human", "Personne"),
+        ("service", "Service"),
+        ("agent", "Agent"),
+    ):
+        assert f">{kind} · {label} · True</option>" in page.text
+    assert "data-actor-labels=" in page.text
+    assert '"human": "Personne"' in unescape(page.text)

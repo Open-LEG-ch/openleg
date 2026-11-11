@@ -31,7 +31,11 @@ def test_issued_secret_is_persisted_and_signs_after_session_key_rotation(
     _set_session(client, "owner")
     response = client.post(
         f"/leg/community/{cid}/operator-api/credentials",
-        json={"name": "Synthetic operator", "capabilities": ["formation.read"]},
+        json={
+            "name": "Synthetic operator",
+            "capabilities": ["formation.read"],
+            "actor_kind": "service",
+        },
         headers={"X-CSRF-Token": "csrf-secret"},
     )
     assert response.status_code == 201
@@ -45,7 +49,11 @@ def test_issued_secret_is_persisted_and_signs_after_session_key_rotation(
     )
     second = client.post(
         f"/leg/community/{cid}/operator-api/credentials",
-        json={"name": "Second operator", "capabilities": ["formation.read"]},
+        json={
+            "name": "Second operator",
+            "capabilities": ["formation.read"],
+            "actor_kind": "service",
+        },
         headers={"X-CSRF-Token": "csrf-secret"},
     )
     assert second.status_code == 201

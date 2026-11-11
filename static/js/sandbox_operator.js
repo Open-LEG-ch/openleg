@@ -4,6 +4,7 @@
     const root = document.getElementById("operator-console");
     if (!root) return;
     const community = root.dataset.community;
+    const actorLabels = JSON.parse(root.dataset.actorLabels);
     const credentialsPath = `/leg/community/${community}/operator-api/credentials`;
     const api = `/api/operator/v1/communities/${community}`;
     const token = document.getElementById("api-token");
@@ -30,7 +31,7 @@
             let option = Array.from(clients.options).find(option => option.value === row.id);
             if (!option) {option = new Option(); clients.add(option);}
             option.value = row.id;
-            option.textContent = row.name + " · " + row.actor_kind + (row.agent_label ? " · " + row.agent_label : "") + " · " + row.active;
+            option.textContent = row.name + " · " + actorLabels[row.actor_kind] + (row.agent_label ? " · " + row.agent_label : "") + " · " + row.active;
             clients.value = row.id;
         }
         if (result.data.token) {

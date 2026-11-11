@@ -388,6 +388,7 @@ def test_operator_replay_retains_the_actual_recorded_event_reference(
         f"/leg/community/{cid}/operator-api/credentials",
         json={
             "name": "Synthetic replay operator",
+            "actor_kind": "service",
             "capabilities": ["membership.read", "membership.mutate"],
         },
         headers={"X-CSRF-Token": "csrf-secret"},
