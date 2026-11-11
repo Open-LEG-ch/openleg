@@ -62,6 +62,8 @@ test('suggestions are keyboard buttons with safe API labels and allow checking',
     await suggestion.fire('click');
     assert.equal(e['address-input'].value,'<img src=x onerror=alert(1)>');
     assert.equal(e['btn-check'].disabled,false);
+    assert.equal(e.suggestions.classList.contains('hidden'),true);
+    assert.equal(e['btn-check'].focused,true);
 });
 test('a failing map must not stop address entry', async () => {
     const {elements:e,type}=setup([{body:{suggestions:[]}}], {L:{map(){throw new Error('blocked map');}}});
