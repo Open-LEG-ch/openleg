@@ -815,8 +815,8 @@ msgstr ""
 msgid "Abrechnungs-Richtlinie"
 msgstr ""
 
-#: member_invoices.py:40 templates/admin/abrechnungen.html:121 templates/leg_billing_policy.html:107
-#: templates/member_invoice_detail.html:88
+#: member_invoices.py:40 member_invoices.py:703 templates/admin/abrechnungen.html:121
+#: templates/leg_billing_policy.html:107 templates/member_invoice_detail.html:88
 msgid "Abrechnungsentgelt"
 msgstr ""
 
@@ -2334,9 +2334,10 @@ msgstr ""
 msgid "Betrag"
 msgstr ""
 
-#: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:68 templates/member_invoice_detail.html:97
-#: templates/member_invoice_detail.html:124 templates/member_invoice_detail.html:152
+#: member_invoices.py:708 templates/documents/member_invoice.html:23
+#: templates/documents/member_invoice.html:32 templates/member_invoice_detail.html:68
+#: templates/member_invoice_detail.html:97 templates/member_invoice_detail.html:124
+#: templates/member_invoice_detail.html:152
 msgid "Betrag (CHF)"
 msgstr ""
 
@@ -8335,7 +8336,7 @@ msgstr ""
 msgid "Keine Gemeinden gefunden"
 msgstr ""
 
-#: member_invoices.py:766
+#: member_invoices.py:774
 msgid "Keine Gutschriften"
 msgstr ""
 
@@ -8395,7 +8396,7 @@ msgstr ""
 msgid "Keine Tarifdaten für diese Gemeinde verfügbar."
 msgstr ""
 
-#: member_invoices.py:758
+#: member_invoices.py:766
 msgid "Keine Verbrauchskosten"
 msgstr ""
 
@@ -9483,9 +9484,10 @@ msgstr ""
 msgid "Menge"
 msgstr ""
 
-#: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:66 templates/member_invoice_detail.html:95
-#: templates/member_invoice_detail.html:122 templates/member_invoice_detail.html:150
+#: member_invoices.py:706 templates/documents/member_invoice.html:23
+#: templates/documents/member_invoice.html:32 templates/member_invoice_detail.html:66
+#: templates/member_invoice_detail.html:95 templates/member_invoice_detail.html:122
+#: templates/member_invoice_detail.html:150
 msgid "Menge (kWh)"
 msgstr ""
 
@@ -10098,7 +10100,7 @@ msgstr ""
 msgid "Netzentgelt-Tarif:"
 msgstr ""
 
-#: templates/member_invoice_detail.html:51 templates/sandbox/billing.html:13
+#: member_invoices.py:744 templates/member_invoice_detail.html:51 templates/sandbox/billing.html:13
 msgid "Netzentgelt:"
 msgstr ""
 
@@ -11091,6 +11093,10 @@ msgstr ""
 msgid "PLZ range e.g. 8000-8999"
 msgstr ""
 
+#: document_generator.py:159
+msgid "PV-Anlage:"
+msgstr ""
+
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
 msgstr ""
@@ -11201,10 +11207,11 @@ msgstr ""
 msgid "Plattform"
 msgstr ""
 
-#: templates/admin/abrechnungen.html:129 templates/documents/member_invoice.html:23
-#: templates/documents/member_invoice.html:32 templates/leg_kalkulator.html:205
-#: templates/member_invoice_detail.html:65 templates/member_invoice_detail.html:94
-#: templates/member_invoice_detail.html:121 templates/member_invoice_detail.html:149
+#: member_invoices.py:705 templates/admin/abrechnungen.html:129
+#: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
+#: templates/leg_kalkulator.html:205 templates/member_invoice_detail.html:65
+#: templates/member_invoice_detail.html:94 templates/member_invoice_detail.html:121
+#: templates/member_invoice_detail.html:149
 msgid "Position"
 msgstr ""
 
@@ -11229,9 +11236,10 @@ msgstr ""
 msgid "Preis"
 msgstr ""
 
-#: templates/documents/member_invoice.html:23 templates/documents/member_invoice.html:32
-#: templates/member_invoice_detail.html:67 templates/member_invoice_detail.html:96
-#: templates/member_invoice_detail.html:123 templates/member_invoice_detail.html:151
+#: member_invoices.py:707 templates/documents/member_invoice.html:23
+#: templates/documents/member_invoice.html:32 templates/member_invoice_detail.html:67
+#: templates/member_invoice_detail.html:96 templates/member_invoice_detail.html:123
+#: templates/member_invoice_detail.html:151
 msgid "Preis (Rp./kWh)"
 msgstr ""
 
@@ -11626,7 +11634,8 @@ msgstr ""
 msgid "Quartierakku speichern"
 msgstr ""
 
-#: member_invoices.py:41 templates/admin/abrechnungen.html:122 templates/member_invoice_detail.html:115
+#: member_invoices.py:41 member_invoices.py:704 templates/admin/abrechnungen.html:122
+#: templates/member_invoice_detail.html:115
 msgid "Quartierakku-Anteil"
 msgstr ""
 
@@ -12077,9 +12086,9 @@ msgstr ""
 msgid "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 msgstr ""
 
-#: i18n.py:142 templates/admin/abrechnungen.html:135 templates/admin/abrechnungen.html:138
-#: templates/documents/member_invoice.html:19 templates/member_invoice_detail.html:50
-#: templates/member_invoice_detail.html:51
+#: i18n.py:142 member_invoices.py:745 templates/admin/abrechnungen.html:135
+#: templates/admin/abrechnungen.html:138 templates/documents/member_invoice.html:19
+#: templates/member_invoice_detail.html:50 templates/member_invoice_detail.html:51
 msgid "Rp./kWh"
 msgstr ""
 
@@ -15407,7 +15416,7 @@ msgstr ""
 msgid "der Anlagen; der Rest bleibt wegen ungelöster Orts- oder Fusionsnamen ungematcht."
 msgstr ""
 
-#: templates/utility/dashboard.html:20
+#: templates/utility/dashboard.html:20 translations/test_workflow.py:224
 msgid "enterprise"
 msgstr ""
 

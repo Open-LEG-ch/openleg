@@ -156,9 +156,8 @@ def generate_teilnehmervertrag(
 
     pv_section = ""
     if pv_kwp and pv_kwp > 0:
-        pv_section = (
-            f"<p><strong>{_('PV-Anlage:')}</strong> {_escape_html(pv_kwp)} kWp</p>"
-        )
+        pv_label = _("PV-Anlage:")
+        pv_section = f"<p><strong>{pv_label}</strong> {_escape_html(pv_kwp)} kWp</p>"
 
     html = render_document_template(
         "documents/participant_contract.html",
