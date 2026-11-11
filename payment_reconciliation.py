@@ -185,7 +185,7 @@ def _amount(element, tag="Amt"):
         raise StatementError(
             _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
         ) from error
-    if amount != stored_amount or amount >= Decimal("1000000000000"):
+    if amount != stored_amount or amount >= Decimal(1000000000000):
         raise StatementError(_N("Der Zahlungseintrag enthält keinen gültigen Betrag."))
     return amount, currency
 
