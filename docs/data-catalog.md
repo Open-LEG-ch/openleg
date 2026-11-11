@@ -660,7 +660,8 @@ Reset, discard and expiry remove the entire capture directory and database.
 ## store/operator_api
 
 - **Tables:** `operator_api_clients`, `operator_api_usage`, `operator_events`, `operator_webhook_deliveries`.
-- **Holds:** hashed credentials, capabilities, minimal signed events, and delivery state.
+- **Holds:** hashed credentials, capabilities, request timestamps and endpoints for hourly budgets, minimal signed events, and delivery state.
+- **Usage retention:** `claim_usage` deletes the requesting client's `operator_api_usage` rows outside the last hour before checking its budget, in the same transaction. Cleanup also commits for a 429 response. Idle or revoked clients retain rows until another budget check or credential deletion; there is no scheduled usage cleanup.
 - **Sensitivity:** private operational integration data; tokens are never stored recoverably.
 - **Resident-visible:** no.
 
