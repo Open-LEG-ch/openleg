@@ -63,7 +63,7 @@ def test_shared_footer_next_actions(
         )
         assert parse_qs(demo.query) == {
             "entry": ["footer"],
-            **({"lang": [locale]} if locale != "de-CH" else {}),
+            "lang": [locale],
         }
     else:
         assert demo_label not in links
