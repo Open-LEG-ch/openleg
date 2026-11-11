@@ -172,7 +172,7 @@
               matchInfo.replaceChildren(matched, document.createTextNode(detail));
               setAddressState('found', messages.found);
           } else {
-              matchInfo.textContent = messages.noNeighbours.replace(/<[^>]*>/g, '');
+              matchInfo.textContent = messages.noNeighbours;
               setAddressState('not-found', messages.noNeighboursHint);
           }
           get('step-address').classList.add('hidden');
