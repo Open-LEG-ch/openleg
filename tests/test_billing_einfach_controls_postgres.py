@@ -59,7 +59,7 @@ def test_einfach_retries_and_issued_snapshots_survive_source_withdrawal(
         payload["community_id"], start, end, prepared_by="member"
     ) == {"status": "already_processed", "period_id": result["period_id"]}
     assert db.get_billing_period(result["period_id"], payload["community_id"]) == period
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         result["period_id"], payload["community_id"], approver_id="producer"
     )
     response = client.post(
@@ -72,7 +72,7 @@ def test_einfach_retries_and_issued_snapshots_survive_source_withdrawal(
     )
     assert response.status_code == 201
     assert (
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             result["period_id"], payload["community_id"], approver_id="producer"
         )
         == invoices
@@ -112,7 +112,7 @@ def test_einfach_source_or_certificate_forgery_cannot_issue_invoices(
             (json.dumps(reconciliation), result["period_id"]),
         )
     with pytest.raises(billing_approval.BillingApprovalError):
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             result["period_id"], payload["community_id"], approver_id="producer"
         )
     with db.get_connection() as conn, conn.cursor() as cur:
@@ -311,7 +311,7 @@ def test_exact_threshold_witness_keeps_the_float_branch_difference_in_audit(
     assert period["reconciliation"]["vnb_allocated_kwh"] == 0.011
     assert period["reconciliation"]["engine_allocated_kwh"] == 0.012
     assert period["reconciliation"]["difference_kwh"] == 0.001
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         result["period_id"], cid, approver_id="producer"
     )
     quantities = {

@@ -135,7 +135,6 @@ def is_db_available() -> bool:
 # that monkeypatch `database.get_connection` keep working unchanged. The import
 # is at module end to avoid a circular import (store.ranking imports database).
 # ---------------------------------------------------------------------------
-from billing_approval import BillingApprovalError  # noqa: F401
 from store import operator_api as _operator_api
 from store import operator_operations as _operator_operations
 from store import vnb_exchange as _vnb_exchange
@@ -158,7 +157,6 @@ from store.battery import get_battery, save_battery  # noqa: F401
 from store.billing import (  # noqa: F401
     BillingPolicyConflict,
     BillingStoreError,
-    approve_billing_period,
     cancel_invoice,
     complete_invoice_delivery,
     confirm_invoice_delivery,

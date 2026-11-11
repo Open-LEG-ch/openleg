@@ -333,7 +333,7 @@ def test_a_late_draft_cannot_approve_with_withdrawn_evidence(
             )
 
     with pytest.raises(billing_approval.BillingApprovalError, match="VNB"):
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             period_id, payload["community_id"], approver_id="member"
         )
 
@@ -663,7 +663,9 @@ def test_withdrawal_and_approval_serialize_on_the_community(
         )
 
     def approve():
-        return db.approve_billing_period(period_id, cid, approver_id="member")
+        return billing_approval.approve_billing_period(
+            period_id, cid, approver_id="member"
+        )
 
     with test_interest_postgres.transaction_race(monkeypatch) as race:
         staged = race.start(
@@ -686,7 +688,9 @@ def test_withdrawal_and_approval_serialize_on_the_community(
             assert race.finish(waiting)["action"] == "withdrawn"
             assert db.get_billing_period(period_id)["status"] == "issued"
             assert (
-                db.approve_billing_period(period_id, cid, approver_id="member")
+                billing_approval.approve_billing_period(
+                    period_id, cid, approver_id="member"
+                )
                 == result
             )
 
@@ -757,7 +761,9 @@ def test_a_draft_saved_during_withdrawal_cannot_approve_before_it_commits(
         assert db.get_billing_period(period_id)["status"] == "invalidated"
         assert db.get_billing_period_for_window(cid, start, end) is None
         with pytest.raises(billing_approval.BillingApprovalError, match="VNB"):
-            db.approve_billing_period(period_id, cid, approver_id="member")
+            billing_approval.approve_billing_period(
+                period_id, cid, approver_id="member"
+            )
     assert db.list_community_invoices(cid) == []
 
 
@@ -768,7 +774,7 @@ def test_withdrawal_preserves_issued_invoice_snapshots(calculated_client):
         datetime.fromisoformat(payload[key]) for key in ("period_start", "period_end")
     )
     period_id = db.save_billing_period(payload["community_id"], start, end, summary)
-    issued = db.approve_billing_period(
+    issued = billing_approval.approve_billing_period(
         period_id, payload["community_id"], approver_id="member"
     )
     assert len(issued) == 3
@@ -799,7 +805,7 @@ def test_withdrawal_preserves_issued_invoice_snapshots(calculated_client):
             },
         )
     assert (
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             period_id, payload["community_id"], approver_id="member"
         )
         == issued

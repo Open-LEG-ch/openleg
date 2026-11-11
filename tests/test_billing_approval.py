@@ -240,7 +240,7 @@ def _patch_workspace(monkeypatch, app_module, *, members=None):  # noqa: F811
         raising=False,
     )
     approve = MagicMock(return_value=[{"invoice_number": "MUSTER-2026-000001"}])
-    monkeypatch.setattr(app_module.db, "approve_billing_period", approve, raising=False)
+    monkeypatch.setattr(billing_approval, "approve_billing_period", approve)
     return approve
 
 
@@ -378,7 +378,12 @@ def test_billing_approval_fails_closed_on_storage_error(app_module, monkeypatch)
 
 
 @pytest.mark.integration
-def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
+@pytest.mark.parametrize(
+    "failure_point", ["second_invoice", "after_invoices", "after_status"]
+)
+def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes(
+    failure_point,
+):
     """Native approval preserves atomicity, idempotency and rollback on partial writes."""
     if not os.environ.get("DATABASE_URL"):
         pytest.skip("needs a live database")
@@ -488,10 +493,10 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
             )
             period_id = seed_period(cur, participants=("building-a", "building-b"))
 
-        first = database.approve_billing_period(
+        first = billing_approval.approve_billing_period(
             period_id, COMMUNITY, issue_date=date(2026, 2, 5)
         )
-        retry = database.approve_billing_period(
+        retry = billing_approval.approve_billing_period(
             period_id, COMMUNITY, issue_date=date(2026, 2, 5)
         )
 
@@ -560,7 +565,7 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
                 period_end="2026-03-01 00:00:00+01",
             )
 
-        continued = database.approve_billing_period(
+        continued = billing_approval.approve_billing_period(
             continuation_period_id, COMMUNITY, issue_date=date(2026, 3, 5)
         )
         assert [row["invoice_number"] for row in continued] == ["MUSTER-2026-000003"]
@@ -588,8 +593,32 @@ def test_postgres_approval_is_atomic_idempotent_and_rolls_back_partial_writes():
                 """
             )
 
+        if failure_point != "second_invoice":
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute("DROP TRIGGER reject_building_d_invoice ON invoices")
+                if failure_point == "after_invoices":
+                    cur.execute(
+                        """CREATE TRIGGER reject_building_d_invoice
+                           AFTER INSERT ON invoices
+                           FOR EACH ROW EXECUTE FUNCTION reject_building_d_invoice()"""
+                    )
+                else:
+                    cur.execute(
+                        """CREATE FUNCTION reject_issued_period() RETURNS trigger AS $$
+                           BEGIN
+                               IF NEW.status = 'issued' THEN
+                                   RAISE EXCEPTION 'forced period failure';
+                               END IF;
+                               RETURN NEW;
+                           END;
+                           $$ LANGUAGE plpgsql;
+                           CREATE TRIGGER reject_issued_period
+                           AFTER UPDATE ON billing_periods
+                           FOR EACH ROW EXECUTE FUNCTION reject_issued_period()"""
+                    )
+
         with pytest.raises(database.BillingStoreError):
-            database.approve_billing_period(
+            billing_approval.approve_billing_period(
                 rollback_period_id, COMMUNITY, issue_date=date(2026, 2, 5)
             )
 
@@ -925,7 +954,7 @@ def test_approve_locks_the_active_community_row_before_the_period(monkeypatch):
     )
     _approve_connection(monkeypatch, cursor)
 
-    database.approve_billing_period(42, COMMUNITY, issue_date=date(2026, 2, 5))
+    billing_approval.approve_billing_period(42, COMMUNITY, issue_date=date(2026, 2, 5))
 
     queries = [" ".join(query.split()) for query, _ in cursor.executed]
     community_lock = next(q for q in queries if "FROM communities" in q)
@@ -975,7 +1004,9 @@ def test_approve_refuses_a_missing_or_inactive_community_before_touching_periods
     _approve_connection(monkeypatch, cursor)
 
     with pytest.raises(billing_approval.BillingApprovalError):
-        database.approve_billing_period(42, COMMUNITY, issue_date=date(2026, 2, 5))
+        billing_approval.approve_billing_period(
+            42, COMMUNITY, issue_date=date(2026, 2, 5)
+        )
 
     assert not any("FROM billing_periods" in query for query, _ in cursor.executed)
 
@@ -985,7 +1016,9 @@ def test_approve_refuses_a_wrong_state_period_as_a_domain_conflict(monkeypatch):
     _approve_connection(monkeypatch, cursor)
 
     with pytest.raises(billing_approval.BillingApprovalError) as exc:
-        database.approve_billing_period(42, COMMUNITY, issue_date=date(2026, 2, 5))
+        billing_approval.approve_billing_period(
+            42, COMMUNITY, issue_date=date(2026, 2, 5)
+        )
 
     assert not isinstance(exc.value, database.BillingStoreError)
 
@@ -995,7 +1028,9 @@ def test_approve_refuses_an_unknown_period_as_a_domain_conflict(monkeypatch):
     _approve_connection(monkeypatch, cursor)
 
     with pytest.raises(billing_approval.BillingApprovalError) as exc:
-        database.approve_billing_period(999, COMMUNITY, issue_date=date(2026, 2, 5))
+        billing_approval.approve_billing_period(
+            999, COMMUNITY, issue_date=date(2026, 2, 5)
+        )
 
     assert not isinstance(exc.value, database.BillingStoreError)
 
@@ -1011,7 +1046,9 @@ def test_approve_wraps_storage_outages_as_store_errors(monkeypatch):
     monkeypatch.setattr(database, "get_connection", unavailable_connection)
 
     with pytest.raises(database.BillingStoreError):
-        database.approve_billing_period(42, COMMUNITY, issue_date=date(2026, 2, 5))
+        billing_approval.approve_billing_period(
+            42, COMMUNITY, issue_date=date(2026, 2, 5)
+        )
 
 
 @pytest.mark.parametrize("bad_issue_date", [False, 0, ""])
@@ -1020,7 +1057,9 @@ def test_store_does_not_replace_falsey_invalid_issue_dates(monkeypatch, bad_issu
     _approve_connection(monkeypatch, cursor)
 
     with pytest.raises(billing_approval.BillingApprovalError):
-        database.approve_billing_period(42, COMMUNITY, issue_date=bad_issue_date)
+        billing_approval.approve_billing_period(
+            42, COMMUNITY, issue_date=bad_issue_date
+        )
 
 
 def test_billing_approval_domain_conflict_returns_a_private_409_without_details(
@@ -1303,7 +1342,7 @@ def test_store_defaults_issue_date_via_public_today(monkeypatch):
     cursor = _ApprovalCursor(_period_row(), _draft()["line_items"])
     _approve_connection(monkeypatch, cursor)
 
-    database.approve_billing_period(42, COMMUNITY)
+    billing_approval.approve_billing_period(42, COMMUNITY)
 
     inserts = [
         params for query, params in cursor.executed if "INSERT INTO invoices" in query

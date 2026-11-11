@@ -42,15 +42,21 @@ def test_deletion_waits_for_the_frozen_registration_transaction(
     token = str(uuid4())
     assert db.save_token(token, "consumer-b", "unsubscribe")
     locked, release, deleting = threading.Event(), threading.Event(), threading.Event()
-    original_lock = billing.lock_original_registrations
+    lock_name = (
+        "lock_original_registrations"
+        if phase == "persistence"
+        else "lock_billing_registrations"
+    )
+    original_lock = getattr(billing, lock_name)
     original_connection = db.get_connection
     deletion_pid = []
 
     def hold_registration(*args):
         """Pause after the real registration locks have been acquired."""
-        original_lock(*args)
+        result = original_lock(*args)
         locked.set()
         assert release.wait(15), "billing transaction was not released"
+        return result
 
     @contextmanager
     def observe_connection():
@@ -61,7 +67,7 @@ def test_deletion_waits_for_the_frozen_registration_transaction(
                 deleting.set()
             yield connection
 
-    monkeypatch.setattr(billing, "lock_original_registrations", hold_registration)
+    monkeypatch.setattr(billing, lock_name, hold_registration)
     monkeypatch.setattr(db, "get_connection", observe_connection)
 
     def bill():
@@ -70,7 +76,7 @@ def test_deletion_waits_for_the_frozen_registration_transaction(
             return billing_runner.run_billing_period(
                 cid, start, end, prepared_by="member"
             )
-        return db.approve_billing_period(
+        return billing_approval.approve_billing_period(
             prepared["period_id"], cid, approver_id="producer"
         )
 
@@ -105,7 +111,9 @@ def test_deletion_waits_for_the_frozen_registration_transaction(
     assert db.get_building("consumer-b") is None
     if phase == "persistence":
         with pytest.raises(billing_approval.BillingApprovalError):
-            db.approve_billing_period(result["period_id"], cid, approver_id="producer")
+            billing_approval.approve_billing_period(
+                result["period_id"], cid, approver_id="producer"
+            )
     else:
         own = next(
             invoice for invoice in result if invoice["participant_id"] == "consumer-b"

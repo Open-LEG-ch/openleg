@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+import billing_approval
 import billing_runner
 from tests import test_billing_precision_postgres as precision
 from tests import test_e66_evidence_postgres as e66
@@ -152,7 +153,7 @@ def test_einfach_precision_reaches_approved_invoice_from_reported_total_witness(
     assert float(gaps["consumer-c"]["engine_kwh"]) == 0.485714
     assert float(gaps["consumer-c"]["vnb_kwh"]) == 0.486
 
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         result["period_id"], payload["community_id"], approver_id="producer"
     )
     quantities = {
@@ -179,7 +180,7 @@ def test_einfach_precision_reaches_approved_invoice_from_reported_total_witness(
             for item in provenance["source_evidence"]["metadata"]["mappings"]
         } == {own}
     assert (
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             result["period_id"], payload["community_id"], approver_id="producer"
         )
         == invoices

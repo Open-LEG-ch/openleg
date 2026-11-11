@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+import billing_approval
 import billing_engine
 import billing_policy
 import billing_readings
@@ -141,7 +142,7 @@ def test_exact_pre_certificate_einfach_draft_retry_stays_idempotent(legacy_perio
     assert error.value.code == "billing_inputs_changed"
     assert db.get_billing_period(period_id, community_id) == stored
 
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         period_id, community_id, approver_id="producer"
     )
     assert len(invoices) == 4

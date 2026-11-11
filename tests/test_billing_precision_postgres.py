@@ -122,7 +122,7 @@ def rounded_delivery(configured_e66, monkeypatch, request):
 
 @pytest.mark.parametrize("rounded_delivery", ["0.03"], indirect=True)
 def test_nonzero_settlement_fee_reaches_approved_rounded_e66_invoices(rounded_delivery):
-    client, db, payload, source = rounded_delivery
+    client, _db, payload, source = rounded_delivery
     assert e66.post_e66(client, source).status_code == 201
     start, end = (
         datetime.fromisoformat(payload[key]).astimezone(ZoneInfo("Europe/Zurich"))
@@ -132,7 +132,7 @@ def test_nonzero_settlement_fee_reaches_approved_rounded_e66_invoices(rounded_de
     prepared = billing_runner.run_billing_period(
         payload["community_id"], start, end, prepared_by="member"
     )
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         prepared["period_id"], payload["community_id"], approver_id="producer"
     )
 
@@ -177,7 +177,7 @@ def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document
     assert result["status"] == "created"
     period = db.get_billing_period(result["period_id"], payload["community_id"])
     assert period["calculated_values_fingerprint"] == accepted["fingerprint"]
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         result["period_id"], payload["community_id"], approver_id="producer"
     )
     quantities = {
@@ -242,7 +242,7 @@ def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document
         == 201
     )
     assert (
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             result["period_id"], payload["community_id"], approver_id="producer"
         )
         == invoices
@@ -292,7 +292,7 @@ def test_forged_precision_drafts_do_not_create_invoices(rounded_delivery, forger
         )
 
     with pytest.raises(billing_approval.BillingApprovalError):
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             period_id, payload["community_id"], approver_id="producer"
         )
     with db.get_connection() as conn, conn.cursor() as cur:
@@ -311,7 +311,7 @@ def test_rounding_policy_keeps_withdrawal_and_dual_control_gates(rounded_deliver
             (payload["community_id"],),
         )
     with pytest.raises(billing_approval.BillingApprovalError, match="Dual-control"):
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             period_id, payload["community_id"], approver_id="member"
         )
     source = db.list_calculated_values_deliveries("dietikon")[0]
@@ -327,7 +327,7 @@ def test_rounding_policy_keeps_withdrawal_and_dual_control_gates(rounded_deliver
         == 201
     )
     with pytest.raises(billing_approval.BillingApprovalError):
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             period_id, payload["community_id"], approver_id="producer"
         )
     assert (
@@ -438,7 +438,7 @@ def test_consumer_limited_source_uses_rounded_producer_credits(rounded_delivery)
     result = billing_runner.run_billing_period(
         payload["community_id"], start, end, prepared_by="member"
     )
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         result["period_id"], payload["community_id"], approver_id="producer"
     )
 

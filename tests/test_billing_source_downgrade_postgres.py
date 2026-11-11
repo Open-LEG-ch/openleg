@@ -46,7 +46,7 @@ def test_removing_precision_marker_cannot_downgrade_source_quantity_checks(
             (json.dumps(reconciliation), period_id),
         )
     with pytest.raises(billing_approval.BillingApprovalError):
-        db.approve_billing_period(
+        billing_approval.approve_billing_period(
             period_id, payload["community_id"], approver_id="producer"
         )
     with db.get_connection() as conn, conn.cursor() as cur:
@@ -87,7 +87,7 @@ def test_legacy_exact_e66_draft_without_certificate_can_still_be_approved(
             (json.dumps(reconciliation), result["period_id"]),
         )
 
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         result["period_id"], payload["community_id"], approver_id="producer"
     )
 

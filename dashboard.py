@@ -9,6 +9,7 @@ from decimal import Decimal
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
+import billing_approval
 import billing_lifecycle
 import billing_policy
 import billing_workspace
@@ -696,7 +697,7 @@ def leg_approve_billing_period(
                 ),
                 "invoices": [],
             }
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         period_id, community_id, approver_id=building_id
     )
     return {"error": None, "invoices": invoices}

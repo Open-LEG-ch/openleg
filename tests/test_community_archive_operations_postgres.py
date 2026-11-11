@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import psycopg2.extras
 import pytest
 
+import billing_approval
 import billing_runner
 import community_archive
 import payment_reconciliation
@@ -48,7 +49,7 @@ def operating_archive(rounded_delivery):
         for key in ("period_start", "period_end")
     )
     period = billing_runner.run_billing_period(cid, start, end, prepared_by="member")
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         period["period_id"], cid, approver_id="producer"
     )
     own = next(invoice for invoice in invoices if invoice["participant_id"] == "member")
