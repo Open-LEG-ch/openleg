@@ -1,0 +1,167 @@
+{% macro home_image(kind, x, y, size) -%}
+<image href="/static/images/release/components/w480/{{ kind }}.webp" x="{{ x }}" y="{{ y }}" width="{{ size }}" height="{{ size }}" />
+{%- endmacro %}
+<link rel="stylesheet" href="/static/css/homepage.css">
+<div class="release-home">
+
+<section class="home-hero">
+  <div class="release-container home-hero-grid">
+    <div class="home-hero-copy">
+      <h1>{{ _('Solarstrom im Quartier teilen. Eine LEG gründen.') }}</h1>
+      <p class="home-lead">{{ _('Mit OpenLEG verwaltet Ihre lokale Elektrizitätsgemeinschaft (LEG) ihre Mitglieder und bereitet die Abrechnung vor. Die Software ist kostenlos.') }}</p>
+      <div class="home-actions">
+        <a class="release-button release-button-primary" href="{{ '/leg-gruenden'|localized_url }}">{{ _('LEG vorbereiten') }}</a>
+        {% if sandbox_url %}
+        <a class="home-link" href="{{ sandbox_url|localized_url }}"><span class="home-link-text">{{ _('Demodorf öffnen') }}</span> <span class="home-arrow" aria-hidden="true">&rarr;</span></a>
+        {% else %}
+        <a class="home-link" href="{{ '/open-source'|localized_url }}"><span class="home-link-text">{{ _('Software ansehen') }}</span> <span class="home-arrow" aria-hidden="true">&rarr;</span></a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="home-scene">
+      <svg viewBox="0 0 900 730" width="900" height="730" role="img" aria-label="{{ _('Fiktives Quartier mit Wohnhäusern, Mehrfamilienhaus und Werkstatt.') }}" focusable="false">
+        <image href="/static/images/release/components/w480/ground.webp" x="0" y="220" width="900" height="486" />
+        {{ home_image('tree', 530, 90, 145) }}
+        {{ home_image('apartments', 105, 0, 390) }}
+        {{ home_image('house', 490, 100, 310) }}
+        {{ home_image('workshop', 385, 330, 410) }}
+        {{ home_image('house', 20, 285, 310) }}
+        {{ home_image('bungalow', 60, 435, 340) }}
+        {{ home_image('tree', 700, 360, 145) }}
+        {{ home_image('tree', 300, 540, 125) }}
+      </svg>
+    </div>
+    <p class="home-trust"><span>{{ _('Illustration: erfundenes Quartier') }}</span>{% if release_identity %}<a href="{{ release_identity.release_url }}">{{ _('Version %(tag)s', tag=release_identity.tag) }}</a><span>{{ _('Lizenz AGPL-3.0-or-later') }}</span><a href="{{ release_identity.source_url }}">{{ _('Quellcode auf GitHub') }}</a>{% endif %}</p>
+  </div>
+</section>
+
+<section class="home-practice" aria-labelledby="home-practice-title">
+  <div class="release-container home-practice-grid">
+    <div class="home-practice-copy">
+      {% if sandbox_url %}
+      <h2 id="home-practice-title">{{ _('Probieren Sie OpenLEG im Demodorf aus.') }}</h2>
+      <p class="home-lead">{{ _('Sie brauchen keine Anmeldung.') }}</p>
+      <div class="home-actions">
+        <a class="release-button release-button-primary" href="{{ sandbox_url|localized_url }}">{{ _('Demodorf öffnen') }}</a>
+      </div>
+      {% else %}
+      <h2 id="home-practice-title">{{ _('Von Messdaten zur geprüften Abrechnung.') }}</h2>
+      <p class="home-lead">{{ _('OpenLEG liest die Messdaten ein, zeigt, was fehlt, und bereitet die Rechnungen vor. Freigeben müssen Sie selbst.') }}</p>
+      <div class="home-actions">
+        <a class="release-button release-button-primary" href="{{ '/dashboard/demo'|localized_url }}">{{ _('Beispiel-Dashboard öffnen') }}</a>
+      </div>
+      {% endif %}
+    </div>
+    <div class="home-flow">
+      <h3>{{ _('Sie prüfen vor jeder Rechnung.') }}</h3>
+      <p class="home-example-label">{{ _('Statische Auszüge aus dem Demodorf Sonnwil, erfundene Daten.') }}</p>
+      <ol>
+        <li><strong>{{ _('Messdaten importieren') }}</strong><p>{{ _('Die Messdaten kommen vom Verteilnetzbetreiber, der das Stromnetz vor Ort betreibt.') }}</p></li>
+        <li class="home-flow-gap">
+          <strong>{{ _('Fehlende Werte prüfen') }}</strong>
+          <p>{{ _('Eine Lücke ist kein Nullverbrauch. OpenLEG lehnt die Lieferung ab, statt Werte zu erfinden.') }}</p>
+          <figure class="home-notice">
+            <figcaption>{{ _('Abgelehnt') }}</figcaption>
+            <p>{{ _('Ein Viertelstundenwert fehlt. Diese Lieferung kann nicht für die Abrechnung verwendet werden.') }}</p>
+          </figure>
+          <p>{{ _('Zuerst wird die Lieferung korrigiert und erneut geprüft. Erst mit gültigen Messdaten wird der Entwurf vorbereitet.') }}</p>
+        </li>
+        <li><strong>{{ _('Rechnungen freigeben') }}</strong><p>{{ _('Erst eine berechtigte Person gibt sie frei.') }}</p>
+          <figure class="home-notice">
+            <figcaption>{{ _('August 2026: Entwurf, wartet auf Freigabe') }}</figcaption>
+            <p>{{ _('Eine berechtigte Person prüft Tarife, den Abgleich mit dem Verteilnetzbetreiber und die Quelldokumente, bevor sie die Abrechnung freigibt.') }}</p>
+          </figure>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="home-define" id="strom-teilen" aria-labelledby="home-define-title">
+  <div class="release-container">
+    <div class="home-statement"><h2 id="home-define-title">{{ _('Was ist eine LEG?') }}</h2> <p>{{ _('Eine lokale Elektrizitätsgemeinschaft, kurz LEG, nutzt Strom aus dem Quartier gemeinsam über das öffentliche Netz.') }}</p></div>
+    <p class="home-define-more">{{ _('Ob Ihre Anschlüsse dazugehören, klärt der Verteilnetzbetreiber.') }} <a href="{{ '/how-it-works'|localized_url }}">{{ _('So funktioniert eine LEG') }}</a></p>
+  </div>
+</section>
+
+<section class="home-manifesto" aria-labelledby="home-manifesto-title">
+  <div class="release-container">
+    <h2 id="home-manifesto-title">{{ _('OpenLEG ist kein Stromanbieter.') }}</h2>
+    <ul class="home-manifesto-list">
+      <li><strong>{{ _('Wir verkaufen keinen Strom.') }}</strong><p>{{ _('Den Strom teilen Sie mit Ihren Nachbarn. OpenLEG ist nur die Software dafür.') }}</p></li>
+      <li><strong>{{ _('Wir versprechen keine Ersparnis.') }}</strong><p>{{ _('Was eine LEG bringt, hängt von Ihren Tarifen und Anschlüssen ab. Das rechnen Sie selbst nach.') }}</p></li>
+      <li><strong>{{ _('Wir verkaufen keine Daten.') }}</strong><p>{{ _('Ihre Smart-Meter-Daten bleiben in Ihrer LEG.') }}</p></li>
+      <li><strong>{{ _('Kein Verkaufsgespräch.') }}</strong><p>{{ _('Das Demodorf ist offen, ohne Anmeldung und ohne Termin.') }}</p></li>
+      <li><strong>{{ _('Kein verschlossener Code.') }}</strong><p>{{ _('Jede Zeile steht öffentlich auf GitHub, unter der Lizenz AGPL.') }}</p></li>
+      {% if not ga4_id %}
+      <li><strong>{{ _('Keine Tracking-Cookies.') }}</strong><p>{{ _('Deshalb sehen Sie hier kein Cookie-Banner.') }}</p></li>
+      {% endif %}
+    </ul>
+  </div>
+</section>
+
+<section class="home-prepare" aria-labelledby="home-prepare-title">
+  <div class="release-container home-prepare-grid">
+    <div class="home-prepare-head">
+      <h2 id="home-prepare-title">{{ _('Eine LEG beginnt mit einem Gespräch.') }}</h2>
+      <p>{{ _('Mit den Nachbarn und mit dem Netzbetreiber.') }}</p>
+    </div>
+    <ol class="home-steps">
+      <li><h3>{{ _('Beteiligte klären') }}</h3><p>{{ _('Fragen Sie die Nachbarn, wer mitmacht, und den Netzbetreiber, welche Anschlüsse teilnehmen können.') }}</p></li>
+      <li><h3>{{ _('Regeln vereinbaren') }}</h3><p>{{ _('Tarife, Abrechnung und Vertretung, auch für Mieterinnen und Mieter.') }}</p></li>
+      <li><h3>{{ _('Betrieb vorbereiten') }}</h3><p>{{ _('Datenzugang klären und eine erste Abrechnung prüfen.') }}</p></li>
+    </ol>
+    <div class="home-actions"><a class="release-button release-button-primary" href="{{ '/leg-gruenden'|localized_url }}">{{ _('Gründungsschritte ansehen') }}</a></div>
+  </div>
+</section>
+
+<section class="home-town" aria-labelledby="home-town-title">
+  <div class="release-container home-town-grid">
+    <svg class="home-town-art" viewBox="0 0 600 480" width="600" height="480" aria-hidden="true" focusable="false">
+      {{ home_image('tree', 380, 160, 170) }}
+      {{ home_image('apartments', 60, 0, 460) }}
+      {{ home_image('tree', 0, 285, 150) }}
+    </svg>
+    <div>
+      <h2 id="home-town-title">{{ _('Auch Ihre Gemeinde kann den Anfang machen.') }}</h2>
+      <p>{{ _('Öffentliche Energie- und Solardaten zeigen, wo Ihre Gemeinde steht.') }}</p>
+      <div class="home-actions">
+        <a class="release-button release-button-primary" href="{{ '/fuer-gemeinden'|localized_url }}">{{ _('Einstieg für Gemeinden') }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="home-address">
+  <noscript><p class="home-noscript release-container">{{ _('Für die Adressprüfung ist JavaScript erforderlich.') }} <a href="{{ '/leg-gruenden'|localized_url }}">{{ _('LEG vorbereiten') }}</a></p></noscript>
+  {% with address_variant='editorial' %}{% include 'partials/address_intake.html' %}{% endwith %}
+</div>
+
+<section class="home-faq" aria-labelledby="home-faq-title">
+  <div class="release-container">
+    <h2 id="home-faq-title">{{ _('Vor dem Start') }}</h2>
+    <div class="home-faq-list">
+      <details><summary>{{ _('Was kostet OpenLEG?') }}</summary><div><p>{{ _('Die Software kostet nichts. Für Server, Einrichtung und Unterstützung können Kosten entstehen.') }}</p><a href="{{ '/pricing'|localized_url }}">{{ _('Kosten ansehen') }}</a></div></details>
+      <details><summary>{{ _('Woher kommen die Messdaten?') }}</summary><div><p>{{ _('Vom Verteilnetzbetreiber. Den Zugang und das Format vereinbaren Sie mit ihm.') }}</p><a href="{{ '/self-host'|localized_url }}">{{ _('Betrieb vorbereiten') }}</a></div></details>
+      <details><summary>{{ _('Wer betreibt unsere LEG?') }}</summary><div><p>{{ _('Ihre LEG selbst oder ein Dienstleister, den sie beauftragt. Offener Code heisst nicht, dass jemand Betrieb oder Support übernimmt.') }}</p></div></details>
+    </div>
+  </div>
+</section>
+
+<section class="home-verein" aria-labelledby="home-verein-title">
+  <svg class="home-verein-art" viewBox="0 0 540 300" width="540" height="300" aria-hidden="true" focusable="false">
+    {{ home_image('house', 230, 0, 270) }}
+    {{ home_image('bungalow', 20, 60, 280) }}
+  </svg>
+  <div class="release-container home-verein-inner">
+    <h2 id="home-verein-title">{{ _('Offene Software braucht Menschen.') }}</h2>
+    <p>{% if verein_formation_date %}{{ _('%(name)s pflegt Software, Dokumentation und Austausch. Der Verein mit Sitz in %(seat)s übernimmt nicht den Betrieb des gehosteten Produkts.', seat=verein_facts.seat, name=verein_facts.legal_name) }}{% else %}{{ _('%(name)s soll die Software, Dokumentation und den Austausch pflegen. Der Verein mit geplantem Sitz in %(seat)s ist noch nicht gegründet. Der Betrieb des gehosteten Produkts gehört nicht zu seinem vorgesehenen Auftrag.', seat=verein_facts.seat, name=verein_facts.legal_name) }}{% endif %}</p>
+    {% if verein_formation_date %}<p>{{ _('Gegründet am %(date)s in %(seat)s.', date=verein_facts.formation_date|datelabel, seat=verein_facts.seat) }}</p>{% endif %}
+    <div class="home-actions home-actions-center">
+      <a class="release-button release-button-primary" href="{{ '/verein'|localized_url }}">{% if verein_formation_date %}{{ _('Verein und Mitgliedschaft') }}{% else %}{{ _('Über den geplanten Verein') }}{% endif %}</a>
+      <a class="home-link" href="https://github.com/Open-LEG-ch/openleg"><span class="home-link-text">{{ _('Auf GitHub mitarbeiten') }}</span> <span class="home-arrow" aria-hidden="true">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+</div>

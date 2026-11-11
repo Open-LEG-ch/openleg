@@ -94,8 +94,11 @@ spacing:
   control: 12px
   lg: 24px
   xl: 32px
-  section-mobile: 40px
-  section-desktop: 72px
+  section-mobile: 64px
+  section-desktop: 128px
+  composition-mobile: 32px
+  composition-desktop: 80px
+  reading-gap: 24px
   container: 1280px
   reading: 720px
   gutter-mobile: 20px
@@ -183,7 +186,9 @@ for new release illustrations or components. Legacy primary buttons use
 
 Keep the text wordmark `openLEG`, with a static coral baseline under LEG. The
 favicon uses the same letters and baseline. No caret, roof, pulsing dot or
-perpetual animation. Use a local monospace fallback for the wordmark; the theme
+animated wordmark. The neighbourhood illustrations are static. Interaction motion
+follows the Motion section.
+Use a local monospace fallback for the wordmark; the theme
 requires no external font request.
 
 Start the hero with its h1. Do not add an eyebrow, slash label or miniature brand
@@ -193,9 +198,10 @@ belongs to identifiers, code and numerical data. Let headings wrap naturally.
 
 | Text | Desktop | Phone |
 | --- | --- | --- |
-| Display | 64-80 px | 40-48 px |
+| Display | 64-80 px | 44-48 px |
 | Page title | 48-64 px | 36-42 px |
 | Section title | 32-40 px | 28-34 px |
+| Homepage section title | 34-52 px | 34 px |
 | Card heading | 22-24 px | 20-22 px |
 | Body and controls | at least 16 px | at least 16 px |
 | Captions and sources | at least 14 px | at least 14 px |
@@ -203,7 +209,9 @@ belongs to identifiers, code and numerical data. Let headings wrap naturally.
 ## Color and layout
 
 YAML contains the semantic tokens. `static/css/site_release.css` applies them
-only to the opt-in theme. The existing Tailwind utility names remain compatible.
+only to the opt-in theme. `static/css/site_story.css` adds public page spacing,
+illustration compositions. Product forms retain their existing task layout. The
+existing Tailwind utility names remain compatible.
 Cobalt identifies actions, selection and explanatory panels. Ink is body text on
 paper, sky and coral surfaces. Coral adds illustration detail and the association
 panel; it is unsuitable for small text on paper. Use labeled success, warning and
@@ -215,8 +223,11 @@ identify an input; use the stronger control boundary. On cobalt, use on-primary
 text, underlined on-primary-link links and inverse focus outlines.
 
 Public containers are 1280 px; reading columns are 720 px. Gutters are 48 px on
-large screens, 32 px on tablets and 20 px below 768 px. Sections use 72 px vertical
-spacing, reduced to 40 px on phones. Below 1100 px navigation becomes a vertical
+large screens, 32 px on tablets and 20 px below 768 px. Public sections use fluid
+vertical spacing from 64 px on phones to 128 px on
+large screens (`clamp(64px, 8vw, 128px)`). Composition gaps scale from 32 to 80 px.
+Keep 24 px between related paragraphs and 36 px before a group of actions.
+Below 1100 px navigation becomes a vertical
 menu. Reduce content columns before translated text becomes cramped. Text must
 reflow at 320 CSS pixels and 200% zoom without clipping or page-wide scrolling.
 Long identifiers wrap; data tables may scroll within their own labeled region.
@@ -236,7 +247,7 @@ marketing navigation or footer. Keep private and capability URLs unchanged.
 | Component state | Required behavior |
 | --- | --- |
 | Normal | Primary action uses cobalt and on-primary text; secondary uses a cobalt boundary. |
-| Hover | Primary becomes primary-hover; secondary gets sky background. |
+| Hover | Primary becomes primary-hover; secondary gets sky background; arrow links send one pulse along the underline. |
 | Selected/pressed | Use primary-selected and an explicit state label or ARIA state. |
 | Focus | 3 px outline and 3 px offset, inverse on cobalt. |
 | Disabled | Explain the unmet condition; retain readable text and do not simulate a click target. |
@@ -265,13 +276,142 @@ must identify demo data and the actual state, including incomplete measurements,
 draft calculation, human approval and issued invoice. Print output keeps dates,
 units, sources and logical reading order.
 
+## Modular neighbourhood illustration system
+
+`templates/release/illustrations.html` is the shared composition library. Assets
+live in `static/images/release/components/`. Each is a complete, independently
+rendered object matching the original neighbourhood's architectural style.
+Do not crop the old neighbourhood image to simulate a separate building.
+
+| Asset | Role | Material and shape |
+| --- | --- | --- |
+| `house.webp` | Individual homes and participants | Two-storey ivory house, coral pitched roof, cobalt solar panels. |
+| `apartments.webp` | Shared housing and municipalities | Four-storey ivory apartment building, balconies and a flat solar roof. |
+| `workshop.webp` | Businesses and practical operating work | Low timber building, glazed entrance and a broad solar roof. |
+| `bungalow.webp` | Smaller participants and foreground variation | Single-storey ivory home with a flat solar roof and terrace. |
+| `tree.webp` | Scale, separation and composition | Complete muted sage deciduous tree on transparent background. |
+| `ground.webp` | Shared neighbourhood base | Empty pale stone platform; buildings can be positioned independently. |
+
+All six assets have true alpha transparency. Keep the elevated isometric view,
+upper-left daylight, ivory plaster, timber and solar-panel detail consistent.
+Assets are images, not editable 3D models. The SVG composition controls position,
+scale, depth ordering and the choice of buildings. It introduces no runtime 3D
+library. Do not mirror buildings or stretch their proportions.
+
+The macros have separate responsibilities:
+
+- `piece(kind, x, y, size)` places a complete square building or tree asset.
+- `walkway(path)` draws a static pale-stone connecting path behind buildings.
+- `neighbourhood()` assembles the full homepage scene from those components.
+- `building('homes' | 'apartments' | 'workshop')` creates a smaller page-specific
+  composition. Homes combine the house, bungalow and trees; apartments and the
+  workshop have their own arrangements.
+- `page_scene` chooses the relevant composition for a public document header.
+
+Example for a new illustration in a template:
+
+```jinja
+{% from 'release/illustrations.html' import piece, walkway %}
+<svg viewBox="0 0 720 580" width="720" height="580" aria-hidden="true">
+  {{ walkway('M 160 440 L 560 300') }}
+  {{ piece('tree', 480, 110, 170) }}
+  {{ piece('house', 230, 30, 380) }}
+  {{ piece('bungalow', 10, 180, 430) }}
+</svg>
+```
+
+Use decorative compositions only beside equivalent HTML explanations. The full
+homepage scene has an accessible description and a visible fictional-scene
+caption. Keep all important content in normal HTML. On phones, scale a complete
+composition uniformly; do not crop roofs or hide buildings. Check that every
+trunk and building base sits on its ground plane and that foreground items
+occlude background items in the intended order.
+
+The original `neighbourhood.webp` remains the style reference and source for
+existing social graphics. The live homepage and page illustrations use the
+component kit. Generation prompts, provenance and export settings are recorded
+in the component directory. Further assets must follow the same reference.
+
+The Demodorf (demo village) entry (`templates/sandbox/entry.html`) uses the public
+type and colors inside the product shell: serif heading, three plain condition
+chips, fictional accounts grouped by audience as selectable cards, and a sticky
+submit bar. A `?konto=` value preselects only a known account; `#konto-<key>`
+scrolls to it. Every simulation and deletion notice stays visible in text.
+
+## Page rhythm and composition
+
+Alternate compositions according to the topic, rather than repeating an equal
+split or a row of boxed cards throughout the page:
+
+1. A generous opening: the German headline has room for natural phrase breaks,
+   with a short supporting paragraph and the assembled neighbourhood. One primary
+   action, LEG vorbereiten; Demodorf as secondary link.
+2. A clear definition: a narrow question heading and a wider answer, followed by
+   four expandable role explanations with a simple cobalt rule.
+3. A practical sequence: a composition of complete houses beside three numbered steps.
+4. A cobalt software section: four stages, light text and coral step numbers.
+   When `OPENLEG_SANDBOX_URL` names the separate Demodorf, an inset ivory
+   panel follows the stages: one primary action to open the village and five
+   role rows that preselect a fictional account. Without that setting the panel,
+   its links and the `/software` copy are absent and the demo dashboard remains.
+5. A municipality section: apartment illustration opposite text and actions.
+6. An inset coral Verein panel: contribution and membership information, with the
+   familiar building components in a smaller arrangement.
+7. Questions: a narrow introductory heading beside a wider list of answers.
+
+Give each section one dominant idea. Reading paragraphs stay within 64 characters
+where practical, while a headline may span 12-18 characters per line. Let the grid
+collapse before translated text becomes cramped. Mobile keeps the full narrative,
+64 px section spacing, 20 px outer gutters and 48 px controls. Do not use fixed
+section heights, scroll snapping or empty full-screen panels to create space.
+
+## Motion
+
+Motion answers something the visitor did. It never starts on its own.
+
+Allowed:
+
+- Hover, keyboard focus, press, open and close. The same effect runs for focus
+  as for hover, so keyboard users see it too.
+- CSS transitions and keyframes that run once and finish within 800 ms.
+- Movement of a few pixels, scale, rotation, opacity and color. Animate
+  `transform` and `opacity`; avoid properties that change layout.
+- A short highlight that links two things, for example a role and its building,
+  while the visitor points at one of them.
+
+Not allowed:
+
+- Loops, pulsing dots, blinking carets, perpetual energy flows and automatic
+  scene rotation.
+- Entrance effects on page load or scroll, parallax and scroll-driven animation.
+- Moving the neighbourhood scene, the wordmark or the favicon.
+- An animation script or a motion library. If a later effect cannot be done in
+  CSS, it needs a new design decision.
+- Hiding information behind motion or hover. Every state must also be reachable
+  without a pointer and readable without the effect.
+
+Under `prefers-reduced-motion: reduce`, skip the movement and show the end state
+directly. Nothing that moves for more than 5 seconds may exist, so no pause
+control is needed.
+
+Selected hover symbols:
+
+- Text link with arrow: one short coral pulse runs along the underline to the
+  arrow, and the arrow moves forward by 3 px. On cobalt the pulse is ivory.
+
+The neighbourhood illustrations stay still. Ordinary navigation and disclosure
+controls remain interactive.
+
 ## Wording, languages and association facts
 
 German uses Schweizer Hochdeutsch, real umlauts, ss and Sie. Explain LEG and
 Verteilnetzbetreiber before abbreviating. Name the actor, decision and next step.
 Do not invent adoption, partners, guaranteed savings, tax exemption or offers.
 
-The complete redesign requires German, English, Swiss French and Swiss Italian.
+Language priority is German, Swiss French, English, then Swiss Italian. German
+is the reference copy and the first version shown in design reviews. Use the
+same order in language navigation. Preserve an explicit visitor language choice.
+The approved homepage heading is `Solarstrom im Quartier teilen. Eine LEG gründen.`
 Keep existing German URLs and language-query compatibility. Public translated
 URLs must be stable with reciprocal alternates; never advertise a locale that
 still falls back to German. Preserve query filters, municipality identity and
@@ -280,9 +420,10 @@ their URL and response contracts. Emails and documents use the recipient's
 validated stored language. Record native-speaker review separately from
 catalog/build checks.
 
-The legal name is Verein openLEG Schweiz. Formation, adopted statutes and elected
-people remain pending until actual evidence exists. Seat: Baden AG. The Verein's
-planned role is software, documentation and community, without hosted-product
+The legal name is Verein openLEG Schweiz. It was founded on 1 November 2026
+(`VEREIN_FORMATION_DATE=2026-11-01` switches the founded copy). Seat: Obersiggenthal
+AG. Name board members and link the adopted Statuten only once they are supplied.
+The Verein's role is software, documentation and community, without hosted-product
 operation. Do not infer membership from a contribution or donation. Publish actual
 people only with their consent; a portrait must depict the real person.
 

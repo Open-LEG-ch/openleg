@@ -14,3 +14,9 @@ The language-specific `og-image.svg` sources are built from
 `templates/assets/release/og-image.svg` and the gettext catalogs. Their PNG exports
 are rendered at 1200 × 630 pixels in Chromium. They reuse this scene and static
 wordmark, with no additional image generation or external reference assets.
+
+The public illustration macros in `templates/release/illustrations.html` now use
+independently generated components in `components/`. The original neighbourhood
+is their style reference. Cropped views and the experimental light animation
+were removed after design feedback. The complete homepage scene is assembled
+from the new components. See `components/README.md` and `design.md`.

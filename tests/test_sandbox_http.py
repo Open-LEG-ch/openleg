@@ -18,6 +18,8 @@ import pytest
 from psycopg2 import sql
 from psycopg2.extensions import make_dsn
 
+from sandbox_seed import SEED_VERSION
+
 
 @pytest.fixture
 def village(tmp_path, request):
@@ -122,7 +124,7 @@ def test_gateway_delivers_a_worker_response_after_the_old_thirty_second_limit(
     if expected_status == 200:
         assert response.json == {"imported": True}
     else:
-        assert "Das Übungsdorf ist nicht verfügbar" in response.text
+        assert "Das Demodorf ist nicht verfügbar" in response.text
         assert response.headers["Cache-Control"] == "no-store"
     assert client.get(_path(client, "/dashboard/export")).status_code == 200
 
@@ -345,7 +347,7 @@ def test_gateway_rejects_untrusted_host_and_cross_site_start(village):
 def test_french_entry_keeps_the_selected_language_when_entering_the_village(village):
     client = village.test_client()
     page = client.get("/sandbox?lang=fr-CH")
-    assert "Votre village d&#39;essai" in page.text
+    assert "Votre village de démonstration" in page.text
     response = client.post(
         "/sandbox/start",
         data={"csrf_token": _csrf(page), "persona": "resident"},
@@ -353,7 +355,7 @@ def test_french_entry_keeps_the_selected_language_when_entering_the_village(vill
     )
     assert response.status_code == 200
     assert '<html lang="fr-CH">' in response.text
-    assert "Village d&#39;essai" in response.text
+    assert "Village de démonstration" in response.text
 
 
 @pytest.mark.integration
@@ -382,7 +384,7 @@ def test_release_languages_survive_entry_management_and_reset(village, language)
         data={
             "csrf_token": _csrf(management),
             "confirm": "reset",
-            "seed_version": "sonnwil/1",
+            "seed_version": SEED_VERSION,
         },
     )
     replacement = client.get(reset.location, follow_redirects=True)
@@ -790,8 +792,8 @@ def test_failed_worker_provisioning_returns_an_unavailable_page_not_capacity(
         "/sandbox/start", data={"csrf_token": _csrf(entry), "persona": "resident"}
     )
     assert response.status_code == 503
-    assert "Das Übungsdorf kann gerade nicht gestartet werden." in response.text
-    assert "Alle Übungsdörfer sind gerade belegt." not in response.text
+    assert "Das Demodorf kann gerade nicht gestartet werden." in response.text
+    assert "Alle Demodörfer sind gerade belegt." not in response.text
     assert "private startup diagnostic" not in response.text
     assert len(manager.workspaces) == 0
 
@@ -890,3 +892,14 @@ def test_expired_access_stays_denied_during_cleanup_failure_and_reused_pid(
         if unrelated.poll() is None:
             unrelated.terminate()
         unrelated.wait(timeout=5)
+
+
+@pytest.mark.parametrize(
+    "query, expected",
+    [("?konto=founder", "founder"), ("?konto=../admin", "resident"), ("", "resident")],
+)
+def test_entry_preselects_only_a_known_fictional_account(village, query, expected):
+    page = village.test_client().get("/sandbox" + query)
+    assert page.status_code == 200
+    assert re.findall(r'value="([a-z]+)" checked', page.text) == [expected]
+    assert page.text.count('id="konto-' + expected + '"') == 1

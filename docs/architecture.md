@@ -66,8 +66,9 @@ without code changes.
 | `verein_bp` | `verein_routes.py` | `/verein` membership and private board administration |
 | `events_bp` | `verein_event_routes.py` | `/veranstaltungen`, `/verein/vorstand/treffen` |
 | `finance_bp` | `verein_finance_routes.py` | `/verein/finanzen`, `/verein/vorstand/finanzen` |
+| `payments_bp` | `verein_payment_routes.py` | `/verein/spenden`, `/verein/vorstand/zahlungsempfaenger` |
 
-The three association/site blueprints require `SITE_RELEASE_ENABLED`. They remain
+The five association/site blueprints require `SITE_RELEASE_ENABLED`. They remain
 registered when disabled so the public route contract is stable; requests return
 404 until that switch is enabled. Actual intake has further formation, contact
 and privacy prerequisites described in [association administration](verein-administration.md).

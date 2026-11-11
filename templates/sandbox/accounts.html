@@ -3,7 +3,7 @@
 {% block content %}
 <div class="mx-auto max-w-3xl px-4 py-12">
   <h1 class="text-3xl font-bold">{{ _('Fiktives Konto wählen') }}</h1>
-  <p class="mt-4">{{ _('Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten.') }}</p>
+  <p class="mt-4">{{ _('Ihre Änderungen bleiben beim Kontowechsel in diesem Demodorf erhalten.') }}</p>
   <form method="post" action="/sandbox/persona" class="mt-8">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     {% include 'sandbox/account_choices.html' %}

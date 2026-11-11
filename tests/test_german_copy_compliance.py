@@ -26,7 +26,6 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 # of these stems, which also admits compounds such as Speicherdauer and
 # Datenquellen.
 ALLOWED_STEMS = {
-    "bruttoeing": "Bruttoeingänge: oe crosses the Brutto/Eingänge compound boundary",
     "quell": "Quelle family: Quelle, Quellen, Quellcode, Quelldokumente, "
     "Datenquellen, Rechtsquellen, Quelloffene (ue after l, not an umlaut)",
     "neu": "neue, Neue, neuen (diphthong eu, not an umlaut)",
@@ -46,6 +45,7 @@ ALLOWED_STEMS = {
     "request": "Request, English technical term",
     "zuerst": "zuerst (ue after z, not an umlaut)",
     "genau": "genaues Modell (au diphthong followed by the adjective ending)",
+    "bruttoeing": "Bruttoeingänge: oe crosses the Brutto/Eingänge compound boundary",
 }
 
 

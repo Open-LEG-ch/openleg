@@ -1,0 +1,143 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ * Public storytelling components. Tokens and usage live in design.md. */
+.site-release {
+  --space-section: clamp(64px, 8vw, 128px);
+  --space-composition: clamp(32px, 5vw, 80px);
+  --space-reading: 24px;
+}
+.release-section { padding-block: var(--space-section); }
+.release-document { padding-block: var(--space-section); }
+.release-document-section { padding-block: clamp(40px, 5vw, 72px); }
+.release-document-header { margin-bottom: 40px; }
+.release-document-header.has-building { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; gap: var(--space-composition); max-width: none; }
+.release-document-header.has-building .release-building { max-width: 360px; }
+.release-story .release-two-column { gap: var(--space-composition); }
+.release-story h2 { font-size: clamp(34px, 4vw, 52px); max-width: 18ch; text-wrap: balance; }
+.release-story p { max-width: 64ch; }
+.release-story p + p { margin-top: var(--space-reading); }
+.release-story .release-lead { font-size: clamp(18px, 1.6vw, 22px); }
+.release-story .release-actions { margin-top: 36px; gap: 16px; }
+.release-story .release-hero { background: linear-gradient(180deg, #edf1f9 0%, #f6f2ea 100%); padding-bottom: 48px; }
+.release-story .release-hero-intro { grid-template-columns: minmax(0, 1.35fr) minmax(0, .8fr); gap: var(--space-composition); align-items: center; }
+.release-story .release-hero h1 { font-size: clamp(44px, 5.5vw, 80px); max-width: 18ch; text-wrap: balance; }
+.release-story .release-hero-copy { padding-top: 0; }
+.release-story .release-neighbourhood { margin-top: clamp(48px, 6vw, 96px); }
+.release-story .release-hero-address { margin-top: 48px; }
+.release-definition-layout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--space-composition); align-items: start; }
+.release-story .release-hero-definition { margin: 0; font-size: clamp(20px, 2vw, 26px); line-height: 1.55; }
+.release-story .release-scene-roles { gap: 24px; margin-top: 64px; }
+.release-story .release-scene-roles details { background: transparent; border: 0; border-top: 2px solid #243b85; border-radius: 0; }
+.release-story .release-scene-roles summary { padding: 24px 0 16px; font-size: 18px; }
+.release-story .release-scene-roles p { padding: 0 0 24px; }
+.release-story .release-steps { list-style: none; padding: 0; counter-reset: steps; }
+.release-story .release-steps li { position: relative; padding: 0 0 32px 64px; border-bottom: 1px solid #bcc3d0; counter-increment: steps; }
+.release-story .release-steps li::before { content: counter(steps, decimal-leading-zero); position: absolute; left: 0; top: -6px; font: 400 32px/1.4 Georgia, serif; color: #243b85; }
+.release-story .release-steps li + li { margin-top: 32px; }
+.release-building { width: 100%; max-width: 430px; margin-top: 40px; }
+.release-building svg { display: block; width: 100%; height: auto; overflow: visible; }
+.release-neighbourhood-scene { display: block; width: 100%; height: auto; }
+.release-neighbourhood figcaption { margin-top: 24px; }
+.release-story .release-software-band { background: #243b85; color: #fffdf8; }
+.release-software-band .release-caption { color: #dde4f5; }
+.release-software-band .release-workflow { border-color: #8191be; margin-block: 64px 32px; gap: 24px; }
+.release-software-band .release-workflow li { padding-block: 32px; }
+.release-software-band .release-workflow span { color: #ffd0c2; margin-bottom: 16px; font-size: 40px; }
+.release-software-band .release-button { border-color: #fffdf8; color: #fffdf8; background: transparent; }
+.release-software-band .release-button-primary { background: #fffdf8; color: #243b85; }
+.release-software-band .release-button:hover { background: #edf1f9; color: #243b85; }
+.release-software-band .release-button:focus-visible { outline-color: #ffc8b8; }
+.release-municipality-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--space-composition); align-items: center; }
+.release-municipality-layout .release-building { max-width: 500px; margin: 0; }
+.release-story .release-association-band { background: transparent; padding-top: 0; }
+.release-association-panel { padding: clamp(32px, 5vw, 72px); border-radius: 24px; background: #f5d4ca; }
+.release-association-panel .release-building { max-width: 320px; margin-top: 32px; }
+.release-faq-layout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--space-composition); }
+.release-story .release-faq details { padding-block: 28px; }
+.release-story .release-faq details:first-child { border-top: 1px solid #bcc3d0; }
+.release-story .release-faq summary { font-size: 20px; }
+@media (max-width: 900px) {
+  .release-story .release-hero-intro { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .release-story .release-hero h1 { max-width: 16ch; }
+  .release-story .release-hero-copy { max-width: 580px; }
+  .release-document-header.has-building { grid-template-columns: minmax(0, 1fr) minmax(0, .7fr); gap: 24px; }
+}
+@media (max-width: 767px) {
+  .release-definition-layout, .release-municipality-layout, .release-faq-layout, .release-document-header.has-building { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .release-story .release-scene-roles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin-top: 40px; }
+  .release-story .release-scene-roles summary { font-size: 16px; }
+  .release-municipality-layout .release-building { order: 2; max-width: 360px; margin-inline: auto; }
+  .release-document-header.has-building .release-building { max-width: 240px; margin-top: 0; }
+  .release-software-band .release-workflow { gap: 0; margin-top: 40px; }
+  .release-software-band .release-workflow span { margin-bottom: 0; }
+  .release-software-band .release-workflow li { padding-block: 20px; }
+  .release-association-panel { padding: 32px 24px; border-radius: 16px; }
+  .release-story .release-steps li { padding-left: 48px; }
+}
+/* Practice village entry inside the cobalt software band. */
+.release-practice { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--space-composition); margin-top: clamp(48px, 6vw, 80px); padding: clamp(28px, 4vw, 56px); border-radius: 24px; background: #fffdf8; color: #26324b; }
+.release-practice h3 { margin-top: 12px; font: 400 clamp(30px, 3.2vw, 44px)/1.12 Georgia, 'Times New Roman', serif; letter-spacing: -.025em; color: #243b85; text-wrap: balance; }
+.release-practice-intro > p { margin-top: 20px; max-width: 46ch; }
+.release-practice-place, .release-practice-label { margin: 0 !important; font-size: 14px; font-weight: 600; letter-spacing: .02em; color: #982f40; }
+.release-practice-intro .release-button { margin-top: 28px; }
+.release-software-band .release-practice .release-button-primary { background: #243b85; color: #fffdf8; border-color: #243b85; }
+.release-software-band .release-practice .release-button-primary:hover { background: #1b2f6a; color: #fffdf8; }
+.release-software-band .release-practice .release-button-primary:focus-visible { outline: 3px solid #ee8d7c; outline-offset: 3px; }
+.release-practice-note { font-size: 14px; line-height: 1.5; color: #505869; }
+.release-practice-roles ul { margin-top: 12px; border-top: 1px solid #bcc3d0; }
+.release-practice-roles li { border-bottom: 1px solid #bcc3d0; }
+.release-practice-roles a { position: relative; display: grid; grid-template-columns: minmax(0, 13.5rem) minmax(0, 1fr); gap: 4px 20px; align-items: baseline; padding: 18px 40px 18px 0; color: inherit; text-decoration: none; transition: background-color .15s ease, padding .15s ease; }
+.release-practice-roles a::after { content: '→'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #243b85; font-size: 20px; transition: transform .15s ease; }
+.release-practice-roles a:hover { background: #edf1f9; padding-left: 12px; }
+.release-practice-roles a:hover::after { transform: translate(4px, -50%); }
+.release-practice-roles a:focus-visible { outline: 3px solid #243b85; outline-offset: 2px; }
+.release-practice-roles strong { color: #243b85; font-weight: 600; }
+.release-practice-roles span { color: #505869; }
+@media (prefers-reduced-motion: reduce) { .release-practice-roles a, .release-practice-roles a::after { transition: none; } }
+@media (max-width: 767px) {
+  .release-practice { grid-template-columns: minmax(0, 1fr); border-radius: 16px; padding: 28px 20px; }
+  .release-practice-roles a { grid-template-columns: minmax(0, 1fr); }
+}
+/* Practice village entry and account choice (sandbox gateway and worker). */
+.sandbox-account-text { display: flex; flex-direction: column; gap: 2px; }
+.sandbox-account-role { font-size: 14px; }
+.site-release .sandbox-entry { max-width: 1120px; padding-block: clamp(48px, 6vw, 96px); }
+.site-release .sandbox-entry-header { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .8fr); gap: var(--space-composition); align-items: center; }
+.site-release .sandbox-entry-header .release-building { margin: 0; max-width: 380px; justify-self: end; }
+.site-release .sandbox-entry-place { margin: 0; color: #982f40; letter-spacing: .02em; }
+.site-release .sandbox-entry h1 { font: 400 clamp(40px, 5vw, 68px)/1.06 Georgia, 'Times New Roman', serif; letter-spacing: -.035em; color: #243b85; text-wrap: balance; }
+.site-release .sandbox-entry-lead { max-width: 52ch; font-size: clamp(18px, 1.6vw, 21px); line-height: 1.6; }
+.site-release .sandbox-entry-facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.site-release .sandbox-entry-facts li { padding: 6px 14px; border: 1px solid #bcc3d0; border-radius: 999px; background: #fffdf8; font-size: 14px; font-weight: 600; color: #26324b; }
+.site-release .sandbox-entry-alert { padding: 16px 20px; border-left: 4px solid #982f40; border-radius: 8px; background: #f5d4ca; font-weight: 600; }
+.site-release .sandbox-entry-form { margin-top: clamp(40px, 5vw, 72px); }
+.site-release .sandbox-accounts legend { margin-bottom: 20px; font: 400 clamp(26px, 2.6vw, 34px)/1.2 Georgia, 'Times New Roman', serif; color: #26324b; }
+.site-release .sandbox-accounts { border: 0; padding: 0; }
+.site-release .sandbox-account-group + .sandbox-account-group { margin-top: 32px; }
+.site-release .sandbox-account-group-title { margin: 0 0 12px; color: #505869; letter-spacing: .02em; }
+.site-release .sandbox-account-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.site-release .sandbox-account { position: relative; align-items: flex-start; gap: 14px; min-height: 100%; margin: 0 !important; padding: 20px 22px; border: 1px solid #bcc3d0; border-radius: 16px; background: #fffdf8; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease; }
+.site-release .sandbox-account:hover { border-color: #3b55a2; background: #fff; }
+.site-release .sandbox-account:has(input:checked) { border-color: #243b85; background: #fff; box-shadow: 0 0 0 1px #243b85, 0 10px 24px -14px rgba(36, 59, 133, .45); }
+.site-release .sandbox-account:has(input:focus-visible) { outline: 3px solid #ee8d7c; outline-offset: 3px; }
+.site-release .sandbox-account input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: #243b85; }
+.site-release .sandbox-account-role { color: #982f40; font-weight: 600; letter-spacing: .01em; }
+.site-release .sandbox-account-task { color: #243b85; font-size: 18px; font-weight: 600; line-height: 1.35; }
+.site-release .sandbox-account-who { margin-top: 6px; color: #505869; }
+.site-release .sandbox-entry-submit { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: auto; justify-content: start; margin-top: 32px; padding-block: 20px; border-top: 1px solid #bcc3d0; background: rgba(246, 242, 234, .96); backdrop-filter: blur(6px); }
+.site-release .sandbox-entry-submit button { min-height: 52px; padding-inline: 28px; border-radius: 999px; background: #243b85; color: #fffdf8; }
+.site-release .sandbox-entry-submit button:hover { background: #1b2f6a; }
+.site-release .sandbox-entry-submit button:focus-visible { outline: 3px solid #ee8d7c; outline-offset: 3px; }
+.site-release .sandbox-entry-note { margin-top: 16px; max-width: 72ch; color: #505869; }
+@media (prefers-reduced-motion: reduce) { .site-release .sandbox-account { transition: none; } }
+@media (max-width: 900px) and (min-width: 768px) { .site-release .sandbox-account-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767px) {
+  .site-release .sandbox-entry-header { grid-template-columns: minmax(0, 1fr); }
+  .site-release .sandbox-entry-header .release-building { display: none; }
+  .site-release .sandbox-account-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .site-release .sandbox-entry-submit { grid-template-columns: minmax(0, 1fr); padding-block: 14px; }
+  .release-practice-intro .release-button { width: 100%; }
+  .site-release .sandbox-entry-submit button { width: 100%; }
+}
+.release-practice-document .release-practice { margin-block: clamp(40px, 5vw, 72px) 0; background: #edf1f9; }
+.release-document .release-practice-roles a { color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+.site-release .sandbox-account { scroll-margin-block: 120px; }

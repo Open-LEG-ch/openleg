@@ -5,6 +5,7 @@ import re
 
 import pytest
 
+from sandbox_seed import SEED_VERSION
 from tests import test_sandbox_http
 
 village = test_sandbox_http.village
@@ -89,7 +90,7 @@ def test_reset_requires_confirmation_retires_old_tabs_and_preserves_other_visito
     )
     confirmation = first.get(old + "/sandbox/manage")
     assert confirmation.status_code == 200
-    data = {"csrf_token": _csrf(confirmation), "seed_version": "sonnwil/1"}
+    data = {"csrf_token": _csrf(confirmation), "seed_version": SEED_VERSION}
     assert first.post(old + "/sandbox/reset", data=data).status_code == 400
     assert first.get(old + "/dashboard/export").json["annual_consumption_kwh"] == 7200
     data["confirm"] = "reset"
@@ -310,7 +311,7 @@ def test_reset_waits_for_an_inflight_write_and_drops_only_the_old_generation(vil
                         old + "/sandbox/reset",
                         data={
                             "csrf_token": _csrf(confirmation),
-                            "seed_version": "sonnwil/1",
+                            "seed_version": SEED_VERSION,
                             "confirm": "reset",
                         },
                     )
@@ -631,7 +632,7 @@ def test_reset_reserves_its_replacement_capacity(village, monkeypatch):
             prefix + "/sandbox/reset",
             data={
                 "csrf_token": _csrf(confirmation),
-                "seed_version": "sonnwil/1",
+                "seed_version": SEED_VERSION,
                 "confirm": "reset",
             },
         )
@@ -818,7 +819,7 @@ def test_two_simultaneous_resets_each_keep_their_reserved_capacity(
     data = [
         {
             "csrf_token": _csrf(client.get(prefix + "/sandbox/manage")),
-            "seed_version": "sonnwil/1",
+            "seed_version": SEED_VERSION,
             "confirm": "reset",
         }
         for client, prefix in ((first, first_prefix), (second, second_prefix))
@@ -1154,17 +1155,17 @@ def test_failed_replacement_clears_retired_binding_and_explains_retry(
             data={
                 "csrf_token": _csrf(confirmation),
                 "confirm": "reset",
-                "seed_version": "sonnwil/1",
+                "seed_version": SEED_VERSION,
             },
         )
     assert response.status_code == 503
     assert "private replacement diagnostic" not in response.text
     if failure == "capacity":
-        assert "Alle Übungsdörfer sind gerade belegt." in response.text
-        assert "Das Übungsdorf kann gerade nicht gestartet werden." not in response.text
+        assert "Alle Demodörfer sind gerade belegt." in response.text
+        assert "Das Demodorf kann gerade nicht gestartet werden." not in response.text
     else:
-        assert "Das Übungsdorf kann gerade nicht gestartet werden." in response.text
-        assert "Alle Übungsdörfer sind gerade belegt." not in response.text
+        assert "Das Demodorf kann gerade nicht gestartet werden." in response.text
+        assert "Alle Demodörfer sind gerade belegt." not in response.text
     with client.session_transaction() as session:
         assert "workspace" not in session
     assert client.get(prefix + "/dashboard").status_code == 410
@@ -1554,7 +1555,7 @@ def test_duplicate_reset_does_not_replace_the_successful_resets_cookie(
     fields = {
         "csrf_token": _csrf(page),
         "confirm": "reset",
-        "seed_version": "sonnwil/1",
+        "seed_version": SEED_VERSION,
     }
     manager = village.extensions["villages"]
     destroy, reset = manager.destroy, manager.reset
@@ -1616,7 +1617,7 @@ def test_authorized_discard_after_reset_does_not_erase_replacement_cookie(
     prefix, _ = _start(first)
     discarder.set_cookie("openleg_sandbox", first.get_cookie("openleg_sandbox").value)
     page = first.get(prefix + "/sandbox/manage")
-    fields = {"csrf_token": _csrf(page), "seed_version": "sonnwil/1"}
+    fields = {"csrf_token": _csrf(page), "seed_version": SEED_VERSION}
     manager = village.extensions["villages"]
     get = manager.get
     authorized, release = Event(), Event()
@@ -1660,7 +1661,7 @@ def test_discard_claim_prevents_an_overlapping_reset(village, monkeypatch):
     prefix, _ = _start(first)
     resetter.set_cookie("openleg_sandbox", first.get_cookie("openleg_sandbox").value)
     page = first.get(prefix + "/sandbox/manage")
-    fields = {"csrf_token": _csrf(page), "seed_version": "sonnwil/1"}
+    fields = {"csrf_token": _csrf(page), "seed_version": SEED_VERSION}
     manager = village.extensions["villages"]
     destroy = manager.destroy
     claimed, release = Event(), Event()

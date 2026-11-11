@@ -16,12 +16,22 @@ class PrivateAccessLogger(Logger):
         atoms = super().atoms(resp, req, environ, request_time)
         # Include URI, Referer and environment/header atoms, even when a future
         # access format starts using fields beyond Gunicorn's defaults.
-        return {
-            key: "[redacted]"
-            if isinstance(value, str) and _MEMBERSHIP_CREDENTIAL.search(unquote(value))
-            else value
-            for key, value in atoms.items()
-        }
+        for key, value in atoms.items():
+            if not isinstance(value, str):
+                continue
+            for _ in range(8):
+                if _MEMBERSHIP_CREDENTIAL.search(value):
+                    atoms[key] = "[redacted]"
+                    break
+                decoded = unquote(value)
+                if decoded == value:
+                    break
+                value = decoded
+            else:
+                # Bound decoding work and hide unusually deep encodings rather
+                # than risk retaining a credential in a raw access atom.
+                atoms[key] = "[redacted]"
+        return atoms
 
 
 logger_class = PrivateAccessLogger

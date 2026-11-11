@@ -800,16 +800,20 @@ def create_gateway(
     @web.get("/")
     def index():
         session.setdefault("csrf", secrets.token_urlsafe(32))
+        # A public-site role link may preselect a fictional account; unknown
+        # values fall back to the default choice.
+        requested = request.args.get("konto", "")
         return render_template(
-            "sandbox/entry.html",
+            "sandbox/entry_standard.html",
             csrf_token=session["csrf"],
             lifetime_seconds=villages.lifetime_seconds,
             inactivity_seconds=villages.inactivity_seconds,
+            sandbox_account_key=requested if requested in ACCOUNTS else None,
         )
 
     def startup_unavailable(*, capacity=False):
         return render_template(
-            "sandbox/entry.html",
+            "sandbox/entry_standard.html",
             csrf_token=session["csrf"],
             capacity=capacity,
             unavailable=not capacity,
@@ -1012,7 +1016,7 @@ def create_gateway(
                 return Response(body, status=upstream.status, headers=response_headers)
 
         except (OSError, http.client.HTTPException):
-            return "Das Übungsdorf ist nicht verfügbar. Bitte starten Sie neu.", 503
+            return "Das Demodorf ist nicht verfügbar. Bitte starten Sie neu.", 503
 
     from sandbox_archive_runtime import install as install_archive
 
