@@ -100,3 +100,49 @@ def test_an_exhausted_delivery_rearmed_by_an_administrator_is_delivered(
     assert after["status"] == "delivered"
     # Re-arming grants one more attempt and keeps the attempt history.
     assert after["attempt_count"] == 6
+
+
+@pytest.mark.integration
+def test_a_rearmed_delivery_claimed_by_a_dead_worker_is_recovered(
+    interest_database,
+):
+    db = interest_database
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO communities(community_id,name) VALUES (%s,'Fictional LEG')",
+            (COMMUNITY,),
+        )
+    db.create_operator_api_client(
+        COMMUNITY,
+        "building-1",
+        "Integrator",
+        ["formation.read"],
+        "token-hash-recovery",
+        "https://hooks.example.net/ingest",
+    )
+    db.create_operator_event(
+        "formation.submission.prepared", "case-1", COMMUNITY, {"state": "prepared"}
+    )
+    for _ in range(5):
+        _make_due(db)
+        operator_api.dispatch_pending_webhooks(
+            transport=lambda *args: 503, signing_key="k"
+        )
+    [failed] = db.list_operator_webhook_deliveries(COMMUNITY)
+    assert db.retry_operator_webhook_delivery(COMMUNITY, failed["delivery_id"])
+
+    # A worker claims the re-armed delivery and dies before recording a result.
+    assert len(db.get_pending_webhook_deliveries()) == 1
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE operator_webhook_deliveries "
+            "SET claimed_at=CURRENT_TIMESTAMP - INTERVAL '16 minutes'"
+        )
+
+    totals = operator_api.dispatch_pending_webhooks(
+        transport=lambda *args: 204, signing_key="k"
+    )
+    [after] = db.list_operator_webhook_deliveries(COMMUNITY)
+    assert totals == {"attempted": 1, "delivered": 1, "failed": 0}
+    assert after["status"] == "delivered"
+    assert after["attempt_count"] == 6
