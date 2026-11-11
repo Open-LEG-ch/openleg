@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Invented, independently specified September evidence for Sonnwil."""
+"""Invented, independently specified monthly evidence for Sonnwil."""
 
 import gzip
+from datetime import UTC, datetime
 from functools import lru_cache
+from zoneinfo import ZoneInfo
 
 COMMUNITY = "sonnwil-operating-leg"
 EXTERNAL_COMMUNITY = "SONNWIL-SIMULATION-LEG"
@@ -20,10 +22,25 @@ POINTS = (
 KINDS = ("valid", "duplicate", "corrected", "missing", "unmapped", "precision")
 
 
-def seed_metering(db):
+def period_window(period):
+    """Return the local calendar month as UTC E66 boundaries and interval count."""
+    start = datetime.strptime(period, "%Y-%m").replace(tzinfo=ZoneInfo("Europe/Zurich"))
+    end = start.replace(
+        year=start.year + (start.month == 12), month=start.month % 12 + 1
+    )
+    start, end = start.astimezone(UTC), end.astimezone(UTC)
+    return (
+        start.isoformat().replace("+00:00", "Z"),
+        end.isoformat().replace("+00:00", "Z"),
+        int((end - start).total_seconds() // 900),
+    )
+
+
+def seed_metering(db, period="2026-09"):
     """Register the operating fixture's dated assignments through normal commands."""
     import vnb_calculated_values
 
+    start, end, _ = period_window(period)
     points = [
         {
             "metering_point_id": point,
@@ -43,22 +60,29 @@ def seed_metering(db):
             point,
             {
                 "confirmed_membership": True,
-                "effective_from": START,
-                "effective_until": END,
-                "source_reference": "SIMULATION-SONNWIL-SEPTEMBER-2026",
+                "effective_from": start,
+                "effective_until": end,
+                "source_reference": (
+                    "SIMULATION-SONNWIL-SEPTEMBER-2026"
+                    if period == "2026-09"
+                    else "SIMULATION-SONNWIL-" + period
+                ),
             },
         )
 
 
-@lru_cache(maxsize=len(KINDS))
-def fixture(kind):
+@lru_cache(maxsize=2 * len(KINDS))
+def fixture(kind, period="2026-09"):
     """Return a deterministic gzip envelope; its contents remain ordinary E66 XML."""
     if kind not in KINDS:
         raise ValueError("unknown fixture")
     if kind == "duplicate":
-        return fixture("valid")
+        return fixture("valid", period)
+    start, end, intervals = period_window(period)
     corrected = kind == "corrected"
-    identifier = "SONNWIL-SIM-" + kind.upper()
+    identifier = (
+        "SONNWIL-SIM-" + ("" if period == "2026-09" else period + "-") + kind.upper()
+    )
     blocks = []
     for point, _participant, direction in POINTS:
         if kind == "unmapped" and point == POINTS[0][0]:
@@ -85,7 +109,7 @@ def fixture(kind):
             ),
         )
         for code, value in values:
-            count = INTERVALS - (kind == "missing" and not blocks)
+            count = intervals - (kind == "missing" and not blocks)
             observations = "".join(
                 "<Observation><Position><Sequence>"
                 + str(index)
@@ -107,7 +131,7 @@ def fixture(kind):
                 f"<MeteringData><Community><CommunityID>{EXTERNAL_COMMUNITY}</CommunityID></Community>"
                 f"<{tag}><VSENationalID>{point}</VSENationalID></{tag}>"
                 f"<Product><ID><VSENationalCode>{code}</VSENationalCode></ID><MeasureUnit>KWH</MeasureUnit></Product>"
-                f"<Interval><StartDateTime>{START}</StartDateTime><EndDateTime>{END}</EndDateTime></Interval>"
+                f"<Interval><StartDateTime>{start}</StartDateTime><EndDateTime>{end}</EndDateTime></Interval>"
                 "<Resolution><Resolution>15</Resolution><Unit>MIN</Unit></Resolution>"
                 + observations
                 + "</MeteringData>"
@@ -119,7 +143,7 @@ def fixture(kind):
         f"<Status>{'5' if corrected else '9'}</Status><Creation>2026-10-02T04:00:00Z</Creation></InstanceDocument>"
         "<Sender><ID><EICID>SONNWIL-SIMULATION-VNB</EICID></ID></Sender>"
         "<Receiver><ID><EICID>SONNWIL-SIMULATION-CEM</EICID></ID></Receiver>"
-        f"<BusinessScopeProcess><ReportPeriod><StartDateTime>{START}</StartDateTime><EndDateTime>{END}</EndDateTime>"
+        f"<BusinessScopeProcess><ReportPeriod><StartDateTime>{start}</StartDateTime><EndDateTime>{end}</EndDateTime>"
         "</ReportPeriod></BusinessScopeProcess></ValidatedMeteredData_HeaderInformation>"
         + "".join(blocks)
         + "</ValidatedMeteredData_16>"

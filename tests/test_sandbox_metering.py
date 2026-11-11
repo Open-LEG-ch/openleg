@@ -68,16 +68,20 @@ def test_operator_imports_a_complete_month_and_replay_preserves_evidence(village
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cursor,
     ):
-        cursor.execute("SELECT COUNT(*) FROM metering_point_readings")
+        cursor.execute(
+            "SELECT COUNT(*) FROM metering_point_readings WHERE measured_at >= '2026-08-31T22:00:00Z'"
+        )
         assert cursor.fetchone()[0] == 14400
-        cursor.execute("SELECT COUNT(*) FROM sdat_imports")
+        cursor.execute(
+            "SELECT COUNT(*) FROM sdat_imports WHERE period_start = '2026-08-31T22:00:00Z'"
+        )
         assert cursor.fetchone()[0] == 1
         cursor.execute(
-            "SELECT COUNT(*), MIN(status), MIN(lifecycle_state) FROM (SELECT d.status, COALESCE(e.action,'current') lifecycle_state FROM vnb_calculated_values_deliveries d LEFT JOIN vnb_calculated_values_events e ON e.delivery_id=d.id) d"
+            "SELECT COUNT(*), MIN(status), MIN(lifecycle_state) FROM (SELECT d.status, COALESCE(e.action,'current') lifecycle_state FROM vnb_calculated_values_deliveries d LEFT JOIN vnb_calculated_values_events e ON e.delivery_id=d.id WHERE d.period_start = '2026-08-31T22:00:00Z') d"
         )
         assert cursor.fetchone() == (1, "accepted", "current")
         cursor.execute(
-            "SELECT direction, SUM(total_kwh), SUM(community_kwh), SUM(grid_kwh) FROM metering_point_readings GROUP BY direction ORDER BY direction"
+            "SELECT direction, SUM(total_kwh), SUM(community_kwh), SUM(grid_kwh) FROM metering_point_readings WHERE measured_at >= '2026-08-31T22:00:00Z' GROUP BY direction ORDER BY direction"
         )
         assert cursor.fetchall() == [
             ("consumption", 2880, 1440, 1440),
@@ -120,7 +124,16 @@ def test_refused_sources_never_create_readings_or_accepted_evidence(village):
             "sdat_imports",
             "vnb_calculated_values_deliveries",
         ):
-            cursor.execute("SELECT COUNT(*) FROM " + table)
+            column = (
+                "measured_at" if table == "metering_point_readings" else "period_start"
+            )
+            cursor.execute(
+                "SELECT COUNT(*) FROM "
+                + table
+                + " WHERE "
+                + column
+                + " >= '2026-08-31T22:00:00Z'"
+            )
             assert cursor.fetchone()[0] == 0
 
 
@@ -143,7 +156,7 @@ def test_correction_requires_explicit_withdrawal_and_preserves_original(village)
         connection.cursor() as cursor,
     ):
         cursor.execute(
-            "SELECT id, evidence_sha256 FROM vnb_calculated_values_deliveries"
+            "SELECT id, evidence_sha256 FROM vnb_calculated_values_deliveries WHERE period_start = '2026-08-31T22:00:00Z'"
         )
         original_id, original_hash = cursor.fetchone()
     withdrawal = path + "/withdraw/" + str(original_id)
@@ -168,7 +181,11 @@ def test_correction_requires_explicit_withdrawal_and_preserves_original(village)
     production = re.search(
         r"<tr><th[^>]*>SONNWIL-SIM-P1</th>(.*?)</tr>", corrected.text, re.DOTALL
     )
-    assert production and format_decimal(1728, locale="de_CH") in production.group(1)
+    assert production
+    cells = re.findall(r"<td[^>]*>(.*?)</td>", production.group(1), re.DOTALL)
+    assert cells[1:] == [
+        format_decimal(value, locale="de_CH") for value in (2880, 1728, 1728, 0)
+    ]
     with (
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cursor,
@@ -179,7 +196,7 @@ def test_correction_requires_explicit_withdrawal_and_preserves_original(village)
         )
         assert cursor.fetchone()[0] == 1
         cursor.execute(
-            "SELECT id, evidence_sha256, source_metadata FROM vnb_calculated_values_deliveries ORDER BY id"
+            "SELECT id, evidence_sha256, source_metadata FROM vnb_calculated_values_deliveries WHERE period_start = '2026-08-31T22:00:00Z' ORDER BY id"
         )
         sources = cursor.fetchall()
         assert (
@@ -189,16 +206,20 @@ def test_correction_requires_explicit_withdrawal_and_preserves_original(village)
         )
         assert sources[1][2]["previously_withdrawn_deliveries"][0]["id"] == original_id
         cursor.execute(
-            "SELECT SUM(total_kwh), SUM(community_kwh), SUM(grid_kwh) FROM metering_point_readings WHERE direction='consumption'"
+            "SELECT SUM(total_kwh), SUM(community_kwh), SUM(grid_kwh) FROM metering_point_readings WHERE measured_at >= '2026-08-31T22:00:00Z' AND direction='consumption'"
         )
         assert cursor.fetchone() == (2880, 1728, 1152)
         cursor.execute(
-            "SELECT SUM(total_kwh) FROM metering_point_readings WHERE direction='production'"
+            "SELECT SUM(total_kwh) FROM metering_point_readings WHERE measured_at >= '2026-08-31T22:00:00Z' AND direction='production'"
         )
         assert cursor.fetchone()[0] == 1728
-        cursor.execute("SELECT COUNT(*) FROM metering_point_readings")
+        cursor.execute(
+            "SELECT COUNT(*) FROM metering_point_readings WHERE measured_at >= '2026-08-31T22:00:00Z'"
+        )
         assert cursor.fetchone()[0] == 14400
-        cursor.execute("SELECT COUNT(*) FROM sdat_imports")
+        cursor.execute(
+            "SELECT COUNT(*) FROM sdat_imports WHERE period_start = '2026-08-31T22:00:00Z'"
+        )
         assert cursor.fetchone()[0] == 2
 
 
@@ -244,11 +265,17 @@ def test_confined_scheduled_failure_can_retry_without_duplicate_delivery(village
             ("success", 1, 1, 14400),
             ("success", 1, 0, 0),
         ]
-        cursor.execute("SELECT COUNT(*) FROM vnb_calculated_values_deliveries")
+        cursor.execute(
+            "SELECT COUNT(*) FROM vnb_calculated_values_deliveries WHERE period_start = '2026-08-31T22:00:00Z'"
+        )
         assert cursor.fetchone()[0] == 1
-        cursor.execute("SELECT COUNT(*) FROM sdat_imports")
+        cursor.execute(
+            "SELECT COUNT(*) FROM sdat_imports WHERE period_start = '2026-08-31T22:00:00Z'"
+        )
         assert cursor.fetchone()[0] == 1
-        cursor.execute("SELECT COUNT(*) FROM metering_point_readings")
+        cursor.execute(
+            "SELECT COUNT(*) FROM metering_point_readings WHERE measured_at >= '2026-08-31T22:00:00Z'"
+        )
         assert cursor.fetchone()[0] == 14400
 
 
@@ -281,7 +308,9 @@ def test_role_csrf_and_attempt_urls_cannot_cross_villages(village):
         _workspace_connection(village, other_prefix) as connection,
         connection.cursor() as cursor,
     ):
-        cursor.execute("SELECT COUNT(*) FROM metering_point_readings")
+        cursor.execute(
+            "SELECT COUNT(*) FROM metering_point_readings WHERE measured_at >= '2026-08-31T22:00:00Z'"
+        )
         assert cursor.fetchone()[0] == 0
     resident = _switch(client, prefix, "resident")
     assert client.get(path).status_code == 403
@@ -355,7 +384,16 @@ def test_malformed_oversized_and_foreign_sources_stay_refused(village):
             "sdat_imports",
             "vnb_calculated_values_deliveries",
         ):
-            cursor.execute("SELECT COUNT(*) FROM " + table)
+            column = (
+                "measured_at" if table == "metering_point_readings" else "period_start"
+            )
+            cursor.execute(
+                "SELECT COUNT(*) FROM "
+                + table
+                + " WHERE "
+                + column
+                + " >= '2026-08-31T22:00:00Z'"
+            )
             assert cursor.fetchone()[0] == 0
 
 

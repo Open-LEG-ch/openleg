@@ -308,6 +308,9 @@ def test_uploaded_archive_rejects_nonstring_versions_without_mutation(village, v
     assert exported.status_code == 200
     payload = exported.json
     payload["manifest"]["schema_version"] = version
+    # Probe schema validation within the unchanged HTTP upload limit. The
+    # seeded August readings make the complete archive exceed that limit.
+    payload["datasets"] = {}
     guide = client.get(prefix + "/sandbox/archive")
     response = client.post(
         path + "/dry-run",

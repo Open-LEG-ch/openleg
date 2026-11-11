@@ -24,7 +24,9 @@ def _prepared(village, client, *, delivery_method="email"):
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cursor,
     ):
-        cursor.execute("SELECT id FROM billing_periods")
+        cursor.execute(
+            "SELECT id FROM billing_periods WHERE period_start='2026-08-31T22:00:00+00:00'"
+        )
         period = cursor.fetchone()[0]
     _switch(client, prefix, "administrator")
     return prefix, period
@@ -326,7 +328,7 @@ def test_legacy_draft_can_be_prepared_again_without_withdrawing_source(
         cursor.execute("SELECT COUNT(*) FROM vnb_calculated_values_events")
         assert cursor.fetchone()[0] == 0
         cursor.execute(
-            "SELECT COUNT(*) FROM vnb_calculated_values_deliveries WHERE status='accepted'"
+            "SELECT COUNT(*) FROM vnb_calculated_values_deliveries WHERE status='accepted' AND period_start='2026-08-31T22:00:00+00:00'"
         )
         assert cursor.fetchone()[0] == 1
     _switch(client, prefix, "operator")
@@ -336,7 +338,9 @@ def test_legacy_draft_can_be_prepared_again_without_withdrawing_source(
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cursor,
     ):
-        cursor.execute("SELECT id FROM billing_periods WHERE status='draft'")
+        cursor.execute(
+            "SELECT id FROM billing_periods WHERE period_start='2026-08-31T22:00:00+00:00' AND status='draft'"
+        )
         replacement = cursor.fetchone()[0]
         assert replacement != period
     with monkeypatch.context() as patch:

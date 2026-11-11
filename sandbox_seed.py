@@ -7,7 +7,7 @@ from pathlib import Path
 
 from translation_markers import gettext_noop as _N
 
-SEED_VERSION = "sonnwil/1"
+SEED_VERSION = "sonnwil/3"
 PERSONAS = (
     ("sonnwil-resident", "Musterweg 1, Sonnwil", 4500, False),
     ("sonnwil-producer", "Musterweg 2, Sonnwil", 5000, True),
@@ -147,6 +147,7 @@ FIXTURE_MANIFEST = {
         "sonnwil-forming-leg": "collecting_interest",
         "sonnwil-operating-leg": "active",
         "billing_period": "2026-09",
+        "billing_draft": "2026-08",
         "mail": "workspace-local",
         "webhooks": "workspace-local",
     },
@@ -246,6 +247,9 @@ def seed_village(db, directory):
     seed_accounts(db)
     from sandbox_metering_fixtures import seed_metering
 
+    seed_metering(db, "2026-08")
+    seed_billing_draft(db)
+    # August evidence freezes its dated mapping; leave September ready for intake.
     seed_metering(db)
     identities = {
         identifier: db.get_building(identifier)["referral_code"]
@@ -316,3 +320,54 @@ def seed_accounts(db):
         preferred_locale="de_CH",
     ) or not db.update_utility_client_status("sonnwil-utility", "active"):
         raise RuntimeError("fictional utility seed failed")
+
+
+def seed_billing_draft(db):
+    """Prepare August using fictional simulation tariffs and accepted E66 evidence."""
+    import gzip
+    from datetime import datetime
+
+    import billing_runner
+    import e66_evidence
+    from sandbox_metering_fixtures import (
+        COMMUNITY,
+        TERRITORY,
+        fixture,
+        period_window,
+    )
+
+    period = "2026-08"
+    evidence = gzip.decompress(fixture("valid", period))
+    accepted = db.ingest_e66_calculated_values(
+        TERRITORY, e66_evidence.parse_source(evidence), evidence
+    )
+    if accepted["status"] != "accepted":
+        raise RuntimeError("fictional August billing source rejected")
+    # Simulation values only, unrelated to any real tariff or payment account.
+    tariff_id = db.save_billing_policy(
+        COMMUNITY,
+        {
+            "effective_from": "2026-07-31",
+            "internal_price_chf_per_kwh": "0.12",
+            "grid_fee_chf_per_kwh": "0.08",
+            "settlement_fee_chf_per_kwh": "0",
+            "network_level": "same",
+            "distribution_model": "einfach",
+            "vat_mode": "none",
+            "vat_rate_pct": "0",
+            "payment_days": 30,
+            "invoice_prefix": "SIMULATION",
+            "delivery_method": "download",
+        },
+    )
+    start, end, _ = period_window(period)
+    # Bound the fictional historical policy before the draft snapshots it.
+    # September still requires an explicitly authored policy.
+    with db.get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE billing_tariffs SET effective_to=%s WHERE id=%s",
+            (end, tariff_id),
+        )
+    billing_runner.run_billing_period(
+        COMMUNITY, datetime.fromisoformat(start), datetime.fromisoformat(end)
+    )
