@@ -439,6 +439,49 @@ def test_factory_secret_key_cases_ignore_inherited_application_settings(tmp_path
     assert "skipped" not in output.lower(), output
 
 
+@pytest.mark.parametrize(
+    "value, expected",
+    (
+        pytest.param("", "", id="empty-hides-the-village"),
+        pytest.param(None, "", id="unset-hides-the-village"),
+        pytest.param(
+            " https://sonnwil.example.org ",
+            "https://sonnwil.example.org/sandbox",
+            id="origin",
+        ),
+        pytest.param(
+            "https://Sonnwil.Example.org/",
+            "https://sonnwil.example.org/sandbox",
+            id="trailing-slash",
+        ),
+    ),
+)
+def test_the_practice_village_url_is_a_fixed_entry_on_a_bare_origin(value, expected):
+    assert app_config.validated_sandbox_url(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        pytest.param("javascript:alert(1)", id="script-scheme"),
+        pytest.param("https://sonnwil.example.org/sandbox", id="path"),
+        pytest.param("https://sonnwil.example.org/?a=1", id="query"),
+        pytest.param("https://user:pw@sonnwil.example.org", id="credentials"),
+        pytest.param("sonnwil.example.org", id="no-scheme"),
+    ),
+)
+def test_a_practice_village_url_with_a_suffix_is_refused(value):
+    with pytest.raises(ValueError, match="OPENLEG_SANDBOX_URL"):
+        app_config.validated_sandbox_url(value)
+
+
+def test_the_environment_reaches_the_practice_village_setting():
+    config = app_config.build_config(
+        {"OPENLEG_SANDBOX_URL": " https://sonnwil.example.org "}
+    )
+    assert config["SANDBOX_URL"] == "https://sonnwil.example.org"
+
+
 @pytest.mark.parametrize("enabled", [False, True])
 def test_database_initialization_uses_effective_site_override(
     secret_key_factory, monkeypatch, enabled
