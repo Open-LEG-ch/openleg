@@ -12167,6 +12167,10 @@ msgstr "Jeton non valide"
 msgid "Ungültiges Token-Format"
 msgstr "Format du jeton non valide"
 
+#: billing_workspace.py:65 dashboard.py:213 dashboard.py:453
+msgid "Unlesbar"
+msgstr "Illisible"
+
 #: billing_policy.py:85 billing_workspace.py:265
 msgid "Unterschiedliche Netzebenen"
 msgstr "Niveaux de réseau différents"

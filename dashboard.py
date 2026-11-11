@@ -5,7 +5,7 @@ import json
 import logging
 import math
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
@@ -27,6 +27,7 @@ import vnb_exchange
 from email_localization import gettext
 from i18n import localized_url
 from locale_policy import resolve_locale
+from money_display import InvalidMoneyAmount, format_amount
 from translation_markers import gettext_noop as _N
 
 logger = logging.getLogger(__name__)
@@ -193,25 +194,24 @@ def _battery_view(config: dict, members: list) -> dict:
             "building_id": building_id,
             "address": addresses.get(building_id, building_id),
             "share_display": f"{share} %",
-            "cost_display": f"CHF {_money_display(quartierakku.cost_share_chf(config['annual_cost_chf'], share))}",
+            "cost_display": _money_display(
+                quartierakku.cost_share_chf(config["annual_cost_chf"], share)
+            ),
         }
         for building_id, share in sorted(config["shares"].items())
     ]
     return {
         "capacity_display": f"{config['capacity_kwh']} kWh",
-        "annual_cost_display": f"CHF {_money_display(config['annual_cost_chf'])}",
+        "annual_cost_display": _money_display(config["annual_cost_chf"]),
         "shares": shares,
     }
 
 
 def _money_display(value) -> str:
     try:
-        amount = Decimal(str(value))
-    except (InvalidOperation, ValueError):
-        return "0.00"
-    if not amount.is_finite():
-        return "0.00"
-    return f"{amount:.2f}"
+        return format_amount(value)
+    except InvalidMoneyAmount:
+        return _N("Unlesbar")
 
 
 def leg_overview(community_id: str, building_id: str) -> dict:
@@ -450,12 +450,9 @@ def _display_gross_chf(invoice: dict) -> tuple[str, bool]:
     fail-closed honesty without failing the whole workspace closed.
     """
     try:
-        amount = Decimal(str(invoice.get("gross_chf")))
-    except (InvalidOperation, ValueError):
-        return "Unlesbar", True
-    if not amount.is_finite():
-        return "Unlesbar", True
-    return f"{amount:.2f}", False
+        return format_amount(invoice.get("gross_chf")), False
+    except InvalidMoneyAmount:
+        return _N("Unlesbar"), True
 
 
 def leg_billing_workspace_view(
@@ -1362,13 +1359,13 @@ def leg_demo_overview() -> dict:
         "community": _with_german_labels(community),
         "battery": {
             "capacity_display": "45 kWh",
-            "annual_cost_display": "CHF 960.00",
+            "annual_cost_display": "960.00",
             "shares": [
                 {
                     "building_id": "demo-building",
                     "address": "Musterweg 1, 5400 Baden",
                     "share_display": "12.5 %",
-                    "cost_display": "CHF 120.00",
+                    "cost_display": "120.00",
                 }
             ],
         },

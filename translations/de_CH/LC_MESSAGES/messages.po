@@ -12058,6 +12058,10 @@ msgstr "Ungültiges Token"
 msgid "Ungültiges Token-Format"
 msgstr "Ungültiges Token-Format"
 
+#: billing_workspace.py:65 dashboard.py:213 dashboard.py:453
+msgid "Unlesbar"
+msgstr "Unlesbar"
+
 #: billing_policy.py:85 billing_workspace.py:265
 msgid "Unterschiedliche Netzebenen"
 msgstr "Unterschiedliche Netzebenen"

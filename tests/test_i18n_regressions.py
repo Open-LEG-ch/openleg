@@ -6,7 +6,7 @@ from html import unescape
 from unittest.mock import MagicMock
 
 import pytest
-from flask import render_template
+from flask import render_template, render_template_string
 
 from i18n import gettext as _
 from tests import test_i18n
@@ -305,3 +305,59 @@ def test_dashboard_errors_are_translatable_without_mutating_domain_results(
         assert _(missing["error"]) == "Facture introuvable."
         assert _(reply["error"]) == "Une réponse ou un statut est requis."
         assert _(creation["error"]) == "La CEL n’a pas pu être créée."
+
+
+def test_admin_billing_translates_unreadable_money_markers(web, monkeypatch):
+    period = {
+        "id": 1,
+        "community_id": "community-a",
+        "period_start": "2026-08-31T22:00:00+00:00",
+        "status": "draft",
+        "distribution_model": "proportional",
+        "network_level": "same",
+        "internal_price_chf_per_kwh": "0.150000",
+        "grid_fee_chf_per_kwh": "0.080000",
+        "total_network_discount_chf": "NaN",
+        "reconciliation": {"difference_kwh": 0},
+        "line_items": [
+            {
+                "item_type": "consumer_charge",
+                "participant_id": "member-a",
+                "quantity_kwh": "1.000",
+                "unit_price_chf_per_kwh": "NaN",
+                "amount_chf": None,
+            }
+        ],
+    }
+    monkeypatch.setattr(db, "list_billing_periods", lambda **kwargs: [period])
+    monkeypatch.setattr(db, "get_billing_period", lambda period_id: period)
+    model = billing_workspace.load()
+    with web.test_request_context("/admin/abrechnungen?lang=fr-CH"):
+        body = unescape(render_template("admin/abrechnungen.html", **model))
+    assert "Unlesbar" not in body
+    assert "CHF Illisible" in body
+    assert "Illisible ct./kWh" in body
+
+
+@pytest.mark.parametrize("lang,marker", [("de-CH", "Unlesbar"), ("fr-CH", "Illisible")])
+def test_leg_battery_costs_translate_unreadable_money_markers(web, lang, marker):
+    view = dashboard._battery_view(
+        {"annual_cost_chf": "NaN", "capacity_kwh": 10, "shares": {"b-1": 100}}, []
+    )
+    with web.test_request_context("/?lang=" + lang):
+        body = unescape(
+            render_template_string(
+                "{{ _(battery.annual_cost_display) }}|"
+                "{% for s in battery.shares %}{{ _(s.cost_display) }}{% endfor %}",
+                battery=view,
+            )
+        )
+    assert body == f"{marker}|{marker}"
+
+
+@pytest.mark.parametrize("lang", ["de-CH", "fr-CH"])
+def test_leg_demo_battery_costs_render_one_currency_prefix(web, lang):
+    body = unescape(web.test_client().get("/leg/dashboard/demo?lang=" + lang).text)
+    assert "CHF 960.00" in body
+    assert "CHF 120.00" in body
+    assert "CHF CHF" not in body

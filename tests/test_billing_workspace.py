@@ -330,8 +330,8 @@ def test_malformed_persisted_numeric_values_fall_back_without_error(monkeypatch)
     assert selected["tariff"]["internal_price"] == "Nicht angegeben"
     assert selected["reconciliation"]["balanced"] is False
     assert item["display_quantity_kwh"] == "0.000"
-    assert item["display_unit_price_rp"] == "0.00"
-    assert item["display_amount_chf"] == "0.00"
+    assert item["display_unit_price_rp"] == "Unlesbar"
+    assert item["display_amount_chf"] == "Unlesbar"
 
 
 @pytest.mark.parametrize("non_finite", ["NaN", "Infinity", "-Infinity"])
@@ -542,3 +542,89 @@ def test_workspace_exposes_the_frozen_battery_source_audit(monkeypatch):
             "value_chf": "0.64",
         },
     ]
+
+
+@pytest.mark.parametrize(
+    "value", [None, "broken", "NaN", "sNaN", "Infinity", "-Infinity"]
+)
+def test_workspace_invalid_money_is_unreadable(monkeypatch, value):
+    workspace = _module()
+    period = {
+        "id": 7,
+        "total_network_discount_chf": value,
+        "battery_snapshot": {"attribution": {"member": {"value_chf": value}}},
+        "line_items": [{"item_type": "consumer_charge", "amount_chf": value}],
+    }
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit: [period])
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _: period)
+
+    selected = workspace.load()["selected"]
+
+    assert selected["consumer_charges"][0]["display_amount_chf"] == "Unlesbar"
+    assert selected["metrics_display"]["network_discount_chf"] == "Unlesbar"
+    assert selected["battery_attribution"][0]["value_chf"] == "Unlesbar"
+    assert period["line_items"][0]["amount_chf"] is value
+
+
+def test_workspace_absent_money_is_unreadable(monkeypatch):
+    workspace = _module()
+    period = {"id": 7, "line_items": [{"item_type": "consumer_charge"}]}
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit: [period])
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _: period)
+
+    selected = workspace.load()["selected"]
+
+    assert selected["consumer_charges"][0]["display_amount_chf"] == "Unlesbar"
+    assert selected["metrics_display"]["network_discount_chf"] == "Unlesbar"
+
+
+@pytest.mark.parametrize("value", ["broken", "NaN", "Infinity", "-Infinity"])
+def test_workspace_invalid_line_price_is_unreadable(monkeypatch, value):
+    workspace = _module()
+    period = {
+        "id": 7,
+        "line_items": [
+            {"item_type": "consumer_charge", "unit_price_chf_per_kwh": value}
+        ],
+    }
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit: [period])
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _: period)
+
+    item = workspace.load()["selected"]["consumer_charges"][0]
+
+    assert item["display_unit_price_rp"] == "Unlesbar"
+
+
+@pytest.mark.parametrize(
+    "amount,display,adjustment",
+    [
+        ("0", "0.00", "0.000000"),
+        ("-12.34", "-12.34", "-12.340000"),
+        ("2.665", "2.67", "2.665000"),
+        ("-2.665", "-2.67", "-2.665000"),
+        ("999999999999999999.12", "999999999999999999.12", "999999999999999999.120000"),
+    ],
+)
+def test_workspace_money_keeps_half_up_display(
+    monkeypatch, amount, display, adjustment
+):
+    workspace = _module()
+    period = {
+        "id": 7,
+        "total_network_discount_chf": amount,
+        "battery_snapshot": {"attribution": {"member": {"value_chf": amount}}},
+        "line_items": [
+            {"item_type": "producer_credit", "amount_chf": amount},
+            {"item_type": "rounding_adjustment", "amount_chf": amount},
+        ],
+    }
+    monkeypatch.setattr(workspace.db, "list_billing_periods", lambda limit: [period])
+    monkeypatch.setattr(workspace.db, "get_billing_period", lambda _: period)
+
+    selected = workspace.load()["selected"]
+
+    assert selected["producer_credits"][0]["display_amount_chf"] == display
+    assert selected["rounding_adjustments"][0]["display_amount_chf"] == adjustment
+    assert selected["metrics_display"]["network_discount_chf"] == display
+    assert selected["battery_attribution"][0]["value_chf"] == display
+    assert period["line_items"][0]["amount_chf"] == amount

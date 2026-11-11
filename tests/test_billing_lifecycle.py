@@ -1441,3 +1441,43 @@ def test_store_correction_leaves_queries_without_open_cases_untouched(monkeypatc
     assert not any(
         "INSERT INTO invoice_query_events" in query for query, _ in cursor.executed
     )
+
+
+@pytest.mark.parametrize(
+    "raw,display,unreadable",
+    [
+        ({}, "Unlesbar", True),
+        ({"gross_chf": None}, "Unlesbar", True),
+        ({"gross_chf": "broken"}, "Unlesbar", True),
+        ({"gross_chf": "NaN"}, "Unlesbar", True),
+        ({"gross_chf": "sNaN"}, "Unlesbar", True),
+        ({"gross_chf": "Infinity"}, "Unlesbar", True),
+        ({"gross_chf": "-Infinity"}, "Unlesbar", True),
+        ({"gross_chf": "0"}, "0.00", False),
+        ({"gross_chf": "-12.34"}, "-12.34", False),
+        ({"gross_chf": "2.665"}, "2.66", False),
+        ({"gross_chf": "-2.665"}, "-2.66", False),
+        (
+            {"gross_chf": "123456789012345678901234567890.125"},
+            "123456789012345678901234567890.12",
+            False,
+        ),
+    ],
+)
+def test_issued_invoice_total_display_preserves_rounding_and_unreadable_flag(
+    monkeypatch, raw, display, unreadable
+):
+    import dashboard
+
+    _confirmed_admin(monkeypatch, dashboard)
+    row = {"id": 42, "lifecycle_state": "issued", "policy_snapshot": {}, **raw}
+    monkeypatch.setattr(dashboard.db, "list_community_billing_periods", lambda _: [])
+    monkeypatch.setattr(dashboard.db, "list_community_invoices", lambda _: [row])
+    monkeypatch.setattr(dashboard.db, "list_community_invoice_events", lambda _: [])
+
+    invoice = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")[
+        "invoices"
+    ][0]
+
+    assert invoice["display_gross_chf"] == display
+    assert invoice["gross_unreadable"] is unreadable
