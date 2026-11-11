@@ -76,6 +76,7 @@ def _import(*, direction="CRDT", reference="unknown reference", **overrides):
         "payment_reference": reference,
         "is_reversal": False,
         "credit_debit_indicator": direction,
+        "booking_status": "BOOK",
         **overrides,
     }
     result = db.reconcile_bank_statement(
@@ -368,9 +369,9 @@ def test_two_reviewed_entries_cannot_pay_one_invoice_twice(payment_client):
         cur.execute(
             """INSERT INTO bank_statement_entries(
                    statement_import_id,community_id,entry_reference,booking_date,
-                   amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision)
+                   amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision,booking_status)
                SELECT statement_import_id,community_id,'bank-entry-2',booking_date,
-                      amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision
+                      amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision,booking_status
                FROM bank_statement_entries WHERE id=%s RETURNING id""",
             (first_id,),
         )
@@ -391,3 +392,58 @@ def test_two_reviewed_entries_cannot_pay_one_invoice_twice(payment_client):
             "matched",
             "unmatched",
         ]
+
+
+@pytest.mark.parametrize("adapter", ["import", "review"])
+@pytest.mark.parametrize("status", ["BOOK", "PDNG", "INFO", "", "FUTR"])
+def test_booking_status_survives_import_and_gates_payment(
+    payment_client, adapter, status
+):
+    import payment_reconciliation
+    from sandbox_payment_fixtures import fixture
+
+    invoice_id = _invoice()
+    xml = fixture(
+        {"id": invoice_id, "gross_chf": "9.67", "invoice_number": "LEG-PAYMENT-1"},
+        "exact",
+        "054",
+    )
+    # Older synthetic fixtures omitted Sts. Strip it before selecting a case.
+    xml = xml.replace(b"<Sts><Cd>BOOK</Cd></Sts>", b"")
+    status_xml = f"<Sts><Cd>{status}</Cd></Sts>".encode() if status else b""
+    xml = xml.replace(b"<BookgDt>", status_xml + b"<BookgDt>")
+    if adapter == "review":
+        xml = xml.replace(b"LEG-PAYMENT-1", b"unmatched reference")
+    result = payment_reconciliation.import_statement(
+        COMMUNITY, "operator-a", "status.xml", xml, db
+    )
+    rows = db.list_bank_statement_entries(COMMUNITY)
+    assert rows[0]["booking_status"] == (status or None)
+    if adapter == "review":
+        response = _confirm(payment_client, rows[0]["id"], invoice_id)
+        assert response.status_code == (200 if status == "BOOK" else 409)
+    else:
+        assert (result["entries"][0]["match_decision"] == "matched") is (
+            status == "BOOK"
+        )
+    rows = db.list_bank_statement_entries(COMMUNITY)
+    assert (rows[0]["match_decision"] == "matched") is (status == "BOOK")
+    assert len(_events("invoice.paid")) == int(status == "BOOK")
+    assert len(_events("payment.match.confirmed")) == int(
+        status == "BOOK" and adapter == "review"
+    )
+    invoice = db.get_invoices_for_participant("member-building")[0]
+    assert invoice["lifecycle_state"] == ("paid" if status == "BOOK" else "delivered")
+    assert invoice["gross_chf"] == Decimal("9.67")
+
+
+def test_legacy_rows_stay_unknown_after_idempotent_schema_upgrade(payment_client):
+    invoice_id = _invoice()
+    entry_id, _ = _import(booking_status=None)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("ALTER TABLE bank_statement_entries DROP COLUMN booking_status")
+    db.create_tables()
+    db.create_tables()
+    assert db.list_bank_statement_entries(COMMUNITY)[0]["booking_status"] is None
+    assert _confirm(payment_client, entry_id, invoice_id).status_code == 409
+    assert _events("invoice.paid") == _events("payment.match.confirmed") == []

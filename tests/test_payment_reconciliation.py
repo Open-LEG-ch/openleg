@@ -13,7 +13,7 @@ import payment_reconciliation
 CAMT_053 = b"""<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
   <BkToCstmrStmt><Stmt><Id>statement-1</Id><Ntry>
-    <Amt Ccy="CHF">120.50</Amt><CdtDbtInd>CRDT</CdtDbtInd><BookgDt><Dt>2026-09-14</Dt></BookgDt>
+    <Amt Ccy="CHF">120.50</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-09-14</Dt></BookgDt>
     <NtryDtls><TxDtls><Refs><AcctSvcrRef>bank-entry-1</AcctSvcrRef><EndToEndId>LEG-2026-000042</EndToEndId></Refs>
     <RmtInf><Ustrd>LEG-2026-000042</Ustrd></RmtInf></TxDtls></NtryDtls>
   </Ntry></Stmt></BkToCstmrStmt>
@@ -79,6 +79,7 @@ def test_non_exact_payments_remain_reviewable(overrides, expected):
         "currency": "CHF",
         "is_reversal": False,
         "credit_debit_indicator": "CRDT",
+        "booking_status": "BOOK",
         **overrides,
     }
     invoices = [
@@ -100,6 +101,7 @@ def test_only_a_unique_reference_amount_currency_and_delivered_state_matches():
         "currency": "CHF",
         "is_reversal": False,
         "credit_debit_indicator": "CRDT",
+        "booking_status": "BOOK",
     }
     invoice = {
         "id": 42,
@@ -172,7 +174,7 @@ CAMT_054_REVERSAL = b"""<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08">
   <BkToCstmrDbtCdtNtfctn><Ntfctn><Id>notification-1</Id><Ntry>
     <Amt Ccy="CHF">120.50</Amt><CdtDbtInd>DBIT</CdtDbtInd><RvslInd>true</RvslInd>
-    <BookgDt><Dt>2026-09-15</Dt></BookgDt>
+    <Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-09-15</Dt></BookgDt>
     <NtryDtls><TxDtls><Refs><AcctSvcrRef>bank-entry-9</AcctSvcrRef><EndToEndId>LEG-2026-000042</EndToEndId></Refs>
     <RmtInf><Ustrd>LEG-2026-000042</Ustrd></RmtInf></TxDtls></NtryDtls>
   </Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn>
@@ -232,6 +234,7 @@ def _bank_entry(**overrides):
         "payment_reference": "LEG-2026-000042",
         "is_reversal": False,
         "credit_debit_indicator": "CRDT",
+        "booking_status": "BOOK",
     }
     entry.update(overrides)
     return entry
@@ -424,3 +427,34 @@ def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatc
     assert len(_event_inserts(cursor)) == 1
     decisions = [params[10] for params in _entry_insert_params(cursor)]
     assert decisions == ["matched", "mismatch"]
+
+
+@pytest.mark.parametrize(
+    "status_xml,expected",
+    [
+        ("<Sts>BOOK</Sts>", "BOOK"),
+        ("<Sts><Cd>BOOK</Cd></Sts>", "BOOK"),
+        ("<Sts><Cd>PDNG</Cd></Sts>", "PDNG"),
+        ("<Sts><Cd>INFO</Cd></Sts>", "INFO"),
+        ("", None),
+        ("<Sts><Cd>BOOK</Cd><Prtry>PDNG</Prtry></Sts>", None),
+        ("<Sts>BOOK</Sts><Sts>PDNG</Sts>", None),
+    ],
+)
+@pytest.mark.parametrize("version", ["04", "08"])
+def test_statement_preserves_unambiguous_entry_booking_status(
+    status_xml, expected, version
+):
+    xml = CAMT_053.replace(b"<Sts><Cd>BOOK</Cd></Sts>", status_xml.encode())
+    xml = xml.replace(b".001.08", f".001.{version}".encode())
+    entry = payment_reconciliation.parse_statement(xml).entries[0]
+    assert entry.booking_status == expected
+
+
+@pytest.mark.parametrize("status", ["PDNG", "INFO", "FUTR", None, "unknown"])
+def test_unbooked_credit_cannot_match_a_delivered_invoice(status):
+    entry = _bank_entry(booking_status=status)
+    assert (
+        payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
+        == "mismatch"
+    )

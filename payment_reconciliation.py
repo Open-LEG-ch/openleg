@@ -35,6 +35,7 @@ class PaymentEntry:
     payment_reference: str
     is_reversal: bool
     credit_debit_indicator: str
+    booking_status: str | None = None
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,26 @@ def _text(element, *names):
             if value and value != "NOTPROVIDED":
                 return value
     return ""
+
+
+def _booking_status(entry):
+    """Read the entry's direct status, never a nested transaction's status.
+
+    Older CAMT uses Sts text; newer CAMT uses the Sts/Cd choice. A missing,
+    proprietary, duplicate or mixed representation is not booking evidence.
+    """
+    statuses = [child for child in entry if _local(child) == "Sts"]
+    if len(statuses) != 1:
+        return None
+    status = statuses[0]
+    if not list(status):
+        return (status.text or "").strip() or None
+    if (status.text or "").strip() or len(status) != 1:
+        return None
+    code = status[0]
+    if _local(code) != "Cd" or list(code) or (code.tail or "").strip():
+        return None
+    return (code.text or "").strip() or None
 
 
 def _amount(element, fallback):
@@ -148,6 +169,7 @@ def parse_statement(content: bytes) -> Statement:
                     payment_reference=payment_reference,
                     is_reversal=reversal,
                     credit_debit_indicator=credit_debit_indicator,
+                    booking_status=_booking_status(entry),
                 )
             )
     if not entries:
@@ -199,6 +221,8 @@ def payment_eligibility(entry, invoice):
         return "reversal"
     invoice_amount = Decimal(str(invoice["gross_chf"]))
     entry_amount = Decimal(str(entry["amount"]))
+    if entry.get("booking_status") != "BOOK":
+        return "mismatch"
     if entry["credit_debit_indicator"] != "CRDT" or entry["currency"] != "CHF":
         return "mismatch"
     if entry_amount < invoice_amount:

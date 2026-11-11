@@ -43,7 +43,7 @@ def fixture(invoice, kind, message):
         f"<{wrapper}><{container}><Id>{escape(identity)}</Id>"
         "<Acct><Id><Othr><Id>SIMULATION-SONNWIL-NO-BANK</Id></Othr></Id></Acct>"
         f'<Ntry><Amt Ccy="{currency}">{amount:.2f}</Amt><CdtDbtInd>{direction}</CdtDbtInd><RvslInd>{reversal}</RvslInd>'
-        "<BookgDt><Dt>2026-11-06</Dt></BookgDt><NtryDtls><TxDtls><Refs>"
+        "<Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-11-06</Dt></BookgDt><NtryDtls><TxDtls><Refs>"
         f"<AcctSvcrRef>{escape(identity)}</AcctSvcrRef><EndToEndId>{escape(reference)}</EndToEndId>"
         f"</Refs><RmtInf><Ustrd>{escape(reference)}</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>"
         f"</{container}></{wrapper}></Document>"
