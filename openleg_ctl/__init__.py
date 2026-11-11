@@ -5,7 +5,8 @@ import argparse
 import json
 import os
 import sys
-import sysconfig
+from http.client import HTTPException, InvalidURL
+from importlib.resources import files
 from pathlib import Path
 
 import yaml
@@ -14,7 +15,7 @@ import yaml
 def contract():
     source = Path(__file__).parents[1] / "docs/openapi/operator-v1.yaml"
     if not source.exists():
-        source = Path(sysconfig.get_path("data")) / "share/openleg/operator-v1.yaml"
+        source = files("openleg_ctl").joinpath("operator-v1.yaml")
     return yaml.safe_load(source.read_text())
 
 
@@ -93,13 +94,18 @@ def parser(spec):
 
 def main(argv=None):
     try:
-        args = parser(contract()).parse_args(argv)
+        try:
+            args = parser(contract()).parse_args(argv)
+        except ValueError:
+            print("invalid_arguments", file=sys.stderr)
+            return 2
+        return execute(args)
     except SystemExit as exc:
         return exc.code
-    except ValueError:
-        print("invalid_arguments", file=sys.stderr)
-        return 2
-    return execute(args)
+    except Exception:
+        # Last boundary: unexpected failures must never disclose exception text.
+        print('{"code": "internal_error"}', file=sys.stderr)
+        return 1
 
 
 def execute(args):
@@ -126,12 +132,16 @@ def execute(args):
     if not re.fullmatch(r"olk_[A-Za-z0-9_-]+", token):
         return fail("invalid_credential")
     try:
-        origin = parse.urlsplit(args.url or "")
+        try:
+            origin = parse.urlsplit(args.url or "")
+            _ = origin.port  # Access validates numeric syntax and the port range.
+        except ValueError:
+            return fail("invalid_url")
         if (
             origin.scheme not in ("http", "https")
             or not origin.hostname
-            or origin.username
-            or origin.password
+            or origin.username is not None
+            or origin.password is not None
             or origin.query
             or origin.fragment
             or origin.path not in ("", "/")
@@ -203,7 +213,9 @@ def execute(args):
                     details["retry_after"] = delay if delay.isdigit() else "unknown"
                 return fail(code, **details)
             return emit(payload)
-    except (error.URLError, TimeoutError, ConnectionError, OSError):
+    except InvalidURL:
+        return fail("invalid_url")
+    except (HTTPException, error.URLError, TimeoutError, ConnectionError, OSError):
         return fail("network_error")
     except (ValueError, TypeError):
         return fail("invalid_arguments")

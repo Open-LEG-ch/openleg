@@ -112,12 +112,85 @@ def test_api_errors_and_retry_delay(operator_http, cli, monkeypatch):
     assert error["retry_after"] == "3600"
 
 
-def test_installed_console_script(operator_http, cli):
+@pytest.mark.parametrize("install_mode", ["venv", "target"])
+def test_installed_console_script(operator_http, cli, tmp_path, install_mode):
+    import os
     import subprocess
+    import sys
     import sysconfig
     from pathlib import Path
 
-    script = Path(sysconfig.get_path("scripts")) / "openleg-ctl"
+    project = Path(__file__).resolve().parents[1]
+    wheels = tmp_path / "wheels"
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "wheel",
+            "--no-deps",
+            "--no-build-isolation",
+            "--no-index",
+            "--wheel-dir",
+            str(wheels),
+            str(project),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    venv = tmp_path / "venv"
+    subprocess.run(
+        [sys.executable, "-m", "venv", "--system-site-packages", str(venv)],
+        check=True,
+    )
+    python = venv / "bin/python"
+    subprocess.run(
+        [
+            str(python),
+            "-m",
+            "pip",
+            "install",
+            "--no-deps",
+            "--no-index",
+            str(next(wheels.glob("*.whl"))),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    # Reuse installed runtime dependencies, even when pytest itself is in a venv.
+    env = {**os.environ, "PYTHONPATH": sysconfig.get_path("purelib")}
+    script = venv / "bin/openleg-ctl"
+    if install_mode == "target":
+        target = tmp_path / "target"
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--no-deps",
+                "--no-index",
+                "--target",
+                str(target),
+                str(next(wheels.glob("*.whl"))),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        env["PYTHONPATH"] = str(target) + os.pathsep + env["PYTHONPATH"]
+        script = target / "bin/openleg-ctl"
+    help_result = subprocess.run(
+        [str(script), "--help"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert help_result.returncode == 0, help_result.stderr
     result = subprocess.run(
         [
             str(script),
@@ -126,6 +199,8 @@ def test_installed_console_script(operator_http, cli):
             operator_http.community_id,
             "--json",
         ],
+        cwd=tmp_path,
+        env=env,
         capture_output=True,
         text=True,
         check=False,
@@ -136,3 +211,11 @@ def test_installed_console_script(operator_http, cli):
         operator_http.headers["Authorization"].split()[1]
         not in result.stdout + result.stderr
     )
+
+    import zipfile
+
+    with zipfile.ZipFile(next(wheels.glob("*.whl"))) as wheel:
+        assert (
+            wheel.read("openleg_ctl/operator-v1.yaml")
+            == (project / "docs/openapi/operator-v1.yaml").read_bytes()
+        )

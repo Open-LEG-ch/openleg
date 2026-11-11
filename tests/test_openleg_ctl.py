@@ -110,3 +110,98 @@ def test_redirect_does_not_forward_credentials(monkeypatch, capsys):
     assert not followed
     output = capsys.readouterr()
     assert "olk_secret" not in output.out + output.err
+
+
+def run_cli(url):
+    import os
+    import subprocess
+    import sys
+
+    return subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from openleg_ctl import main; raise SystemExit(main())",
+            "listPeriods",
+            "--community-id",
+            "leg",
+            "--url",
+            url,
+            "--json",
+        ],
+        env={**os.environ, "OPENLEG_TOKEN": "olk_secret"},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=20,
+    )
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://localhost:olk_secret",
+        "http://localhost:99999",
+        "http://olk_secret@localhost",
+        "http://@localhost",
+        "ftp://localhost",
+        "http://[invalid",
+    ],
+)
+def test_invalid_url_subprocess_never_echoes_secrets(url):
+    import json
+
+    result = run_cli(url)
+    assert result.returncode == 1
+    assert "olk_" not in result.stdout + result.stderr
+    assert result.stdout == ""
+    assert json.loads(result.stderr) == {"code": "invalid_url"}
+
+
+def test_bad_http_status_subprocess_never_echoes_secrets():
+    import json
+    import socketserver
+    from threading import Thread
+
+    class BadStatus(socketserver.BaseRequestHandler):
+        def handle(self):
+            self.request.recv(65536)
+            self.request.sendall(b"olk_secret\r\n")
+
+    with socketserver.TCPServer(("127.0.0.1", 0), BadStatus) as server:
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            result = run_cli(f"http://127.0.0.1:{server.server_address[1]}")
+        finally:
+            server.shutdown()
+            thread.join()
+    assert result.returncode == 1
+    assert "olk_" not in result.stdout + result.stderr
+    assert result.stdout == ""
+    assert json.loads(result.stderr) == {"code": "network_error"}
+
+
+def test_unexpected_failure_subprocess_never_echoes_secrets():
+    import json
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import openleg_ctl; "
+                "openleg_ctl.contract = lambda: 1 / 0; "
+                "raise SystemExit(openleg_ctl.main(['--help']))"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=20,
+    )
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert json.loads(result.stderr) == {"code": "internal_error"}

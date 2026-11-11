@@ -220,5 +220,5 @@ openleg-ctl = "openleg_ctl:main"
 [tool.setuptools]
 packages = ["openleg_ctl"]
 
-[tool.setuptools.data-files]
-"share/openleg" = ["docs/openapi/operator-v1.yaml"]
+[tool.setuptools.package-data]
+openleg_ctl = ["operator-v1.yaml"]
