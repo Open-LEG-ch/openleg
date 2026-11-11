@@ -89,20 +89,6 @@ def _json_default(value):
     raise TypeError
 
 
-def _safe_case(row: dict) -> dict:
-    blocked = {
-        "manual_package",
-        "response_evidence",
-        "evidence",
-        "created_by",
-        "delivered_by",
-        "before_facts",
-        "after_facts",
-        "capability_snapshot",
-    }
-    return {key: value for key, value in row.items() if key not in blocked}
-
-
 def _error(message, status):
     response = jsonify({"error": message, "schema_version": API_SCHEMA_VERSION})
     response.status_code = status
@@ -156,7 +142,7 @@ def formation_status(community_id):
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
         submissions=[
-            _safe_case(row) for row in db.list_vnb_submission_cases(community_id)
+            _safe_formation(row) for row in db.list_vnb_submission_cases(community_id)
         ],
     )
 
@@ -192,7 +178,9 @@ def submit_formation(community_id):
 def membership_mutations(community_id):
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
-        mutations=[_safe_case(row) for row in db.list_vnb_mutations(community_id)],
+        mutations=[
+            _safe_membership(row) for row in db.list_vnb_mutations(community_id)
+        ],
     )
 
 
@@ -267,6 +255,48 @@ def _safe_fields(*names):
     allowed = frozenset(names)
     return lambda row: {key: value for key, value in row.items() if key in allowed}
 
+
+_safe_formation = _safe_fields(
+    "case_id",
+    "community_id",
+    "adapter_key",
+    "contract_version",
+    "state",
+    "next_action",
+    "response_status",
+    "retryable",
+    "failure_code",
+    "created_at",
+    "delivered_at",
+    "acknowledged_at",
+)
+
+_safe_membership = _safe_fields(
+    "case_id",
+    "mutation_id",
+    "community_id",
+    "mutation_type",
+    "effective_date",
+    "source_agreement_id",
+    "state",
+    "next_action",
+    "response_status",
+    "created_at",
+    "updated_at",
+)
+
+_safe_webhook_delivery = _safe_fields(
+    "delivery_id",
+    "status",
+    "attempt_count",
+    "response_status",
+    "next_attempt_at",
+    "last_attempt_at",
+    "event_id",
+    "event_type",
+    "aggregate_id",
+    "occurred_at",
+)
 
 _safe_job = _safe_fields(
     "id",
@@ -604,7 +634,12 @@ def revoke_credential(community_id, client_id):
 def list_webhook_deliveries(community_id):
     if not _admin_for(community_id, session.get("dashboard_building_id")):
         return _error("Forbidden", 403)
-    return jsonify(deliveries=db.list_operator_webhook_deliveries(community_id))
+    return jsonify(
+        deliveries=[
+            _safe_webhook_delivery(row)
+            for row in db.list_operator_webhook_deliveries(community_id)
+        ]
+    )
 
 
 @operator_api_bp.post(
