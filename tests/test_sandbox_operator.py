@@ -175,7 +175,9 @@ def test_real_operator_requests_replay_and_signed_capture_retry(village):
         )
         assert cur.fetchone() == ("pending", 0)
         cur.execute(
-            "SELECT COUNT(*) FROM operator_events WHERE community_id=%s", (COMMUNITY,)
+            "SELECT COUNT(*) FROM operator_events WHERE community_id=%s "
+            "AND event_type='membership.mutation.prepared'",
+            (COMMUNITY,),
         )
         assert cur.fetchone()[0] == 1
         cur.execute(

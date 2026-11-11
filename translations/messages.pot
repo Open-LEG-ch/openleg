@@ -3686,7 +3686,7 @@ msgstr ""
 msgid "Die CSV-Zeile ist unvollständig oder die Tabelle überschreitet 3’000 Zeilen."
 msgstr ""
 
-#: sandbox_metering.py:54
+#: sandbox_metering.py:57
 msgid ""
 "Die Datei ist kein unterstützter vollständiger E66-Beleg. Verwenden Sie eine der bereitgestellten"
 " Übungsdateien."
@@ -4023,7 +4023,7 @@ msgstr ""
 msgid "Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
 msgstr ""
 
-#: sandbox_metering.py:45
+#: sandbox_metering.py:48
 msgid ""
 "Die Quelle enthält feinere Werte als das unterstützte E66-Profil. Verwenden Sie die gültige Datei"
 " ohne Rundung."
@@ -4226,7 +4226,7 @@ msgstr ""
 msgid "Die englische und deutsche Übersicht im"
 msgstr ""
 
-#: sandbox_metering.py:59
+#: sandbox_metering.py:62
 msgid "Die entpackte Datei überschreitet das Limit von 8 MiB."
 msgstr ""
 
@@ -4419,7 +4419,7 @@ msgstr ""
 msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
 msgstr ""
 
-#: sandbox_metering.py:57
+#: sandbox_metering.py:60
 msgid "Diese Quelle gehört nicht zur vorbereiteten LEG Sonnwil."
 msgstr ""
 
@@ -4877,7 +4877,7 @@ msgstr ""
 msgid "Ein Grund ist erforderlich."
 msgstr ""
 
-#: sandbox_metering.py:42
+#: sandbox_metering.py:45
 msgid ""
 "Ein Messpunkt ist nicht zugeordnet. Prüfen Sie die datierte Zuordnung; die Lieferung bleibt "
 "abgelehnt."
@@ -4897,7 +4897,7 @@ msgstr ""
 msgid "Ein Transfer wechselt das Konto und behält denselben Fonds."
 msgstr ""
 
-#: sandbox_metering.py:39
+#: sandbox_metering.py:42
 msgid ""
 "Ein Viertelstundenwert fehlt. Laden Sie die vollständige gültige Lieferung, statt Werte zu "
 "ergänzen."
@@ -5817,7 +5817,7 @@ msgstr ""
 msgid "Fehlende Fähigkeit prüfen"
 msgstr ""
 
-#: sandbox_metering.py:65
+#: sandbox_metering.py:68
 msgid "Fehlende Viertelstunde"
 msgstr ""
 
@@ -6279,7 +6279,7 @@ msgstr ""
 msgid "Für dieses Treffen sind keine freigegebenen Notizen veröffentlicht."
 msgstr ""
 
-#: sandbox_metering.py:51
+#: sandbox_metering.py:54
 msgid ""
 "Für dieses Zeitfenster liegt bereits eine Quelle vor. Prüfen Sie das Original und ziehen Sie es "
 "vor einer Korrektur zurück."
@@ -7445,7 +7445,7 @@ msgstr ""
 msgid "Ich ziehe diese Quelle ausdrücklich zurück, bevor ich die Korrektur importiere."
 msgstr ""
 
-#: sandbox_metering.py:63
+#: sandbox_metering.py:66
 msgid "Identische Wiederholung"
 msgstr ""
 
@@ -8590,7 +8590,7 @@ msgstr ""
 msgid "Kopiert"
 msgstr ""
 
-#: sandbox_metering.py:64
+#: sandbox_metering.py:67
 msgid "Korrektur nach Rückzug"
 msgstr ""
 
@@ -10238,7 +10238,7 @@ msgstr ""
 msgid "Nicht mehr benötigte Zugänge"
 msgstr ""
 
-#: sandbox_metering.py:67
+#: sandbox_metering.py:70
 msgid "Nicht unterstützte Genauigkeit"
 msgstr ""
 
@@ -10250,7 +10250,7 @@ msgstr ""
 msgid "Nicht zugeordnet"
 msgstr ""
 
-#: sandbox_metering.py:66
+#: sandbox_metering.py:69
 msgid "Nicht zugeordneter Messpunkt"
 msgstr ""
 
@@ -14114,7 +14114,7 @@ msgstr ""
 msgid "Vollständig abgeglichen"
 msgstr ""
 
-#: sandbox_metering.py:62
+#: sandbox_metering.py:65
 msgid "Vollständiger September"
 msgstr ""
 
@@ -15048,7 +15048,7 @@ msgstr ""
 msgid "Zeitüberschreitung der Anfrage"
 msgstr ""
 
-#: sandbox_metering.py:48
+#: sandbox_metering.py:51
 msgid ""
 "Ziehen Sie zuerst die angenommene Originalquelle ausdrücklich zurück. Importieren Sie danach die "
 "Korrektur."

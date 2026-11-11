@@ -27,7 +27,9 @@ def _issued(village, client):
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cur,
     ):
-        cur.execute("SELECT id FROM billing_periods")
+        cur.execute(
+            "SELECT id FROM billing_periods WHERE period_start='2026-08-31T22:00:00+00:00'"
+        )
         period = cur.fetchone()[0]
     _switch(client, prefix, "administrator")
     page = client.get(prefix + COMMUNITY + "/billing")
