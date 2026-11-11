@@ -18860,3 +18860,37 @@ msgstr "Freigeben"
 #: templates/sandbox/telemetry.html:25
 msgid "Freigabe entziehen"
 msgstr "Freigabe entziehen"
+
+#: templates/partials/operator_actor.html:1
+msgid "Ausgelöst durch"
+msgstr "Ausgelöst durch"
+
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Mensch"
+msgstr "Mensch"
+
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Dienst"
+msgstr "Dienst"
+
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Agent"
+msgstr "Agent"
+
+#: templates/sandbox/operator.html:11
+msgid ""
+"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
+"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
+"Bestätigung ist derzeit noch nicht verfügbar."
+msgstr ""
+"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
+"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
+"Bestätigung ist derzeit noch nicht verfügbar."
+
+#: templates/sandbox/operator.html:14
+msgid "Wer handelt mit diesem Schlüssel?"
+msgstr "Wer handelt mit diesem Schlüssel?"
+
+#: templates/sandbox/operator.html:16
+msgid "Agentenname (optional)"
+msgstr "Agentenname (optional)"

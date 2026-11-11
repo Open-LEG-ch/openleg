@@ -22160,3 +22160,41 @@ msgstr "Share"
 #: templates/sandbox/telemetry.html:25
 msgid "Freigabe entziehen"
 msgstr "Revoke sharing"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1
+msgid "Ausgelöst durch"
+msgstr "Triggered by"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Mensch"
+msgstr "Human"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Dienst"
+msgstr "Service"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Agent"
+msgstr "Agent"
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:11
+msgid ""
+"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
+"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
+"Bestätigung ist derzeit noch nicht verfügbar."
+msgstr "For the submission steps, choose Human (human) or Service (service). An agent key is rejected without human confirmation. This confirmation is not available yet."
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:14
+msgid "Wer handelt mit diesem Schlüssel?"
+msgstr "Who acts with this key?"
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:16
+msgid "Agentenname (optional)"
+msgstr "Agent name (optional)"

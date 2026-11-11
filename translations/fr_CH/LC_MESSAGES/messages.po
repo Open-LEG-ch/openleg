@@ -19802,3 +19802,41 @@ msgstr "Partager"
 #: templates/sandbox/telemetry.html:25
 msgid "Freigabe entziehen"
 msgstr "Retirer l’accès"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1
+msgid "Ausgelöst durch"
+msgstr "Déclenché par"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Mensch"
+msgstr "Personne"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Dienst"
+msgstr "Service"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Agent"
+msgstr "Agent"
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:11
+msgid ""
+"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
+"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
+"Bestätigung ist derzeit noch nicht verfügbar."
+msgstr "Pour les étapes de soumission, choisissez Personne (human) ou Service (service). Une clé d’agent est refusée sans confirmation humaine. Cette confirmation n’est pas encore disponible."
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:14
+msgid "Wer handelt mit diesem Schlüssel?"
+msgstr "Qui agit avec cette clé ?"
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:16
+msgid "Agentenname (optional)"
+msgstr "Nom de l’agent (facultatif)"

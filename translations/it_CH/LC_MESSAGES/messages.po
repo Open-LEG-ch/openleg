@@ -22432,3 +22432,41 @@ msgstr "Condividere"
 #: templates/sandbox/telemetry.html:25
 msgid "Freigabe entziehen"
 msgstr "Revocare la condivisione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1
+msgid "Ausgelöst durch"
+msgstr "Avviato da"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Mensch"
+msgstr "Persona"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Dienst"
+msgstr "Servizio"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4 templates/sandbox/operator.html:15
+msgid "Agent"
+msgstr "Agente"
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:11
+msgid ""
+"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
+"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
+"Bestätigung ist derzeit noch nicht verfügbar."
+msgstr "Per le fasi di invio, scegliete Persona (human) o Servizio (service). Una chiave agente viene rifiutata senza conferma umana. Questa conferma non è ancora disponibile."
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:14
+msgid "Wer handelt mit diesem Schlüssel?"
+msgstr "Chi agisce con questa chiave?"
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/operator.html:16
+msgid "Agentenname (optional)"
+msgstr "Nome dell’agente (facoltativo)"

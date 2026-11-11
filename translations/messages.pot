@@ -432,7 +432,7 @@ msgstr ""
 msgid "1. Als Lea eine Frage stellen"
 msgstr ""
 
-#: templates/sandbox/operator.html:8
+#: templates/sandbox/operator.html:9
 msgid "1. Einen API-Schlüssel ausstellen"
 msgstr ""
 
@@ -480,7 +480,7 @@ msgstr ""
 msgid "2. Als Sam bestätigen und beantworten"
 msgstr ""
 
-#: templates/sandbox/operator.html:22
+#: templates/sandbox/operator.html:27
 msgid "2. Anfragen bearbeiten und ausführen"
 msgstr ""
 
@@ -536,7 +536,7 @@ msgstr ""
 msgid "3. Rechtsgrundlage"
 msgstr ""
 
-#: templates/sandbox/operator.html:29
+#: templates/sandbox/operator.html:34
 msgid "3. Signierte Zustellung und Wiederholung prüfen"
 msgstr ""
 
@@ -649,11 +649,11 @@ msgstr ""
 msgid "API-Dokumentation öffnen"
 msgstr ""
 
-#: templates/sandbox/operator.html:14
+#: templates/sandbox/operator.html:19
 msgid "API-Schlüssel ausstellen"
 msgstr ""
 
-#: templates/sandbox/operator.html:18
+#: templates/sandbox/operator.html:23
 msgid "API-Schlüssel erneuern"
 msgstr ""
 
@@ -661,7 +661,7 @@ msgstr ""
 msgid "API-Schlüssel erstellen"
 msgstr ""
 
-#: templates/sandbox/operator.html:16
+#: templates/sandbox/operator.html:21
 msgid "API-Schlüssel für diese Seite"
 msgstr ""
 
@@ -669,7 +669,7 @@ msgstr ""
 msgid "API-Schlüssel generiert. Bitte sicher aufbewahren, er wird nur einmal angezeigt."
 msgstr ""
 
-#: templates/sandbox/operator.html:18 templates/utility/dashboard.html:89
+#: templates/sandbox/operator.html:23 templates/utility/dashboard.html:89
 msgid "API-Schlüssel widerrufen"
 msgstr ""
 
@@ -768,7 +768,7 @@ msgstr ""
 msgid "Ablehnen"
 msgstr ""
 
-#: templates/leg_dashboard.html:284
+#: templates/leg_dashboard.html:285
 msgid "Ablehnung prüfen"
 msgstr ""
 
@@ -822,11 +822,11 @@ msgstr ""
 msgid "Abrechnungen prüfen | OpenLEG"
 msgstr ""
 
-#: templates/leg_dashboard.html:425
+#: templates/leg_dashboard.html:426
 msgid "Abrechnungen öffnen"
 msgstr ""
 
-#: templates/leg_billing_policy.html:5 templates/leg_dashboard.html:422
+#: templates/leg_billing_policy.html:5 templates/leg_dashboard.html:423
 msgid "Abrechnungs-Richtlinie"
 msgstr ""
 
@@ -859,7 +859,7 @@ msgstr ""
 msgid "Abrechnungsperioden"
 msgstr ""
 
-#: templates/leg_dashboard.html:412
+#: templates/leg_dashboard.html:413
 msgid "Abrechnungsvorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr ""
 
@@ -998,8 +998,17 @@ msgstr ""
 msgid "Adressprüfung"
 msgstr ""
 
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4
+#: templates/sandbox/operator.html:15
+msgid "Agent"
+msgstr ""
+
 #: templates/admin/ops.html:167
 msgid "Agent Health"
+msgstr ""
+
+#: templates/sandbox/operator.html:16
+msgid "Agentenname (optional)"
 msgstr ""
 
 #: templates/meter_upload.html:37
@@ -1022,7 +1031,7 @@ msgstr ""
 msgid "Aktive Mitglieder"
 msgstr ""
 
-#: templates/leg_dashboard.html:318
+#: templates/leg_dashboard.html:319
 msgid ""
 "Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
 "weiterhin vollständige Tarife, Messwerte und VNB-Zuteilungen."
@@ -1222,7 +1231,7 @@ msgstr ""
 msgid "An %(recipient)s"
 msgstr ""
 
-#: templates/leg_dashboard.html:284
+#: templates/leg_dashboard.html:285
 msgid "An VNB eskalieren"
 msgstr ""
 
@@ -1248,7 +1257,7 @@ msgstr ""
 msgid "Anfangseinlage"
 msgstr ""
 
-#: templates/api_docs.html:233 templates/sandbox/operator.html:25
+#: templates/api_docs.html:233 templates/sandbox/operator.html:30
 msgid "Anfrage ausführen"
 msgstr ""
 
@@ -1320,11 +1329,11 @@ msgstr ""
 msgid "Anmelden"
 msgstr ""
 
-#: templates/leg_dashboard.html:287
+#: templates/leg_dashboard.html:288
 msgid "Anmeldepaket herunterladen"
 msgstr ""
 
-#: templates/leg_dashboard.html:300
+#: templates/leg_dashboard.html:301
 msgid "Anmeldepaket vorbereiten"
 msgstr ""
 
@@ -1441,7 +1450,7 @@ msgstr ""
 msgid "Antwort und Status speichern"
 msgstr ""
 
-#: templates/leg_dashboard.html:283
+#: templates/leg_dashboard.html:284
 msgid "Antwort:"
 msgstr ""
 
@@ -1645,12 +1654,16 @@ msgstr ""
 msgid "Ausgaben"
 msgstr ""
 
-#: templates/leg_dashboard.html:352 templates/leg_dashboard.html:371
+#: templates/leg_dashboard.html:353 templates/leg_dashboard.html:372
 msgid "Ausgang"
 msgstr ""
 
 #: templates/verein/events.html:9
 msgid "Ausgebucht"
+msgstr ""
+
+#: templates/partials/operator_actor.html:1
+msgid "Ausgelöst durch"
 msgstr ""
 
 #: templates/verein/index.html:11
@@ -2022,7 +2035,7 @@ msgid ""
 "sowie Community und Treffen gesucht. Eine Zusage oder Wahl ist damit noch nicht erfolgt."
 msgstr ""
 
-#: templates/sandbox/operator.html:9
+#: templates/sandbox/operator.html:10
 msgid ""
 "Belassen Sie die drei gewählten Fähigkeiten. Schlüssel und Signiergeheimnis erscheinen nur bei "
 "der Ausstellung oder Erneuerung. Diese Seite speichert sie nicht im Browser-Speicher. Nach einem "
@@ -2038,11 +2051,11 @@ msgstr ""
 msgid "Belastungen"
 msgstr ""
 
-#: templates/leg_dashboard.html:325
+#: templates/leg_dashboard.html:326
 msgid "Beleg"
 msgstr ""
 
-#: templates/leg_dashboard.html:325
+#: templates/leg_dashboard.html:326
 msgid "Beleg auswählen"
 msgstr ""
 
@@ -2305,7 +2318,7 @@ msgstr ""
 msgid "Bestätigte Treffen ansehen"
 msgstr ""
 
-#: templates/leg_dashboard.html:312
+#: templates/leg_dashboard.html:313
 #, python-format
 msgid "Bestätigter Start: %(date)s. Referenz: %(reference)s."
 msgstr ""
@@ -2326,7 +2339,7 @@ msgstr ""
 msgid "Bestätigtes LEG-Interesse"
 msgstr ""
 
-#: templates/leg_dashboard.html:326
+#: templates/leg_dashboard.html:327
 msgid "Bestätigtes Startdatum"
 msgstr ""
 
@@ -2374,7 +2387,7 @@ msgstr ""
 msgid "Betrag in CHF, freiwillig"
 msgstr ""
 
-#: templates/leg_dashboard.html:345 templates/leg_dashboard.html:379
+#: templates/leg_dashboard.html:346 templates/leg_dashboard.html:380
 msgid "Betreff"
 msgstr ""
 
@@ -2439,7 +2452,7 @@ msgstr ""
 msgid "Betriebsmodelle vergleichen"
 msgstr ""
 
-#: templates/leg_dashboard.html:308
+#: templates/leg_dashboard.html:309
 msgid "Betriebsstart"
 msgstr ""
 
@@ -2637,7 +2650,7 @@ msgid "Bitte verwenden Sie das verlangte Format."
 msgstr ""
 
 #: templates/dashboard.html:166 templates/gemeinde/vergleich.html:38
-#: templates/gemeinde/vergleich.html:47
+#: templates/gemeinde/vergleich.html:47 templates/sandbox/operator.html:15
 msgid "Bitte wählen"
 msgstr ""
 
@@ -2665,7 +2678,7 @@ msgstr ""
 msgid "Breitengrad ausserhalb des gültigen Bereichs"
 msgstr ""
 
-#: templates/leg_dashboard.html:353 templates/leg_dashboard.html:376
+#: templates/leg_dashboard.html:354 templates/leg_dashboard.html:377
 msgid "Brief"
 msgstr ""
 
@@ -2840,7 +2853,7 @@ msgstr ""
 msgid "Das Abrechnungsentgelt der Richtlinie liegt ausserhalb des zulässigen Bereichs."
 msgstr ""
 
-#: templates/leg_dashboard.html:303
+#: templates/leg_dashboard.html:304
 msgid "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
 msgstr ""
 
@@ -2908,7 +2921,7 @@ msgstr ""
 msgid "Das Inkrafttretungsdatum der Richtlinie ist ungültig."
 msgstr ""
 
-#: templates/leg_dashboard.html:367
+#: templates/leg_dashboard.html:368
 msgid ""
 "Das Journal bleibt nachvollziehbar: Korrekturen bleiben als neue Einträge sichtbar. Bestehende "
 "Einträge werden nicht überschrieben oder gelöscht."
@@ -3143,7 +3156,7 @@ msgstr ""
 msgid "Datierte Messpunktzuordnungen"
 msgstr ""
 
-#: templates/documents/community_agreement.html:37 templates/leg_dashboard.html:346
+#: templates/documents/community_agreement.html:37 templates/leg_dashboard.html:347
 #: templates/sandbox/start_evidence.html:6
 msgid "Datum"
 msgstr ""
@@ -3191,7 +3204,7 @@ msgstr ""
 msgid "Den Messwerten fehlt ein nachvollziehbarer Importbeleg."
 msgstr ""
 
-#: templates/leg_dashboard.html:313
+#: templates/leg_dashboard.html:314
 msgid "Den Originalbeleg finden Sie im Korrespondenzjournal."
 msgstr ""
 
@@ -3343,7 +3356,7 @@ msgstr ""
 msgid "Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist."
 msgstr ""
 
-#: templates/leg_dashboard.html:309
+#: templates/leg_dashboard.html:310
 msgid ""
 "Der Netzbetreiber muss den Start der LEG bestätigen. Eine Empfangsbestätigung für die Anmeldung "
 "reicht dafür nicht aus."
@@ -3773,7 +3786,7 @@ msgid ""
 "Verwenden Sie ausschliesslich Beispieldaten."
 msgstr ""
 
-#: store/formation_signatures.py:171 store/vnb_exchange.py:334
+#: store/formation_signatures.py:171 store/vnb_exchange.py:337
 msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 msgstr ""
 
@@ -4278,7 +4291,7 @@ msgstr ""
 msgid "Die Zustellmethode der Richtlinie ist ungültig."
 msgstr ""
 
-#: templates/sandbox/operator.html:30
+#: templates/sandbox/operator.html:35
 msgid ""
 "Die angenommene Mitgliedschaftsanfrage erzeugt ein echtes Outbox-Ereignis. Simulieren Sie zuerst "
 "eine fehlgeschlagene Zustellung. Der lokale Empfänger prüft die Signatur, antwortet aber mit 503."
@@ -4411,6 +4424,11 @@ msgstr ""
 msgid ""
 "Die weitere Frist von %(reminder_days)s Tagen beginnt erst mit dem erfolgreichen Versand der "
 "Erinnerung."
+msgstr ""
+
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4
+#: templates/sandbox/operator.html:15
+msgid "Dienst"
 msgstr ""
 
 #: i18n.py:99 templates/leg_verzeichnis/leg_check.html:54 templates/leg_verzeichnis/liste.html:19
@@ -4794,8 +4812,8 @@ msgid ""
 "Weitergabe entlang der Linien ab."
 msgstr ""
 
-#: billing_policy.py:100 templates/admin/ops.html:87 templates/leg_dashboard.html:353
-#: templates/leg_dashboard.html:375 templates/partials/address_intake.html:45
+#: billing_policy.py:100 templates/admin/ops.html:87 templates/leg_dashboard.html:354
+#: templates/leg_dashboard.html:376 templates/partials/address_intake.html:45
 #: templates/partials/address_intake.html:71 templates/utility/dashboard.html:136
 #: templates/verein/application.html:7 templates/verein/join.html:10 templates/verein/login.html:8
 #: templates/verein/member_access.html:4
@@ -4815,7 +4833,7 @@ msgid "E-Mail unterwegs"
 msgstr ""
 
 #: templates/contact_requests.html:40 templates/dashboard.html:20 templates/dashboard.html:60
-#: templates/dashboard.html:257 templates/gemeinde/dashboard.html:158 templates/leg_dashboard.html:400
+#: templates/dashboard.html:257 templates/gemeinde/dashboard.html:158 templates/leg_dashboard.html:401
 #: templates/sandbox/onboarding.html:15 templates/unsubscribe.html:48
 msgid "E-Mail-Adresse"
 msgstr ""
@@ -5245,7 +5263,7 @@ msgstr ""
 msgid "Eine Zahlungsreferenz ist erforderlich."
 msgstr ""
 
-#: templates/sandbox/operator.html:32
+#: templates/sandbox/operator.html:37
 msgid "Eine Zustellung erfolgreich ausführen"
 msgstr ""
 
@@ -5317,7 +5335,7 @@ msgstr ""
 msgid "Einfach"
 msgstr ""
 
-#: templates/leg_dashboard.html:352 templates/leg_dashboard.html:372
+#: templates/leg_dashboard.html:353 templates/leg_dashboard.html:373
 msgid "Eingang"
 msgstr ""
 
@@ -5338,7 +5356,7 @@ msgstr ""
 msgid "Einhaltung der Gemeinschaftsvereinbarung"
 msgstr ""
 
-#: templates/leg_dashboard.html:402
+#: templates/leg_dashboard.html:403
 msgid "Einladen"
 msgstr ""
 
@@ -5368,7 +5386,7 @@ msgstr ""
 msgid "Einladungslink kopiert"
 msgstr ""
 
-#: templates/leg_dashboard.html:284
+#: templates/leg_dashboard.html:285
 msgid "Einleitung erneut möglich"
 msgstr ""
 
@@ -5376,7 +5394,7 @@ msgstr ""
 msgid "Einloggen"
 msgstr ""
 
-#: templates/sandbox/operator.html:17
+#: templates/sandbox/operator.html:22
 msgid "Einmaliges Signiergeheimnis"
 msgstr ""
 
@@ -5392,7 +5410,7 @@ msgstr ""
 msgid "Einspeisevergütung"
 msgstr ""
 
-#: templates/leg_dashboard.html:414
+#: templates/leg_dashboard.html:415
 msgid "Einstellung speichern"
 msgstr ""
 
@@ -5432,7 +5450,7 @@ msgstr ""
 msgid "Eintrag bestätigt: "
 msgstr ""
 
-#: templates/leg_dashboard.html:382
+#: templates/leg_dashboard.html:383
 msgid "Eintrag hinzufügen"
 msgstr ""
 
@@ -5521,7 +5539,7 @@ msgstr ""
 msgid "Empfang bestätigt"
 msgstr ""
 
-#: templates/sandbox/operator.html:34
+#: templates/sandbox/operator.html:39
 msgid "Empfangene Signatur prüfen"
 msgstr ""
 
@@ -5691,7 +5709,7 @@ msgstr ""
 msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
 msgstr ""
 
-#: templates/leg_dashboard.html:322
+#: templates/leg_dashboard.html:323
 msgid ""
 "Erfassen Sie zuerst die tatsächliche Startbestätigung als Eingang mit Anhang im "
 "Korrespondenzjournal. Wählen Sie danach diesen Beleg aus."
@@ -5995,7 +6013,7 @@ msgstr ""
 msgid "Falscher Betrag"
 msgstr ""
 
-#: templates/sandbox/operator.html:24
+#: templates/sandbox/operator.html:29
 msgid "Fehlende Fähigkeit prüfen"
 msgstr ""
 
@@ -6039,7 +6057,7 @@ msgstr ""
 msgid "Fehlgeschlagen"
 msgstr ""
 
-#: templates/sandbox/operator.html:33
+#: templates/sandbox/operator.html:38
 msgid "Fehlgeschlagene Zustellung erneut ansetzen"
 msgstr ""
 
@@ -6273,7 +6291,7 @@ msgid ""
 "nach unabhängiger Prüfung."
 msgstr ""
 
-#: templates/sandbox/operator.html:24
+#: templates/sandbox/operator.html:29
 msgid "Fremde LEG prüfen"
 msgstr ""
 
@@ -6297,7 +6315,7 @@ msgstr ""
 msgid "Funktionsumfang und Voraussetzungen"
 msgstr ""
 
-#: templates/sandbox/operator.html:12
+#: templates/sandbox/operator.html:17
 msgid "Fähigkeiten"
 msgstr ""
 
@@ -6427,6 +6445,13 @@ msgstr ""
 
 #: templates/release/homepage.html:136
 msgid "Für die Adressprüfung ist JavaScript erforderlich."
+msgstr ""
+
+#: templates/sandbox/operator.html:11
+msgid ""
+"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
+"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
+"Bestätigung ist derzeit noch nicht verfügbar."
 msgstr ""
 
 #: templates/leg_gruenden.html:203
@@ -6567,7 +6592,7 @@ msgstr ""
 msgid "Geben Sie den Namen Ihrer Gemeinde ein."
 msgstr ""
 
-#: templates/leg_dashboard.html:396
+#: templates/leg_dashboard.html:397
 msgid ""
 "Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen"
 " nicht an, ob bereits ein Profil existiert."
@@ -6651,7 +6676,7 @@ msgstr ""
 msgid "Geeignete Dachfläche"
 msgstr ""
 
-#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:378
+#: templates/leg_dashboard.html:345 templates/leg_dashboard.html:379
 msgid "Gegenstelle"
 msgstr ""
 
@@ -6833,7 +6858,7 @@ msgstr ""
 msgid "Gemeinsame Messwerte"
 msgstr ""
 
-#: templates/leg_dashboard.html:336
+#: templates/leg_dashboard.html:337
 msgid ""
 "Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem "
 "Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist."
@@ -7087,7 +7112,7 @@ msgstr ""
 msgid "Gespeicherte Messwerte: %(count)s."
 msgstr ""
 
-#: templates/sandbox/operator.html:24
+#: templates/sandbox/operator.html:29
 msgid "Gespeicherte Mutationen lesen"
 msgstr ""
 
@@ -7302,8 +7327,8 @@ msgstr ""
 msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
 msgstr ""
 
-#: templates/emails/day_14_formation.html:71 templates/leg_dashboard.html:431
-#: templates/leg_dashboard.html:435 templates/leg_dashboard.html:441
+#: templates/emails/day_14_formation.html:71 templates/leg_dashboard.html:432
+#: templates/leg_dashboard.html:436 templates/leg_dashboard.html:442
 msgid "Gründung starten"
 msgstr ""
 
@@ -7343,7 +7368,7 @@ msgstr ""
 msgid "Gründungsschritte ansehen"
 msgstr ""
 
-#: templates/sandbox/operator.html:24
+#: templates/sandbox/operator.html:29
 msgid "Gründungsstand lesen"
 msgstr ""
 
@@ -7506,7 +7531,7 @@ msgstr ""
 msgid "Heute registriert"
 msgstr ""
 
-#: templates/leg_dashboard.html:363
+#: templates/leg_dashboard.html:364
 msgid "Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu."
 msgstr ""
 
@@ -7674,7 +7699,7 @@ msgstr ""
 msgid "Ich habe diese Version des Hinweises gelesen."
 msgstr ""
 
-#: templates/leg_dashboard.html:328
+#: templates/leg_dashboard.html:329
 msgid "Ich habe geprüft, dass der Netzbetreiber den Start der LEG zu diesem Datum bestätigt."
 msgstr ""
 
@@ -7983,11 +8008,11 @@ msgid ""
 "keinen Zugriff mehr. Ein Dorf-Reset stellt die Ausgangsdaten wieder her."
 msgstr ""
 
-#: templates/leg_dashboard.html:386
+#: templates/leg_dashboard.html:387
 msgid "Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern."
 msgstr ""
 
-#: templates/leg_dashboard.html:442
+#: templates/leg_dashboard.html:443
 msgid "Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen."
 msgstr ""
 
@@ -8139,7 +8164,7 @@ msgstr ""
 msgid "Installierte PV-Leistung"
 msgstr ""
 
-#: templates/sandbox/operator.html:18
+#: templates/sandbox/operator.html:23
 msgid "Integrationskonto"
 msgstr ""
 
@@ -8256,7 +8281,7 @@ msgstr ""
 msgid "Ist die Berechnung genau?"
 msgstr ""
 
-#: templates/sandbox/operator.html:25
+#: templates/sandbox/operator.html:30
 msgid "JSON-Inhalt"
 msgstr ""
 
@@ -8394,7 +8419,7 @@ msgstr ""
 msgid "Kalenderquartal, z. B. 2026-Q3"
 msgstr ""
 
-#: templates/leg_dashboard.html:343 templates/leg_dashboard.html:374
+#: templates/leg_dashboard.html:344 templates/leg_dashboard.html:375
 msgid "Kanal"
 msgstr ""
 
@@ -8549,7 +8574,7 @@ msgstr ""
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1113 store/vnb_exchange.py:367
+#: dashboard.py:1113 store/vnb_exchange.py:370
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
@@ -8874,7 +8899,7 @@ msgstr ""
 msgid "Kopieren"
 msgstr ""
 
-#: templates/sandbox/operator.html:4
+#: templates/sandbox/operator.html:5
 msgid "Kopieren Sie zuerst den aktuellen Schlüssel und erneuern Sie ihn."
 msgstr ""
 
@@ -8902,11 +8927,11 @@ msgstr ""
 msgid "Korrekturgrund"
 msgstr ""
 
-#: templates/leg_dashboard.html:335
+#: templates/leg_dashboard.html:336
 msgid "Korrespondenz"
 msgstr ""
 
-#: templates/leg_dashboard.html:339
+#: templates/leg_dashboard.html:340
 msgid "Korrespondenzjournal dieser Stromgemeinschaft"
 msgstr ""
 
@@ -9030,7 +9055,7 @@ msgstr ""
 msgid "LEG Toolkit"
 msgstr ""
 
-#: templates/leg_dashboard.html:317
+#: templates/leg_dashboard.html:318
 msgid "LEG aktivieren"
 msgstr ""
 
@@ -9384,7 +9409,7 @@ msgid ""
 "Netzbetreiber folgt im Gründungsprozess."
 msgstr ""
 
-#: templates/leg_dashboard.html:423
+#: templates/leg_dashboard.html:424
 msgid ""
 "Legen Sie Preise, Netzentgelt, Mehrwertsteuer und Zustellung versioniert fest. Die Richtlinie "
 "steuert künftige Abrechnungsentwürfe."
@@ -9406,7 +9431,7 @@ msgstr ""
 msgid "Lesen Sie den Code, nutzen Sie die API oder betreiben Sie OpenLEG selbst."
 msgstr ""
 
-#: templates/sandbox/operator.html:23
+#: templates/sandbox/operator.html:28
 msgid ""
 "Lesen Sie zuerst den Gründungsstand. Die Mitgliedschaftsanfrage bereitet eine manuelle VNB-"
 "Mutation vor; sie ändert die tatsächliche Teilnahme noch nicht. Die mutation_id ist der "
@@ -9537,7 +9562,7 @@ msgstr ""
 msgid "Lokale Anlagen speisen Strom ein."
 msgstr ""
 
-#: templates/sandbox/operator.html:13
+#: templates/sandbox/operator.html:18
 msgid "Lokale Callback-Adresse"
 msgstr ""
 
@@ -9807,6 +9832,11 @@ msgstr ""
 msgid "Menge (kWh)"
 msgstr ""
 
+#: templates/partials/operator_actor.html:1 templates/sandbox/operator.html:4
+#: templates/sandbox/operator.html:15
+msgid "Mensch"
+msgstr ""
+
 #: templates/fuer_bewohner.html:70
 msgid "Menschen in einem Schweizer Stadtquartier"
 msgstr ""
@@ -9897,7 +9927,7 @@ msgstr ""
 msgid "Messzeiten der geeigneten Werte"
 msgstr ""
 
-#: templates/sandbox/operator.html:25
+#: templates/sandbox/operator.html:30
 msgid "Methode"
 msgstr ""
 
@@ -9998,7 +10028,7 @@ msgid_plural "Mitglieder"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/leg_dashboard.html:395
+#: templates/leg_dashboard.html:396
 msgid "Mitglied einladen"
 msgstr ""
 
@@ -10062,7 +10092,7 @@ msgstr ""
 msgid "Mitgliedschaft: LEG und VNB"
 msgstr ""
 
-#: templates/sandbox/operator.html:24
+#: templates/sandbox/operator.html:29
 msgid "Mitgliedschaftsanfrage vorbereiten"
 msgstr ""
 
@@ -10249,7 +10279,7 @@ msgstr ""
 
 #: templates/admin/ops.html:121 templates/documents/community_agreement.html:18
 #: templates/documents/community_agreement.html:37 templates/documents/dso_registration.html:23
-#: templates/gemeinde/verzeichnis.html:51 templates/sandbox/operator.html:11
+#: templates/gemeinde/verzeichnis.html:51 templates/sandbox/operator.html:13
 #: templates/verein/join.html:9
 msgid "Name"
 msgstr ""
@@ -10760,7 +10790,7 @@ msgstr ""
 msgid "Not found"
 msgstr ""
 
-#: templates/leg_dashboard.html:380
+#: templates/leg_dashboard.html:381
 msgid "Notiz"
 msgstr ""
 
@@ -10832,7 +10862,7 @@ msgstr ""
 msgid "Nur die Administration kann einladen."
 msgstr ""
 
-#: templates/sandbox/operator.html:4
+#: templates/sandbox/operator.html:5
 msgid "Nur die gezeigten Operator-Pfade innerhalb dieses Übungsdorfs sind zulässig."
 msgstr ""
 
@@ -10882,7 +10912,7 @@ msgid "Nächster Schritt für %(profile_name)s"
 msgstr ""
 
 #: templates/emails/formation_nudge.html:33 templates/fuer_gemeinden.html:37
-#: templates/leg_dashboard.html:284
+#: templates/leg_dashboard.html:285
 msgid "Nächster Schritt:"
 msgstr ""
 
@@ -11384,7 +11414,7 @@ msgid "OpenLEGs Software für Abrechnung, Dokumente und Mitgliederverwaltung ist
 msgstr ""
 
 #: templates/sandbox/home.html:47 templates/sandbox/home.html:49 templates/sandbox/operator.html:2
-#: templates/sandbox/operator.html:5
+#: templates/sandbox/operator.html:6
 msgid "Operator-API ausprobieren"
 msgstr ""
 
@@ -11413,7 +11443,7 @@ msgstr ""
 msgid "PDF öffnen"
 msgstr ""
 
-#: templates/leg_dashboard.html:381
+#: templates/leg_dashboard.html:382
 msgid "PDF-Anhang"
 msgstr ""
 
@@ -11528,7 +11558,7 @@ msgstr ""
 msgid "Persönlicher Vereinszugang"
 msgstr ""
 
-#: templates/sandbox/operator.html:25
+#: templates/sandbox/operator.html:30
 msgid "Pfad innerhalb dieses Übungsdorfs"
 msgstr ""
 
@@ -12333,7 +12363,7 @@ msgstr ""
 msgid "Referenz"
 msgstr ""
 
-#: templates/leg_dashboard.html:327
+#: templates/leg_dashboard.html:328
 msgid "Referenz des Netzbetreibers"
 msgstr ""
 
@@ -12423,11 +12453,11 @@ msgstr ""
 msgid "Richtlinie bearbeiten"
 msgstr ""
 
-#: templates/leg_dashboard.html:424
+#: templates/leg_dashboard.html:425
 msgid "Richtlinie verwalten"
 msgstr ""
 
-#: templates/leg_dashboard.html:342 templates/leg_dashboard.html:370 templates/sandbox/metering.html:40
+#: templates/leg_dashboard.html:343 templates/leg_dashboard.html:371 templates/sandbox/metering.html:40
 msgid "Richtung"
 msgstr ""
 
@@ -12553,7 +12583,7 @@ msgid ""
 "Messdaten für die Abrechnung."
 msgstr ""
 
-#: templates/sandbox/operator.html:6
+#: templates/sandbox/operator.html:7
 msgid ""
 "SIMULATION SONNWIL: Erstellen Sie als Robin ein beschränktes Integrationskonto. Alle Anfragen "
 "bleiben in Ihrem Übungsdorf. Die Callback-Adresse bezeichnet nur den lokalen Empfänger; es wird "
@@ -12978,7 +13008,7 @@ msgid ""
 "koordiniert die nötigen Meldungen und Unterlagen."
 msgstr ""
 
-#: templates/sandbox/operator.html:34
+#: templates/sandbox/operator.html:39
 msgid "Signatur gültig"
 msgstr ""
 
@@ -13132,7 +13162,7 @@ msgstr ""
 msgid "Sobald es genug Leute sind, stellen wir den Kontakt her."
 msgstr ""
 
-#: templates/leg_dashboard.html:432
+#: templates/leg_dashboard.html:433
 msgid "Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess."
 msgstr ""
 
@@ -13387,7 +13417,7 @@ msgstr ""
 msgid "Start, wenn"
 msgstr ""
 
-#: templates/leg_dashboard.html:329
+#: templates/leg_dashboard.html:330
 msgid "Startbestätigung erfassen"
 msgstr ""
 
@@ -14077,7 +14107,7 @@ msgstr ""
 msgid "VNB Monitor"
 msgstr ""
 
-#: templates/leg_dashboard.html:284
+#: templates/leg_dashboard.html:285
 msgid "VNB kontaktieren"
 msgstr ""
 
@@ -14492,7 +14522,7 @@ msgstr ""
 msgid "Vier Punkte entscheiden, ob die Anmeldung starten kann."
 msgstr ""
 
-#: templates/leg_dashboard.html:407
+#: templates/leg_dashboard.html:408
 msgid "Vier-Augen-Prinzip"
 msgstr ""
 
@@ -14522,7 +14552,7 @@ msgstr ""
 msgid "Vollständigkeit prüfen"
 msgstr ""
 
-#: templates/leg_dashboard.html:387 templates/leg_dashboard.html:443
+#: templates/leg_dashboard.html:388 templates/leg_dashboard.html:444
 msgid "Vollzugriff im persönlichen Dashboard anfordern"
 msgstr ""
 
@@ -14662,7 +14692,7 @@ msgstr ""
 msgid "Vorherige Seite"
 msgstr ""
 
-#: templates/sandbox/operator.html:19
+#: templates/sandbox/operator.html:24
 msgid "Vorherigen API-Schlüssel testen"
 msgstr ""
 
@@ -14959,6 +14989,10 @@ msgstr ""
 
 #: templates/open_source.html:122
 msgid "Wer einen Fehler verfolgt oder einen Pull Request plant, findet hier den passenden Einstieg."
+msgstr ""
+
+#: templates/sandbox/operator.html:14
+msgid "Wer handelt mit diesem Schlüssel?"
 msgstr ""
 
 #: app.py:108 formation_guide.py:32
@@ -15742,11 +15776,11 @@ msgstr ""
 msgid "Zustellung als erfolgt bestätigen"
 msgstr ""
 
-#: templates/leg_dashboard.html:258 templates/leg_dashboard.html:290
+#: templates/leg_dashboard.html:258 templates/leg_dashboard.html:291
 msgid "Zustellung bestätigen"
 msgstr ""
 
-#: templates/sandbox/operator.html:32
+#: templates/sandbox/operator.html:37
 msgid "Zustellung mit Fehler simulieren"
 msgstr ""
 
@@ -15899,7 +15933,7 @@ msgstr ""
 msgid "geschätztes Dachpotenzial minus installierte Leistung."
 msgstr ""
 
-#: templates/leg_dashboard.html:358
+#: templates/leg_dashboard.html:359
 msgid "herunterladen"
 msgstr ""
 
@@ -15996,7 +16030,7 @@ msgstr ""
 msgid "n/a"
 msgstr ""
 
-#: templates/leg_dashboard.html:401
+#: templates/leg_dashboard.html:402
 msgid "name@beispiel.ch"
 msgstr ""
 
@@ -16046,11 +16080,11 @@ msgstr ""
 msgid "open"
 msgstr ""
 
-#: templates/leg_dashboard.html:380
+#: templates/leg_dashboard.html:381
 msgid "optional"
 msgstr ""
 
-#: templates/leg_dashboard.html:381
+#: templates/leg_dashboard.html:382
 msgid "optional, höchstens 2 MB"
 msgstr ""
 
@@ -16183,7 +16217,7 @@ msgstr ""
 msgid "z. B. LEG-2026"
 msgstr ""
 
-#: templates/leg_dashboard.html:378
+#: templates/leg_dashboard.html:379
 msgid "z. B. Netzbetreiber"
 msgstr ""
 
@@ -16685,64 +16719,4 @@ msgstr ""
 
 #: templates/gemeinde/onboarding.html:44
 msgid "✓ Übersicht über Anmeldungen und Formationsfortschritt"
-msgstr ""
-
-msgid "Agent"
-msgstr ""
-
-msgid "Agentenname (optional)"
-msgstr ""
-
-msgid "Ausgelöst durch"
-msgstr ""
-
-msgid "Dienst"
-msgstr ""
-
-msgid "Mensch"
-msgstr ""
-
-msgid "Wer handelt mit diesem Schlüssel?"
-msgstr ""
-
-#: templates/sandbox/operator.html:12
-msgid ""
-"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
-"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
-"Bestätigung ist derzeit noch nicht verfügbar."
-
-#, python-format
-msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
-msgstr ""
-
-#: templates/api_docs.html
-msgid "Anfragelimit erreicht."
-msgstr ""
-
-#: templates/api_docs.html
-msgid "Erfolgreiche Antwort"
-msgstr ""
-
-#: templates/api_docs.html
-msgid "Kennzahlen der Startseite"
-msgstr ""
-
-#: templates/api_docs.html
-msgid "LEG-Verzeichniseintrag"
-msgstr ""
-
-#: templates/api_docs.html
-msgid "OpenAPI-Vertrag"
-msgstr ""
-
-#: templates/api_docs.html
-msgid "Ungültige Anfrage oder keine Daten verfügbar."
-msgstr ""
-
-#: templates/api_docs.html
-msgid "Veränderung der Solarnutzung"
-msgstr ""
-
-#: templates/api_docs.html
-msgid "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert."
 msgstr ""
