@@ -6,7 +6,9 @@ before charges. They cannot replace the booked account credit. If a direct
 `TxDtls/Amt` is supplied for that single transaction, it must agree with the
 entry amount and currency. A conflicting transaction direction is rejected.
 
-A batch requires one direct `TxDtls/Amt` per transaction. All amounts must use
+A declared batch must provide a valid `Btch/NbOfTxs` count matching its
+transaction details. Incomplete breakdowns cannot use the entry total as one
+payment. A batch requires one direct `TxDtls/Amt` per transaction. All amounts must use
 the entry currency and sum exactly to `Ntry/Amt`. Batch charges and mixed
 credit/debit directions are unsupported and cause the statement to be rejected.
 A missing transaction amount never falls back to the batch total. These are

@@ -566,3 +566,22 @@ def test_unsupported_batch_amounts_are_refused(first, second, entry_extra):
     xml = xml.replace(b"<NtryDtls>", entry_extra.encode() + b"<NtryDtls>")
     with pytest.raises(payment_reconciliation.StatementError):
         payment_reconciliation.parse_statement(xml)
+
+
+@pytest.mark.parametrize("declared", ["2", "0", "unknown", ""])
+def test_incomplete_or_invalid_declared_batch_cannot_certify_entry_total(declared):
+    batch = f"<Btch><NbOfTxs>{declared}</NbOfTxs></Btch>".encode()
+    xml = CAMT_053.replace(b"<NtryDtls>", b"<NtryDtls>" + batch)
+    with pytest.raises(payment_reconciliation.StatementError):
+        payment_reconciliation.parse_statement(xml)
+
+
+def test_complete_declared_single_payment_retains_booked_amount():
+    xml = CAMT_053.replace(
+        b"<NtryDtls>", b"<NtryDtls><Btch><NbOfTxs>1</NbOfTxs></Btch>"
+    )
+    entry = asdict(payment_reconciliation.parse_statement(xml).entries[0])
+    assert (
+        payment_reconciliation.match_payment(entry, [_delivered_invoice()]).decision
+        == "matched"
+    )

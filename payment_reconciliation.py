@@ -89,6 +89,32 @@ def _booking_status(entry):
     return (code.text or "").strip() or None
 
 
+def _validate_batch_details(entry):
+    """Do not mistake an incomplete batch's total for an individual payment."""
+    for group in entry:
+        if _local(group) != "NtryDtls":
+            continue
+        batches = [child for child in group if _local(child) == "Btch"]
+        if not batches:
+            continue
+        counts = [
+            child for batch in batches for child in batch if _local(child) == "NbOfTxs"
+        ]
+        text = (counts[0].text or "").strip() if len(counts) == 1 else ""
+        transactions = [child for child in group if _local(child) == "TxDtls"]
+        if (
+            len(batches) != 1
+            or not text.isascii()
+            or not text.isdigit()
+            or len(text) > 15
+            or int(text) == 0
+            or int(text) != len(transactions)
+        ):
+            raise StatementError(
+                _N("Der Zahlungseintrag enthält keinen gültigen Betrag.")
+            )
+
+
 def _amount(element):
     candidates = [child for child in element if _local(child) == "Amt"]
     if len(candidates) != 1:
@@ -157,6 +183,7 @@ def parse_statement(content: bytes) -> Statement:
             raise StatementError(
                 _N("Der Zahlungseintrag enthält keine gültige Richtung.")
             )
+        _validate_batch_details(entry)
         transactions = _children(entry, "TxDtls") or [entry]
         booked_amount, booked_currency = _amount(entry)
         for transaction in transactions:
