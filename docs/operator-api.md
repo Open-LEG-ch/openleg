@@ -69,8 +69,19 @@ Bedeutungen oder Typen werden erst in einer neuen Hauptversion geändert.
 OpenLEG sendet die kanonischen JSON-Bytes per POST. `OpenLEG-Delivery` bleibt
 bei Wiederholungen stabil. `OpenLEG-Signature` ist
 `sha256=` plus dem hexadezimalen HMAC-SHA-256 über den unveränderten Body. Der
-Empfänger prüft die Signatur mit dem Signing-Secret und verarbeitet jede
-Delivery-ID höchstens einmal.
+signierte Body enthält zusätzlich `delivery_id` mit demselben Wert wie der
+Header und `sent_at` als UTC-Zeitstempel im ISO-8601-Format. Bei jedem Versuch
+aktualisiert OpenLEG `sent_at`; `delivery_id` und `event_id` bleiben stabil.
+
+Der Empfänger prüft zuerst die Signatur über die unveränderten Body-Bytes mit
+dem Signing-Secret, bevor er JSON parst. Danach lehnt er Zustellungen ab, deren
+signiertes `sent_at` mehr als fünf Minuten vor oder nach seiner aktuellen
+Uhrzeit liegt. Fehlende oder ungültige Zeitstempel lehnt er ebenfalls ab.
+Er dedupliziert anhand der signierten `event_id` und/oder `delivery_id` und
+speichert die verarbeiteten IDs dauerhaft. Der unsignierte Header
+`OpenLEG-Delivery` eignet sich nicht als vertrauenswürdiger Deduplizierungsschlüssel.
+Ein Python-Beispiel steht in
+[operator-operations-api.md](operator-operations-api.md#webhook-payloads-and-signature-verification).
 
 Ein Cronlauf beansprucht atomar höchstens 50 Zustellungen. Andere Worker können
 diese Zustellungen während der 15-minütigen Claim-Frist nicht übernehmen.
