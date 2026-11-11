@@ -5948,7 +5948,7 @@ msgstr "Own website with community branding"
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:306
 msgid "Eigene Webseite unter gemeinde.openleg.ch, kostenlos"
-msgstr "Own website under community.openleg.ch, free of charge"
+msgstr "Own website under gemeinde.openleg.ch, free of charge"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/pricing.html:14
@@ -16918,7 +16918,7 @@ msgstr "Association finances"
 #. Draft translation; native language and domain review pending.
 #: templates/verein/login.html:2 templates/verein/login.html:5
 msgid "Vereinsvorstand anmelden"
-msgstr "Registering the board of associations"
+msgstr "Association board sign-in"
 
 #. Draft translation; native language and domain review pending.
 #: templates/pricing.html:123 templates/pricing.html:131
@@ -17829,8 +17829,8 @@ msgid ""
 "Wie OpenLEG als offene Infrastruktur funktioniert: öffentliches App-Repo, privates "
 "Ops-Repo, Flask, PostgreSQL, Redis, Caddy und offene Energiedaten."
 msgstr ""
-"How OpenLEG works as an open infrastructure: public app repo, private ops repo , "
-"flask, PostgreSQL, Redis , caddy and open energy data."
+"How OpenLEG works as an open infrastructure: public app repo, private ops repo , Flask, "
+"PostgreSQL, Redis , Caddy and open energy data."
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/methodik.html:8
@@ -18835,7 +18835,7 @@ msgstr "Maximum solar use"
 #. Draft translation; native language and domain review pending.
 #: templates/partials/address_intake.html:48
 msgid "ihre@email.ch"
-msgstr "your@email.ch"
+msgstr "ihre@email.ch"
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/dashboard.html:72
@@ -18890,7 +18890,7 @@ msgstr "continuously updated"
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:220
 msgid "lokalerstrom.ch"
-msgstr "localstrom.ch"
+msgstr "lokalerstrom.ch"
 
 #. Draft translation; native language and domain review pending.
 #: templates/partials/address_intake.html:67
@@ -18945,7 +18945,7 @@ msgstr "n/a"
 #. Draft translation; native language and domain review pending.
 #: templates/leg_dashboard.html:393
 msgid "name@beispiel.ch"
-msgstr "name@example.ch"
+msgstr "name@beispiel.ch"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/detail.html:56
