@@ -40,6 +40,12 @@ jobs:
           npm run build:css
           git diff --exit-code -- static/css/openleg.css
 
+      - name: Check translation artifacts
+        run: python scripts/translations.py check
+
+      - name: Test translation workflow
+        run: python -m pytest tests/test_translation_catalog.py translations/test_workflow.py
+
       - name: Run ruff check
         run: ruff check .
 

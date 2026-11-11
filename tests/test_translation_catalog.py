@@ -14,6 +14,42 @@ from babel.messages.pofile import write_po
 from scripts.translations import normalize_flags, validate
 
 
+def catalog_artifacts(tmp_path, monkeypatch, source, authored):
+    """Supply the POT, all locales, compiled output and review digests for check."""
+    from scripts import translations
+
+    root = tmp_path / "translations"
+    root.mkdir()
+
+    def extract(path):
+        with path.open("wb") as handle:
+            write_po(handle, source)
+        return source
+
+    monkeypatch.setattr(translations, "ROOT", tmp_path)
+    monkeypatch.setattr(translations, "TRANSLATIONS", root)
+    monkeypatch.setattr(translations, "extract", extract)
+    extract(root / "messages.pot")
+    catalogs = {}
+    for locale in translations.LOCALES:
+        catalog = authored.get(locale)
+        if catalog is None:
+            catalog = Catalog(locale=locale)
+            for message in source:
+                if message.id:
+                    catalog.add(message.id, message.id, context=message.context)
+        normalize_flags(catalog)
+        directory = root / locale / "LC_MESSAGES"
+        directory.mkdir(parents=True)
+        with (directory / "messages.po").open("wb") as handle:
+            write_po(handle, catalog)
+        catalog = translations.load(directory / "messages.po", locale)
+        normalize_flags(catalog)
+        (directory / "messages.mo").write_bytes(translations.compiled_bytes(catalog))
+        catalogs[locale] = catalog
+    translations.review_state(source, catalogs, check=False)
+
+
 @pytest.mark.parametrize("locale", ["de_CH", "fr_CH"])
 def test_plural_placeholders_compile_and_render_per_source_form(
     tmp_path, monkeypatch, locale
@@ -31,13 +67,7 @@ def test_plural_placeholders_compile_and_render_per_source_form(
     catalog.add(identifiers, strings)
     normalize_flags(catalog)
     validate(catalog, source)
-    directory = tmp_path / "translations" / locale / "LC_MESSAGES"
-    directory.mkdir(parents=True)
-    with (directory / "messages.po").open("wb") as handle:
-        write_po(handle, catalog)
-    monkeypatch.setattr(translations, "ROOT", tmp_path)
-    monkeypatch.setattr(translations, "TRANSLATIONS", tmp_path / "translations")
-    monkeypatch.setattr(translations, "extract", lambda path: source)
+    catalog_artifacts(tmp_path, monkeypatch, source, {locale: catalog})
     for command in ("compile", "check"):
         monkeypatch.setattr(sys, "argv", ["translations.py", command])
         translations.main()
@@ -222,16 +252,11 @@ def test_compiled_plural_rule_must_match_the_po(tmp_path, monkeypatch):
     source.add(("Ein Haushalt", "Haushalte"))
     french = Catalog(locale="fr_CH")
     french.add(("Ein Haushalt", "Haushalte"), ("Un ménage", "Des ménages"))
+    catalog_artifacts(tmp_path, monkeypatch, source, {"fr_CH": french})
     directory = tmp_path / "translations/fr_CH/LC_MESSAGES"
-    directory.mkdir(parents=True)
-    with (directory / "messages.po").open("wb") as handle:
-        write_po(handle, french)
     french._plural_expr = "(n != 1)"
     with (directory / "messages.mo").open("wb") as handle:
         write_mo(handle, french)
-    monkeypatch.setattr(translations, "ROOT", tmp_path)
-    monkeypatch.setattr(translations, "TRANSLATIONS", tmp_path / "translations")
-    monkeypatch.setattr(translations, "extract", lambda path: source)
     monkeypatch.setattr(sys, "argv", ["translations.py", "check"])
     with pytest.raises(ValueError, match="plural|Plural"):
         translations.main()
@@ -257,15 +282,8 @@ def test_compiled_contextual_messages_are_checked_with_their_context(
     french = Catalog(locale="fr_CH")
     french.add("Open", "Ouvert", context="navigation")
     french.add("Open", "Ouvrir", context="document-action")
+    catalog_artifacts(tmp_path, monkeypatch, source, {"fr_CH": french})
     directory = tmp_path / "translations/fr_CH/LC_MESSAGES"
-    directory.mkdir(parents=True)
-    with (directory / "messages.po").open("wb") as handle:
-        write_po(handle, french)
-    with (directory / "messages.mo").open("wb") as handle:
-        write_mo(handle, french)
-    monkeypatch.setattr(translations, "ROOT", tmp_path)
-    monkeypatch.setattr(translations, "TRANSLATIONS", tmp_path / "translations")
-    monkeypatch.setattr(translations, "extract", lambda path: source)
     monkeypatch.setattr(sys, "argv", ["translations.py", "check"])
     translations.main()
     assert "2 translated messages, OK" in capsys.readouterr().out
@@ -274,3 +292,17 @@ def test_compiled_contextual_messages_are_checked_with_their_context(
         write_po(handle, french)
     with pytest.raises(ValueError, match="stale"):
         translations.main()
+
+
+def test_german_api_description_preserves_authored_paragraphs():
+    from babel.support import Translations
+
+    translated = Translations.load(
+        Path(__file__).resolve().parents[1] / "translations", locales=["de_CH"]
+    ).gettext(
+        "Open-source Swiss energy data API. Aggregates public government data (ElCom tariffs, Sonnendach solar potential, Energie Reporter) into clean, queryable endpoints. Plus LEG formation toolkit.\n\nAll endpoints return JSON. No authentication required. Rate limited to 60 requests/minute per IP.\n\n**Data Sources:** ElCom (LINDAS SPARQL), BFE Sonnendach, Energie Reporter, Swisstopo\n\n**License:** Open data, DSG-compliant. No PII."
+    )
+    assert (
+        translated
+        == "Open-Source-API für Schweizer Energiedaten. Sie bündelt öffentliche Behördendaten (ElCom-Tarife, Solarpotenzial von Sonnendach, Energie Reporter) in aufbereiteten, abfragbaren Schnittstellen und ergänzt sie um Werkzeuge zur LEG-Gründung.\n\nAlle Schnittstellen liefern JSON. Keine Anmeldung erforderlich. Höchstens 60 Anfragen pro Minute und IP-Adresse.\n\n**Datenquellen:** ElCom (LINDAS SPARQL), BFE Sonnendach, Energie Reporter, Swisstopo\n\n**Lizenz:** Offene Daten, DSG-konform. Keine Personendaten."
+    )

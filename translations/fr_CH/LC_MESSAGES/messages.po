@@ -1066,8 +1066,8 @@ msgid "Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung"
 msgstr "Tous les documents : convention, contrats, annonce au gestionnaire de réseau"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/release/finance.html:13 templates/release/finance.html:14
-#: templates/verein/index.html:13
+#: templates/release/donations.html:2 templates/release/finance.html:13
+#: templates/release/finance.html:14 templates/verein/index.html:13
 msgid "Alle Finanzberichte"
 msgstr "Tous les rapports financiers"
 
@@ -1144,10 +1144,6 @@ msgid ""
 msgstr ""
 "Tous les comptes et prestataires contrôlés sont intégralement inclus ; aucun solde en"
 " devises étrangères n'est omis."
-
-#: templates/sandbox/entry.html:9
-msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
-msgstr "Tous les villages d'essai sont occupés. Veuillez réessayer plus tard."
 
 #: templates/utility/register.html:92
 msgid "Als Netzbetreiber erhalten Sie:"
@@ -1311,15 +1307,6 @@ msgstr "Les pièces jointes doivent être des fichiers PDF."
 #: templates/gemeinde/methodik.html:47 templates/partials/data_provenance.html:13
 msgid "Anlagen-Matching"
 msgstr "Attribution des installations"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:16
-msgid ""
-"Anlagenbetreiber stellen lokal erzeugten Strom bereit. Die Bedingungen und Vergütung "
-"regelt die Gemeinschaft mit den Beteiligten."
-msgstr ""
-"Les exploitants d'installations fournissent de l'électricité produite localement. La "
-"communauté convient des conditions et de la rémunération avec les participants."
 
 #: templates/telemetry_dashboard.html:55
 msgid "Anlagenhinweise"
@@ -1625,16 +1612,6 @@ msgstr "Mission"
 #: templates/release/how_it_works.html:39
 msgid "Aufgaben im Detail"
 msgstr "Tâches détaillées"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:15
-msgid "Aufgaben im Quartier"
-msgstr "Rôles dans le quartier"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:27
-msgid "Aufgaben und Zusammenarbeit verstehen"
-msgstr "Comprendre les rôles et la collaboration"
 
 #: templates/equipment_form.html:64
 msgid "Aufgabenstatus"
@@ -2473,11 +2450,6 @@ msgstr "Renvoyer le lien de confirmation"
 msgid "Bestätigungslink senden"
 msgstr "Envoyer le lien de confirmation"
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:29
-msgid "Beteiligte und Anschlüsse klären"
-msgstr "Identifier les participants et les raccordements"
-
 #. Draft translation; native language and domain review pending.
 #: templates/release/software.html:14
 msgid "Beteiligte, Vereinbarungen, Dokumente und VNB-Übergaben verwalten."
@@ -2952,13 +2924,6 @@ msgstr "Regrouper les bâtiments pour une CEL"
 msgid "Code auf GitHub"
 msgstr "Code sur GitHub"
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:50
-msgid "Code beitragen, Wissen teilen und die Gemeinschaft mitgestalten."
-msgstr ""
-"Contribuer au code, partager ses connaissances et participer à la vie de la "
-"communauté."
-
 #. Draft translation; native language and domain review pending.
 #: templates/release/community.html:3
 msgid ""
@@ -3173,12 +3138,6 @@ msgstr ""
 msgid "Das mögliche Gebiet feststeht."
 msgstr "La zone possible est déterminée."
 
-#: templates/sandbox/entry.html:10
-msgid ""
-"Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später "
-"erneut."
-msgstr "Le village d'essai ne peut pas démarrer pour le moment. Veuillez réessayer plus tard."
-
 #: templates/product_base.html:18 templates/utility/settings.html:16
 msgid "Dashboard"
 msgstr "Tableau de bord"
@@ -3222,11 +3181,6 @@ msgstr "Importer les données"
 #: templates/gemeinde/profil.html:118
 msgid "Daten melden oder korrigieren"
 msgstr "Signaler ou corriger des données"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:31
-msgid "Daten prüfen und Rechnungen freigeben"
-msgstr "Vérifier les données et approuver les factures"
 
 #: templates/self_host.html:66
 msgid "Daten und Lizenz"
@@ -3489,19 +3443,6 @@ msgstr ""
 "l’état actuel."
 
 #. Draft translation; native language and domain review pending.
-#: templates/verein/index.html:7
-msgid ""
-"Der Gründer nahm bei etablierten Energieversorgern Zurückhaltung wahr. Das ist seine "
-"Einschätzung und keine belegte Aussage über deren Motive. Die geplanten "
-"Unabhängigkeitsregeln sollen verhindern, dass einzelne Anbieter die Richtung "
-"bestimmen."
-msgstr ""
-"Le fondateur a fait preuve de retenue auprès des fournisseurs d'énergie bien établis,"
-" ce qui est son appréciation et non une indication de leurs motifs. Les règles "
-"d'indépendance prévues visent à empêcher les fournisseurs individuels de choisir la "
-"direction."
-
-#. Draft translation; native language and domain review pending.
 #: templates/release/software.html:8
 msgid ""
 "Der Import ordnet Messpunkte und Viertelstundenwerte den Beteiligten zu. Die Prüfung "
@@ -3522,19 +3463,6 @@ msgstr ""
 "L’installateur configure l’application et sa base de données localement avec Docker. "
 "Votre CEL prend ensuite en charge les mises à jour, les sauvegardes et la "
 "disponibilité."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/verein/index.html:11
-msgid ""
-"Der Jahresbeitrag beträgt CHF 50 und ist innert 30 Tagen nach der Aufnahme fällig. "
-"Ein Beitragserlass ist nicht vorgesehen. Eine tatsächlich versendete Mahnung gewährt "
-"weitere 60 Tage. Erst danach ist eine begründete Beendigung durch den Vorstand mit "
-"Beschwerdemöglichkeit vorgesehen."
-msgstr ""
-"La cotisation annuelle est de CHF 50, payable dans les 30 jours suivant l’admission. "
-"Aucune dispense n’est prévue. Un rappel effectivement envoyé accorde 60 jours "
-"supplémentaires. Ce délai doit expirer avant une exclusion motivée par le comité, "
-"avec possibilité de recours."
 
 #: payment_reconciliation.py:154
 msgid "Der Kontoauszug enthält keine Zahlungseinträge."
@@ -3711,11 +3639,6 @@ msgstr ""
 "\n"
 "%(url)s"
 
-#. Draft translation; native language and domain review pending.
-#: templates/release/event.html:6
-msgid "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
-msgstr "La participation n'est pas encore autorisée. Questions à ce sujet: hallo@openleg.ch."
-
 #. Draft checked against source; native language and domain review pending.
 #: verein_finance.py:63
 msgid "Der Text ist zu lang oder enthält ungültige Zeichen."
@@ -3741,25 +3664,6 @@ msgstr ""
 #: templates/leg_dashboard.html:236
 msgid "Der VNB-Austausch ist derzeit nicht verfügbar."
 msgstr "L’échange GRD n’est actuellement pas disponible."
-
-#. Draft translation; native language and domain review pending.
-#: templates/verein/index.html:6
-msgid ""
-"Der Verein hat seinen Sitz in Baden. Die Mitglieder tragen Software, Dokumentation "
-"und Austausch gemeinsam."
-msgstr ""
-"L'association a son siège à Baden. Les membres partagent des logiciels, de la "
-"documentation et des échanges."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/verein/index.html:6 templates/verein/index.html:7
-#: templates/verein/index.html:8
-msgid ""
-"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Statuten und "
-"Vorstand werden an der tatsächlichen Gründung beschlossen."
-msgstr ""
-"L'association, dont le siège est prévu à Baden, n'est pas encore constituée. Les "
-"statuts seront adoptés et le comité élu lors de l'assemblée constitutive."
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/index.html:10
@@ -3809,16 +3713,6 @@ msgstr ""
 "renouvelable introduits doivent représenter ensemble au moins 5 pour cent de la "
 "puissance de raccordement de tous les consommateurs finaux participants."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:19
-msgid ""
-"Der Verteilnetzbetreiber prüft die Voraussetzungen und liefert die vereinbarten "
-"Messdaten. Datenzugang, Format und Zuständigkeit müssen vor dem Betrieb geklärt sein."
-msgstr ""
-"Le gestionnaire du réseau de distribution vérifie les conditions et fournit les "
-"données de mesure convenues. L'accès aux données, leur format et les responsabilités "
-"doivent être définis avant l'exploitation."
-
 #: app.py:104 formation_guide.py:35
 msgid ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der"
@@ -3829,31 +3723,6 @@ msgstr ""
 "mesure, ainsi que les autres achats d’électricité des participants à "
 "l’approvisionnement de base. La CEL ou son prestataire établit le décompte de "
 "l’électricité échangée au sein de la communauté."
-
-#. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:362
-#: verein_routes.py:375
-#, python-format
-msgid ""
-"Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
-"\n"
-"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
-"hallo@openleg.ch."
-msgstr ""
-"Le comité a mis fin à votre adhésion. Motif : %(reason)s\n"
-"\n"
-"Vous pouvez recourir auprès de l'assemblée des membres. Contact : hallo@openleg.ch."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/verein/join.html:6
-msgid ""
-"Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
-"Jahresbeitrag von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen "
-"Beitragserlass."
-msgstr ""
-"Le comité examine votre demande. L'adhésion commence à l'admission. La cotisation "
-"annuelle de CHF 50 est alors due dans un délai de 30 jours. Aucune dispense de "
-"cotisation n'est prévue."
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/index.html:11
@@ -4277,18 +4146,6 @@ msgstr ""
 #: templates/api_docs.html:250
 msgid "Die Gruppenbildung ist fehlgeschlagen."
 msgstr "La constitution du groupe a échoué."
-
-#. Draft translation; native language and domain review pending.
-#: templates/verein/index.html:7
-msgid ""
-"Die Idee zu OpenLEG entstand nach der Teilnahme des Gründers an den Energy Data "
-"Hackdays 2025 in Brugg-Windisch. Lokale Stromgemeinschaften brauchen nachvollziehbare"
-" Software und Menschen, die Wissen teilen und die Werkzeuge pflegen."
-msgstr ""
-"L'idée de OpenLEG est née après la participation du fondateur aux Energy Data "
-"Hackdays 2025 à Brugg-Windisch. Les communautés locales d'électricité ont besoin de "
-"logiciels compréhensibles et de personnes qui partagent des connaissances et "
-"maintiennent les outils."
 
 #: templates/impressum.html:46
 msgid ""
@@ -4945,24 +4802,6 @@ msgstr ""
 msgid "Die tatsächliche Datenlieferung wird vereinbart."
 msgstr "La livraison effective des données est convenue."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:18
-msgid ""
-"Die verantwortlichen Personen pflegen die Beteiligten, prüfen Messdaten und geben "
-"Abrechnungen frei. OpenLEG unterstützt diese Arbeit."
-msgstr ""
-"Les personnes responsables tiennent les données des participants à jour, vérifient "
-"les mesures et approuvent les décomptes. OpenLEG facilite ce travail."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/verein/application.html:24 templates/verein/dues.html:6
-msgid ""
-"Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der "
-"Erinnerung."
-msgstr ""
-"Le délai supplémentaire de 60 jours commence uniquement lorsque le rappel a été "
-"envoyé avec succès."
-
 #: i18n.py:80
 msgid "Dienst vorübergehend nicht verfügbar"
 msgstr "Service temporairement indisponible"
@@ -4994,7 +4833,7 @@ msgstr ""
 " réessayez plus tard."
 
 #. Draft checked against source; native language and domain review pending.
-#: verein_finance.py:67
+#: verein_finance.py:67 verein_payments.py:48
 msgid "Diese Angabe ist erforderlich."
 msgstr "Ce champ est obligatoire."
 
@@ -5070,10 +4909,6 @@ msgid ""
 msgstr ""
 "Ce message a été retiré du catalogue audité. Les versions précédentes restent ci-"
 "dessous."
-
-#: templates/sandbox/inbox.html:6
-msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
-msgstr "Ces messages restent dans votre village d'essai. Aucun e-mail n'est envoyé."
 
 #: sandbox_metering.py:57
 msgid "Diese Quelle gehört nicht zur vorbereiteten LEG Sonnwil."
@@ -5176,14 +5011,6 @@ msgstr ""
 "documents sources manquent. La validation exige un rapprochement entièrement "
 "concordant."
 
-#: templates/sandbox/account_unavailable.html:6
-msgid ""
-"Dieser Haushalt ist gelöscht oder noch nicht bestätigt. Wählen Sie ein anderes Konto "
-"oder setzen Sie Ihr Übungsdorf zurück, um die Ausgangsdaten wiederherzustellen."
-msgstr ""
-"Ce ménage a été supprimé ou n'est pas encore confirmé. Choisissez un autre compte ou "
-"réinitialisez votre village d'essai pour retrouver les données de départ."
-
 #: templates/leg_billing.html:24
 msgid ""
 "Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt "
@@ -5254,11 +5081,6 @@ msgstr ""
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/event.html:6
-msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
-msgstr "Cette réunion est complète. Questions concernant d'autres dates: salut@openleg.ch."
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/event.html:6
 msgid "Dieses Treffen liegt in der Vergangenheit."
 msgstr "Cette rencontre est dans le passé."
 
@@ -5266,10 +5088,6 @@ msgstr "Cette rencontre est dans le passé."
 #: templates/release/event.html:6
 msgid "Dieses Treffen wurde abgesagt. Aktualisieren Sie den Eintrag in Ihrem Kalender."
 msgstr "Cette rencontre a été annulée. Mettez à jour votre calendrier."
-
-#: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
-msgid "Dieses Übungsdorf ist abgelaufen"
-msgstr "Ce village d'essai a expiré"
 
 #: templates/admin/abrechnungen.html:106 templates/leg_kalkulator.html:208
 msgid "Differenz"
@@ -5756,15 +5574,6 @@ msgstr "Référence unique de l'écriture comptable"
 msgid "Eine Abbildung auf dieser Seite zeigt die Oberfläche auf Deutsch."
 msgstr "Une illustration sur cette page montre l'interface en allemand."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/verein/dues.html:6
-msgid ""
-"Eine Beendigung wegen offener Beiträge ist erst nach der tatsächlich versendeten "
-"Erinnerung und weiteren 60 Tagen möglich."
-msgstr ""
-"Une exclusion pour cotisations impayées n'est possible qu'après un rappel "
-"effectivement envoyé et 60 jours supplémentaires."
-
 #: templates/telemetry_dashboard.html:56
 msgid ""
 "Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt "
@@ -5926,28 +5735,6 @@ msgid ""
 "Eine interne Bewegung braucht zwei unterschiedliche erfasste Konto-Fonds-"
 "Kombinationen."
 msgstr "Un mouvement interne exige deux combinaisons compte/fonds distinctes et enregistrées."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:55
-msgid ""
-"Eine lokale Elektrizitätsgemeinschaft organisiert die gemeinsame Nutzung von lokal "
-"erzeugtem Strom über das öffentliche Netz. Der Netzbetreiber prüft, ob die "
-"beteiligten Anschlüsse die Voraussetzungen erfüllen."
-msgstr ""
-"Une communauté électrique locale organise l'utilisation commune d'électricité "
-"produite localement par le réseau public. Le gestionnaire de réseau vérifie si les "
-"raccordements concernés remplissent les conditions."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:10
-msgid ""
-"Eine lokale Elektrizitätsgemeinschaft, kurz LEG, organisiert die gemeinsame Nutzung "
-"von lokal erzeugtem Strom. Ob Ihre Anschlüsse die Voraussetzungen erfüllen, klären "
-"Sie mit Ihrem Netzbetreiber."
-msgstr ""
-"Une communauté électrique locale, appelée LEG, organise l'utilisation commune "
-"d'électricité produite localement. Vérifiez avec votre gestionnaire de réseau si vos "
-"raccordements remplissent les conditions."
 
 #: sandbox_seed.py:53
 msgid "Eine neue LEG gründen"
@@ -6245,11 +6032,6 @@ msgstr ""
 #: templates/gemeinde/verzeichnis.html:47
 msgid "Energiewende-Score"
 msgstr "Score de transition énergétique"
-
-#. Draft translation; native language and domain review pending.
-#: templates/verein/index.html:7
-msgid "Energy Data Hackdays 2025: Veranstaltung und Hintergrund"
-msgstr "Energy Data Hackdays 2025: événement et contexte"
 
 #: templates/api_docs.html:96
 msgid "Energy transition score breakdown"
@@ -6702,26 +6484,6 @@ msgstr "Accès à distance possible"
 msgid "Fiktives Konto wählen"
 msgstr "Choisir un compte fictif"
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:12
-msgid ""
-"Fiktives Quartier mit Wohnhäusern, Solardächern und einem Gewerbebau. Die farbigen "
-"Linien veranschaulichen Beziehungen und zeigen keine geprüften Netzanschlüsse."
-msgstr ""
-"Quartier fictif comprenant des logements, des toitures solaires et un bâtiment "
-"d'activité. Les lignes colorées illustrent les relations ; elles ne représentent pas "
-"des raccordements vérifiés."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:13
-msgid ""
-"Fiktives Quartier. Eine LEG verbindet Beteiligte mit unterschiedlichen Aufgaben. Die "
-"Darstellung belegt keine Netzzugehörigkeit oder bestehende Installation."
-msgstr ""
-"Quartier fictif. Une LEG réunit des participants aux rôles différents. Cette "
-"illustration ne prouve ni l'appartenance à un réseau ni l'existence d'une "
-"installation."
-
 #: templates/api_docs.html:200
 msgid "Financial projections"
 msgstr "Projections financières"
@@ -6838,11 +6600,6 @@ msgstr ""
 #: templates/leg_gruenden.html:239
 msgid "Fragen ausserhalb der Gründungsschritte"
 msgstr "Des questions en dehors des étapes fondatrices"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/home.html:54
-msgid "Fragen vor dem Start"
-msgstr "Questions avant le lancement"
 
 #: templates/pricing.html:153
 msgid "Fragen zu Betrieb, Finanzierung oder Self-Hosting?"
@@ -7045,18 +6802,6 @@ msgstr "Pour les communes :"
 msgid "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 msgstr "Pour les communes : révéler le potentiel, faciliter le démarrage."
 
-#. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:350 verein_routes.py:361
-#, python-format
-msgid ""
-"Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am "
-"%(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang."
-" Kontakt: hallo@openleg.ch."
-msgstr ""
-"Pour votre année de cotisation débutant le %(period)s, la cotisation annuelle est de "
-"CHF 50, payable le %(due_on)s. Votre accès personnel indique l'état de vos "
-"cotisations. Contact : hallo@openleg.ch."
-
 #: templates/leg_gruenden.html:46
 msgid "Für LEG-Gründerinnen und LEG-Gründer"
 msgstr "Pour les personnes qui créent une CEL"
@@ -7095,20 +6840,6 @@ msgid ""
 msgstr ""
 "Des compteurs intelligents de BKW sont obligatoires pour tous les participants. BKW "
 "installera les appareils manquants dans le cadre de la procédure d'enregistrement."
-
-#. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:341 verein_routes.py:350
-#, python-format
-msgid ""
-"Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie "
-"innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen "
-"begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. "
-"Kontakt: hallo@openleg.ch."
-msgstr ""
-"Pour l'année de cotisation débutant le %(period)s, CHF %(amount)s restent impayés. "
-"Veuillez payer dans les 60 jours supplémentaires suivant ce rappel. Ensuite, le "
-"comité peut prendre une décision d'exclusion motivée. Vous pouvez faire recours. "
-"Contact : hallo@openleg.ch."
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/release/finance.html:15 templates/release/finance.html:16
@@ -7536,11 +7267,6 @@ msgstr ""
 "Ensemble, vous créez votre CEL et pouvez économiser plusieurs centaines de francs par"
 " an selon votre situation."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:27
-msgid "Gemeinsam planen. Verantwortlich handeln."
-msgstr "Planifier ensemble. Assumer ses responsabilités."
-
 #: templates/leg_dashboard.html:328
 msgid ""
 "Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit "
@@ -7562,11 +7288,6 @@ msgstr "Créer la communauté"
 #: templates/emails/day_14_formation.html:43
 msgid "Gemeinschaft bilden"
 msgstr "Former la communauté"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:18
-msgid "Gemeinschaft organisieren"
-msgstr "Organiser la communauté"
 
 #: templates/documents/community_agreement.html:13
 msgid "Gemeinschaftsvereinbarung"
@@ -7948,15 +7669,6 @@ msgstr "Plus fortes progressions de l’exploitation du potentiel solaire | Open
 msgid "Gründen Sie eine"
 msgstr "Créez une"
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:27
-msgid ""
-"Gründen Sie eine Stromgemeinschaft mit klaren Rollen. Die Software übernimmt weder "
-"den Entscheid des Netzbetreibers noch die Verantwortung Ihrer LEG."
-msgstr ""
-"Créez une communauté électrique avec des rôles définis. Le logiciel ne prend ni les "
-"décisions du gestionnaire de réseau ni la responsabilité de votre LEG."
-
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
 msgid "Gründung"
 msgstr "Création"
@@ -8140,16 +7852,6 @@ msgstr "Ménages de la CEL"
 #: templates/dashboard.html:84
 msgid "Haushalte in der Nähe"
 msgstr "Ménages à proximité"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:17
-msgid ""
-"Haushalte und Betriebe verbrauchen Strom. Für ihre Teilnahme braucht es eine "
-"Vereinbarung und die Prüfung der Anschlüsse durch den Netzbetreiber."
-msgstr ""
-"Les ménages et les entreprises consomment de l'électricité. Leur participation "
-"nécessite un accord et la vérification des raccordements par le gestionnaire de "
-"réseau."
 
 #: templates/advisories.html:7
 msgid "Herausgeber"
@@ -8435,33 +8137,6 @@ msgstr "Votre fiche CEL dans le répertoire ouvert est toujours à jour."
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr "Votre fiche CEL dans le répertoire ouvert a bien été revendiquée."
 
-#. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:335 verein_routes.py:340
-#: verein_routes.py:344
-#, python-format
-msgid ""
-"Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
-"\n"
-"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
-"hallo@openleg.ch."
-msgstr ""
-"Votre demande d'adhésion a été refusée. Motif : %(reason)s\n"
-"\n"
-"Vous pouvez recourir auprès de l'assemblée des membres. Contact : hallo@openleg.ch."
-
-#. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:329 verein_routes.py:334
-#: verein_routes.py:338
-#, python-format
-msgid ""
-"Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. "
-"Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und "
-"Rückfragen: hallo@openleg.ch."
-msgstr ""
-"Votre demande d'adhésion a été acceptée. L'adhésion commence à l'admission. La "
-"cotisation annuelle de CHF 50 est due le %(due_on)s. Pour les coordonnées de paiement"
-" et les questions : hallo@openleg.ch."
-
 #: templates/index.html:202
 msgid "Ihr Recht"
 msgstr "Votre droit"
@@ -8474,10 +8149,6 @@ msgstr "Vos économies possibles"
 msgid "Ihr Stromverbrauch"
 msgstr "Votre consommation d’électricité"
 
-#: templates/sandbox/entry.html:3 templates/sandbox/entry.html:7
-msgid "Ihr eigenes Übungsdorf"
-msgstr "Votre village d'essai"
-
 #: sandbox_seed.py:117
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Votre gestionnaire de réseau fictif est actif et n'a pas encore de clé API."
@@ -8489,11 +8160,6 @@ msgstr "Votre nouveau ménage est confirmé."
 #: templates/index.html:408
 msgid "Ihre Adresse"
 msgstr "Votre adresse"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:21
-msgid "Ihre Adresse prüfen und Interessierte in Ihrer Gemeinde finden"
-msgstr "Vérifier votre adresse et trouver des personnes intéressées dans votre commune"
 
 #: templates/contact_requests.html:31
 msgid "Ihre Anfragen"
@@ -8532,19 +8198,6 @@ msgstr ""
 #: templates/leg_gruenden.html:186 templates/leg_gruenden.html:199
 msgid "Ihre Aufgabe"
 msgstr "Votre tâche"
-
-#. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:357 verein_routes.py:370
-msgid ""
-"Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und "
-"benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über "
-"Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- "
-"und Entscheidnachweise. Kontakt: hallo@openleg.ch."
-msgstr ""
-"Votre déclaration de démission a été reçue et a pris effet dès réception. Aucune "
-"autorisation du comité n'est nécessaire. Votre accès personnel indique la date et "
-"l'état de vos cotisations. La déclaration n'efface pas automatiquement les pièces "
-"comptables et les décisions. Contact : hallo@openleg.ch."
 
 #: templates/dashboard.html:238
 msgid "Ihre Daten"
@@ -8599,17 +8252,6 @@ msgstr ""
 #: dashboard_routes.py:153
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr "Vos demandes de contact sur OpenLEG"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:58
-msgid ""
-"Ihre LEG bestimmt die verantwortlichen Personen oder beauftragt einen Dienstleister. "
-"Open Source ermöglicht den eigenen Betrieb. Die Veröffentlichung des Codes ist keine "
-"Betriebs- oder Supportzusage."
-msgstr ""
-"Votre LEG désigne les personnes responsables ou mandate un prestataire. Le code "
-"ouvert permet une exploitation autonome. La publication du code ne constitue pas un "
-"engagement d'exploitation ou d'assistance."
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/release/software.html:22
@@ -8696,10 +8338,6 @@ msgstr ""
 msgid "Ihre nächste Aufgabe"
 msgstr "Votre prochaine tâche"
 
-#: templates/sandbox/accounts.html:6
-msgid "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
-msgstr "Vos modifications restent dans ce village d'essai lorsque vous changez de compte."
-
 #: templates/emails/day_7_consumption.html:43
 msgid "Ihre übliche Verbrauchszeit, tagsüber oder abends"
 msgstr "Vos habitudes de consommation, en journée ou en soirée"
@@ -8744,15 +8382,6 @@ msgstr "Aucune CEL de %(profile_name)s n’est encore inscrite dans le répertoi
 #: templates/sandbox/metering.html:67
 msgid "Import fehlgeschlagen"
 msgstr "Échec de l'import"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:31
-msgid ""
-"Importieren Sie Messwerte, prüfen Sie die Periode und kontrollieren Sie den Entwurf, "
-"bevor Rechnungen ausgegeben werden."
-msgstr ""
-"Importez les mesures, vérifiez la période et contrôlez le projet avant d'émettre les "
-"factures."
 
 #: templates/impressum.html:21 templates/partials/site_footer.html:11
 msgid "Impressum"
@@ -10244,10 +9873,6 @@ msgstr "Demander un lien"
 msgid "Link erneut anfordern"
 msgstr "Demander à nouveau le lien"
 
-#: templates/sandbox/inbox.html:13
-msgid "Link im Übungsdorf öffnen"
-msgstr "Ouvrir le lien dans le village d'essai"
-
 #: templates/gemeinde/dashboard.html:106
 msgid "Link teilen, Interessierte sammeln"
 msgstr "Partager le lien, recueillir les manifestations d’intérêt"
@@ -10771,15 +10396,6 @@ msgstr ""
 "Préparer une communauté électrique locale, gérer ses participants et vérifier les "
 "décomptes avec OpenLEG. Un logiciel libre à exploiter vous-même."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:6
-msgid ""
-"Mit OpenLEG verwalten Sie Mitglieder und bereiten Abrechnungen vor. Sie können die "
-"Software selbst betreiben."
-msgstr ""
-"Avec OpenLEG, vous gérez les membres et préparez les décomptes. Vous pouvez exploiter"
-" le logiciel vous-même."
-
 #: templates/leg_kalkulator.html:157
 msgid "Mit Spannungstransformation"
 msgstr "Avec transformation de tension"
@@ -11144,11 +10760,6 @@ msgstr "Réseau"
 #: templates/sandbox/metering.html:40
 msgid "Netz (kWh)"
 msgstr "Réseau (kWh)"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/home.html:19
-msgid "Netz und Messdaten"
-msgstr "Réseau et données de mesure"
 
 #: sandbox_seed.py:111
 msgid "Netzbetreiber"
@@ -11589,7 +11200,7 @@ msgstr ""
 "held."
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/verein/finance_edit.html:13
+#: templates/verein/finance_edit.html:13 templates/verein/recipient_edit.html:9
 msgid "Noch nicht freigegeben"
 msgstr "Pas encore approuvé"
 
@@ -12097,17 +11708,6 @@ msgstr ""
 "OpenLEG est une infrastructure libre pour les communautés électriques suisses. Aucun "
 "coût caché, aucune dépendance envers un fournisseur, aucune vente de données."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:56
-msgid ""
-"OpenLEG ist freie Software unter AGPL-3.0-or-later. Für Server, Einrichtung und "
-"Unterstützung können Kosten entstehen. Klären Sie vor dem Start, wer diese Aufgaben "
-"übernimmt."
-msgstr ""
-"OpenLEG est un logiciel libre sous licence AGPL-3.0-or-later. Les serveurs, la mise "
-"en place et l'assistance peuvent entraîner des coûts. Avant de commencer, définissez "
-"qui assume ces tâches."
-
 #: templates/index.html:485
 msgid ""
 "OpenLEG ist freie Software unter AGPL-3.0-or-later. Sie können den Code prüfen, die "
@@ -12272,17 +11872,6 @@ msgstr ""
 "mesure et les factures. Les personnes responsables examinent les bases et donnent les"
 " résultats."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:38
-msgid ""
-"OpenLEG unterstützt den Import von Messdaten und die Vorbereitung von Rechnungen. "
-"Fehlende Daten bleiben sichtbar. Die Freigabe liegt bei den dafür berechtigten "
-"Personen."
-msgstr ""
-"OpenLEG facilite l'importation des données de mesure et la préparation des factures. "
-"Les données manquantes restent signalées. Les personnes habilitées approuvent les "
-"factures."
-
 #: templates/leg_gruenden.html:72
 msgid ""
 "OpenLEG unterstützt die Gründung und den Betrieb von LEGs. Für vZEV bietet OpenLEG "
@@ -12433,6 +12022,11 @@ msgstr "NPA"
 #: templates/api_docs.html:214
 msgid "PLZ range e.g. 8000-8999"
 msgstr "Plage de NPA, p. ex. 8000-8999"
+
+#. Draft translation; native language and domain review pending.
+#: document_generator.py:160
+msgid "PV-Anlage:"
+msgstr "Système PV:"
 
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
@@ -12664,7 +12258,7 @@ msgid ""
 msgstr "Référence privée des règles de rapport adoptées et du périmètre complet des comptes"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/verein/finance_review.html:11
+#: templates/verein/finance_review.html:11 templates/verein/recipient_review.html:7
 msgid "Private Referenz zur tatsächlichen zweiten Prüfung und Freigabe"
 msgstr "Référence privée du deuxième contrôle et de l'approbation effectivement réalisés"
 
@@ -13357,11 +12951,6 @@ msgstr "Référence à la libération effective"
 msgid "Referenz:"
 msgstr "Référence:"
 
-#. Draft translation; native language and domain review pending.
-#: templates/release/home.html:30
-msgid "Regeln und Zuständigkeiten festlegen"
-msgstr "Définir des règles et des responsabilités"
-
 #: templates/utility/login.html:47 templates/utility/register.html:106
 msgid "Registrieren"
 msgstr "S’inscrire"
@@ -13603,17 +13192,6 @@ msgstr "Ouvrir le guide de démarrage"
 #: templates/open_source.html:166
 msgid "Schnellstart, manuelle Installation und privates Netzwerk"
 msgstr "Démarrage rapide, installation manuelle et réseau privé"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:6
-msgid ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
-" an hallo@openleg.ch. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden "
-"Sie keine Passwörter oder privaten Messdaten."
-msgstr ""
-"Écrivez des questions sur le projet, sur l'adhésion prévue ou sur la participation à "
-"hallo@openleg.ch. Indiquez votre demande et une possibilité de demander votre retour."
-" Ne pas envoyer de mots de passe ou de données de mesure privées."
 
 #: templates/gemeinde/dashboard.html:115
 msgid "Schritt für Schritt zur Stromgemeinschaft"
@@ -14004,17 +13582,6 @@ msgstr ""
 "vérifiables."
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:57
-msgid ""
-"Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber "
-"liefert dasselbe Format. Prüfen Sie den Import mit Ihren Daten, bevor Sie eine "
-"Abrechnung vorbereiten."
-msgstr ""
-"Convenez de l'accès aux données avec le gestionnaire du réseau de distribution. Tous "
-"les gestionnaires ne fournissent pas le même format. Testez l'importation de vos "
-"données avant de préparer un décompte."
-
-#. Draft checked against source; native language and domain review pending.
 #: templates/release/how_it_works.html:16
 msgid ""
 "Sie vereinbaren ihre Teilnahme und beziehen den in der LEG zugeordneten Anteil zu den"
@@ -14361,14 +13928,6 @@ msgstr "Soleure"
 msgid "Sonnendach solar data"
 msgstr "Données solaires Toitsolaire"
 
-#: templates/sandbox/start_evidence.html:8
-msgid ""
-"Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der "
-"erfundenen LEG. Es wurde kein realer Netzbetreiber kontaktiert."
-msgstr ""
-"Sonnwil Energie confirme le démarrage simulé de cette CEL fictive uniquement dans ce "
-"village d'essai. Aucun gestionnaire de réseau réel n'a été contacté."
-
 #: templates/sandbox/home.html:2 templates/sandbox/home.html:5
 msgid "Sonnwil ausprobieren"
 msgstr "Découvrir Sonnwil"
@@ -14420,15 +13979,6 @@ msgstr "Langue des e-mails"
 #: templates/dashboard.html:203 templates/utility/settings.html:14
 msgid "Sprache speichern"
 msgstr "Enregistrer la langue"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:29
-msgid ""
-"Sprechen Sie mit Nachbarn und dem Netzbetreiber. Halten Sie fest, wer teilnimmt und "
-"welche Daten gebraucht werden."
-msgstr ""
-"Échangez avec vos voisins et le gestionnaire de réseau. Consignez les participants et"
-" les données nécessaires."
 
 #: templates/utility/register.html:48
 msgid "St. Gallen"
@@ -14570,16 +14120,6 @@ msgstr "Rue, NPA, localité"
 #: templates/member_invoice_detail.html:192
 msgid "Strom aus dem Quartierakku"
 msgstr "Alimentation par la batterie de quartier"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:16
-msgid "Strom erzeugen"
-msgstr "Produire de l'électricité"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/home.html:17
-msgid "Strom nutzen"
-msgstr "Utiliser l'électricité"
 
 #: templates/emails/day_14_formation.html:64
 msgid "Strom teilen und sparen"
@@ -14769,11 +14309,6 @@ msgstr "Langues de conversation effectives"
 #: templates/release/knowledge.html:21
 msgid "Technische Betriebsdokumentation"
 msgstr "Documentation technique opérationnelle"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:57
-msgid "Technischen Betrieb vorbereiten"
-msgstr "Préparer l'exploitation technique"
 
 #: templates/index.html:469
 msgid "Teilen Sie Ihren Einladungslink"
@@ -15335,33 +14870,6 @@ msgid "Verein"
 msgstr "Association"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/verein/index.html:2 templates/verein/index.html:3
-#: templates/verein/index.html:6
-msgid "Verein openLEG Schweiz"
-msgstr "Verein openLEG Schweiz"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/home.html:50
-msgid ""
-"Verein openLEG Schweiz pflegt Software, Dokumentation und Austausch. Der Verein mit "
-"Sitz in Baden übernimmt nicht den Betrieb des gehosteten Produkts."
-msgstr ""
-"Verein openLEG Schweiz • L'association dont le siège est à Baden n'est pas "
-"responsable de l'exploitation du produit hébergé."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:50
-msgid ""
-"Verein openLEG Schweiz soll die Software, Dokumentation und den Austausch pflegen. "
-"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Der Betrieb des "
-"gehosteten Produkts gehört nicht zu seinem vorgesehenen Auftrag."
-msgstr ""
-"Verein openLEG Schweiz a pour projet d'entretenir le logiciel, la documentation et "
-"les échanges. L'association, dont le siège est prévu à Baden, n'est pas encore "
-"constituée. L'exploitation du produit hébergé ne fait pas partie de sa mission "
-"prévue."
-
-#. Draft checked against source; native language and domain review pending.
 #: templates/release/home.html:50
 msgid "Verein und Mitgliedschaft"
 msgstr "Association et adhésion"
@@ -15380,24 +14888,6 @@ msgstr "Association : adhésion et cotisation annuelle"
 #: verein_routes.py:66 verein_routes.py:68 verein_routes.py:92
 msgid "Verein: persönlicher Zugang"
 msgstr "Association : accès personnel"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:30
-msgid ""
-"Vereinbaren Sie Vertretung, Tarife, Abrechnung und den Umgang mit Fragen. Benennen "
-"Sie die verantwortlichen Personen."
-msgstr ""
-"Convenez de la représentation, des tarifs, de la facturation et du traitement des "
-"questions. Désignez les personnes responsables."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:40
-msgid ""
-"Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem "
-"Netzbetreiber. Ein Entwurf ist noch keine freigegebene Rechnung."
-msgstr ""
-"Parcours simplifié. Définissez les données disponibles et leur format avec votre "
-"gestionnaire de réseau. Un projet n'est pas encore une facture approuvée."
 
 #. Draft checked against source; native language and domain review pending.
 #: verein_finance_routes.py:223 verein_finance_routes.py:235
@@ -15873,7 +15363,7 @@ msgid "Vorlage"
 msgstr "Modèle"
 
 #. Draft checked against source; native language and domain review pending.
-#: templates/verein/finance_review.html:6
+#: templates/verein/finance_review.html:6 templates/verein/recipient_review.html:4
 msgid "Vorschau der öffentlichen Angaben"
 msgstr "Aperçu des informations publiques"
 
@@ -15988,11 +15478,6 @@ msgstr "Qu’est-il possible de faire dans votre commune ?"
 msgid "Was ist in meiner Gemeinde möglich?"
 msgstr "Qu’est-il possible de faire dans ma commune ?"
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:46
-msgid "Was kann Ihre Gemeinde ermöglichen?"
-msgstr "Que peut faciliter votre commune ?"
-
 #: templates/pricing.html:96
 msgid "Was kostenlos bleibt"
 msgstr "Ce qui reste gratuit"
@@ -16005,11 +15490,6 @@ msgstr "Quels sont les coûts d'utilisation ?"
 #: templates/how-it-works.html:46 templates/how-it-works.html:123
 msgid "Was kostet die Gründung mit OpenLEG?"
 msgstr "Combien coûte la création avec OpenLEG ?"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/home.html:56
-msgid "Was kostet die Software?"
-msgstr "Combien coûte le logiciel ?"
 
 #: templates/how-it-works.html:56 templates/how-it-works.html:131
 msgid "Was macht OpenLEG, was der Netzbetreiber?"
@@ -16140,11 +15620,6 @@ msgstr ""
 #: templates/release/knowledge.html:6
 msgid "Wer Entscheidungen trifft und welche Aufgabe beim Netzbetreiber bleibt."
 msgstr "Qui prend des décisions et quelle est la tâche du gestionnaire de réseau."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:58
-msgid "Wer betreibt unsere Gemeinschaft?"
-msgstr "Qui exploite notre communauté ?"
 
 #: templates/open_source.html:65 templates/pricing.html:39
 msgid ""
@@ -16731,19 +16206,6 @@ msgstr "Objectif :"
 msgid "Zielgruppe"
 msgstr "Public cible"
 
-#. Draft checked against source; native language and domain review pending.
-#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:373
-#: verein_routes.py:386
-#, python-format
-msgid ""
-"Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die "
-"Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter "
-"%(access_url)s. Kontakt: hallo@openleg.ch."
-msgstr ""
-"Une décision a été enregistrée sur votre demande : %(reason)s. Consultez votre statut"
-" actuel, l'échéance de cotisation et vos demandes dans votre espace personnel à "
-"l'adresse %(access_url)s. Contact : hallo@openleg.ch."
-
 #: templates/advisories_error.html:7
 msgid "Zu meinen Solargeräten"
 msgstr "À mes appareils solaires"
@@ -16829,15 +16291,6 @@ msgstr "Vers le guide de démarrage"
 #: templates/verein/message.html:6
 msgid "Zum Verein"
 msgstr "Vers l'association"
-
-#: templates/sandbox/home.html:19
-#, python-format
-msgid ""
-"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an"
-" und öffnen Sie ihn im Postfach dieses Übungsdorfs."
-msgstr ""
-"Pour vous reconnecter, utilisez %(email)s. Demandez un lien d'accès avec cette "
-"adresse et ouvrez-le dans la boîte de réception de ce village d'essai."
 
 #: templates/sandbox/metering.html:15
 msgid "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum."
@@ -16928,10 +16381,6 @@ msgstr "Retour à la vérification LEG"
 msgid "Zurück zum LEG-Dashboard"
 msgstr "Retour au tableau de bord de la CEL"
 
-#: templates/sandbox/manage.html:28
-msgid "Zurück zum Übungsdorf"
-msgstr "Retour au village d'essai"
-
 #: templates/gemeinde/methodik.html:22 templates/gemeinde/vergleich.html:23
 msgid "Zurück zur Rangliste"
 msgstr "Retour au classement"
@@ -16947,11 +16396,6 @@ msgstr "Retiré"
 #: templates/gemeinde/rangliste.html:70 templates/gemeinde/rangliste_fortschritte.html:74
 msgid "Zurücksetzen"
 msgstr "Réinitialiser"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/home.html:55
-msgid "Zusammenarbeit verstehen"
-msgstr "Comprendre la coopération"
 
 #: templates/leg_billing.html:113
 msgid "Zustellen"
@@ -17611,16 +17055,6 @@ msgstr ""
 "Vérifier avec l’exploitant les services accessibles depuis Internet et les accès "
 "distants."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:46
-msgid ""
-"Öffentliche Energie- und Solardaten helfen, Fragen vor Ort einzuordnen. Vergleichen "
-"Sie Gemeinden und finden Sie den Einstieg für Ihre Verwaltung."
-msgstr ""
-"Les données publiques sur l'énergie et le solaire aident à comprendre la situation "
-"locale. Comparez les communes et découvrez le parcours destiné à votre "
-"administration."
-
 #. Draft translation; native language and domain review pending.
 #: templates/verein/events.html:11
 msgid "Öffentliche Seite"
@@ -17770,14 +17204,6 @@ msgstr "Plage habituelle : entre"
 #: templates/sandbox/metering.html:18
 msgid "Übungsdateien"
 msgstr "Fichiers d'essai"
-
-#: templates/sandbox/banner.html:4 templates/sandbox/onboarding.html:25
-msgid "Übungsdorf"
-msgstr "Village d'essai"
-
-#: templates/sandbox/manage.html:2 templates/sandbox/manage.html:6
-msgid "Übungsdorf verwalten"
-msgstr "Gérer le village d'essai"
 
 #: templates/gemeinde/profil.html:118
 msgid "öffentlich gemeldeten PV-Anlagen"
@@ -19247,3 +18673,582 @@ msgstr "Partager"
 #: templates/sandbox/telemetry.html:25
 msgid "Freigabe entziehen"
 msgstr "Retirer l’accès"
+
+#: templates/sandbox/entry.html:9
+msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
+msgstr "Tous les villages d'essai sont occupés. Veuillez réessayer plus tard."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:16
+msgid ""
+"Anlagenbetreiber stellen lokal erzeugten Strom bereit. Die Bedingungen und Vergütung "
+"regelt die Gemeinschaft mit den Beteiligten."
+msgstr ""
+"Les exploitants d'installations fournissent de l'électricité produite localement. La "
+"communauté convient des conditions et de la rémunération avec les participants."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:15
+msgid "Aufgaben im Quartier"
+msgstr "Rôles dans le quartier"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:27
+msgid "Aufgaben und Zusammenarbeit verstehen"
+msgstr "Comprendre les rôles et la collaboration"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:29
+msgid "Beteiligte und Anschlüsse klären"
+msgstr "Identifier les participants et les raccordements"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:50
+msgid "Code beitragen, Wissen teilen und die Gemeinschaft mitgestalten."
+msgstr ""
+"Contribuer au code, partager ses connaissances et participer à la vie de la "
+"communauté."
+
+#: templates/sandbox/entry.html:10
+msgid ""
+"Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später "
+"erneut."
+msgstr "Le village d'essai ne peut pas démarrer pour le moment. Veuillez réessayer plus tard."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:31
+msgid "Daten prüfen und Rechnungen freigeben"
+msgstr "Vérifier les données et approuver les factures"
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/index.html:7
+msgid ""
+"Der Gründer nahm bei etablierten Energieversorgern Zurückhaltung wahr. Das ist seine "
+"Einschätzung und keine belegte Aussage über deren Motive. Die geplanten "
+"Unabhängigkeitsregeln sollen verhindern, dass einzelne Anbieter die Richtung "
+"bestimmen."
+msgstr ""
+"Le fondateur a fait preuve de retenue auprès des fournisseurs d'énergie bien établis,"
+" ce qui est son appréciation et non une indication de leurs motifs. Les règles "
+"d'indépendance prévues visent à empêcher les fournisseurs individuels de choisir la "
+"direction."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/index.html:11
+msgid ""
+"Der Jahresbeitrag beträgt CHF 50 und ist innert 30 Tagen nach der Aufnahme fällig. "
+"Ein Beitragserlass ist nicht vorgesehen. Eine tatsächlich versendete Mahnung gewährt "
+"weitere 60 Tage. Erst danach ist eine begründete Beendigung durch den Vorstand mit "
+"Beschwerdemöglichkeit vorgesehen."
+msgstr ""
+"La cotisation annuelle est de CHF 50, payable dans les 30 jours suivant l’admission. "
+"Aucune dispense n’est prévue. Un rappel effectivement envoyé accorde 60 jours "
+"supplémentaires. Ce délai doit expirer avant une exclusion motivée par le comité, "
+"avec possibilité de recours."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
+msgstr "La participation n'est pas encore autorisée. Questions à ce sujet: hallo@openleg.ch."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/index.html:6
+msgid ""
+"Der Verein hat seinen Sitz in Baden. Die Mitglieder tragen Software, Dokumentation "
+"und Austausch gemeinsam."
+msgstr ""
+"L'association a son siège à Baden. Les membres partagent des logiciels, de la "
+"documentation et des échanges."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/index.html:6 templates/verein/index.html:7
+#: templates/verein/index.html:8
+msgid ""
+"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Statuten und "
+"Vorstand werden an der tatsächlichen Gründung beschlossen."
+msgstr ""
+"L'association, dont le siège est prévu à Baden, n'est pas encore constituée. Les "
+"statuts seront adoptés et le comité élu lors de l'assemblée constitutive."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:19
+msgid ""
+"Der Verteilnetzbetreiber prüft die Voraussetzungen und liefert die vereinbarten "
+"Messdaten. Datenzugang, Format und Zuständigkeit müssen vor dem Betrieb geklärt sein."
+msgstr ""
+"Le gestionnaire du réseau de distribution vérifie les conditions et fournit les "
+"données de mesure convenues. L'accès aux données, leur format et les responsabilités "
+"doivent être définis avant l'exploitation."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:362
+#: verein_routes.py:375
+#, python-format
+msgid ""
+"Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
+"\n"
+"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
+"hallo@openleg.ch."
+msgstr ""
+"Le comité a mis fin à votre adhésion. Motif : %(reason)s\n"
+"\n"
+"Vous pouvez recourir auprès de l'assemblée des membres. Contact : hallo@openleg.ch."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/join.html:6
+msgid ""
+"Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
+"Jahresbeitrag von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen "
+"Beitragserlass."
+msgstr ""
+"Le comité examine votre demande. L'adhésion commence à l'admission. La cotisation "
+"annuelle de CHF 50 est alors due dans un délai de 30 jours. Aucune dispense de "
+"cotisation n'est prévue."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/index.html:7
+msgid ""
+"Die Idee zu OpenLEG entstand nach der Teilnahme des Gründers an den Energy Data "
+"Hackdays 2025 in Brugg-Windisch. Lokale Stromgemeinschaften brauchen nachvollziehbare"
+" Software und Menschen, die Wissen teilen und die Werkzeuge pflegen."
+msgstr ""
+"L'idée de OpenLEG est née après la participation du fondateur aux Energy Data "
+"Hackdays 2025 à Brugg-Windisch. Les communautés locales d'électricité ont besoin de "
+"logiciels compréhensibles et de personnes qui partagent des connaissances et "
+"maintiennent les outils."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:18
+msgid ""
+"Die verantwortlichen Personen pflegen die Beteiligten, prüfen Messdaten und geben "
+"Abrechnungen frei. OpenLEG unterstützt diese Arbeit."
+msgstr ""
+"Les personnes responsables tiennent les données des participants à jour, vérifient "
+"les mesures et approuvent les décomptes. OpenLEG facilite ce travail."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/application.html:24 templates/verein/dues.html:6
+msgid ""
+"Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der "
+"Erinnerung."
+msgstr ""
+"Le délai supplémentaire de 60 jours commence uniquement lorsque le rappel a été "
+"envoyé avec succès."
+
+#: templates/sandbox/inbox.html:6
+msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
+msgstr "Ces messages restent dans votre village d'essai. Aucun e-mail n'est envoyé."
+
+#: templates/sandbox/account_unavailable.html:6
+msgid ""
+"Dieser Haushalt ist gelöscht oder noch nicht bestätigt. Wählen Sie ein anderes Konto "
+"oder setzen Sie Ihr Übungsdorf zurück, um die Ausgangsdaten wiederherzustellen."
+msgstr ""
+"Ce ménage a été supprimé ou n'est pas encore confirmé. Choisissez un autre compte ou "
+"réinitialisez votre village d'essai pour retrouver les données de départ."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/event.html:6
+msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
+msgstr "Cette réunion est complète. Questions concernant d'autres dates: salut@openleg.ch."
+
+#: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
+msgid "Dieses Übungsdorf ist abgelaufen"
+msgstr "Ce village d'essai a expiré"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/dues.html:6
+msgid ""
+"Eine Beendigung wegen offener Beiträge ist erst nach der tatsächlich versendeten "
+"Erinnerung und weiteren 60 Tagen möglich."
+msgstr ""
+"Une exclusion pour cotisations impayées n'est possible qu'après un rappel "
+"effectivement envoyé et 60 jours supplémentaires."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:55
+msgid ""
+"Eine lokale Elektrizitätsgemeinschaft organisiert die gemeinsame Nutzung von lokal "
+"erzeugtem Strom über das öffentliche Netz. Der Netzbetreiber prüft, ob die "
+"beteiligten Anschlüsse die Voraussetzungen erfüllen."
+msgstr ""
+"Une communauté électrique locale organise l'utilisation commune d'électricité "
+"produite localement par le réseau public. Le gestionnaire de réseau vérifie si les "
+"raccordements concernés remplissent les conditions."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:10
+msgid ""
+"Eine lokale Elektrizitätsgemeinschaft, kurz LEG, organisiert die gemeinsame Nutzung "
+"von lokal erzeugtem Strom. Ob Ihre Anschlüsse die Voraussetzungen erfüllen, klären "
+"Sie mit Ihrem Netzbetreiber."
+msgstr ""
+"Une communauté électrique locale, appelée LEG, organise l'utilisation commune "
+"d'électricité produite localement. Vérifiez avec votre gestionnaire de réseau si vos "
+"raccordements remplissent les conditions."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/index.html:7
+msgid "Energy Data Hackdays 2025: Veranstaltung und Hintergrund"
+msgstr "Energy Data Hackdays 2025: événement et contexte"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:12
+msgid ""
+"Fiktives Quartier mit Wohnhäusern, Solardächern und einem Gewerbebau. Die farbigen "
+"Linien veranschaulichen Beziehungen und zeigen keine geprüften Netzanschlüsse."
+msgstr ""
+"Quartier fictif comprenant des logements, des toitures solaires et un bâtiment "
+"d'activité. Les lignes colorées illustrent les relations ; elles ne représentent pas "
+"des raccordements vérifiés."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:13
+msgid ""
+"Fiktives Quartier. Eine LEG verbindet Beteiligte mit unterschiedlichen Aufgaben. Die "
+"Darstellung belegt keine Netzzugehörigkeit oder bestehende Installation."
+msgstr ""
+"Quartier fictif. Une LEG réunit des participants aux rôles différents. Cette "
+"illustration ne prouve ni l'appartenance à un réseau ni l'existence d'une "
+"installation."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:54
+msgid "Fragen vor dem Start"
+msgstr "Questions avant le lancement"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:350 verein_routes.py:361
+#, python-format
+msgid ""
+"Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am "
+"%(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang."
+" Kontakt: hallo@openleg.ch."
+msgstr ""
+"Pour votre année de cotisation débutant le %(period)s, la cotisation annuelle est de "
+"CHF 50, payable le %(due_on)s. Votre accès personnel indique l'état de vos "
+"cotisations. Contact : hallo@openleg.ch."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:341 verein_routes.py:350
+#, python-format
+msgid ""
+"Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie "
+"innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen "
+"begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. "
+"Kontakt: hallo@openleg.ch."
+msgstr ""
+"Pour l'année de cotisation débutant le %(period)s, CHF %(amount)s restent impayés. "
+"Veuillez payer dans les 60 jours supplémentaires suivant ce rappel. Ensuite, le "
+"comité peut prendre une décision d'exclusion motivée. Vous pouvez faire recours. "
+"Contact : hallo@openleg.ch."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:27
+msgid "Gemeinsam planen. Verantwortlich handeln."
+msgstr "Planifier ensemble. Assumer ses responsabilités."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:18
+msgid "Gemeinschaft organisieren"
+msgstr "Organiser la communauté"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:27
+msgid ""
+"Gründen Sie eine Stromgemeinschaft mit klaren Rollen. Die Software übernimmt weder "
+"den Entscheid des Netzbetreibers noch die Verantwortung Ihrer LEG."
+msgstr ""
+"Créez une communauté électrique avec des rôles définis. Le logiciel ne prend ni les "
+"décisions du gestionnaire de réseau ni la responsabilité de votre LEG."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:17
+msgid ""
+"Haushalte und Betriebe verbrauchen Strom. Für ihre Teilnahme braucht es eine "
+"Vereinbarung und die Prüfung der Anschlüsse durch den Netzbetreiber."
+msgstr ""
+"Les ménages et les entreprises consomment de l'électricité. Leur participation "
+"nécessite un accord et la vérification des raccordements par le gestionnaire de "
+"réseau."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:335 verein_routes.py:340
+#: verein_routes.py:344
+#, python-format
+msgid ""
+"Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
+"\n"
+"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
+"hallo@openleg.ch."
+msgstr ""
+"Votre demande d'adhésion a été refusée. Motif : %(reason)s\n"
+"\n"
+"Vous pouvez recourir auprès de l'assemblée des membres. Contact : hallo@openleg.ch."
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:329 verein_routes.py:334
+#: verein_routes.py:338
+#, python-format
+msgid ""
+"Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. "
+"Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und "
+"Rückfragen: hallo@openleg.ch."
+msgstr ""
+"Votre demande d'adhésion a été acceptée. L'adhésion commence à l'admission. La "
+"cotisation annuelle de CHF 50 est due le %(due_on)s. Pour les coordonnées de paiement"
+" et les questions : hallo@openleg.ch."
+
+#: templates/sandbox/entry.html:3 templates/sandbox/entry.html:7
+msgid "Ihr eigenes Übungsdorf"
+msgstr "Votre village d'essai"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:21
+msgid "Ihre Adresse prüfen und Interessierte in Ihrer Gemeinde finden"
+msgstr "Vérifier votre adresse et trouver des personnes intéressées dans votre commune"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:357 verein_routes.py:370
+msgid ""
+"Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und "
+"benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über "
+"Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- "
+"und Entscheidnachweise. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Votre déclaration de démission a été reçue et a pris effet dès réception. Aucune "
+"autorisation du comité n'est nécessaire. Votre accès personnel indique la date et "
+"l'état de vos cotisations. La déclaration n'efface pas automatiquement les pièces "
+"comptables et les décisions. Contact : hallo@openleg.ch."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:58
+msgid ""
+"Ihre LEG bestimmt die verantwortlichen Personen oder beauftragt einen Dienstleister. "
+"Open Source ermöglicht den eigenen Betrieb. Die Veröffentlichung des Codes ist keine "
+"Betriebs- oder Supportzusage."
+msgstr ""
+"Votre LEG désigne les personnes responsables ou mandate un prestataire. Le code "
+"ouvert permet une exploitation autonome. La publication du code ne constitue pas un "
+"engagement d'exploitation ou d'assistance."
+
+#: templates/sandbox/accounts.html:6
+msgid "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
+msgstr "Vos modifications restent dans ce village d'essai lorsque vous changez de compte."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:31
+msgid ""
+"Importieren Sie Messwerte, prüfen Sie die Periode und kontrollieren Sie den Entwurf, "
+"bevor Rechnungen ausgegeben werden."
+msgstr ""
+"Importez les mesures, vérifiez la période et contrôlez le projet avant d'émettre les "
+"factures."
+
+#: templates/sandbox/inbox.html:13
+msgid "Link im Übungsdorf öffnen"
+msgstr "Ouvrir le lien dans le village d'essai"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:6
+msgid ""
+"Mit OpenLEG verwalten Sie Mitglieder und bereiten Abrechnungen vor. Sie können die "
+"Software selbst betreiben."
+msgstr ""
+"Avec OpenLEG, vous gérez les membres et préparez les décomptes. Vous pouvez exploiter"
+" le logiciel vous-même."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:19
+msgid "Netz und Messdaten"
+msgstr "Réseau et données de mesure"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:56
+msgid ""
+"OpenLEG ist freie Software unter AGPL-3.0-or-later. Für Server, Einrichtung und "
+"Unterstützung können Kosten entstehen. Klären Sie vor dem Start, wer diese Aufgaben "
+"übernimmt."
+msgstr ""
+"OpenLEG est un logiciel libre sous licence AGPL-3.0-or-later. Les serveurs, la mise "
+"en place et l'assistance peuvent entraîner des coûts. Avant de commencer, définissez "
+"qui assume ces tâches."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:38
+msgid ""
+"OpenLEG unterstützt den Import von Messdaten und die Vorbereitung von Rechnungen. "
+"Fehlende Daten bleiben sichtbar. Die Freigabe liegt bei den dafür berechtigten "
+"Personen."
+msgstr ""
+"OpenLEG facilite l'importation des données de mesure et la préparation des factures. "
+"Les données manquantes restent signalées. Les personnes habilitées approuvent les "
+"factures."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:30
+msgid "Regeln und Zuständigkeiten festlegen"
+msgstr "Définir des règles et des responsabilités"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/community.html:6
+msgid ""
+"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
+" an hallo@openleg.ch. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden "
+"Sie keine Passwörter oder privaten Messdaten."
+msgstr ""
+"Écrivez des questions sur le projet, sur l'adhésion prévue ou sur la participation à "
+"hallo@openleg.ch. Indiquez votre demande et une possibilité de demander votre retour."
+" Ne pas envoyer de mots de passe ou de données de mesure privées."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:57
+msgid ""
+"Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber "
+"liefert dasselbe Format. Prüfen Sie den Import mit Ihren Daten, bevor Sie eine "
+"Abrechnung vorbereiten."
+msgstr ""
+"Convenez de l'accès aux données avec le gestionnaire du réseau de distribution. Tous "
+"les gestionnaires ne fournissent pas le même format. Testez l'importation de vos "
+"données avant de préparer un décompte."
+
+#: templates/sandbox/start_evidence.html:8
+msgid ""
+"Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der "
+"erfundenen LEG. Es wurde kein realer Netzbetreiber kontaktiert."
+msgstr ""
+"Sonnwil Energie confirme le démarrage simulé de cette CEL fictive uniquement dans ce "
+"village d'essai. Aucun gestionnaire de réseau réel n'a été contacté."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:29
+msgid ""
+"Sprechen Sie mit Nachbarn und dem Netzbetreiber. Halten Sie fest, wer teilnimmt und "
+"welche Daten gebraucht werden."
+msgstr ""
+"Échangez avec vos voisins et le gestionnaire de réseau. Consignez les participants et"
+" les données nécessaires."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:16
+msgid "Strom erzeugen"
+msgstr "Produire de l'électricité"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:17
+msgid "Strom nutzen"
+msgstr "Utiliser l'électricité"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:57
+msgid "Technischen Betrieb vorbereiten"
+msgstr "Préparer l'exploitation technique"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/verein/index.html:2 templates/verein/index.html:3
+#: templates/verein/index.html:6
+msgid "Verein openLEG Schweiz"
+msgstr "Verein openLEG Schweiz"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:50
+msgid ""
+"Verein openLEG Schweiz pflegt Software, Dokumentation und Austausch. Der Verein mit "
+"Sitz in Baden übernimmt nicht den Betrieb des gehosteten Produkts."
+msgstr ""
+"Verein openLEG Schweiz • L'association dont le siège est à Baden n'est pas "
+"responsable de l'exploitation du produit hébergé."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:50
+msgid ""
+"Verein openLEG Schweiz soll die Software, Dokumentation und den Austausch pflegen. "
+"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Der Betrieb des "
+"gehosteten Produkts gehört nicht zu seinem vorgesehenen Auftrag."
+msgstr ""
+"Verein openLEG Schweiz a pour projet d'entretenir le logiciel, la documentation et "
+"les échanges. L'association, dont le siège est prévu à Baden, n'est pas encore "
+"constituée. L'exploitation du produit hébergé ne fait pas partie de sa mission "
+"prévue."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:30
+msgid ""
+"Vereinbaren Sie Vertretung, Tarife, Abrechnung und den Umgang mit Fragen. Benennen "
+"Sie die verantwortlichen Personen."
+msgstr ""
+"Convenez de la représentation, des tarifs, de la facturation et du traitement des "
+"questions. Désignez les personnes responsables."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:40
+msgid ""
+"Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem "
+"Netzbetreiber. Ein Entwurf ist noch keine freigegebene Rechnung."
+msgstr ""
+"Parcours simplifié. Définissez les données disponibles et leur format avec votre "
+"gestionnaire de réseau. Un projet n'est pas encore une facture approuvée."
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:46
+msgid "Was kann Ihre Gemeinde ermöglichen?"
+msgstr "Que peut faciliter votre commune ?"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:56
+msgid "Was kostet die Software?"
+msgstr "Combien coûte le logiciel ?"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:58
+msgid "Wer betreibt unsere Gemeinschaft?"
+msgstr "Qui exploite notre communauté ?"
+
+#. Draft checked against source; native language and domain review pending.
+#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:373
+#: verein_routes.py:386
+#, python-format
+msgid ""
+"Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die "
+"Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter "
+"%(access_url)s. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Une décision a été enregistrée sur votre demande : %(reason)s. Consultez votre statut"
+" actuel, l'échéance de cotisation et vos demandes dans votre espace personnel à "
+"l'adresse %(access_url)s. Contact : hallo@openleg.ch."
+
+#: templates/sandbox/home.html:19
+#, python-format
+msgid ""
+"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an"
+" und öffnen Sie ihn im Postfach dieses Übungsdorfs."
+msgstr ""
+"Pour vous reconnecter, utilisez %(email)s. Demandez un lien d'accès avec cette "
+"adresse et ouvrez-le dans la boîte de réception de ce village d'essai."
+
+#: templates/sandbox/manage.html:28
+msgid "Zurück zum Übungsdorf"
+msgstr "Retour au village d'essai"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/home.html:55
+msgid "Zusammenarbeit verstehen"
+msgstr "Comprendre la coopération"
+
+#. Draft checked against source; native language and domain review pending.
+#: templates/release/home.html:46
+msgid ""
+"Öffentliche Energie- und Solardaten helfen, Fragen vor Ort einzuordnen. Vergleichen "
+"Sie Gemeinden und finden Sie den Einstieg für Ihre Verwaltung."
+msgstr ""
+"Les données publiques sur l'énergie et le solaire aident à comprendre la situation "
+"locale. Comparez les communes et découvrez le parcours destiné à votre "
+"administration."
+
+#: templates/sandbox/banner.html:4 templates/sandbox/onboarding.html:25
+msgid "Übungsdorf"
+msgstr "Village d'essai"
+
+#: templates/sandbox/manage.html:2 templates/sandbox/manage.html:6
+msgid "Übungsdorf verwalten"
+msgstr "Gérer le village d'essai"

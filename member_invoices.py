@@ -700,9 +700,15 @@ def render_pdf_html_string(invoice: dict) -> str:
     """Build the printable invoice HTML from the exact detail_view() dict."""
     charges_rows = _rows_html(invoice.get("charges", []))
     settlement_rows = _rows_html(invoice.get("settlement_charges", []))
+    settlement_heading = _("Abrechnungsentgelt")
+    battery_heading = _("Quartierakku-Anteil")
+    position_heading = _("Position")
+    quantity_heading = _("Menge (kWh)")
+    price_heading = _("Preis (Rp./kWh)")
+    amount_heading = _("Betrag (CHF)")
     settlement_section = (
-        f"""<h2>{_("Abrechnungsentgelt")}</h2>
-<table><tr><th>{_("Position")}</th><th>{_("Menge (kWh)")}</th><th>{_("Preis (Rp./kWh)")}</th><th>{_("Betrag (CHF)")}</th></tr>
+        f"""<h2>{settlement_heading}</h2>
+<table><tr><th>{position_heading}</th><th>{quantity_heading}</th><th>{price_heading}</th><th>{amount_heading}</th></tr>
 {settlement_rows}
 </table>"""
         if settlement_rows
@@ -710,8 +716,8 @@ def render_pdf_html_string(invoice: dict) -> str:
     )
     battery_rows = _rows_html(invoice.get("battery_shares", []))
     battery_section = (
-        f"""<h2>{_("Quartierakku-Anteil")}</h2>
-<table><tr><th>{_("Position")}</th><th>{_("Menge (kWh)")}</th><th>{_("Preis (Rp./kWh)")}</th><th>{_("Betrag (CHF)")}</th></tr>
+        f"""<h2>{battery_heading}</h2>
+<table><tr><th>{position_heading}</th><th>{quantity_heading}</th><th>{price_heading}</th><th>{amount_heading}</th></tr>
 {battery_rows}
 </table>"""
         if battery_rows
@@ -735,8 +741,10 @@ def render_pdf_html_string(invoice: dict) -> str:
     net_chf = escape(invoice.get("display_net_chf", "0.00"))
     vat_chf = escape(invoice.get("display_vat_chf", "0.00"))
     gross_chf = escape(invoice.get("display_gross_chf", "0.00"))
+    grid_fee_label = _("Netzentgelt:")
+    price_unit = _("Rp./kWh")
     grid_fee_line = (
-        f"<strong>{_('Netzentgelt:')}</strong> {escape(grid_fee_rp)} {_('Rp./kWh')}<br>"
+        f"<strong>{grid_fee_label}</strong> {escape(grid_fee_rp)} {price_unit}<br>"
         if grid_fee_rp
         else ""
     )
