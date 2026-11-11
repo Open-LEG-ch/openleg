@@ -16,7 +16,8 @@ transaction amounts and currency. Batch charges and mixed
 credit/debit directions are unsupported and cause the statement to be rejected.
 A missing transaction amount never falls back to the batch total. These are
 conservative supported cases, not a general currency-conversion policy.
-Amounts must fit the existing two-decimal storage precision without rounding.
+Amounts must fit the existing two-decimal storage precision without rounding
+and remain below CHF 1 trillion (the `DECIMAL(14,2)` storage bound).
 
 Imports persist `amount_basis` as `entry` or `reconciled_batch`. Automatic
 matching and reviewed confirmation require this evidence. The schema upgrade

@@ -660,3 +660,17 @@ def test_declared_batch_total_must_agree_with_transaction_amounts(
     else:
         with pytest.raises(payment_reconciliation.StatementError):
             payment_reconciliation.parse_statement(xml)
+
+
+@pytest.mark.parametrize(
+    "amount,accepted", [("999999999999.99", True), ("1000000000000.00", False)]
+)
+def test_statement_amount_must_fit_bank_entry_storage(amount, accepted):
+    xml = CAMT_053.replace(b"120.50", amount.encode())
+    if accepted:
+        assert payment_reconciliation.parse_statement(xml).entries[0].amount == Decimal(
+            "999999999999.99"
+        )
+    else:
+        with pytest.raises(payment_reconciliation.StatementError):
+            payment_reconciliation.parse_statement(xml)
