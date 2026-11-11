@@ -2496,7 +2496,7 @@ msgid "Bereits registriert?"
 msgstr "Already registered?"
 
 #. Draft checked against source; native language and domain review pending.
-#: store/verein_finance.py:92
+#: store/verein_finance.py:112
 msgid ""
 "Bereits veröffentlichte Quellbelege dürfen nicht verschwinden. Erfassen Sie eine "
 "nachvollziehbare Korrektur."
@@ -6225,7 +6225,7 @@ msgid "Ein Messwert dieser Periode ist ungültig."
 msgstr "A measured value of this period is invalid."
 
 #. Draft checked against source; native language and domain review pending.
-#: store/verein_finance.py:111
+#: store/verein_finance.py:62
 msgid ""
 "Ein Quellbeleg gehört bereits zu einem anderen Quartal. Importieren Sie denselben "
 "Beleg nicht nochmals."
@@ -6584,7 +6584,7 @@ msgid "Eine neue LEG gründen"
 msgstr "Create a new LEG"
 
 #. Draft checked against source; native language and domain review pending.
-#: store/verein_finance.py:79
+#: store/verein_finance.py:99
 msgid "Eine neue Version braucht eine öffentliche Korrekturbegründung."
 msgstr "A new version requires a public reason for correction."
 

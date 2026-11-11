@@ -2262,6 +2262,17 @@ def create_tables():
                     "leg_registry",
                 ):
                     cur.execute(
+                        "SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint "
+                        "WHERE conrelid=%s::regclass AND conname=%s",
+                        (table, f"{table}_preferred_locale_check"),
+                    )
+                    constraint = cur.fetchone()
+                    if constraint and all(
+                        f"'{locale}'" in constraint["definition"]
+                        for locale in ("de_CH", "en", "fr_CH", "it_CH")
+                    ):
+                        continue
+                    cur.execute(
                         f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {table}_preferred_locale_check"
                     )
                     cur.execute(
