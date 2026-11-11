@@ -46,6 +46,25 @@ def _continuity(cur, private):
     )
 
 
+def _check_published_sources(cur, private, quarter):
+    """Only publication binds source identities to a quarter, under the report lock."""
+    cur.execute(
+        """SELECT DISTINCT r.quarter, b->>'source_id' AS source_id
+        FROM verein_finance_reports r,
+             jsonb_array_elements(r.private_input->'bookings') b
+        WHERE r.published_at IS NOT NULL AND r.quarter != %s""",
+        (quarter,),
+    )
+    reserved = {row["source_id"] for row in cur.fetchall()}
+    if any(row["source_id"] in reserved for row in private["bookings"]):
+        raise verein_finance.FinanceInputError(
+            _(
+                "Ein Quellbeleg gehört bereits zu einem anderen Quartal. Importieren Sie denselben Beleg nicht nochmals."
+            ),
+            field="bookings",
+        )
+
+
 def prepare(token, data):
     private, public = verein_finance.reconcile(data)
     try:
@@ -62,6 +81,7 @@ def prepare(token, data):
         actor = verein.require_reviewer(cur, token)
         cur.execute("SELECT pg_advisory_xact_lock(hashtext('verein-finance-reports'))")
         _continuity(cur, private)
+        _check_published_sources(cur, private, public["quarter"])
         cur.execute(
             "SELECT id FROM verein_finance_reports WHERE quarter=%s AND input_digest=%s",
             (public["quarter"], digest),
@@ -105,13 +125,6 @@ def prepare(token, data):
                 (source["source_id"],),
             )
             identity = cur.fetchone()
-            if identity["quarter"] != public["quarter"]:
-                raise verein_finance.FinanceInputError(
-                    _(
-                        "Ein Quellbeleg gehört bereits zu einem anderen Quartal. Importieren Sie denselben Beleg nicht nochmals."
-                    ),
-                    field="bookings",
-                )
             booking["id"] = str(identity["public_id"])
         identifier = str(uuid.uuid4())
         now = datetime.now(UTC)
@@ -182,6 +195,7 @@ def publish(token, identifier, evidence):
         if cur.fetchone()["latest"] != report["version"]:
             raise verein.VereinDenied("Review the latest prepared version")
         _continuity(cur, report["private_input"])
+        _check_published_sources(cur, report["private_input"], report["quarter"])
         now = datetime.now(UTC)
         snapshot = dict(report["public_snapshot"], published_at=now.isoformat())
         cur.execute(

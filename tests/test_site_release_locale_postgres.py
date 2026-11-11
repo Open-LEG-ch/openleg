@@ -29,3 +29,25 @@ def test_release_migration_accepts_new_recipient_language_and_never_narrows(
     with pytest.raises(psycopg2.IntegrityError):
         with db.get_connection() as conn, conn.cursor() as cur:
             cur.execute("UPDATE buildings SET preferred_locale='../../invalid'")
+
+
+def test_expanded_constraints_keep_their_identity_on_reinitialization(
+    interest_database,
+):
+    db = interest_database
+    app = Flask(__name__)
+    app.config["SITE_RELEASE_ENABLED"] = True
+
+    def constraints():
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT conrelid,oid FROM pg_constraint WHERE conname LIKE '%_preferred_locale_check' ORDER BY conrelid"
+            )
+            return [(row["conrelid"], row["oid"]) for row in cur.fetchall()]
+
+    with app.app_context():
+        db.create_tables()
+        before = constraints()
+        assert len(before) == 4
+        db.create_tables()
+        assert constraints() == before

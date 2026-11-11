@@ -694,18 +694,19 @@ def _admit(cur, identifier, now):
 
 
 def renew_dues(token):
-    """Create each due anniversary once; stopped memberships never renew."""
+    """Record anniversaries during membership, without notifying former members."""
     now = now_utc()
     created = 0
     with transaction_cursor() as cur:
         actor = require_reviewer(cur, token)
-        cur.execute("""SELECT a.id AS application_id,m.id,m.accepted_at
+        cur.execute("""SELECT a.id AS application_id,m.id,m.accepted_at,m.status,m.ended_at
             FROM verein_applications a JOIN verein_members m ON m.application_id=a.id
-            WHERE m.status='active' ORDER BY a.id FOR UPDATE OF a,m""")
+            ORDER BY a.id FOR UPDATE OF a,m""")
         members = cur.fetchall()
         for member in members:
             for period, due_on in verein_policy.renewal_periods(
-                member["accepted_at"], now
+                member["accepted_at"],
+                min(now, member["ended_at"]) if member["ended_at"] else now,
             ):
                 dues = str(uuid.uuid4())
                 cur.execute(
@@ -720,10 +721,11 @@ def renew_dues(token):
                     (member["application_id"], actor["id"]),
                 )
                 event = cur.fetchone()["id"]
-                cur.execute(
-                    "INSERT INTO verein_notifications(id,application_id,kind,event_id,dues_id) VALUES (%s,%s,'renewal',%s,%s)",
-                    (str(uuid.uuid4()), member["application_id"], event, dues),
-                )
+                if member["status"] == "active":
+                    cur.execute(
+                        "INSERT INTO verein_notifications(id,application_id,kind,event_id,dues_id) VALUES (%s,%s,'renewal',%s,%s)",
+                        (str(uuid.uuid4()), member["application_id"], event, dues),
+                    )
                 created += 1
     return created
 
