@@ -161,3 +161,42 @@ def test_additional_public_responses(client, validate_public_api_responses):
             ).status_code
             == 500
         )
+
+
+def test_french_docs_translate_every_displayed_contract_string(full_app_module):
+    """New spec prose must have a translation and reach the rendered reference."""
+    import gettext
+    import subprocess
+
+    spec = json.loads((ROOT / "docs/openapi/public-v1.json").read_text())
+    displayed = {spec["info"]["title"], spec["info"]["description"]}
+    for operations in spec["paths"].values():
+        for operation in operations.values():
+            displayed.add(operation["summary"])
+            displayed.update(
+                parameter["description"]
+                for parameter in operation.get("parameters", [])
+                if parameter.get("description")
+            )
+            displayed.update(
+                response["description"] for response in operation["responses"].values()
+            )
+
+    response = full_app_module.web.test_client().get("/api/v1/docs?lang=fr-CH")
+    assert response.status_code == 200
+    assert response.headers["Content-Language"] == "fr-CH"
+    rendered = subprocess.run(
+        ["node", str(ROOT / "tests/js/render_api_reference.cjs")],
+        input=json.dumps({"html": response.get_data(as_text=True), "spec": spec}),
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    texts = json.loads(rendered.stdout)
+    catalog = gettext.translation("messages", ROOT / "translations", ["fr_CH"])
+    for source in sorted(displayed):
+        translated = catalog.gettext(source)
+        assert translated != source, f"Missing French translation: {source}"
+        assert any(translated in text for text in texts), (
+            f"French reference did not render {source!r} as {translated!r}"
+        )

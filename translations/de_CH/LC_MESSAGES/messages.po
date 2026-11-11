@@ -14564,3 +14564,35 @@ msgstr "Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (se
 #, python-format
 msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
 msgstr "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
+
+#: templates/api_docs.html
+msgid "Anfragelimit erreicht."
+msgstr "Anfragelimit erreicht."
+
+#: templates/api_docs.html
+msgid "Erfolgreiche Antwort"
+msgstr "Erfolgreiche Antwort"
+
+#: templates/api_docs.html
+msgid "Kennzahlen der Startseite"
+msgstr "Kennzahlen der Startseite"
+
+#: templates/api_docs.html
+msgid "LEG-Verzeichniseintrag"
+msgstr "LEG-Verzeichniseintrag"
+
+#: templates/api_docs.html
+msgid "OpenAPI-Vertrag"
+msgstr "OpenAPI-Vertrag"
+
+#: templates/api_docs.html
+msgid "Ungültige Anfrage oder keine Daten verfügbar."
+msgstr "Ungültige Anfrage oder keine Daten verfügbar."
+
+#: templates/api_docs.html
+msgid "Veränderung der Solarnutzung"
+msgstr "Veränderung der Solarnutzung"
+
+#: templates/api_docs.html
+msgid "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert."
+msgstr "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert."

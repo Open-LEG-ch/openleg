@@ -44,6 +44,16 @@
 <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
 loadApiReference(document.getElementById('swagger-ui'), "/api/v1/openapi.json", {
     text: {
+        "Anfragelimit erreicht.": {{ _("Anfragelimit erreicht.")|tojson }},
+        "Erfolgreiche Antwort": {{ _("Erfolgreiche Antwort")|tojson }},
+        "Kennzahlen der Startseite": {{ _("Kennzahlen der Startseite")|tojson }},
+        "LEG-Verzeichnis": {{ _("LEG-Verzeichnis")|tojson }},
+        "LEG-Verzeichniseintrag": {{ _("LEG-Verzeichniseintrag")|tojson }},
+        "OpenAPI-Vertrag": {{ _("OpenAPI-Vertrag")|tojson }},
+        "Solarnutzungs-Rangliste": {{ _("Solarnutzungs-Rangliste")|tojson }},
+        "Ungültige Anfrage oder keine Daten verfügbar.": {{ _("Ungültige Anfrage oder keine Daten verfügbar.")|tojson }},
+        "Veränderung der Solarnutzung": {{ _("Veränderung der Solarnutzung")|tojson }},
+        "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert.": {{ _("Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert.")|tojson }},
         "OpenLEG Public API": {{ _("OpenLEG Public API")|tojson }},
         "OpenLEG": {{ _("OpenLEG")|tojson }},
         "Production": {{ _("Production")|tojson }},
