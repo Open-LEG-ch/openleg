@@ -97,6 +97,7 @@
                           suggestionsDiv.classList.add('hidden');
                           btnCheck.disabled = false;
                           setAddressState('empty', messages.selectedHint);
+                          btnCheck.focus();
                       });
                       suggestionsDiv.appendChild(el);
                   });
