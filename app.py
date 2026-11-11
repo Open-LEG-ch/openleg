@@ -170,6 +170,12 @@ LEG_FORMATION_FAQS = (
 
 @main_bp.app_errorhandler(429)
 def handle_rate_limit(_error):
+    if request.path.startswith("/api/operator/v1/"):
+        from operator_api import _error as operator_error
+
+        response = operator_error("Rate limit exceeded", 429)
+        response.headers["Retry-After"] = str(RATE_LIMIT_RETRY_AFTER_SECONDS)
+        return response
     return (
         jsonify(
             {

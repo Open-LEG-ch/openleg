@@ -13,6 +13,7 @@ from typing import Protocol
 
 import community_access
 import database as db
+from operator_errors import ErrorCode
 
 FORMATION_SUBMISSION = "formation_submission"
 SUPPORTED_CONTRACT_VERSION = "vnb-formation/1"
@@ -197,13 +198,19 @@ class SubmissionCases(Protocol):
 class FormationSubmissionForbidden(PermissionError):
     """The actor cannot submit formation documents for this community."""
 
+    reason = ErrorCode.CAPABILITY_DENIED
+
 
 class FormationSubmissionInvalid(RuntimeError):
     """The community or its documents are not ready for submission."""
 
+    reason = ErrorCode.INVALID_FORMATION
+
 
 class ParticipantMutationInvalid(RuntimeError):
     """A participant mutation is invalid or conflicts with pending work."""
+
+    reason = ErrorCode.INVALID_MEMBERSHIP
 
 
 def _manifest(package: FormationPackage, contract: ExchangeContract) -> dict:

@@ -593,25 +593,19 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Error429:
-      description: >-
-        Credential hourly request budget or application-wide IP limit exhausted.
-        The credential budget returns the operator error envelope with Retry-After
-        3600; the IP limiter returns error and retry_after_seconds without
-        schema_version, with Retry-After 60.
+      description: Credential hourly budget or application IP limit exhausted.
       headers:
         Cache-Control: *id001
         Referrer-Policy: *id002
         Retry-After:
-          description: Seconds to wait before retrying.
+          description: Seconds until retry.
           schema:
             type: integer
-            minimum: 0
+            minimum: 1
       content:
         application/json:
           schema:
-            oneOf:
-            - $ref: '#/components/schemas/Error'
-            - $ref: '#/components/schemas/ApplicationRateLimitError'
+            $ref: '#/components/schemas/Error'
     Error503:
       description: VNB exchange store unavailable.
       headers:
@@ -622,18 +616,6 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
-    ApplicationRateLimitError:
-      type: object
-      properties:
-        error:
-          type: string
-        retry_after_seconds:
-          type: integer
-          const: 60
-      required:
-      - error
-      - retry_after_seconds
-      additionalProperties: false
     Error:
       type: object
       properties:
@@ -641,10 +623,37 @@ components:
           const: operator-api/1
           type: string
         error: *id003
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        field:
+          type: string
+        retryable:
+          type: boolean
       required:
       - schema_version
       - error
+      - code
+      - retryable
       additionalProperties: false
+    ErrorCode:
+      type: string
+      enum:
+      - authentication_required
+      - invalid_credential
+      - capability_denied
+      - not_found
+      - invalid_request
+      - invalid_pagination
+      - invalid_idempotency_key
+      - invalid_formation
+      - invalid_membership
+      - invalid_case
+      - invalid_payment
+      - conflict
+      - idempotency_conflict
+      - retry_in_progress
+      - rate_limited
+      - unavailable
     Formation:
       type: object
       properties:

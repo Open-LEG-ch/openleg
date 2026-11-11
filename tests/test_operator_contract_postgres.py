@@ -139,6 +139,15 @@ def test_authentication_capability_scope_and_rate_errors(operator_http):
             ]:
                 response = http.client.open(url, method=method.upper(), headers=headers)
                 assert response.status_code == status
+                assert (
+                    response.json["code"]
+                    == {
+                        401: "authentication_required",
+                        403: "capability_denied",
+                        404: "not_found",
+                        429: "rate_limited",
+                    }[status]
+                )
                 validate_response(spec, path, method, response)
 
 
@@ -179,7 +188,20 @@ def test_validation_conflict_and_missing_resource_errors(operator_http):
             409,
         ),
     ]
-    for method, suffix, body, query, headers, status in scenarios:
+    expected_codes = [
+        "invalid_pagination",
+        "invalid_request",
+        "invalid_membership",
+        "invalid_idempotency_key",
+        "invalid_idempotency_key",
+        "invalid_idempotency_key",
+        "invalid_payment",
+        "invalid_case",
+        "invalid_payment",
+    ]
+    for (method, suffix, body, query, headers, status), code in zip(
+        scenarios, expected_codes, strict=True
+    ):
         response = http.request(
             method.upper(),
             suffix.format(**ids),
@@ -188,4 +210,61 @@ def test_validation_conflict_and_missing_resource_errors(operator_http):
             headers=headers,
         )
         assert response.status_code == status, response.get_json()
+        assert response.json["code"] == code
         validate_response(spec, prefix + suffix, method, response)
+
+
+def test_sql_idempotency_conflict_has_distinct_reason(operator_http):
+    http = operator_http
+    ids = seed_operator_resources(http)
+    suffix = "/billing/cases/{case_id}/responses".format(**ids)
+    headers = {"Idempotency-Key": "same-key"}
+    first = http.request(
+        "POST",
+        suffix,
+        headers=headers,
+        json={"message": "one", "status": "acknowledged"},
+    )
+    assert first.status_code == 200
+    conflict = http.request(
+        "POST", suffix, headers=headers, json={"message": "two", "status": "resolved"}
+    )
+    assert conflict.status_code == 409
+    assert conflict.json["code"] == "idempotency_conflict"
+    invalid = http.request(
+        "POST",
+        suffix,
+        headers={"Idempotency-Key": "new-key"},
+        json={"message": "two", "status": "open"},
+    )
+    assert invalid.status_code == 409
+    assert invalid.json["code"] == "invalid_case"
+
+
+def test_missing_resources_and_pending_retry_from_sql(operator_http):
+    http = operator_http
+    ids = seed_operator_resources(http)
+    for suffix, payload in [
+        ("/metering/jobs/999999/retry", {}),
+        ("/billing/cases/999999/responses", {"message": "hello", "status": "resolved"}),
+        ("/payments/matches/999999/confirm", {"invoice_id": ids["invoice_id"]}),
+    ]:
+        response = http.request(
+            "POST", suffix, json=payload, headers={"Idempotency-Key": "missing"}
+        )
+        assert response.status_code == 404
+        assert response.json["code"] == "not_found"
+    http.db.claim_operator_ingestion_retry(http.community_id, ids["job_id"], "pending")
+    response = http.request(
+        "POST",
+        "/metering/jobs/{job_id}/retry".format(**ids),
+        headers={"Idempotency-Key": "pending"},
+    )
+    assert response.status_code == 409
+    assert response.json["code"] == "retry_in_progress"
+
+
+def test_formation_not_ready_from_sql(operator_http):
+    response = operator_http.request("POST", "/formation/submissions", json={})
+    assert response.status_code == 409
+    assert response.json["code"] == "invalid_formation"

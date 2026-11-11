@@ -19,6 +19,7 @@ from mcp.server.lowlevel import Server
 from mcp.server.lowlevel.helper_types import ReadResourceContents
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.server.transport_security import TransportSecuritySettings
+from mcp.shared.exceptions import McpError
 from starlette.applications import Starlette
 from starlette.routing import Route
 
@@ -184,9 +185,18 @@ def create_app():
             for name, op in reads.items()
         ]
 
-    def error(code):
+    error_schema = yaml.safe_load(
+        (Path(__file__).parents[1] / "docs/openapi/operator-v1.yaml").read_text()
+    )["components"]["schemas"]
+    error_validator = Draft202012Validator(
+        {"components": {"schemas": error_schema}, **error_schema["Error"]}
+    )
+
+    def error(code, *, field=None, retryable=False, text=None):
         return types.CallToolResult(
-            isError=True, content=[types.TextContent(type="text", text=code)]
+            isError=True,
+            content=[types.TextContent(type="text", text=text or code)],
+            structuredContent={"code": code, "field": field, "retryable": retryable},
         )
 
     @server.call_tool(validate_input=False)
@@ -209,7 +219,7 @@ def create_app():
             return error("invalid_arguments")
         authorization = server.request_context.request.headers.get("authorization", "")
         if not re.fullmatch(r"Bearer olk_[A-Za-z0-9_-]+", authorization):
-            return error("unauthorized")
+            return error("authentication_required")
         # A fresh client also prevents upstream cookies from crossing callers.
         try:
             async with httpx.AsyncClient(
@@ -220,14 +230,34 @@ def create_app():
                     params={k: v for k, v in arguments.items() if k != "community_id"},
                     headers={"Authorization": authorization},
                 )
+            if response.status_code == 401:
+                return error("invalid_credential")
             if response.status_code != 200:
+                body = response.json()
+                if not error_validator.is_valid(body):
+                    return error("operator_error")
+                # Never forward upstream text or arbitrary field values.
+                field = body.get("field")
+                if field not in {
+                    "Idempotency-Key",
+                    "invoice_id",
+                    "limit",
+                    "cursor",
+                    "message",
+                    "status",
+                    "mutation_id",
+                    "participant_id",
+                    "mutation_type",
+                    "effective_date",
+                    "source_agreement_id",
+                    "after",
+                }:
+                    field = None
                 return error(
-                    {
-                        401: "unauthorized",
-                        403: "forbidden",
-                        404: "not_found",
-                        429: "rate_limited",
-                    }.get(response.status_code, "operator_error")
+                    body["code"],
+                    field=field,
+                    retryable=body["retryable"],
+                    text={403: "forbidden"}.get(response.status_code),
                 )
             body = response.json()
             result = {key: body[key] for key in op["result_keys"]}
@@ -255,8 +285,35 @@ def create_app():
             if untrusted:
                 result["untrusted_fields"] = untrusted
             return result
-        except (httpx.HTTPError, ValueError, KeyError, TypeError):
-            return error("operator_unavailable")
+        except httpx.HTTPError:
+            return error("operator_unavailable", retryable=True)
+        except (ValueError, KeyError, TypeError):
+            return error("operator_error")
+
+    # SDK call_tool catches all exceptions as tool errors. Promote boundary
+    # failures outside that wrapper so they become JSON-RPC error responses.
+    tool_handler = server.request_handlers[types.CallToolRequest]
+
+    async def boundary_handler(request):
+        result = await tool_handler(request)
+        body = result.root
+        details = body.structuredContent or {}
+        code = details.get("code") if body.isError else None
+        if code in {"authentication_required", "invalid_credential"}:
+            raise McpError(
+                types.ErrorData(
+                    code=-32001, message="Authorization required", data=details
+                )
+            )
+        if code == "operator_unavailable":
+            raise McpError(
+                types.ErrorData(
+                    code=-32603, message="Operator transport unavailable", data=details
+                )
+            )
+        return result
+
+    server.request_handlers[types.CallToolRequest] = boundary_handler
 
     @server.list_resource_templates()
     async def list_resource_templates():

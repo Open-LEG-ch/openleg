@@ -3,11 +3,14 @@
 
 from datetime import date
 
+from operator_errors import ErrorCode
 from translation_markers import gettext_noop as _N
 
 
 class InvoiceLifecycleError(ValueError):
     """A requested invoice state transition is invalid or incomplete."""
+
+    reason = ErrorCode.INVALID_PAYMENT
 
 
 STATES = ("issued", "delivered", "paid", "cancelled", "corrected")
