@@ -17379,6 +17379,11 @@ msgid "Demodorf öffnen"
 msgstr "Ouvrir la démo"
 
 #. Draft translation; native language and domain review pending.
+#: templates/partials/release_identity.html:5
+msgid "Release-Details"
+msgstr "Détails de la version"
+
+#. Draft translation; native language and domain review pending.
 #: billing_workspace.py:65 dashboard.py:213 dashboard.py:214 dashboard.py:453
 #: dashboard.py:455
 msgid "Unlesbar"
