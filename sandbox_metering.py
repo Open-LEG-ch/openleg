@@ -10,6 +10,7 @@ import re
 import secrets
 import zlib
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -26,8 +27,10 @@ from dashboard_routes import (
 )
 from sandbox_metering_fixtures import (
     COMMUNITY,
+    END,
     EXTERNAL_COMMUNITY,
     KINDS,
+    START,
     TERRITORY,
     fixture,
 )
@@ -194,12 +197,27 @@ def _present(selected=None, status=200):
         row
         for row in db.list_calculated_values_deliveries(TERRITORY)
         if row["community_id"] == COMMUNITY
+        and row["period_start"] == datetime.fromisoformat(START)
+        and row["period_end"] == datetime.fromisoformat(END)
     ]
     points = db.get_metering_points(COMMUNITY)
+    readings = db.get_period_readings(COMMUNITY, START, END)
     for point in points:
-        point["readings"] = db.get_metering_point_reading_stats(
-            point["metering_point_id"]
-        )
+        rows = [
+            row
+            for row in readings
+            if row["metering_point_id"] == point["metering_point_id"]
+        ]
+        point["readings"] = {
+            "total_readings": len(rows),
+            **{
+                # Store readers expose floats; reconstruct each decimal reading
+                # before summing, as in the billing paths. Never accumulate
+                # binary rounding error or round away metered kWh here.
+                key: sum((Decimal(str(row[key])) for row in rows), Decimal(0))
+                for key in ("total_kwh", "community_kwh", "grid_kwh")
+            },
+        }
     return render_template(
         "sandbox/metering.html",
         csrf_token=_dashboard_csrf_token(),

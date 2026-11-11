@@ -86,7 +86,9 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cur,
     ):
-        cur.execute("SELECT id, status, prepared_by FROM billing_periods")
+        cur.execute(
+            "SELECT id, status, prepared_by FROM billing_periods WHERE period_start='2026-08-31T22:00:00+00:00'"
+        )
         period, status, actor = cur.fetchone()
         assert status == "draft" and actor == "sonnwil-operator"
     approval = prefix + COMMUNITY + f"/billing/period/{period}/approve"
@@ -114,7 +116,8 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
         # which 360 kWh is local; the producer supplies 1440 local kWh.
         cur.execute(
             "SELECT participant_id, item_type, quantity_kwh, consumption_kwh, allocated_kwh "
-            "FROM billing_line_items ORDER BY participant_id, item_type"
+            "FROM billing_line_items WHERE billing_period_id=%s ORDER BY participant_id, item_type",
+            (period,),
         )
         assert cur.fetchall() == [
             (
@@ -270,7 +273,9 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
             _workspace_connection(village, prefix) as connection,
             connection.cursor() as cur,
         ):
-            cur.execute("SELECT id FROM vnb_calculated_values_deliveries")
+            cur.execute(
+                "SELECT id FROM vnb_calculated_values_deliveries WHERE period_start='2026-08-31T22:00:00+00:00'"
+            )
             delivery = cur.fetchone()[0]
         page = client.get(prefix + "/sandbox/metering")
         assert (
@@ -340,7 +345,9 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
             _workspace_connection(village, prefix) as connection,
             connection.cursor() as cur,
         ):
-            cur.execute("SELECT id, status, input_fingerprint FROM billing_periods")
+            cur.execute(
+                "SELECT id, status, input_fingerprint FROM billing_periods WHERE period_start='2026-08-31T22:00:00+00:00'"
+            )
             original, status, fingerprint = cur.fetchone()
             assert status == "invalidated"
         page = client.get(prefix + COMMUNITY + "/billing")
@@ -358,7 +365,7 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
             connection.cursor() as cur,
         ):
             cur.execute(
-                "SELECT id, status, input_fingerprint FROM billing_periods ORDER BY id"
+                "SELECT id, status, input_fingerprint FROM billing_periods WHERE period_start='2026-08-31T22:00:00+00:00' ORDER BY id"
             )
             rows = cur.fetchall()
             assert len(rows) == 2 and rows[0] == (original, "invalidated", fingerprint)
@@ -403,7 +410,9 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cur,
     ):
-        cur.execute("SELECT id FROM billing_periods")
+        cur.execute(
+            "SELECT id FROM billing_periods WHERE period_start='2026-08-31T22:00:00+00:00'"
+        )
         periods = cur.fetchall()
     for (period,) in periods:
         page = client.get(prefix + COMMUNITY + "/billing")
