@@ -7,11 +7,15 @@ and the ``billing_tariffs`` table. Every invalid choice is refused: OpenLEG
 never guesses money-path inputs.
 """
 
+from __future__ import annotations
+
 import re
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+from typing import cast
 from zoneinfo import ZoneInfo
 
+from billing_types import ValidatedPolicy
 from i18n import gettext as _
 from translation_markers import gettext_noop as _N
 
@@ -129,7 +133,9 @@ def _has_precision(value, places):
     return value.is_finite() and -value.as_tuple().exponent <= places
 
 
-def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
+def validate_persisted_policy(
+    policy: object, *, period_start: date, community_id: str
+) -> ValidatedPolicy:
     """Validate and normalize one stored policy snapshot, failing closed."""
     if not isinstance(policy, dict) or not policy:
         raise InvalidPersistedPolicy(
@@ -243,7 +249,7 @@ def validate_persisted_policy(policy, *, period_start, community_id) -> dict:
             _N("Der Mehrwertsteuersatz der Richtlinie ist ungültig.")
         )
     normalized["vat_rate_pct"] = vat_rate
-    return normalized
+    return cast(ValidatedPolicy, normalized)
 
 
 def policy_fingerprint_values(policy: dict) -> dict:

@@ -91,9 +91,17 @@ source .venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt -r requirements-dev.txt
 
-# Run local tests, lint, and formatting checks
+# Run local tests, lint, formatting, and strict typing checks
 scripts/tdd_cycle.sh gate
 ```
+
+`bash scripts/strict_mypy.sh` runs the same pinned strict check as `ci/lint`.
+Its explicit scope lives in `mypy-strict.ini`: money display, billing approval,
+and their shared record types. Add modules there as their interfaces settle.
+Imported modules are analysed without reporting their existing errors; this
+does not claim strict coverage of storage or the whole application. Missing-stub
+exceptions, if needed, must name individual modules and explain why. The older
+non-strict CI check still covers its original four files.
 
 The local gate can pass while PostgreSQL tests are skipped if `DATABASE_URL`
 is unset. Follow the [disposable PostgreSQL 16 setup](docs/contributor-onboarding.md#postgresql-validation)

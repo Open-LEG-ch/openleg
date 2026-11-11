@@ -8,7 +8,7 @@ class InvalidMoneyAmount(ValueError):
     """An amount cannot be represented as a finite decimal display."""
 
 
-def finite_decimal(value) -> Decimal:
+def finite_decimal(value: object) -> Decimal:
     """Parse a finite amount, rejecting missing and malformed values."""
     try:
         amount = Decimal(str(value))
@@ -19,7 +19,13 @@ def finite_decimal(value) -> Decimal:
     return amount
 
 
-def format_amount(value, places=2, *, rounding=None, scale=Decimal(1)) -> str:
+def format_amount(
+    value: object,
+    places: int = 2,
+    *,
+    rounding: str | None = None,
+    scale: Decimal = Decimal(1),
+) -> str:
     """Format using the caller's rounding policy.
 
     With explicit rounding, retain billing's scale-then-quantize behavior.

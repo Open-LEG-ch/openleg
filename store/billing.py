@@ -8,14 +8,19 @@ billing line items, and communities. The connection seam is resolved via
 unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
+from __future__ import annotations
+
 import json
 import logging
+from collections.abc import Set as AbstractSet
 from datetime import date, datetime
 from decimal import Decimal
+from typing import cast
 
 import billing_lifecycle
 import billing_policy
 import payment_reconciliation
+from billing_types import BillingCursor, InvoiceSnapshot, LineItem, Period
 from store import invoice_query as invoice_query_store
 from store import operator_operations
 from store.invoice_identity import (
@@ -349,7 +354,7 @@ def list_community_billing_periods(community_id: str) -> list[dict]:
         raise BillingStoreError("Could not list community billing periods") from e
 
 
-def list_period_invoices(cur, period_id: int) -> list[dict]:
+def list_period_invoices(cur: BillingCursor, period_id: int) -> list[dict[str, object]]:
     cur.execute(
         """
         SELECT * FROM invoices
@@ -361,7 +366,9 @@ def list_period_invoices(cur, period_id: int) -> list[dict]:
     return [dict(row) for row in cur.fetchall()]
 
 
-def list_invoice_numbers(cur, community_id: str, prefix: str, year: int) -> list[str]:
+def list_invoice_numbers(
+    cur: BillingCursor, community_id: str, prefix: str, year: int
+) -> list[str]:
     """Read existing invoice numbers for a community, prefix and year."""
     cur.execute(
         """
@@ -370,10 +377,12 @@ def list_invoice_numbers(cur, community_id: str, prefix: str, year: int) -> list
         """,
         (community_id, f"{prefix}-{year}-%"),
     )
-    return [row["invoice_number"] for row in cur.fetchall()]
+    return [cast(str, row["invoice_number"]) for row in cur.fetchall()]
 
 
-def lock_active_billing_community(cur, community_id):
+def lock_active_billing_community(
+    cur: BillingCursor, community_id: str
+) -> dict[str, object] | None:
     """Lock the active community row on the caller's transaction."""
     cur.execute(
         """
@@ -387,7 +396,9 @@ def lock_active_billing_community(cur, community_id):
     return dict(community_row) if community_row else None
 
 
-def lock_billing_period(cur, period_id, community_id):
+def lock_billing_period(
+    cur: BillingCursor, period_id: int, community_id: str
+) -> dict[str, object] | None:
     """Lock the period scoped to its community."""
     cur.execute(
         """
@@ -401,7 +412,9 @@ def lock_billing_period(cur, period_id, community_id):
     return dict(row) if row else None
 
 
-def get_current_billing_source(cur, community_id, period):
+def get_current_billing_source(
+    cur: BillingCursor, community_id: str, period: Period
+) -> dict[str, object] | None:
     """Read the accepted source for the exact draft window and fingerprint."""
     cur.execute(
         """SELECT d.* FROM vnb_calculated_values_deliveries d
@@ -423,7 +436,7 @@ def get_current_billing_source(cur, community_id, period):
     return dict(source_row) if source_row else None
 
 
-def list_billing_line_items(cur, period_id):
+def list_billing_line_items(cur: BillingCursor, period_id: int) -> list[LineItem]:
     """Read the persisted line items in their original order."""
     cur.execute(
         """
@@ -433,22 +446,32 @@ def list_billing_line_items(cur, period_id):
         """,
         (period_id,),
     )
-    return [dict(item) for item in cur.fetchall()]
+    return [cast(LineItem, dict(item)) for item in cur.fetchall()]
 
 
-def lock_billing_registrations(cur, participants):
+def lock_billing_registrations(
+    cur: BillingCursor, participants: AbstractSet[str]
+) -> dict[str, str]:
     """Lock registrations until the caller's approval transaction completes."""
     cur.execute(
         """SELECT building_id,referral_code FROM buildings
            WHERE building_id=ANY(%s) ORDER BY building_id FOR SHARE""",
         (sorted(participants),),
     )
-    return {row["building_id"]: row["referral_code"] for row in cur.fetchall()}
+    return {
+        cast(str, row["building_id"]): cast(str, row["referral_code"])
+        for row in cur.fetchall()
+    }
 
 
 def insert_approved_invoice(
-    cur, period_id, community_id, invoice_number, snapshot, provenance_snapshot
-):
+    cur: BillingCursor,
+    period_id: int,
+    community_id: str,
+    invoice_number: str,
+    snapshot: InvoiceSnapshot,
+    provenance_snapshot: dict[str, object],
+) -> None:
     """Insert one frozen invoice on the caller's transaction."""
     cur.execute(
         """
@@ -482,7 +505,7 @@ def insert_approved_invoice(
     )
 
 
-def mark_billing_period_issued(cur, period_id):
+def mark_billing_period_issued(cur: BillingCursor, period_id: int) -> None:
     """Persist the issued status on the caller's transaction."""
     cur.execute(
         "UPDATE billing_periods SET status = 'issued' WHERE id = %s",

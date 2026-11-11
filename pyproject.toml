@@ -103,6 +103,7 @@ also_copy = [
     "billing_reconciliation.py",
     "billing_runner.py",
     "billing_workspace.py",
+    "billing_types.py",
     "quartierakku.py",
     "cache.py",
     "cantons.py",

@@ -5,13 +5,17 @@ A certificate proves that one supported allocation can explain every source
 channel's rounding cell. It does not reconstruct the VNB's unrounded values.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 
+from billing_types import Period
 from sdat_e66 import exact_e66_kwh
 
 VERSION = "vnb-proportional-e66-rounding/1"
@@ -364,8 +368,13 @@ def audit_e66(delivery, *, model):
 
 
 def validate_billed_source(
-    period, delivery, consumption_kwh, production_kwh, *, require_certificate=True
-):
+    period: Period,
+    delivery: object,
+    consumption_kwh: Mapping[str, Decimal],
+    production_kwh: Mapping[str, Decimal],
+    *,
+    require_certificate: bool = True,
+) -> None:
     """Recheck source quantities, model evidence and certificate at approval."""
     import billing_engine
     import billing_readings

@@ -44,3 +44,6 @@ jobs:
       - name: Run mypy on core files
         run: |
           mypy --ignore-missing-imports --follow-imports=skip app.py database.py api_public.py formation_wizard.py
+
+      - name: Run strict mypy on billing interfaces
+        run: bash scripts/strict_mypy.sh
