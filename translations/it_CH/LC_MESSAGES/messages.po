@@ -6046,7 +6046,7 @@ msgstr "Sito web privato con branding comunale"
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:306
 msgid "Eigene Webseite unter gemeinde.openleg.ch, kostenlos"
-msgstr "Sito web all'indirizzo comune.openleg.ch, gratuito"
+msgstr "Sito web all'indirizzo gemeinde.openleg.ch, gratuito"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/pricing.html:14
@@ -7411,7 +7411,7 @@ msgstr "Versione del firmware"
 #. Draft translation; native language and domain review pending.
 #: templates/open_source.html:78
 msgid "Flask-App und öffentliche API"
-msgstr "App flask e pubblico API"
+msgstr "App Flask e pubblico API"
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/release/finance.html:9 templates/release/finance.html:10
@@ -8587,7 +8587,7 @@ msgstr "GitHub Monitor"
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:399
 msgid "GitHub ansehen"
-msgstr "GitHubVisualizza"
+msgstr "Visualizza GitHub"
 
 #. Draft translation; native language and domain review pending.
 #: templates/open_source.html:40
@@ -9474,9 +9474,7 @@ msgstr "L'ultima fattura di %(utility_name)s contiene le informazioni necessarie
 #: dashboard.py:602
 #, python-format
 msgid "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
-msgstr ""
-"La tua nuova fattura LEG è disponibile nella scheda OpenLEGdashboard protetta: "
-"%(invoice_url)s"
+msgstr "La tua nuova fattura LEG è disponibile nella scheda OpenLEG dashboard protetta: %(invoice_url)s"
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/release/how_it_works.html:64
@@ -11076,9 +11074,9 @@ msgid ""
 "erfundenen Teilnehmervertrag herunter und erfassen Sie ihn dort als ausgehenden PDF-"
 "Beleg im Korrespondenzjournal. Kehren Sie danach hierher zurück."
 msgstr ""
-"Scarica Sam con sonnwil-operator@example. org nel dashboard LEG. Scarica il contratto"
-" di partecipazione inventato e registralo come un oggetto PDF in uscita nel giornale "
-"di corrispondenza. Torna qui dopo."
+"Scarica Sam con sonnwil-operator@example.org nel dashboard LEG. Scarica il contratto di "
+"partecipazione inventato e registralo come un oggetto PDF in uscita nel giornale di "
+"corrispondenza. Torna qui dopo."
 
 #. Draft translation; native language and domain review pending.
 #: templates/partials/install_console.html:27
@@ -13463,9 +13461,7 @@ msgstr ""
 msgid ""
 "OpenLEG läuft auf Schweizer Infrastruktur und richtet sich nach dem Datenschutzgesetz"
 " (DSG)."
-msgstr ""
-"OpenLEGcorre su infrastrutture svizzere e si basa sulla legge sulla protezione dei "
-"dati (DSG)."
+msgstr "OpenLEG corre su infrastrutture svizzere e si basa sulla legge sulla protezione dei dati (DSG)."
 
 #. Draft translation; native language and domain review pending.
 #: templates/self_host.html:10
@@ -13693,7 +13689,7 @@ msgstr "OpenLEG-Box o VPS svizzero vicino a te"
 #. Draft translation; native language and domain review pending.
 #: templates/pricing.html:144
 msgid "OpenLEG-Netzwerk"
-msgstr "OpenLEGRete"
+msgstr "Rete OpenLEG"
 
 #. Draft translation; native language and domain review pending.
 #: templates/self_host.html:58
@@ -16378,7 +16374,7 @@ msgstr "Dati di sistema (server-logs, timestamp di conferma)"
 #. Draft translation; native language and domain review pending.
 #: templates/open_source.html:113
 msgid "TLS, Domains und Reverse Proxy vor der Flask-App."
-msgstr "TLS, domini e proxy reverse prima dell'app flask."
+msgstr "TLS, domini e proxy reverse prima dell'app Flask."
 
 #. Draft translation; native language and domain review pending.
 #: templates/admin/abrechnungen.html:72
@@ -17107,7 +17103,7 @@ msgstr "Finanze dell'associazione"
 #. Draft translation; native language and domain review pending.
 #: templates/verein/login.html:2 templates/verein/login.html:5
 msgid "Vereinsvorstand anmelden"
-msgstr "Iscriviti al comitato di associazione"
+msgstr "Accesso del comitato dell'associazione"
 
 #. Draft translation; native language and domain review pending.
 #: templates/pricing.html:123 templates/pricing.html:131
@@ -19039,7 +19035,7 @@ msgstr "massima utilizzazione del solare"
 #. Draft translation; native language and domain review pending.
 #: templates/partials/address_intake.html:48
 msgid "ihre@email.ch"
-msgstr "loro@email.ch"
+msgstr "ihre@email.ch"
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/dashboard.html:72
@@ -19094,7 +19090,7 @@ msgstr "Aggiornato costantemente"
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:220
 msgid "lokalerstrom.ch"
-msgstr "localestrom.ch"
+msgstr "lokalerstrom.ch"
 
 #. Draft translation; native language and domain review pending.
 #: templates/partials/address_intake.html:67
@@ -19149,7 +19145,7 @@ msgstr "n/ a"
 #. Draft translation; native language and domain review pending.
 #: templates/leg_dashboard.html:393
 msgid "name@beispiel.ch"
-msgstr "name@ esempio. ch"
+msgstr "name@beispiel.ch"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/detail.html:56
@@ -19419,7 +19415,7 @@ msgstr "ad esempio Regionalwerke AG Baden Versräte"
 #. Draft translation; native language and domain review pending.
 #: templates/unsubscribe.html:55
 msgid "z.B. name@example.com"
-msgstr "per esempio name@example. com"
+msgstr "per esempio name@example.com"
 
 #. Draft translation; native language and domain review pending.
 #: templates/fuer_bewohner.html:112
@@ -19851,7 +19847,7 @@ msgstr "..di propria iniziativa"
 #. Draft translation; native language and domain review pending.
 #: templates/pricing.html:68
 msgid "✓ Eigene Subdomain (gemeinde.openleg.ch)"
-msgstr "Il sottodominio proprio (commune.openleg.ch)"
+msgstr "Il sottodominio proprio (gemeinde.openleg.ch)"
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/pricing.html:82
@@ -21371,7 +21367,7 @@ msgstr ""
 #. Draft translation; native language and domain review pending.
 #: templates/release/event.html:6
 msgid "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
-msgstr "Il percorso di partecipazione non è ancora stato aperto. Domande: ciao@openleg.ch."
+msgstr "Il percorso di partecipazione non è ancora stato aperto. Domande: hallo@openleg.ch."
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/index.html:6
@@ -21476,7 +21472,7 @@ msgstr ""
 #. Draft translation; native language and domain review pending.
 #: templates/release/event.html:6
 msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
-msgstr "Questo incontro è completo. Domande su ulteriori appuntamenti: ciao@openleg.ch."
+msgstr "Questo incontro è completo. Domande su ulteriori appuntamenti: hallo@openleg.ch."
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6

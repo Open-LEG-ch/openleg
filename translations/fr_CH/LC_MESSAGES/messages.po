@@ -16578,7 +16578,7 @@ msgstr "la plus forte utilisation du solaire"
 
 #: templates/index.html:425
 msgid "ihre@email.ch"
-msgstr "votre@email.ch"
+msgstr "ihre@email.ch"
 
 #: templates/gemeinde/dashboard.html:72
 msgid "in den letzten 30 Tagen"
@@ -16667,7 +16667,7 @@ msgstr "n/d"
 
 #: templates/leg_dashboard.html:393
 msgid "name@beispiel.ch"
-msgstr "nom@exemple.ch"
+msgstr "name@beispiel.ch"
 
 #: templates/leg_verzeichnis/detail.html:56
 msgid "nicht angegeben"
@@ -18850,7 +18850,7 @@ msgstr ""
 #. Draft translation; native language and domain review pending.
 #: templates/release/event.html:6
 msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
-msgstr "Cette réunion est complète. Questions concernant d'autres dates: salut@openleg.ch."
+msgstr "Cette réunion est complète. Questions concernant d'autres dates: hallo@openleg.ch."
 
 #: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
 msgid "Dieses Übungsdorf ist abgelaufen"

@@ -350,3 +350,81 @@ def test_plural_forms_change_invalidates_only_affected_locale_review(
         updated["superseded_reviews"][-1]["locales"]["fr_CH"]
         == state["locales"]["fr_CH"]
     )
+
+
+@pytest.mark.parametrize("header_separator", ["\n", "\n\n"])
+@pytest.mark.parametrize("keep_second", [True, False])
+@pytest.mark.parametrize("separator", ["", "# translator note\n#: page.html:1\n"])
+def test_sync_retains_adjacent_entries_once_and_prunes_individually(
+    tmp_path, keep_second, separator, header_separator
+):
+    from scripts.translations import load, merge
+
+    path = tmp_path / "messages.po"
+    first = 'msgid "First"\nmsgstr "Premier"'
+    second = separator + 'msgctxt "heading"\nmsgid "Second"\nmsgstr "Deuxième"'
+    path.write_text(
+        'msgid ""\nmsgstr ""' + header_separator + first + "\n" + second + "\n"
+    )
+    expected = Catalog()
+    expected.add("First")
+    if keep_second:
+        expected.add("Second", context="heading")
+    merge(path, expected, "fr_CH")
+    once = path.read_text()
+    assert once.count(first) == 1
+    assert once.count(second) == int(keep_second)
+    assert ("Second" in once) == keep_second
+    assert len(load(path, "fr_CH")) == 1 + int(keep_second)
+    merge(path, expected, "fr_CH")
+    assert path.read_text() == once
+
+
+@pytest.mark.parametrize(
+    "path",
+    sorted(
+        (Path(__file__).resolve().parents[1] / "translations").glob(
+            "*/LC_MESSAGES/*.po"
+        )
+    ),
+    ids=lambda p: p.parent.parent.name,
+)
+def test_catalogs_preserve_source_tokens(path):
+    from scripts.translations import load, protected_tokens
+
+    problems = []
+    for message in load(path):
+        if not message.id:
+            continue
+        sources = message.id if isinstance(message.id, tuple) else (message.id,)
+        values = (
+            message.string if isinstance(message.string, tuple) else (message.string,)
+        )
+        for index, value in enumerate(values):
+            source = sources[min(index, len(sources) - 1)]
+            missing = protected_tokens(source) - protected_tokens(value or "")
+            if missing:
+                problems.append(f"{message.id!r}: {missing}")
+    assert not problems, "\n".join(problems)
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "hallo@openleg.ch",
+        "https://openleg.ch/path?q=1",
+        "gemeinde.openleg.ch",
+        "%(name)s",
+        "{name}",
+        '<a href="https://openleg.ch">',
+        "</a>",
+        "OpenLEG",
+    ],
+)
+def test_validation_rejects_changed_protected_tokens(token):
+    source = Catalog()
+    source.add("Kontakt " + token)
+    catalog = Catalog(locale="fr_CH")
+    catalog.add("Kontakt " + token, "Contact modifié")
+    with pytest.raises(ValueError, match="[Tt]oken|placeholder"):
+        validate(catalog, source)
