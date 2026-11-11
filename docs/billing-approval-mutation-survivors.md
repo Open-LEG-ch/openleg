@@ -69,7 +69,7 @@ caller-installed traps or changes to precision/exponent limits.
 ## Persisted residual quantization
 
 `_require_rounding_adjustment` 52, 53, 54 and 55 are guarded on the
-production path. `store/billing.py::approve_billing_period` reads persisted
+production path. `billing_approval.approve_billing_period` reads persisted
 line items in id order and passes them unchanged to the preparation seam.
 `store/schema.py` declares their primary key as `SERIAL` and `amount_chf`
 as `DECIMAL(12,6)`; the compatibility migration preserves those types.
