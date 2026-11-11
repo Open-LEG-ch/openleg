@@ -59,7 +59,9 @@ in a public repository. `CRAP_ANALYSIS_SKILL_DIR` points at that checkout.
 It has no version tag, so the scripts are pinned by SHA-256:
 `run_python.py` 13c37546641c268994962c02f11a912936b6eb1aab1a66b9a676c8ed496344ed
 and `crap_score.py` 437f7b22fe1cbd79a916caab1d271d30177b45d58644272bca2bde8d24da574c.
-The evidence schema is `crap-native-evidence/v2`.
+The evidence schema is `crap-native-evidence/v2`. The skill is not published,
+so others cannot obtain a matching copy and independently rerun this producer.
+They can rerun the listed pytest commands and recompute complexity from source.
 
 Disk-sync durability was disabled only on this disposable cluster. These runs
 do not establish crash durability. Two discarded attempts exposed setup errors:
