@@ -4,6 +4,9 @@
 import json
 import threading
 
+from psycopg2.extras import Json
+
+import operator_actor
 from store.operator_api import enqueue_event
 
 _lock_guard = threading.Lock()
@@ -138,8 +141,8 @@ def record_sdat_ingestion_run(territory: str, report: dict) -> None:
             INSERT INTO sdat_ingestion_runs
                 (territory, started_at, finished_at, status, attempts,
                  downloaded_files, imported_files, imported_readings, error_code,
-                 report)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 report, actor)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -153,6 +156,7 @@ def record_sdat_ingestion_run(territory: str, report: dict) -> None:
                 report["imported_readings"],
                 report.get("error"),
                 json.dumps(report, default=str),
+                Json(operator_actor.snapshot()),
             ),
         )
         run_id = cur.fetchone()["id"]

@@ -14539,3 +14539,21 @@ msgstr "Admin-Zugang"
 #: templates/admin/login.html
 msgid "Anmeldung fehlgeschlagen."
 msgstr "Anmeldung fehlgeschlagen."
+
+msgid "Agent"
+msgstr "Agent"
+
+msgid "Agentenname (optional)"
+msgstr "Agentenname (optional)"
+
+msgid "Ausgelöst durch"
+msgstr "Ausgelöst durch"
+
+msgid "Dienst"
+msgstr "Dienst"
+
+msgid "Mensch"
+msgstr "Mensch"
+
+msgid "Wer handelt mit diesem Schlüssel?"
+msgstr "Wer handelt mit diesem Schlüssel?"

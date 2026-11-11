@@ -175,7 +175,7 @@
           {% for event in query.events if event.linked_reference %}
           <p class="mt-1 text-ink-muted">{{ _('Verknüpft mit Korrektur:') }} <span class="font-semibold">{{ event.linked_reference }}</span></p>
           {% endfor %}
-          {% for message in query.messages %}<p class="mt-1"><strong>{{ message.actor_id }}:</strong> {{ message.message }}</p>{% endfor %}
+          {% for message in query.messages %}<p class="mt-1"><strong>{{ message.actor_id }}:</strong> {{ message.message }} {% with actor=message.actor %}{% include "partials/operator_actor.html" %}{% endwith %}</p>{% endfor %}
           {% if can_prepare_billing and query.status != 'resolved' %}
           <form method="post" action="/leg/community/{{ community_id }}/billing/queries/{{ query.id }}" class="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

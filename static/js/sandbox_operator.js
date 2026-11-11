@@ -30,7 +30,7 @@
             let option = Array.from(clients.options).find(option => option.value === row.id);
             if (!option) {option = new Option(); clients.add(option);}
             option.value = row.id;
-            option.textContent = row.name + " · " + row.active;
+            option.textContent = row.name + " · " + row.actor_kind + (row.agent_label ? " · " + row.agent_label : "") + " · " + row.active;
             clients.value = row.id;
         }
         if (result.data.token) {
@@ -53,7 +53,8 @@
         const fields = new FormData(event.target);
         issue(await call(credentialsPath, "POST", {
             name: fields.get("name"), capabilities: fields.getAll("capabilities"),
-            webhook_url: fields.get("webhook_url")
+            webhook_url: fields.get("webhook_url"),
+            actor_kind: fields.get("actor_kind"), agent_label: fields.get("agent_label")
         }, {"X-CSRF-Token": root.dataset.csrf}));
     });
     onForm("credential-manage", async event => {

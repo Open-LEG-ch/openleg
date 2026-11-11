@@ -1407,7 +1407,9 @@ def test_store_correction_links_open_invoice_queries_to_the_correction(monkeypat
         for query, params in cursor.executed
         if "INSERT INTO invoice_query_events" in query
     ]
-    assert linkage == [(901, "admin-building", "open", "open", "LEG-2026-000002")]
+    assert len(linkage) == 1
+    assert linkage[0][-1].adapted is None
+    assert linkage[0][:-1] == (901, "admin-building", "open", "open", "LEG-2026-000002")
 
 
 def test_store_correction_leaves_queries_without_open_cases_untouched(monkeypatch):

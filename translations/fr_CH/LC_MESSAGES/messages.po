@@ -14651,3 +14651,21 @@ msgstr "Accès administrateur"
 #: templates/admin/login.html
 msgid "Anmeldung fehlgeschlagen."
 msgstr "Échec de la connexion."
+
+msgid "Agent"
+msgstr "Agent"
+
+msgid "Agentenname (optional)"
+msgstr "Nom de l’agent (facultatif)"
+
+msgid "Ausgelöst durch"
+msgstr "Déclenché par"
+
+msgid "Dienst"
+msgstr "Service"
+
+msgid "Mensch"
+msgstr "Personne"
+
+msgid "Wer handelt mit diesem Schlüssel?"
+msgstr "Qui agit avec cette clé ?"

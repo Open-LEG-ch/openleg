@@ -13380,3 +13380,21 @@ msgstr ""
 #: templates/gemeinde/onboarding.html:44
 msgid "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 msgstr ""
+
+msgid "Agent"
+msgstr ""
+
+msgid "Agentenname (optional)"
+msgstr ""
+
+msgid "Ausgelöst durch"
+msgstr ""
+
+msgid "Dienst"
+msgstr ""
+
+msgid "Mensch"
+msgstr ""
+
+msgid "Wer handelt mit diesem Schlüssel?"
+msgstr ""

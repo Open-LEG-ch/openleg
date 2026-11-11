@@ -35,6 +35,7 @@ def _credential(client, prefix, **fields):
             "name": "SIMULATION Sonnwil Integration",
             "capabilities": CAPABILITIES,
             "webhook_url": operator_api.SANDBOX_WEBHOOK_URL,
+            "actor_kind": "service",
             **fields,
         },
         headers={"X-CSRF-Token": _csrf(guide)},

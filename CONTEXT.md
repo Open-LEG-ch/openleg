@@ -143,3 +143,13 @@ Domain logic sits above storage and stays free of SQL:
 - Data pipeline and import commands: `docs/data-pipeline.md`
 - Repository boundary: `docs/repo-boundary.md`
 - Agent execution contract: `docs/codex-execution.md`
+
+## Operator actor attribution
+
+An **operator actor** identifies the initiating API credential separately from
+its building authorization principal (`created_by`). Its kind is `human`,
+`service` or `agent`, with an optional agent label. An **actor snapshot**
+stores `initiating_client_id`, `actor_kind` and `agent_label` in the domain
+record or append-only transition and its transactional event. It never resolves
+historical attribution through a current credential or webhook subscriber.
+`operator_actor` carries this request-local snapshot; it grants no permissions.

@@ -27,7 +27,7 @@
   <section class="mt-8 rounded-lg border border-line p-6">
     <h2 class="text-xl font-semibold">{{ _('Netzbetreiber simulieren') }}</h2>
     <p class="mt-4">{{ _('Eine Empfangsbestätigung bestätigt nur den Empfang. Sie erlaubt keinen Betriebsstart. Für die Aktivierung braucht es einen separaten Startbeleg, ein gültiges Datum und die Administration.') }}</p>
-    {% for case in cases %}<p class="mt-4">{{ _('Übermittlung') }}: {{ state_labels.get(case.state, case.state) }}</p>{% endfor %}
+    {% for case in cases %}<p class="mt-4">{{ _('Übermittlung') }}: {{ state_labels.get(case.state, case.state) }} {% with actor=case.actor %}{% include "partials/operator_actor.html" %}{% endwith %}</p>{% endfor %}
     {% if not cases or cases[0].state == 'delivered' %}
     <form method="post" action="/sandbox/formation/{{ community.community_id }}/vnb" class="mt-4 grid gap-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -77,7 +77,7 @@
     </form>
     {% endif %}
     {% for mutation in mutations %}
-    <p class="mt-4">{{ mutation.participant_id }} · {{ mutation.effective_date }} · {{ state_labels.get(mutation.state, mutation.state) }}</p>
+    <p class="mt-4">{{ mutation.participant_id }} · {{ mutation.effective_date }} · {{ state_labels.get(mutation.state, mutation.state) }} {% with actor=mutation.actor %}{% include "partials/operator_actor.html" %}{% endwith %}</p>
     {% if can_manage_members and mutation.state == 'delivered' %}
     <form method="post" action="/sandbox/formation/{{ community.community_id }}/mutation-response" class="mt-4 grid gap-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

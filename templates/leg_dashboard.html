@@ -248,7 +248,7 @@
         <caption class="sr-only">{{ _('Mitgliedermutationen und deren VNB-Verarbeitungsstatus') }}</caption>
         <thead><tr><th scope="col" class="text-left p-2">{{ _('LEG-Vorgang') }}</th><th scope="col" class="text-left p-2">{{ _('Person') }}</th><th scope="col" class="text-left p-2">{{ _('Wirksam') }}</th><th scope="col" class="text-left p-2">{{ _('VNB-Status') }}</th><th scope="col" class="text-left p-2">{{ _('Antwort') }}</th></tr></thead>
         <tbody class="divide-y">{% for mutation in vnb_mutations %}<tr>
-          <td class="p-2"><code>{{ mutation.mutation_id }}</code><br><span class="text-xs text-ink-muted">{{ {"join": _("Beitritt"), "exit": _("Austritt"), "change": _("Änderung")}.get(mutation.mutation_type, mutation.mutation_type) }} {{ _('· Vertrag') }} {{ mutation.source_agreement_id }}</span></td>
+          <td class="p-2"><code>{{ mutation.mutation_id }}</code><br>{% with actor=mutation.actor %}{% include "partials/operator_actor.html" %}{% endwith %}<br><span class="text-xs text-ink-muted">{{ {"join": _("Beitritt"), "exit": _("Austritt"), "change": _("Änderung")}.get(mutation.mutation_type, mutation.mutation_type) }} {{ _('· Vertrag') }} {{ mutation.source_agreement_id }}</span></td>
           <td class="p-2"><code>{{ mutation.participant_id }}</code></td><td class="p-2">{{ mutation.effective_date }}</td>
           <td class="p-2">{{ {"prepared": _("Manuelle Übergabe bereit"), "delivered": _("Zugestellt"), "acknowledged": _("Bestätigt"), "rejected": _("Abgelehnt"), "failed": _("Fehlgeschlagen"), "superseded": _("Ersetzt")}.get(mutation.state, mutation.state) }}</td>
           <td class="p-2">{{ mutation.response_status or _('Keine Angabe') }}</td>
@@ -280,6 +280,7 @@
         {% for submission in vnb_submissions %}
         <div class="rounded-lg border border-line p-4 text-sm">
           <p><strong>{{ _('Status:') }}</strong> {{ {"prepared": _("Paket bereit"), "delivered": _("Zugestellt"), "acknowledged": _("Bestätigt"), "rejected": _("Abgelehnt"), "failed": _("Fehlgeschlagen"), "claimed": _("Wird vorbereitet")}.get(submission.state, submission.state) }}</p>
+          {% with actor=submission.actor %}{% include "partials/operator_actor.html" %}{% endwith %}
           {% if submission.response_status %}<p class="mt-1 text-ink-muted">{{ _('Antwort:') }} {{ submission.response_status }}</p>{% endif %}
           {% if submission.state in ["failed", "rejected"] and submission.next_action %}<p class="mt-1 text-ink-muted">{{ _('Nächster Schritt:') }} {{ {"retry": _("Einleitung erneut möglich"), "review_rejection": _("Ablehnung prüfen"), "contact_vnb": _("VNB kontaktieren"), "escalate": _("An VNB eskalieren")}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
           {% if submission.state == "prepared" and is_admin and viewer_has_session %}

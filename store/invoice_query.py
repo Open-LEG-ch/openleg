@@ -4,7 +4,10 @@
 from collections import defaultdict
 from datetime import datetime
 
+from psycopg2.extras import Json
+
 import invoice_queries
+import operator_actor
 from store.invoice_identity import REGISTRATION_MATCH_SQL
 from store.operator_api import enqueue_event
 from store.operator_operations import _remember, _replay, request_hash
@@ -66,10 +69,17 @@ def _append(cur, query_id, actor_id, message, filename="", data=None):
     cur.execute(
         """
             INSERT INTO invoice_query_messages (
-                query_id, actor_id, message, attachment_filename, attachment_data
-            ) VALUES (%s, %s, %s, %s, %s)
+                query_id, actor_id, message, attachment_filename, attachment_data, actor
+            ) VALUES (%s, %s, %s, %s, %s, %s)
         """,
-        (query_id, actor_id, message, filename or None, data),
+        (
+            query_id,
+            actor_id,
+            message,
+            filename or None,
+            data,
+            Json(operator_actor.snapshot()),
+        ),
     )
 
 
@@ -77,10 +87,17 @@ def _event(cur, query_id, actor_id, previous_status, new_status, linked_referenc
     cur.execute(
         """
             INSERT INTO invoice_query_events (
-                query_id, actor_id, previous_status, new_status, linked_reference
-            ) VALUES (%s, %s, %s, %s, %s) RETURNING id
+                query_id, actor_id, previous_status, new_status, linked_reference, actor
+            ) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
         """,
-        (query_id, actor_id, previous_status, new_status, linked_reference),
+        (
+            query_id,
+            actor_id,
+            previous_status,
+            new_status,
+            linked_reference,
+            Json(operator_actor.snapshot()),
+        ),
     )
     return cur.fetchone()["id"]
 
@@ -134,7 +151,7 @@ def list_invoice_queries(
         query_ids = [case["id"] for case in cases]
         cur.execute(
             """
-                SELECT query_id, id, actor_id, message, attachment_filename, created_at
+                SELECT query_id, id, actor_id, actor, message, attachment_filename, created_at
                 FROM invoice_query_messages
                 WHERE query_id = ANY(%s) ORDER BY query_id, id
             """,

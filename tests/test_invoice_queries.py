@@ -195,7 +195,8 @@ def test_mark_reminded_appends_one_event_then_stays_silent(monkeypatch):
     assert len(updates) == 1
     assert "reminder_sent_at IS NULL" in updates[0]
     assert len(events) == 1
-    assert cursor.executed[-1][1] == (7, "system", "open", "open", None)
+    assert cursor.executed[-1][1][-1].adapted is None
+    assert cursor.executed[-1][1][:-1] == (7, "system", "open", "open", None)
 
     repeat = RecordingCursor()
     monkeypatch.setattr(database, "get_connection", lambda: SingleUseConnection(repeat))
