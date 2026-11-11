@@ -96,4 +96,7 @@ ohne `actor`; OpenLEG leitet ihn nicht nachträglich aus heutigen Credentials ab
 
 `operator-event/1` ergänzt nur das optionale Feld `actor`. Die
 `client_id` der Webhook-Zustellung bezeichnet weiterhin den Empfänger.
-Sie ist nicht die auslösende Client-ID.
+Sie ist nicht die auslösende Client-ID. OpenLEG sendet `actor` mit auslösender
+Client-ID, Akteursart und Agentenbezeichnung an alle Webhook-Empfänger der
+LEG, deren Capability das Ereignis abdeckt. Eine Agentenbezeichnung enthält
+deshalb keine vertraulichen Angaben.
