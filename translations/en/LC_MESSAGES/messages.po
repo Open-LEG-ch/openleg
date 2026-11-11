@@ -14026,11 +14026,6 @@ msgid "PLZ range e.g. 8000-8999"
 msgstr "Postcode range e.g. 8000-8999"
 
 #. Draft translation; native language and domain review pending.
-#: document_generator.py:160
-msgid "PV-Anlage:"
-msgstr "PV system:"
-
-#. Draft translation; native language and domain review pending.
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
 msgstr "PV DC power (kWp, optional)"

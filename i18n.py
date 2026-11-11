@@ -157,7 +157,9 @@ def format_date_label(value):
     if value is None:
         return ""
     if isinstance(value, datetime):
-        value = value.astimezone(ZoneInfo("Europe/Zurich")).date()
+        if value.utcoffset() is not None:
+            value = value.astimezone(ZoneInfo("Europe/Zurich"))
+        value = value.date()
     locale = (
         str(get_locale())
         if has_app_context() and "babel" in current_app.extensions

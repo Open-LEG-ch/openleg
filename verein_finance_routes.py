@@ -93,6 +93,8 @@ def finance_labels():
 @finance_bp.route("/verein/vorstand/finanzen", methods=["GET", "POST"])
 def prepare():
     require_reviewer()
+    # Keep bounded multipart CSV fields within the existing total upload cap.
+    request.max_form_memory_size = current_app.config["MAX_CONTENT_LENGTH"]
     error = None
     errors = {}
     form = request.form

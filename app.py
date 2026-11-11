@@ -1095,11 +1095,12 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[logging.StreamHandler()],
     )
-    if check_database and not db.is_db_available():
-        raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
-
     application = Flask(__name__)
     application.config.from_mapping(app_config.build_config(os.environ, config))
+    if check_database:
+        with application.app_context():
+            if not db.is_db_available():
+                raise RuntimeError("PostgreSQL required. Set DATABASE_URL.")
     # Topology precondition: ProxyFix may only rewrite REMOTE_ADDR from
     # X-Forwarded-For when exactly one trusted reverse proxy sits in front of
     # the WSGI server. Without that topology the header is client-controlled,

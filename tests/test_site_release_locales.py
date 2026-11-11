@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Extended presentation remains opt-in and shares the existing URL contract."""
 
+import time
+from datetime import UTC, datetime
+
 import pytest
+from flask import render_template_string
 
 from tests import test_i18n
 
@@ -135,3 +139,43 @@ def test_sitemap_excludes_draft_languages_and_private_routes(web):
     assert all(
         "/verein/mitglied" not in url and "/vorstand" not in url for url in locations
     )
+
+
+@pytest.mark.parametrize(
+    "server_zone,value,expected",
+    [
+        (
+            "Pacific/Kiritimati",
+            datetime(2026, 11, 6, 0, 30, tzinfo=UTC).replace(tzinfo=None),
+            "November 6, 2026",
+        ),
+        (
+            "America/Adak",
+            datetime(2026, 11, 6, 23, 30, tzinfo=UTC).replace(tzinfo=None),
+            "November 6, 2026",
+        ),
+        (
+            "Pacific/Kiritimati",
+            datetime(2026, 11, 5, 23, 30, tzinfo=UTC),
+            "November 6, 2026",
+        ),
+        (
+            "America/Adak",
+            datetime(2026, 11, 6, 23, 30, tzinfo=UTC),
+            "November 7, 2026",
+        ),
+    ],
+)
+def test_rendered_dates_ignore_server_zone_for_naive_timestamps(
+    web, monkeypatch, server_zone, value, expected
+):
+    web.config["SITE_RELEASE_ENABLED"] = True
+    try:
+        with monkeypatch.context() as environment:
+            environment.setenv("TZ", server_zone)
+            time.tzset()
+            with web.test_request_context("/leg-verzeichnis?lang=en"):
+                rendered = render_template_string("{{ value|datelabel }}", value=value)
+            assert rendered == expected
+    finally:
+        time.tzset()

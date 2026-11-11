@@ -137,6 +137,8 @@ also_copy = [
     "verein_commands.py",
     "verein_event_routes.py",
     "verein_events.py",
+    "verein_finance_routes.py",
+    "verein_finance.py",
     "verein_policy.py",
     "verein_routes.py",
     "translation_markers.py",

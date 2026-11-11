@@ -316,7 +316,11 @@ def test_reminder_uses_receipt_balance_at_delivery_even_after_batch_fetch(
     membership, monkeypatch
 ):
     import database
+    from store import verein
 
+    monkeypatch.setattr(
+        verein, "now_utc", lambda: datetime(2026, 11, 7, 12, tzinfo=UTC)
+    )
     client, mail, store, _reviewer_id, path = _accepted(membership)
     identifier = path.rsplit("/", 1)[1]
     with client.session_transaction() as session:
