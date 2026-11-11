@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+import billing_approval
 import billing_runner
 import vnb_calculated_values
 from tests import test_calculated_values_lifecycle_postgres as lifecycle
@@ -716,7 +717,7 @@ def test_raw_e66_reaches_draft_and_immutable_invoice_provenance(
     assert frozen_source["evidence_sha256"] == hashlib.sha256(source).hexdigest()
     assert frozen_source["fingerprint"] == accepted["fingerprint"]
     assert frozen_source["metadata"] == accepted["source_metadata"]
-    invoices = db.approve_billing_period(
+    invoices = billing_approval.approve_billing_period(
         created["period_id"], cid, approver_id="producer"
     )
     assert len(invoices) == 2

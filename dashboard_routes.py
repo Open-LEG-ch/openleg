@@ -26,6 +26,7 @@ from flask import (
 )
 
 import access_token
+import billing_approval
 import billing_policy
 import community_access
 import dashboard as dashboard_module
@@ -936,7 +937,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             result = dashboard_module.leg_approve_billing_period(
                 community_id, building_id, period_id
             )
-        except db.BillingApprovalError:
+        except billing_approval.BillingApprovalError:
             # Domain conflict (invalid, stale, or unreconciled draft): tell the
             # admin without leaking storage or reconciliation internals.
             try:

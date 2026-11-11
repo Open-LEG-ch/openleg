@@ -48,7 +48,16 @@ time. Two matter:
   Store functions are re-exported at the bottom of `database.py`, so
   `import database as db; db.get_metering_points()` keeps working. Call storage
   through `db.` in application code; import `store.<domain>` directly only
-  inside that domain's own tests.
+  inside that domain's own tests, except for billing operations below.
+
+  **Billing-only exception:** `billing_approval.approve_billing_period` owns
+  its transaction through `database.get_connection` and passes the cursor to
+  `store.billing` helpers. Those helpers only read, lock, and write rows;
+  approval validation, replay, numbering, snapshots, and outcomes belong to
+  the operation. Locks remain community first, then period. No session object
+  is introduced. Callers import the operation directly; its `database` export
+  is removed with the caller migration. Other billing operations keep their
+  existing exports until their own migrations.
 
 - **`tenant.get_tenant_config`** is the tenancy seam. A `before_request` hook
   resolves the hostname to a territory and puts the config on `g.tenant`.
@@ -65,7 +74,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/cluster` | Provisional cluster assignments and cluster metadata |
 | `store/ranking` | PV snapshots, the ten-year panel, Rangliste read models |
 | `store/profile` | Gemeindeprofil: ElCom tariffs, profiles, Sonnendach |
-| `store/billing` | LEG communities, billing periods, versioned billing policies, atomic invoice approval snapshots, append-only invoice lifecycle audit, atomic bank import and reviewed-payment acceptance |
+| `store/billing` | LEG communities, billing periods, versioned billing policies, invoice snapshot persistence and approval row locks, append-only invoice lifecycle audit, atomic bank import and reviewed-payment acceptance |
 | `store/email_queue` | Outbound mail queue |
 | `store/utility` | EVU/VNB utility clients |
 | `store/metering` | Messpunkte, 15-minute E66 readings, SDAT import ledger |
@@ -94,7 +103,7 @@ Domain logic sits above storage and stays free of SQL:
 | `billing_engine.py` | `allocate_energy`, `compute_network_discount`, `generate_billing_summary` |
 | `billing_policy.py` | Billing policy validation, option labels, the no-legal-advice disclaimer |
 | `billing_runner.py` | Fail-closed draft run; resolves and fingerprints the complete effective policy |
-| `billing_approval.py` | Fail-closed approval validation; immutable invoice snapshots from the stored policy/provenance seam |
+| `billing_approval.py` | Approval transaction, validation, replay, invoice numbering and immutable snapshots from the stored policy/provenance seam |
 | `billing_lifecycle.py` | Allowed invoice state transitions and shared member/admin status labels |
 | `payment_reconciliation.py` | ISO 20022 camt.053/.054 parsing, reference selection and shared bank-payment eligibility |
 | `pv_ranking.py`, `ranking.py` | Utilization, peer comparison, progress |

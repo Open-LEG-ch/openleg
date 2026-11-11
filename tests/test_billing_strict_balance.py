@@ -150,7 +150,7 @@ def _install(monkeypatch, source, model):
     saved = MagicMock(return_value=42)
     invoices = MagicMock()
     monkeypatch.setattr(database, "save_billing_period", saved)
-    monkeypatch.setattr(database, "approve_billing_period", invoices)
+    monkeypatch.setattr(billing_approval, "approve_billing_period", invoices)
     return rows, saved, invoices
 
 

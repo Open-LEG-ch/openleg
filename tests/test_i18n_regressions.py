@@ -17,6 +17,7 @@ web = test_i18n.web
 
 # Imported route seams also read configuration on a cold Python process.
 with test_i18n._synthetic_environment():
+    import billing_approval
     import billing_policy
     import billing_workspace
     import community_access
@@ -164,7 +165,7 @@ def test_approval_conflict_is_localized_through_real_route(web, monkeypatch, lan
     monkeypatch.setattr(
         dashboard,
         "leg_approve_billing_period",
-        MagicMock(side_effect=db.BillingApprovalError()),
+        MagicMock(side_effect=billing_approval.BillingApprovalError()),
     )
     monkeypatch.setattr(
         dashboard, "leg_billing_workspace_view", lambda *args: _workspace()

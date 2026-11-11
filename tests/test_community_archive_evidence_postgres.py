@@ -15,6 +15,7 @@ import psycopg2.extras
 import psycopg2.pool
 import pytest
 
+import billing_approval
 import billing_runner
 import community_archive
 from tests import test_billing_precision_postgres as precision
@@ -113,7 +114,7 @@ def test_billing_and_withdrawal_history_survive_clean_restore(
     assert period["status"] == "created"
     issued = None
     if state == "corrected_issued":
-        issued = db.approve_billing_period(
+        issued = billing_approval.approve_billing_period(
             period["period_id"], cid, approver_id="producer"
         )
         withdrawal = client.post(
@@ -150,7 +151,7 @@ def test_billing_and_withdrawal_history_survive_clean_restore(
             for table, rows in expected.items():
                 cur.execute(f"SELECT * FROM {table} ORDER BY 1")
                 assert [dict(row) for row in cur.fetchall()] == rows
-        invoices = db.approve_billing_period(
+        invoices = billing_approval.approve_billing_period(
             period["period_id"], cid, approver_id="producer"
         )
         if issued is not None:

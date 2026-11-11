@@ -273,7 +273,7 @@ VNB reconciliation, calls `generate_billing_summary`, and persists an immutable
 draft `billing_periods` row. The secret-protected billing cron invokes this flow
 for the previous complete month. Approval is the write seam: a confirmed
 community admin approves a reconciled draft in the billing workspace, and
-`store/billing.approve_billing_period` validates it through
+`billing_approval.approve_billing_period` owns the transaction and validates it through
 `billing_approval.prepare_invoice_snapshots` and atomically issues one
 immutable, timezone-aware `invoices` row per participant with frozen policy,
 provenance, and line-item snapshots. `/admin/abrechnungen` stays a read-only

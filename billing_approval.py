@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Fail-closed invoice snapshots for approving a reconciled billing draft.
+"""Transactional approval and fail-closed snapshots for a reconciled draft.
 
 Approval never reconstructs historic choices from mutable tables: the draft
 period carries its complete ``billing_policy_snapshot`` plus provenance, and
@@ -9,6 +9,7 @@ outside the policy value domains of ``billing_policy`` is refused with
 :class:`BillingApprovalError`.
 """
 
+import logging
 import re
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -16,6 +17,9 @@ from zoneinfo import ZoneInfo
 
 import billing_policy
 import quartierakku
+from store import billing as billing_store
+
+logger = logging.getLogger(__name__)
 
 _CENT = Decimal("0.01")
 _KWH_QUANTUM = Decimal("0.000001")
@@ -989,3 +993,148 @@ def prepare_invoice_snapshots(period, issue_date=None, *, calculated_values=None
             }
         )
     return snapshots
+
+
+def approve_billing_period(
+    period_id: int,
+    community_id: str,
+    issue_date=None,
+    *,
+    approver_id: str | None = None,
+) -> list[dict]:
+    """Issue immutable invoices for one reconciled draft period, atomically.
+
+    The exact active community row is locked first, so invoice numbering is
+    serialised across concurrent approvals of different periods of the same
+    community; then the period row is locked. Every invoice is inserted with
+    its frozen policy/provenance/line snapshots in one transaction, and only
+    then does the period flip to ``issued``. Retrying an already issued
+    period is a no-op that returns the stored invoices.
+
+    Domain conflicts (unknown/inactive community, unknown, stale, or
+    unreconciled draft) raise ``BillingApprovalError``;
+    storage outages raise ``BillingStoreError`` and roll everything back.
+    """
+    import database
+
+    if issue_date is None:
+        issue_date = today()
+    try:
+        with database.get_connection() as conn, conn.cursor() as cur:
+            community_row = billing_store.lock_active_billing_community(
+                cur, community_id
+            )
+            if not community_row:
+                raise BillingApprovalError("Community is not active or does not exist")
+            community_name = community_row.get("name")
+            if not isinstance(community_name, str) or not community_name.strip():
+                raise BillingApprovalError("Community has no valid issuer name")
+            row = billing_store.lock_billing_period(cur, period_id, community_id)
+            if not row:
+                raise BillingApprovalError("Billing period not found")
+            period = dict(row)
+            status = period.get("status")
+            if status == "issued":
+                invoices = billing_store.list_period_invoices(cur, period_id)
+                if not invoices:
+                    raise BillingApprovalError("Issued billing period has no invoices")
+                return invoices
+            calculated_values = None
+            if period.get("calculated_values_fingerprint"):
+                source_row = billing_store.get_current_billing_source(
+                    cur, community_id, period
+                )
+                if not source_row:
+                    raise BillingApprovalError(
+                        "Der VNB-Beleg dieses Entwurfs ist nicht mehr aktuell. "
+                        "Erstellen Sie den Entwurf neu."
+                    )
+                calculated_values = dict(source_row)
+                calculated_values["fingerprint"] = calculated_values[
+                    "content_fingerprint"
+                ]
+            if status != "draft":
+                raise BillingApprovalError(
+                    "Only a draft billing period can be approved"
+                )
+            if community_row.get("require_dual_control") and (
+                not period.get("prepared_by")
+                or period.get("prepared_by") == approver_id
+                or not approver_id
+            ):
+                raise BillingApprovalError(
+                    "Dual-control approval requires a different recorded preparer"
+                )
+            period["line_items"] = billing_store.list_billing_line_items(cur, period_id)
+            reconciliation = period.get("reconciliation")
+            if not isinstance(reconciliation, dict):
+                raise BillingApprovalError("Billing reconciliation must be an object")
+            _require_original_registrations(cur, period)
+            snapshots = prepare_invoice_snapshots(
+                period, issue_date=issue_date, calculated_values=calculated_values
+            )
+
+            prefix = str(snapshots[0]["policy_snapshot"]["invoice_prefix"])
+            sequence = _next_invoice_sequence(
+                billing_store.list_invoice_numbers(
+                    cur, community_id, prefix, issue_date.year
+                )
+            )
+            for snapshot in snapshots:
+                provenance_snapshot = dict(snapshot["provenance_snapshot"])
+                provenance_snapshot["issuer"] = {
+                    "community_id": community_id,
+                    "name": community_name,
+                }
+                invoice_number = f"{prefix}-{issue_date.year}-{sequence:06d}"
+                sequence += 1
+                billing_store.insert_approved_invoice(
+                    cur,
+                    period_id,
+                    community_id,
+                    invoice_number,
+                    snapshot,
+                    provenance_snapshot,
+                )
+            billing_store.mark_billing_period_issued(cur, period_id)
+            return billing_store.list_period_invoices(cur, period_id)
+    except BillingApprovalError:
+        raise
+    except billing_store.BillingStoreError:
+        raise
+    except Exception as e:
+        logger.error(f"[DB] Error approving billing period: {e}")
+        raise billing_store.BillingStoreError("Could not approve billing period") from e
+
+
+def _next_invoice_sequence(invoice_numbers):
+    """Continue numbering after the largest existing numeric suffix."""
+    sequence = 0
+    for invoice_number in invoice_numbers:
+        suffix = (invoice_number or "").rsplit("-", 1)[-1]
+        if suffix.isdigit():
+            sequence = max(sequence, int(suffix))
+    return sequence + 1
+
+
+def _require_original_registrations(cur, period):
+    """Refuse issuance if any frozen participant registration has changed."""
+    registrations = period["reconciliation"].get("participant_registrations")
+    participants = {item["participant_id"] for item in period["line_items"]}
+    if (
+        not isinstance(registrations, dict)
+        or set(registrations) != participants
+        or any(
+            not isinstance(value, str) or not value for value in registrations.values()
+        )
+    ):
+        raise BillingApprovalError(
+            "Die ursprünglichen Teilnehmerregistrierungen sind nicht belegt. "
+            "Klären Sie die Zuordnung vor einer neuen Abrechnung."
+        )
+    actual = billing_store.lock_billing_registrations(cur, participants)
+    if actual != registrations:
+        raise BillingApprovalError(
+            "Eine Teilnehmerregistrierung hat sich seit der Vorbereitung geändert. "
+            "Klären Sie die Zuordnung und erstellen Sie den Entwurf neu."
+        )
