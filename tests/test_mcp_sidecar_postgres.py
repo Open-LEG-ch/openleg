@@ -174,7 +174,14 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
                     expected.pop("schema_version")
                     actual = dict(result.structuredContent)
                     if op["operationId"] == "listCalculatedDeliverys":
-                        assert actual["untrusted_fields"] == ["/items/0/diagnostics"]
+                        # Rejected VNB deliveries keep the VNB's own version
+                        # and transport strings, so those are untrusted too.
+                        assert actual["untrusted_fields"] == [
+                            "/items/0/diagnostics",
+                            "/items/0/contract_version",
+                            "/items/0/format_version",
+                            "/items/0/transport",
+                        ]
                     actual.pop("untrusted_fields", None)
                     assert actual == expected
                     denied = await sdk.call_tool(

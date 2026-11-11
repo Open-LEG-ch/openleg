@@ -125,6 +125,15 @@ def operations():
     return reads
 
 
+# Fields whose values can carry text from VNB adapters or VNB deliveries.
+UNTRUSTED_FIELDS = ("next_action", "response_status", "failure_code", "diagnostics")
+# A rejected calculated delivery keeps the VNB's own version and transport
+# strings, which are not limited to the values OpenLEG supports.
+UNTRUSTED_BY_OPERATION = {
+    "listCalculatedDeliverys": ("contract_version", "format_version", "transport"),
+}
+
+
 def create_app():
     if os.environ.get("OPENLEG_MCP_ENABLED", "false") != "true":
         raise RuntimeError("MCP sidecar is disabled")
@@ -224,11 +233,8 @@ def create_app():
                 if not isinstance(value, list):
                     continue
                 for i, item in enumerate(value):
-                    for field in (
-                        "next_action",
-                        "response_status",
-                        "failure_code",
-                        "diagnostics",
+                    for field in UNTRUSTED_FIELDS + UNTRUSTED_BY_OPERATION.get(
+                        op["operationId"], ()
                     ):
                         if isinstance(item, dict) and item.get(field) is not None:
                             untrusted.append(f"/{key}/{i}/{field}")

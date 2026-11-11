@@ -223,6 +223,9 @@ This marker is present in both structured and textual MCP content:
   collections conservatively mark it untrusted as well.
 - Calculated-delivery `diagnostics` contains validation output about VNB input.
   The entire value is conservatively marked, including nested text.
+- Calculated-delivery `contract_version`, `format_version` and `transport` are
+  taken from the VNB delivery and kept when the delivery is rejected, so they
+  are marked untrusted too.
 
 Null or absent values need no marker. States, IDs, timestamps, amounts and
 counts are structured domain data, not VNB instructions. Case messages,
