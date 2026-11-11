@@ -235,6 +235,14 @@ dashboard CSRF token. They can inspect delivery attempts at
 delivery at `/{delivery_id}/retry`. The cron worker dispatches pending events
 through `POST /api/cron/process-operator-webhooks`, protected by `CRON_SECRET`.
 
+Each cron run claims up to 50 deliveries for 15 minutes and has a 120-second
+dispatch budget. Each attempt has a 15-second total deadline for connection,
+TLS, request and response headers, capped by the remaining run budget.
+Timeouts record response status 0 and follow the normal retry rules.
+After a credential times out, its remaining deliveries in the batch return to
+`retry` without consuming an attempt. Deliveries not reached within the run
+budget are released in the same way and can be claimed by a later run.
+
 ## MCP reads
 
 The opt-in sidecar generates one read-only tool for each GET operation in the

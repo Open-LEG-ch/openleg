@@ -100,6 +100,12 @@ Ein Python-Beispiel steht in
 
 Ein Cronlauf beansprucht atomar höchstens 50 Zustellungen. Andere Worker können
 diese Zustellungen während der 15-minütigen Claim-Frist nicht übernehmen.
+Ein Zustellversuch hat insgesamt 15 Sekunden für Verbindung, TLS, Anfrage und
+Antwort-Header. Ein Timeout zählt als fehlgeschlagener Versuch mit
+Antwortstatus 0. Nach einem Timeout gibt der Worker die übrigen Zustellungen
+desselben Credentials im Batch ohne zusätzlichen Versuch als `retry` frei.
+Der Lauf hat ein Zeitbudget von 120 Sekunden; nicht begonnene Zustellungen
+werden ebenfalls ohne zusätzlichen Versuch freigegeben.
 Fehler werden mit exponentiellem Abstand höchstens fünfmal versucht. Danach
 bleibt die Delivery sichtbar im Status `failed`; ein erfolgreicher 2xx-Aufruf
 endet im Status `delivered`.

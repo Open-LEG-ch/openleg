@@ -19,6 +19,7 @@ def webhook_boundary(app):
         session["dashboard_csrf_token"] = "csrf-secret"
     delivery = {
         "delivery_id": "delivery-1",
+        "client_id": "client-1",
         "claim_id": "claim-1",
         "status": "processing",
         "schema_version": "operator-event/1",
@@ -59,8 +60,12 @@ def webhook_boundary(app):
         patch("operator_api.db.record_webhook_attempt") as record,
     ):
         tls.return_value.wrap_socket.return_value = MagicMock()
-        tls.return_value.wrap_socket.return_value.makefile.return_value = io.BytesIO(
+        response_bytes = io.BytesIO(
             b"HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n"
+        )
+
+        tls.return_value.wrap_socket.return_value.recv_into.side_effect = (
+            response_bytes.readinto
         )
 
         def exercise(seam, addresses, accepted):
@@ -108,7 +113,11 @@ def webhook_boundary(app):
                     retryable=not accepted,
                 )
                 if accepted:
-                    connect.assert_called_once_with((addresses[0], 443), 10, None)
+                    assert connect.call_count == 1
+                    destination, timeout, source = connect.call_args.args
+                    assert destination == (addresses[0], 443)
+                    assert 0 < timeout <= 15
+                    assert source is None
                 else:
                     connect.assert_not_called()
             resolve.assert_called_once_with(

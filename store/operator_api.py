@@ -370,3 +370,14 @@ def retry_delivery(community_id, delivery_id):
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+def release_delivery(delivery_id, *, claim_id):
+    """Release an unattempted delivery only while this worker owns its claim."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE operator_webhook_deliveries
+                  SET status='retry', claim_id=NULL, claimed_at=NULL
+                WHERE delivery_id=%s AND status='processing' AND claim_id=%s""",
+            (delivery_id, claim_id),
+        )

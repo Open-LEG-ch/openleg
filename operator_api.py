@@ -6,11 +6,13 @@ from __future__ import annotations
 import hashlib
 import hmac
 import http.client
+import io
 import json
 import os
 import secrets
 import socket
 import ssl
+import time
 import urllib.error
 from datetime import UTC, date, datetime
 from functools import wraps
@@ -917,37 +919,87 @@ def _is_public_webhook_url(url):
 
 
 def _default_transport(url, body, headers, timeout):
+    deadline = time.monotonic() + timeout
     parsed = urlparse(url)
     addresses = _public_webhook_addresses(url)
     if not addresses:
         raise ValueError("Webhook destination is not public")
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Webhook delivery deadline exceeded")
     connection = _PinnedHTTPSConnection(
-        parsed.hostname, addresses[0], parsed.port or 443, timeout=timeout
+        parsed.hostname, addresses[0], parsed.port or 443, timeout=remaining
     )
     try:
         target = parsed.path or "/"
         if parsed.query:
             target += "?" + parsed.query
         connection.request("POST", target, body=body, headers=headers)
-        return connection.getresponse().status
+        with connection.getresponse() as response:
+            return response.status
     finally:
         connection.close()
+
+
+class _DeadlineReader(io.RawIOBase):
+    """Refresh the socket timeout before every raw read, including header reads."""
+
+    def __init__(self, connection):
+        self.connection = connection
+
+    def readable(self):
+        return True
+
+    def readinto(self, buffer):
+        self.connection.sock.settimeout(self.connection.remaining())
+        return self.connection.sock.recv_into(buffer)
+
+
+class _DeadlineSocket:
+    """HTTP socket facade sharing the connect/TLS deadline with writes and reads."""
+
+    def __init__(self, sock, remaining):
+        self.sock = sock
+        self.remaining = remaining
+
+    def sendall(self, data):
+        self.sock.settimeout(self.remaining())
+        self.sock.sendall(data)
+
+    def makefile(self, mode):
+        return io.BufferedReader(_DeadlineReader(self))
+
+    def close(self):
+        self.sock.close()
 
 
 class _PinnedHTTPSConnection(http.client.HTTPSConnection):
     """Connect to a validated address while verifying TLS for the original host."""
 
     def __init__(self, hostname, address, port, *, timeout):
+        self._deadline = time.monotonic() + timeout
         super().__init__(
             hostname, port=port, timeout=timeout, context=ssl.create_default_context()
         )
         self._validated_address = address
 
+    def _remaining(self):
+        remaining = self._deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("Webhook delivery deadline exceeded")
+        return remaining
+
     def connect(self):
         raw = socket.create_connection(
-            (self._validated_address, self.port), self.timeout, self.source_address
+            (self._validated_address, self.port), self._remaining(), self.source_address
         )
-        self.sock = self._context.wrap_socket(raw, server_hostname=self.host)
+        try:
+            raw.settimeout(self._remaining())
+            secured = self._context.wrap_socket(raw, server_hostname=self.host)
+        except BaseException:
+            raw.close()
+            raise
+        self.sock = _DeadlineSocket(secured, self._remaining)
 
 
 def dispatch_pending_webhooks(
@@ -957,8 +1009,11 @@ def dispatch_pending_webhooks(
     batch_size=50,
     signing_key=None,
     community_id=None,
+    clock=None,
 ):
     """Claim scoped deliveries, sign payloads and record retryable transport results."""
+    clock = clock or time.monotonic
+    run_deadline = clock() + 120
     transport = transport or _default_transport
     batch_size = max(1, min(int(batch_size), MAX_WEBHOOK_BATCH_SIZE))
     totals = {"attempted": 0, "delivered": 0, "failed": 0}
@@ -966,7 +1021,11 @@ def dispatch_pending_webhooks(
     if community_id is not None:
         claim["community_id"] = community_id
     authority = {}
+    timed_out_clients = set()
     for row in db.get_pending_webhook_deliveries(**claim):
+        if clock() >= run_deadline or row["client_id"] in timed_out_clients:
+            db.release_webhook_delivery(row["delivery_id"], claim_id=row["claim_id"])
+            continue
         totals["attempted"] += 1
         identity = (row["community_id"], row.get("created_by"))
         if identity not in authority:
@@ -1027,7 +1086,17 @@ def dispatch_pending_webhooks(
             ),
         }
         try:
-            status = transport(row["webhook_url"], body, headers, 10)
+            remaining = run_deadline - clock()
+            if remaining <= 0:
+                db.release_webhook_delivery(
+                    row["delivery_id"], claim_id=row["claim_id"]
+                )
+                totals["attempted"] -= 1
+                continue
+            status = transport(row["webhook_url"], body, headers, min(15, remaining))
+        except TimeoutError:
+            timed_out_clients.add(row["client_id"])
+            status = 0
         except urllib.error.HTTPError as error:
             status = error.code
         except Exception:

@@ -424,6 +424,7 @@ get_operator_webhook_delivery_context = _operator_api.delivery_context
 list_operator_api_clients = _operator_api.list_clients
 list_operator_webhook_deliveries = _operator_api.list_deliveries
 list_community_operator_events = _operator_api.list_events
+release_webhook_delivery = _operator_api.release_delivery
 record_webhook_attempt = _operator_api.record_attempt
 record_operator_api_usage = _operator_api.record_usage
 revoke_operator_api_client = _operator_api.revoke_client
