@@ -23,3 +23,5 @@
 {{ _("- [Kosten](%(url)s): Kostenlos, ohne Datenverkauf; Finanzierung", url=(site_url ~ "/pricing")|localized_url) }}
 {{ _("- [Öffentliche API](%(url)s): Tarife, Solardaten, Rangliste, ohne API-Key", url=(site_url ~ "/api/v1/docs")|localized_url) }}
 {{ _("- [Kontakt](mailto:%(email)s): E-Mail", email=contact_email) }}
+
+{{ _("- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)", url=site_url ~ "/api/v1/openapi.json") }}

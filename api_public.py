@@ -5,8 +5,10 @@ Open-source Swiss energy data API: municipalities, tariffs, solar, LEG toolkit.
 No auth required. Rate limited. CORS enabled.
 """
 
+import json
 import logging
 import math
+from pathlib import Path
 
 from flask import Blueprint, g, jsonify, render_template, request
 
@@ -583,6 +585,13 @@ def address_profile():
 
 
 # === API docs ===
+
+
+@public_api_bp.route("/openapi.json")
+def openapi_spec():
+    """Serve the committed public API contract."""
+    path = Path(__file__).parent / "docs/openapi/public-v1.json"
+    return jsonify(json.loads(path.read_text(encoding="utf-8")))
 
 
 @public_api_bp.route("/docs")

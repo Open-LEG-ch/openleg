@@ -933,12 +933,14 @@ def test_generation_routing_preserves_openapi_server_and_path_fragments(village)
     prefix, _ = _start(client)
     page = client.get(prefix + "/api/v1/docs")
     assert page.status_code == 200
-    code = next(script for script in _inline_scripts(page) if "const spec =" in script)
+    code = next(
+        script for script in _inline_scripts(page) if "loadApiReference(" in script
+    )
     result = subprocess.run(
         [
             "node",
             "-e",
-            "const vm=require('node:vm'); let spec; const context={document:{getElementById(){return {}; }}, initializeApiReference(_root,value){spec=value;}}; context.window=context; vm.runInNewContext(JSON.parse(require('node:fs').readFileSync(0,'utf8')),context); process.stdout.write(JSON.stringify({server:spec.servers[0].url, paths:Object.keys(spec.paths)}));",
+            "const vm=require('node:vm'); let url; const context={document:{getElementById(){return {}; }}, loadApiReference(_root,value){url=value;}}; context.window=context; vm.runInNewContext(JSON.parse(require('node:fs').readFileSync(0,'utf8')),context); process.stdout.write(JSON.stringify(url));",
         ],
         input=json.dumps(code),
         text=True,
@@ -946,7 +948,13 @@ def test_generation_routing_preserves_openapi_server_and_path_fragments(village)
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    spec = json.loads(result.stdout)
+    spec_url = json.loads(result.stdout)
+    assert spec_url == "/api/v1/openapi.json"
+    # The browser fetch adapter adds the generation prefix at request time.
+    response = client.get(prefix + spec_url)
+    assert response.status_code == 200
+    contract = response.get_json()
+    spec = {"server": contract["servers"][0]["url"], "paths": list(contract["paths"])}
     assert spec["server"] == "/api/v1"
     assert "/municipalities" in spec["paths"]
     assert not any(path.startswith("/v/") for path in spec["paths"])

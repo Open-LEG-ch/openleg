@@ -1,0 +1,163 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""The committed public contract is served unchanged at the HTTP boundary."""
+
+import json
+from pathlib import Path
+
+from tests.test_app_organic_routes import full_app_module as organic_app_module
+
+full_app_module = organic_app_module
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_public_contract_is_served_as_json(client):
+    response = client.get("/api/v1/openapi.json")
+    assert response.status_code == 200
+    assert response.mimetype == "application/json"
+    assert response.get_json() == json.loads(
+        (ROOT / "docs/openapi/public-v1.json").read_text()
+    )
+    assert response.get_json()["openapi"] == "3.1.0"
+
+
+def test_public_routes_match_contract_in_both_directions(full_app_module):
+    import re
+
+    app = full_app_module.web
+    spec = app.test_client().get("/api/v1/openapi.json").get_json()
+    routes = {
+        (method.lower(), re.sub(r"<(?:[^:<>]+:)?([^<>]+)>", r"{\1}", rule.rule))
+        for rule in app.url_map.iter_rules()
+        if rule.rule.startswith("/api/v1/") and rule.rule != "/api/v1/docs"
+        for method in rule.methods - {"HEAD", "OPTIONS"}
+    }
+    documented = {
+        (method, "/api/v1" + path)
+        for path, operations in spec["paths"].items()
+        for method in operations
+        if method
+        in {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
+    }
+    assert routes == documented, (
+        f"Undocumented routes: {routes - documented}; "
+        f"Stale operations: {documented - routes}"
+    )
+
+
+def test_every_operation_documents_response_schemas(client):
+    spec = client.get("/api/v1/openapi.json").get_json()
+    for path, operations in spec["paths"].items():
+        for method, operation in operations.items():
+            for status, response in operation["responses"].items():
+                assert (
+                    response.get("content", {})
+                    .get("application/json", {})
+                    .get("schema")
+                ), (path, method, status)
+
+
+def test_public_contract_is_valid_openapi(client):
+    from openapi_spec_validator import validate
+
+    validate(client.get("/api/v1/openapi.json").get_json())
+
+
+def test_docs_load_served_contract(client):
+    html = client.get("/api/v1/docs").get_data(as_text=True)
+    assert '"/api/v1/openapi.json"' in html
+    assert "loadApiReference(" in html
+    assert "const spec =" not in html
+    assert "openapi:" not in html
+
+
+def test_release_image_packages_contract():
+    dockerfile = (ROOT / "Dockerfile").read_text()
+    assert "COPY docs/openapi/ docs/openapi/" in dockerfile
+
+
+def test_additional_public_responses(client, validate_public_api_responses):
+    from unittest.mock import patch
+
+    import data_enricher
+
+    with (
+        patch("homepage_view_model.db.get_stats", return_value={"total_buildings": 7}),
+        patch("homepage_view_model.Ranking.load") as ranking,
+    ):
+        ranking.return_value.national.return_value = []
+        assert client.get("/api/v1/site/home").get_json()["stats"] == {
+            "registered_buildings": 7
+        }
+
+    with patch(
+        "data_enricher.get_address_suggestions",
+        return_value=[{"label": "Bundesplatz 1, Bern", "lat": 46.95, "lon": 7.44}],
+    ):
+        assert client.get("/api/v1/address/suggest?q=Bundesplatz").status_code == 200
+
+    estimates, _ = data_enricher.get_mock_energy_profile_for_address("Bundesplatz 1")
+    with patch(
+        "data_enricher.get_energy_profile_for_address",
+        return_value=(estimates, None),
+    ):
+        assert (
+            client.get("/api/v1/address/profile?address=Bundesplatz").status_code == 200
+        )
+    assert client.get("/api/v1/address/profile").status_code == 400
+    with (
+        patch(
+            "data_enricher.get_energy_profile_for_address", return_value=(None, None)
+        ),
+        patch(
+            "data_enricher.get_mock_energy_profile_for_address",
+            return_value=(None, None),
+        ),
+    ):
+        assert client.get("/api/v1/address/profile?address=missing").status_code == 404
+
+    assert client.post("/api/v1/leg/cluster", json={}).status_code == 400
+    assert (
+        client.post(
+            "/api/v1/leg/cluster",
+            json={"buildings": [{"lat": 47.37, "lon": 8.54}] * 301},
+        ).status_code
+        == 413
+    )
+    assert (
+        client.post(
+            "/api/v1/leg/cluster",
+            json={
+                "buildings": [
+                    {
+                        "building_id": str(i),
+                        "lat": 47.37,
+                        "lon": 8.54,
+                        "annual_consumption_kwh": 4500,
+                        "potential_pv_kwp": 5,
+                    }
+                    for i in range(2)
+                ]
+            },
+        ).status_code
+        == 200
+    )
+    with patch("ml_models.find_optimal_communities", side_effect=RuntimeError("test")):
+        assert (
+            client.post(
+                "/api/v1/leg/cluster",
+                json={
+                    "buildings": [
+                        {
+                            "building_id": str(i),
+                            "lat": 47.37,
+                            "lon": 8.54,
+                            "annual_consumption_kwh": 4500,
+                            "potential_pv_kwp": 5,
+                        }
+                        for i in range(2)
+                    ]
+                },
+            ).status_code
+            == 500
+        )

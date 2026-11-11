@@ -141,3 +141,51 @@ def app(mock_db):
 def client(app):
     """Flask test client."""
     return app.test_client()
+
+
+@pytest.fixture
+def validate_public_api_responses(app):
+    """Validate actual HTTP responses in the existing public API scenarios."""
+    import json
+    import re
+    from pathlib import Path
+
+    from flask import request
+    from jsonschema import Draft202012Validator
+    from referencing import Registry, Resource
+
+    spec = json.loads(
+        (
+            Path(__file__).resolve().parents[1] / "docs/openapi/public-v1.json"
+        ).read_text()
+    )
+    registry = Registry().with_resource(
+        "urn:openleg:public-v1",
+        Resource.from_contents(
+            {"$schema": "https://json-schema.org/draft/2020-12/schema", **spec}
+        ),
+    )
+
+    @app.after_request
+    def validate_response(response):
+        if request.url_rule is None or request.url_rule.rule == "/api/v1/docs":
+            return response
+        path = re.sub(
+            r"<(?:[^:<>]+:)?([^<>]+)>", r"{\1}", request.url_rule.rule
+        ).removeprefix("/api/v1")
+        assert response.is_json
+        # Keep local component references anchored to the complete document.
+        validator = Draft202012Validator(
+            {
+                "$ref": "urn:openleg:public-v1#/paths/"
+                + path.replace("~", "~0").replace("/", "~1")
+                + "/"
+                + request.method.lower()
+                + "/responses/"
+                + str(response.status_code)
+                + "/content/application~1json/schema"
+            },
+            registry=registry,
+        )
+        validator.validate(response.get_json())
+        return response

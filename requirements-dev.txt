@@ -6,3 +6,7 @@ mypy==2.4.1
 ruff==0.17.4
 coverage==7.17.2
 mutmut==3.7.0
+
+# Public OpenAPI contract validation (test only)
+jsonschema==4.26.0
+openapi-spec-validator==0.7.2

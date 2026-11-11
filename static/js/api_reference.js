@@ -1,6 +1,19 @@
+/* Load the same committed contract used by API clients. */
+window.loadApiReference = async function (root, url, labels) {
+    root.textContent = labels.loading;
+    try {
+        const response = await fetch(url, {headers: {Accept: "application/json"}});
+        if (!response.ok) throw new Error("Contract request failed");
+        window.initializeApiReference(root, await response.json(), labels);
+    } catch (_) {
+        root.textContent = labels.networkError;
+    }
+};
+
 /* Local, gettext-labelled API reference. Protocol names and JSON stay intact. */
 window.initializeApiReference = function (root, spec, labels) {
     "use strict";
+    const translate = text => Object.hasOwn(labels.text || {}, text) ? labels.text[text] : text;
     function element(tag, text, className) {
         const node = document.createElement(tag);
         if (text !== undefined) node.textContent = text;
@@ -21,15 +34,15 @@ window.initializeApiReference = function (root, spec, labels) {
     }
     const fieldClass = "mt-1 block w-full rounded border border-line px-3 py-2 font-mono text-sm";
     root.replaceChildren();
-    root.append(element("h2", spec.info.title, "mt-8 text-2xl font-bold"));
-    root.append(element("p", spec.info.description, "mt-3 whitespace-pre-line text-sm text-ink-muted"));
+    root.append(element("h2", translate(spec.info.title), "mt-8 text-2xl font-bold"));
+    root.append(element("p", translate(spec.info.description), "mt-3 whitespace-pre-line text-sm text-ink-muted"));
     for (const [path, operations] of Object.entries(spec.paths)) {
         for (const [method, operation] of Object.entries(operations)) {
             if (!["get", "post", "put", "patch", "delete"].includes(method)) continue;
             const details = element("details", undefined, "mt-4 rounded-xl border border-line bg-white p-4");
             const summary = element("summary", undefined, "cursor-pointer font-semibold");
             summary.append(element("code", method.toUpperCase() + " " + path, "mr-3 text-brand"));
-            summary.append(document.createTextNode(operation.summary || ""));
+            summary.append(document.createTextNode(translate(operation.summary || "")));
             details.append(summary);
             const form = element("form", undefined, "mt-4 space-y-4");
             const inputs = [];
@@ -37,7 +50,7 @@ window.initializeApiReference = function (root, spec, labels) {
             for (const parameter of operation.parameters || []) {
                 const label = element("label", undefined, "block text-sm");
                 label.append(element("span", parameter.name + (parameter.required ? " *" : ""), "font-mono"));
-                if (parameter.description) label.append(element("span", " · " + parameter.description, "text-ink-muted"));
+                if (parameter.description) label.append(element("span", " · " + translate(parameter.description), "text-ink-muted"));
                 const schema = parameter.schema || {};
                 const input = element(schema.enum ? "select" : "input", undefined, fieldClass);
                 if (schema.enum) {
@@ -123,7 +136,7 @@ window.initializeApiReference = function (root, spec, labels) {
             const responseList = element("dl", undefined, "mt-5 space-y-2 text-sm");
             responseList.append(element("dt", labels.responses, "font-semibold"));
             for (const [code, response] of Object.entries(operation.responses || {})) {
-                responseList.append(element("dd", code + " · " + (response.description || ""), "text-ink-muted"));
+                responseList.append(element("dd", code + " · " + translate(response.description || ""), "text-ink-muted"));
             }
             details.append(responseList);
             root.append(details);

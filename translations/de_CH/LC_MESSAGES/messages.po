@@ -14560,3 +14560,7 @@ msgstr "Wer handelt mit diesem Schlüssel?"
 
 msgid "Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese Bestätigung ist derzeit noch nicht verfügbar."
 msgstr "Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese Bestätigung ist derzeit noch nicht verfügbar."
+
+#, python-format
+msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
+msgstr "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"

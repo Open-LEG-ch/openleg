@@ -108,6 +108,7 @@ def test_llms_txt_summarizes_facts_and_pages(full_app_module):
     assert resp.mimetype == "text/plain"
     body = resp.get_data(as_text=True)
     assert body.startswith("# OpenLEG\n")
+    assert f"{full_app_module.web.config['SITE_URL']}/api/v1/openapi.json" in body
     assert "40%" in body
     assert "Art. 19h StromVV" in body
     assert f"{full_app_module.web.config['SITE_URL']}/how-it-works" in body
