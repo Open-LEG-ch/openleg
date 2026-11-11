@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+from collections import Counter
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
@@ -25,6 +26,26 @@ ROOT = Path(__file__).resolve().parents[1]
 TRANSLATIONS = ROOT / "translations"
 LOCALES = ("de_CH", "fr_CH", "en", "it_CH")
 NAMED_FORMAT = re.compile(r"%\([^)]+\)[#0 +.\-0-9]*[diouxXeEfFgGcrsa]")
+
+
+# Keep contact/routing identifiers and markup out of translation edits.
+PROTECTED = re.compile(
+    r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}"
+    r"|https?://[^\s<>\"']+"
+    r"|(?<![\w@])(?:[A-Za-z0-9-]+\.)+[a-z]{2,63}\b"
+    r"|%\([^)]+\)[#0 +.\-0-9]*[diouxXeEfFgGcrsa]"
+    r"|\{[A-Za-z_]\w*(?:![rsa])?(?::[^{}]+)?\}"
+    r"|</?[A-Za-z][^>]*>"
+    r"|\b(?:OpenLEG|GitHub|Docker|PostgreSQL|Swissgrid|Pronovo|Energy Data Hackdays"
+    r"|JavaScript|OpenAPI|OpenSSL|WireGuard|Babel|Caddy|Flask|Linux|Redis|TWINT)\b"
+)
+
+
+def protected_tokens(text):
+    """Count source literals that translators must preserve, including repeats."""
+    return Counter(
+        match.group().rstrip(".,;:!?)") for match in PROTECTED.finditer(text)
+    )
 
 
 def extract(destination):
@@ -114,6 +135,11 @@ def validate(catalog, expected):
         identifiers = message.id if isinstance(message.id, tuple) else (message.id,)
         for index, value in enumerate(values):
             source = identifiers[min(index, len(identifiers) - 1)]
+            missing_tokens = protected_tokens(source) - protected_tokens(value or "")
+            if missing_tokens:
+                problems.append(
+                    f"Protected token mismatch: {message.id}: {missing_tokens}"
+                )
             source_parameters = set(NAMED_FORMAT.findall(source))
             if set(NAMED_FORMAT.findall(value or "")) != source_parameters:
                 problems.append(f"Named placeholder mismatch: {message.id}: {value}")
@@ -195,14 +221,31 @@ def entry_text(message, locale):
     return "\n".join(lines)
 
 
+def po_entries(text):
+    """Split on entry syntax, including entries with no blank separator."""
+    lines = []
+    translated = False
+    for line in text.splitlines():
+        token = line.lstrip().removeprefix("#~ ")
+        if translated and token.startswith(("#", "msgctxt ", "msgid ")):
+            yield "\n".join(lines).strip()
+            lines = []
+            translated = False
+        lines.append(line)
+        if token.startswith("msgstr"):
+            translated = True
+    if lines:
+        yield "\n".join(lines).strip()
+
+
 def merge(path, expected, locale):
-    """Keep surviving PO blocks verbatim; prune obsolete blocks and append new ones.
+    """Keep surviving PO entries verbatim; prune obsolete entries and append new ones.
 
     Exact identity includes context and plural source. Fuzzy matching would silently
     attach an old translation to different source text, so it is deliberately absent.
     """
     if path.exists():
-        blocks = re.split(r"\n\s*\n", path.read_text(encoding="utf-8").strip())
+        blocks = list(po_entries(path.read_text(encoding="utf-8")))
         header = blocks[0]
     else:
         catalog = Catalog(locale=locale, project="OpenLEG")
