@@ -430,3 +430,157 @@ def test_public_municipality_profile_handler_is_allowed(release_web, monkeypatch
         lambda bfs: ("synthetic public profile", 200),
     )
     assert release_web.test_client().get("/gemeinde/profil/261").status_code == 200
+
+
+SITE_PAGE_PATHS = [
+    "/verein",
+    "/software",
+    "/wissen",
+    "/wissen/strommodelle",
+    "/wissen/glossar",
+    "/dokumente",
+    "/community",
+    "/mitmachen",
+    "/kontakt",
+]
+SITE_DIRECTORY_PATHS = ["/leg-verzeichnis", "/leg-verzeichnis/published"]
+
+
+@pytest.mark.parametrize("path", SITE_PAGE_PATHS)
+@pytest.mark.parametrize("language", ["de-CH", "en", "fr-CH", "it-CH"])
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+def test_enabled_site_pages_and_aliases_render_read_only(
+    release_web, path, language, method
+):
+    release_web.config["SITE_RELEASE_ENABLED"] = True
+    response = release_web.test_client().open(
+        path, method=method, query_string={"lang": language}
+    )
+    assert response.status_code == 200
+    assert response.headers["Content-Language"] == language
+    if method == "GET":
+        assert response.text.count("<h1") == 1
+    else:
+        assert response.data == b""
+
+
+@pytest.fixture
+def release_directory(release_database, monkeypatch):
+    # A candidate's schema/data exist before read-only validation starts.
+    with monkeypatch.context() as setup:
+        setup.setenv("OPENLEG_RELEASE_READ_ONLY", "0")
+        release_database.create_tables()
+        with release_database.get_connection() as conn, conn.cursor() as cur:
+            cur.executemany(
+                """INSERT INTO leg_registry(slug,name,moderation_status,contact_email)
+                VALUES (%s,%s,%s,'private@example.invalid')""",
+                [
+                    ("published", "Fictional public LEG", "published"),
+                    ("pending", "Fictional pending LEG", "pending"),
+                    ("rejected", "Fictional rejected LEG", "rejected"),
+                ],
+            )
+    return release_database
+
+
+@pytest.mark.parametrize("language", ["de-CH", "en", "fr-CH", "it-CH"])
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+def test_published_directory_renders_with_native_read_only_storage(
+    release_web, release_directory, language, method
+):
+    release_web.config["SITE_RELEASE_ENABLED"] = True
+    client = release_web.test_client()
+    for path in SITE_DIRECTORY_PATHS:
+        response = client.open(path, method=method, query_string={"lang": language})
+        assert response.status_code == 200
+        assert response.headers["Content-Language"] == language
+        if method == "GET":
+            assert "Fictional public LEG" in response.text
+            assert "Fictional pending LEG" not in response.text
+            assert "Fictional rejected LEG" not in response.text
+            assert "private@example.invalid" not in response.text
+        else:
+            assert response.data == b""
+    with release_directory.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SHOW transaction_read_only")
+        assert cur.fetchone()["transaction_read_only"] == "on"
+    with pytest.raises(psycopg2.errors.ReadOnlySqlTransaction):
+        _insert_probe(release_directory, "public reads must not enable writes")
+
+
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+@pytest.mark.parametrize("path", SITE_PAGE_PATHS + SITE_DIRECTORY_PATHS)
+def test_disabled_site_keeps_404_in_read_only_mode(release_web, path, method):
+    release_web.config["SITE_RELEASE_ENABLED"] = False
+    response = release_web.test_client().open(path, method=method)
+    assert response.status_code == 404
+    assert "Retry-After" not in response.headers
+
+
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+def test_directory_errors_remain_distinct_from_release_blocking(
+    release_web, release_directory, method
+):
+    release_web.config["SITE_RELEASE_ENABLED"] = True
+    client = release_web.test_client()
+    for slug in ["missing", "pending", "rejected"]:
+        response = client.open("/leg-verzeichnis/" + slug, method=method)
+        assert response.status_code == 404
+        assert "Retry-After" not in response.headers
+    for query in ["kanton=ZZ", "page=-1", "bfs=invalid", "plz=54"]:
+        response = client.open("/leg-verzeichnis?" + query, method=method)
+        assert response.status_code == 400
+        assert "Retry-After" not in response.headers
+    # Simulate unavailable storage outside the candidate's guarded connection.
+    with psycopg2.connect(release_directory.DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("DROP TABLE leg_registry")
+    for path in SITE_DIRECTORY_PATHS:
+        response = client.open(path, method=method)
+        assert response.status_code == 503
+        assert "Retry-After" not in response.headers
+        if method == "GET":
+            assert response.mimetype == "text/html"
+            assert "Service temporarily unavailable." not in response.text
+
+
+@pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+def test_site_mutations_are_blocked_before_handlers(release_web, monkeypatch, method):
+    release_web.config["SITE_RELEASE_ENABLED"] = True
+
+    def forbidden(**kwargs):
+        pytest.fail("mutation reached a site handler")
+
+    for path in SITE_PAGE_PATHS + SITE_DIRECTORY_PATHS:
+        endpoint = release_web.url_map.bind("localhost").match(path)[0]
+        monkeypatch.setitem(release_web.view_functions, endpoint, forbidden)
+        _assert_guarded(release_web.test_client().open(path, method=method))
+
+
+@pytest.mark.parametrize(
+    "method", ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+)
+def test_private_site_and_unreviewed_handlers_never_execute(
+    release_web, monkeypatch, method
+):
+    release_web.config["SITE_RELEASE_ENABLED"] = True
+
+    def forbidden(**kwargs):
+        pytest.fail("blocked request reached a private or unreviewed handler")
+
+    release_web.add_url_rule(
+        "/unreviewed-site-route", endpoint="site.unreviewed", view_func=forbidden
+    )
+    paths = [
+        "/verein/mitglied/zugang/test",
+        "/verein/bestaetigen/test",
+        "/verein/vorstand/login",
+        "/verein/vorstand/antraege",
+        "/unreviewed-site-route",
+    ]
+    for path in paths:
+        endpoint = release_web.url_map.bind("localhost").match(path)[0]
+        monkeypatch.setitem(release_web.view_functions, endpoint, forbidden)
+        _assert_guarded(release_web.test_client().open(path, method=method))
+    _assert_guarded(
+        release_web.test_client().open("/unknown-site-route", method=method)
+    )
