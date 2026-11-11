@@ -145,6 +145,12 @@ UNTRUSTED_BY_OPERATION = {
 }
 
 
+# Application-defined JSON-RPC code in the server range. -32000, -32001,
+# -32002 and -32042 already carry meanings in MCP SDKs (-32001 is a request
+# timeout in the TypeScript SDK), so clients must not read this as one.
+AUTHENTICATION_FAILED = -32011
+
+
 def create_app():
     if os.environ.get("OPENLEG_MCP_ENABLED", "false") != "true":
         raise RuntimeError("MCP sidecar is disabled")
@@ -302,7 +308,9 @@ def create_app():
         if code in {"authentication_required", "invalid_credential"}:
             raise McpError(
                 types.ErrorData(
-                    code=-32001, message="Authorization required", data=details
+                    code=AUTHENTICATION_FAILED,
+                    message="Authorization required",
+                    data=details,
                 )
             )
         if code == "operator_unavailable":

@@ -207,6 +207,12 @@ class FormationSubmissionInvalid(RuntimeError):
     reason = ErrorCode.INVALID_FORMATION
 
 
+class ParticipantMutationIncomplete(ValueError):
+    """A participant mutation lacks the identity or facts its manifest needs."""
+
+    reason = ErrorCode.INVALID_MEMBERSHIP
+
+
 class ParticipantMutationInvalid(RuntimeError):
     """A participant mutation is invalid or conflicts with pending work."""
 
@@ -271,7 +277,7 @@ def _mutation_manifest(
     mutation: ParticipantMutation, contract: ExchangeContract
 ) -> dict:
     if mutation.mutation_type not in MUTATION_CAPABILITIES:
-        raise ValueError("Unsupported participant mutation type")
+        raise ParticipantMutationIncomplete("Unsupported participant mutation type")
     if not all(
         (
             mutation.mutation_id,
@@ -281,9 +287,13 @@ def _mutation_manifest(
             mutation.source_agreement_id,
         )
     ):
-        raise ValueError("Participant mutation identity is incomplete")
+        raise ParticipantMutationIncomplete(
+            "Participant mutation identity is incomplete"
+        )
     if not mutation.before or not mutation.after:
-        raise ValueError("Participant mutation requires before and after facts")
+        raise ParticipantMutationIncomplete(
+            "Participant mutation requires before and after facts"
+        )
     return {
         "adapter_key": contract.adapter_key,
         "contract_version": MEMBERSHIP_CONTRACT_VERSION,

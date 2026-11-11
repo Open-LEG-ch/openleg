@@ -244,7 +244,7 @@ through; upstream error text is discarded. HTTP 503 remains a retryable tool
 failure; a failed HTTP connection is a JSON-RPC internal error (-32603).
 
 Missing, malformed, or rejected bearer credentials produce a JSON-RPC
-authorization error (-32001, application-defined), with the stable reason in
+authorization error (-32011, application-defined; chosen to avoid codes MCP SDKs already use, such as -32001 for a request timeout), with the stable reason in
 `error.data`. They are never sent as `CallToolResult`. The pinned MCP Python
 SDK catches exceptions inside its `call_tool` decorator, so the boundary promotes
 these failures to `McpError` outside that decorator. The SDK has no dedicated

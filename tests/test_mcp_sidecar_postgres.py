@@ -86,7 +86,7 @@ def test_real_http_pagination_and_scope(operator_http, monkeypatch, caplog):
                 transport.headers.pop("Authorization")
                 with pytest.raises(McpError) as failure:
                     await sdk.call_tool("list_billing_periods", args)
-                assert failure.value.error.code == -32001
+                assert failure.value.error.code == -32011
                 transport.headers.update(fixture.headers)
                 denied = await sdk.call_tool(
                     "list_billing_periods", {"community_id": "other-leg"}
@@ -96,7 +96,7 @@ def test_real_http_pagination_and_scope(operator_http, monkeypatch, caplog):
                 async with session(app) as anonymous:
                     with pytest.raises(McpError) as failure:
                         await anonymous.call_tool("list_billing_periods", args)
-                    assert failure.value.error.code == -32001
+                    assert failure.value.error.code == -32011
                 restricted, _ = fixture.credential_headers(["payments.read"])
                 async with session(app, restricted) as other:
                     denied = await other.call_tool("list_billing_periods", args)

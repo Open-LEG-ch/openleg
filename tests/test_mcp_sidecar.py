@@ -171,7 +171,7 @@ def test_http_trust_boundary(monkeypatch, caplog):
                         await sdk.call_tool(
                             "list_billing_periods", {"community_id": "one"}
                         )
-                    assert failure.value.error.code == -32001
+                    assert failure.value.error.code == -32011
                     assert len(seen) == count
 
         asyncio.run(check())
@@ -585,7 +585,7 @@ def test_upstream_error_metadata_and_authorization(monkeypatch):
                     await sdk.call_tool(
                         "list_billing_periods", {"community_id": "leg", "status": "401"}
                     )
-                assert failure.value.error.code == -32001
+                assert failure.value.error.code == -32011
                 assert failure.value.error.data["code"] == "invalid_credential"
 
         asyncio.run(check())
