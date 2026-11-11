@@ -71,7 +71,23 @@ paths:
       x-openleg-capability: membership.mutate
       parameters:
       - $ref: '#/components/parameters/community_id'
+      - name: dry_run
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+        description: Validate and check existing conflicts without claiming cases. Usage accounting still applies.
       responses:
+        '200':
+          description: Preview only. No package, transport, case, event or idempotency writes.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionPreview'
         '202':
           description: Successful operation.
           headers:
@@ -345,7 +361,23 @@ paths:
       x-openleg-capability: formation.mutate
       parameters:
       - $ref: '#/components/parameters/community_id'
+      - name: dry_run
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+        description: Validate and check existing conflicts without claiming cases. Usage accounting still applies.
       responses:
+        '200':
+          description: Preview only. No package, transport, case, event or idempotency writes.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionPreview'
         '202':
           description: Successful operation.
           headers:
@@ -355,6 +387,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Submission'
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
@@ -1020,6 +1054,23 @@ components:
       additionalProperties: false
       description: Explicit read allowlist. Missing store fields are omitted; null
         values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    SubmissionPreview:
+      type: object
+      additionalProperties: false
+      required: [schema_version, intended_action, payload_fingerprint, recipient]
+      properties:
+        schema_version:
+          const: operator-api/1
+        intended_action:
+          type: string
+          enum: [prepare_manual_package, send_through_adapter]
+          description: Intended action only, not a prediction of delivery success.
+        payload_fingerprint:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        recipient:
+          type: string
+          description: Adapter recipient description, or manual / not configured.
     Submission:
       type: object
       properties:

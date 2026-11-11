@@ -57,6 +57,48 @@ def get_mutation(community_id: str, mutation_id: str) -> dict | None:
         return dict(row) if row else None
 
 
+def check_mutation(submission: MutationClaim) -> None:
+    """Check existing identities and pending work without claiming anything."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT payload_fingerprint FROM vnb_mutation_cases
+               WHERE community_id = %s AND mutation_id = %s""",
+            (submission.community_id, submission.mutation_id),
+        )
+        existing = cur.fetchone()
+        if existing:
+            if existing["payload_fingerprint"] != submission.payload_fingerprint:
+                raise VnbSubmissionConflict("Mutation identity has different content")
+            return
+        cur.execute(
+            """SELECT 1 FROM vnb_mutation_cases
+               WHERE community_id = %s AND participant_id = %s
+                 AND state IN ('claimed', 'prepared', 'delivered') LIMIT 1""",
+            (submission.community_id, submission.participant_id),
+        )
+        if cur.fetchone():
+            raise VnbSubmissionConflict("Participant has a pending mutation")
+
+
+def check_submission(submission: SubmissionClaim) -> None:
+    """Check formation conflicts without the upsert that claims retries."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT contract_version, payload_fingerprint FROM vnb_submission_cases
+               WHERE community_id = %s""",
+            (submission.community_id,),
+        )
+        rows = cur.fetchall()
+        if any(
+            row["contract_version"] == submission.contract_version
+            and row["payload_fingerprint"] == submission.payload_fingerprint
+            for row in rows
+        ):
+            return
+        if rows:
+            raise VnbSubmissionConflict("Formation already has a different case")
+
+
 def claim_mutation(submission: MutationClaim) -> dict:
     """Claim a stable mutation, rejecting re-use and participant conflicts."""
     case_id = str(uuid.uuid4())

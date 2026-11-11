@@ -42,6 +42,44 @@ def test_contract_tool(monkeypatch):
     async def check():
         async with app.router.lifespan_context(app), session(app) as sdk:
             result = await sdk.list_tools()
+            names = [t.name for t in result.tools]
+            assert "list_billing_periods" in names
+            # The preview tools follow the read tools.
+            assert names[-2:] == [
+                "preview_formation_submission",
+                "preview_membership_mutation",
+            ]
+            previews = result.tools[-2:]
+            spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
+            for preview, suffix, capability in zip(
+                previews,
+                ("/formation/submissions", "/membership-mutations"),
+                ("formation.mutate", "membership.mutate"),
+                strict=True,
+            ):
+                assert preview.annotations.readOnlyHint is True
+                assert preview.meta["x-openleg-capability"] == capability
+                assert "dry_run" not in preview.inputSchema["properties"]
+                operation = spec["paths"][
+                    "/api/operator/v1/communities/{community_id}" + suffix
+                ]["post"]
+                body = (
+                    operation.get("requestBody", {})
+                    .get("content", {})
+                    .get("application/json", {})
+                    .get("schema", {})
+                )
+                assert preview.inputSchema["properties"] == {
+                    "community_id": spec["components"]["parameters"]["community_id"][
+                        "schema"
+                    ],
+                    **body.get("properties", {}),
+                }
+                assert preview.inputSchema["required"] == ["community_id"] + body.get(
+                    "required", []
+                )
+                assert preview.inputSchema["additionalProperties"] is False
+            assert "access_roles" in previews[1].description
             tool = next(t for t in result.tools if t.name == "list_billing_periods")
             spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
             op = spec["paths"][

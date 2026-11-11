@@ -138,6 +138,12 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
                 session(app, fixture.headers) as sdk,
             ):
                 tools = (await sdk.list_tools()).tools
+                # Dry-run previews of writes are the only non-read tools.
+                assert [t.name for t in tools if "operationId" not in t.meta] == [
+                    "preview_formation_submission",
+                    "preview_membership_mutation",
+                ]
+                tools = [t for t in tools if "operationId" in t.meta]
                 ids = [t.meta["operationId"] for t in tools]
                 assert sorted(ids) == sorted(reads)
                 for tool in tools:

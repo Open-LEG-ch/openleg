@@ -250,3 +250,24 @@ SDK catches exceptions inside its `call_tool` decorator, so the boundary promote
 these failures to `McpError` outside that decorator. The SDK has no dedicated
 authorization exception for an upstream credential rejection. This development
 bearer flow does not implement the OAuth HTTP challenge planned in #838.
+
+## VNB previews
+
+Both VNB write endpoints accept the query option `dry_run=true` (default
+`false`). A successful preview returns HTTP 200 with `schema_version`,
+`intended_action` (`prepare_manual_package` or `send_through_adapter`),
+`payload_fingerprint` and `recipient`. The recipient comes from the adapter's
+`ExchangeContract.recipient_description`; absent descriptions return
+`manual / not configured`.
+
+Previews run the same authorization and preflight validation as submission.
+They check existing conflicts without claiming or changing cases, including
+retryable cases. They build no stored package and call no transport. Cases,
+events, webhooks and idempotency records remain unchanged; credential usage and
+last-used accounting still apply. A preview is a point-in-time check, not a
+reservation or a prediction of delivery success.
+
+The development MCP sidecar exposes `preview_formation_submission` and
+`preview_membership_mutation`. They require `formation.mutate` and
+`membership.mutate`, respectively, and always request a dry run. Their inputs
+come from the operator contract; callers cannot disable the dry run.

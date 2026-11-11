@@ -34,6 +34,7 @@ class ExchangeContract:
     adapter_key: str
     contract_version: str
     capabilities: frozenset[str]
+    recipient_description: str | None = None
 
 
 @dataclass(frozen=True)
@@ -125,6 +126,25 @@ class SubmissionOutcome:
 
 
 @dataclass(frozen=True)
+class SubmissionPreview:
+    intended_action: str
+    payload_fingerprint: str
+    recipient: str
+
+
+def _preview(contract, capability, fingerprint):
+    return SubmissionPreview(
+        intended_action=(
+            "send_through_adapter"
+            if capability in contract.capabilities
+            else "prepare_manual_package"
+        ),
+        payload_fingerprint=fingerprint,
+        recipient=contract.recipient_description or "manual / not configured",
+    )
+
+
+@dataclass(frozen=True)
 class MutationClaim:
     mutation_id: str
     community_id: str
@@ -186,6 +206,8 @@ def adapter_for(adapter_key: str | None) -> VnbAdapter:
 
 
 class SubmissionCases(Protocol):
+    def check_submission(self, submission: SubmissionClaim) -> None: ...
+
     def claim(self, submission: SubmissionClaim) -> dict: ...
 
     def record_outcome(self, case_id: str, outcome: SubmissionOutcome) -> dict: ...
@@ -324,7 +346,8 @@ def submit_participant_mutation(
     cases,
     *,
     recorded_fingerprint: str | None = None,
-) -> MutationOutcome:
+    dry_run: bool = False,
+) -> MutationOutcome | SubmissionPreview:
     """Deliver a mutation; authorized recovery retains its recorded fingerprint."""
     contract = adapter.contract()
     manifest = _mutation_manifest(mutation, contract)
@@ -333,16 +356,20 @@ def submit_participant_mutation(
         if recorded_fingerprint is not None
         else _fingerprint(manifest)
     )
-    row = cases.claim_mutation(
-        MutationClaim(
-            **mutation.__dict__,
-            actor_building_id=actor_building_id,
-            adapter_key=contract.adapter_key,
-            contract_version=MEMBERSHIP_CONTRACT_VERSION,
-            capability_snapshot=tuple(sorted(contract.capabilities)),
-            payload_fingerprint=fingerprint,
-        )
+    submission = MutationClaim(
+        **mutation.__dict__,
+        actor_building_id=actor_building_id,
+        adapter_key=contract.adapter_key,
+        contract_version=MEMBERSHIP_CONTRACT_VERSION,
+        capability_snapshot=tuple(sorted(contract.capabilities)),
+        payload_fingerprint=fingerprint,
     )
+    if dry_run:
+        cases.check_mutation(submission)
+        return _preview(
+            contract, MUTATION_CAPABILITIES[mutation.mutation_type], fingerprint
+        )
+    row = cases.claim_mutation(submission)
     if row["state"] != "claimed":
         return _mutation_outcome_from_row(row)
     capability = MUTATION_CAPABILITIES[mutation.mutation_type]
@@ -426,7 +453,8 @@ def submit_membership_mutation(
     adapter: VnbAdapter | None = None,
     *,
     cases=None,
-) -> MutationOutcome:
+    dry_run: bool = False,
+) -> MutationOutcome | SubmissionPreview:
     """Authorize a mutation and snapshot the LEG record without changing it."""
     community = db.fetch_community_with_members(command.community_id)
     actor = next(
@@ -464,7 +492,26 @@ def submit_membership_mutation(
                 "Diese Mutations-ID bezeichnet bereits einen anderen Inhalt."
             )
         if previous["state"] != "claimed":
-            return _mutation_outcome_from_row(previous)
+            if not dry_run:
+                return _mutation_outcome_from_row(previous)
+            # A real replay returns before adapter availability checks. Describe
+            # its recorded intent without adding a new validation failure.
+            recorded_adapter = adapter or ADAPTERS.get(previous["adapter_key"])
+            recipient = (
+                recorded_adapter.contract().recipient_description
+                if recorded_adapter
+                else None
+            )
+            return _preview(
+                ExchangeContract(
+                    previous["adapter_key"],
+                    previous["contract_version"],
+                    frozenset(previous["capability_snapshot"]),
+                    recipient,
+                ),
+                MUTATION_CAPABILITIES[command.mutation_type],
+                previous["payload_fingerprint"],
+            )
         before = previous["before_facts"]
         after = previous["after_facts"]
     else:
@@ -530,6 +577,7 @@ def submit_membership_mutation(
         adapter,
         cases,
         recorded_fingerprint=previous["payload_fingerprint"] if previous else None,
+        dry_run=dry_run,
     )
 
 
@@ -538,7 +586,9 @@ def submit_package(
     actor_building_id: str,
     adapter: VnbAdapter,
     cases: SubmissionCases,
-) -> SubmissionOutcome:
+    *,
+    dry_run: bool = False,
+) -> SubmissionOutcome | SubmissionPreview:
     """Claim and deliver one immutable formation package idempotently."""
     contract = adapter.contract()
     if contract.contract_version != SUPPORTED_CONTRACT_VERSION:
@@ -548,19 +598,21 @@ def submit_package(
 
     manifest = _manifest(package, contract)
     fingerprint = _fingerprint(manifest)
-    row = cases.claim(
-        SubmissionClaim(
-            community_id=package.community_id,
-            actor_building_id=actor_building_id,
-            adapter_key=contract.adapter_key,
-            contract_version=contract.contract_version,
-            capability_snapshot=tuple(sorted(contract.capabilities)),
-            payload_fingerprint=fingerprint,
-            document_ids=tuple(
-                sorted(document.document_id for document in package.documents)
-            ),
-        )
+    submission = SubmissionClaim(
+        community_id=package.community_id,
+        actor_building_id=actor_building_id,
+        adapter_key=contract.adapter_key,
+        contract_version=contract.contract_version,
+        capability_snapshot=tuple(sorted(contract.capabilities)),
+        payload_fingerprint=fingerprint,
+        document_ids=tuple(
+            sorted(document.document_id for document in package.documents)
+        ),
     )
+    if dry_run:
+        cases.check_submission(submission)
+        return _preview(contract, FORMATION_SUBMISSION, fingerprint)
+    row = cases.claim(submission)
     if row["state"] != "claimed":
         return _outcome_from_row(row)
 
@@ -622,7 +674,8 @@ def submit_formation(
     adapter: VnbAdapter | None = None,
     *,
     cases: SubmissionCases | None = None,
-) -> SubmissionOutcome:
+    dry_run: bool = False,
+) -> SubmissionOutcome | SubmissionPreview:
     """Authorize, assemble and submit one community's signed formation bundle."""
     community = db.fetch_community_with_members(command.community_id)
     if not community:
@@ -686,6 +739,7 @@ def submit_formation(
         command.actor_building_id,
         adapter,
         cases,
+        **({"dry_run": True} if dry_run else {}),
     )
 
 

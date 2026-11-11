@@ -177,13 +177,17 @@ def formation_status(community_id):
 )
 @require_operator("formation.mutate")
 def submit_formation(community_id):
-    if g.operator_client.get("actor_kind") == "agent":
+    dry_run = request.args.get("dry_run", "false")
+    if dry_run not in {"true", "false"}:
+        return _error("Invalid dry_run option", 400)
+    if dry_run != "true" and g.operator_client.get("actor_kind") == "agent":
         return _error("Formation submission denied", 403)
     try:
         outcome = vnb_exchange.submit_formation(
             vnb_exchange.FormationSubmission(
                 community_id, g.operator_client["created_by"]
-            )
+            ),
+            **({"dry_run": True} if dry_run == "true" else {}),
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return _error("Formation submission denied", 403)
@@ -192,6 +196,8 @@ def submit_formation(community_id):
         return _error("Formation submission invalid or conflicting", 409, exc.reason)
     except db.VnbExchangeStoreError:
         return _error("Formation submission unavailable", 503)
+    if dry_run == "true":
+        return jsonify(schema_version=API_SCHEMA_VERSION, **outcome.__dict__)
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
         state=outcome.state,
@@ -216,7 +222,10 @@ def membership_mutations(community_id):
 )
 @require_operator("membership.mutate")
 def submit_membership_mutation(community_id):
-    if g.operator_client.get("actor_kind") == "agent":
+    dry_run = request.args.get("dry_run", "false")
+    if dry_run not in {"true", "false"}:
+        return _error("Invalid dry_run option", 400)
+    if dry_run != "true" and g.operator_client.get("actor_kind") == "agent":
         return _error("Membership mutation denied", 403)
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
@@ -232,7 +241,8 @@ def submit_membership_mutation(community_id):
                 str(payload.get("effective_date", "")),
                 str(payload.get("source_agreement_id", "")),
                 payload.get("after") if isinstance(payload.get("after"), dict) else {},
-            )
+            ),
+            **({"dry_run": True} if dry_run == "true" else {}),
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return _error("Membership mutation denied", 403)
@@ -249,6 +259,8 @@ def submit_membership_mutation(community_id):
         )
     except db.VnbExchangeStoreError:
         return _error("Membership mutation unavailable", 503)
+    if dry_run == "true":
+        return jsonify(schema_version=API_SCHEMA_VERSION, **outcome.__dict__)
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
         state=outcome.state,
