@@ -14198,11 +14198,6 @@ msgid "PLZ range e.g. 8000-8999"
 msgstr "PLZ range e.g. 800-8999"
 
 #. Draft translation; native language and domain review pending.
-#: document_generator.py:160
-msgid "PV-Anlage:"
-msgstr "Impianto PV:"
-
-#. Draft translation; native language and domain review pending.
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
 msgstr "Prestazioni PV-DC (kWp, opzionale)"
@@ -20606,7 +20601,7 @@ msgid ""
 "Die Eingaben dieses Entwurfs wurden verändert. Der vorhandene Entwurf und "
 "ausgestellte Rechnungen werden nicht überschrieben."
 msgstr ""
-"I dati di questo progetto sono cambiati. La bozza esistente e le fatture emesse non "
+"I dati di questa bozza sono cambiati. La bozza esistente e le fatture emesse non "
 "vengono sovrascritte."
 
 #. Draft translation; native language and domain review pending.

@@ -189,3 +189,35 @@ def test_invalid_or_ambiguous_local_times_never_publish(membership, start, end):
     data.update(start=start, end=end)
     with pytest.raises(events.verein.VereinDenied):
         events.save(token, data)
+
+
+@pytest.mark.parametrize("change", ["reschedule", "cancel"])
+def test_occurrence_changes_invalidate_notes_and_block_republication(
+    membership, change
+):
+    client, _store, token, data, events = _event(membership)
+    data.update(status="scheduled", start="2026-01-10T10:00", end="2026-01-10T11:00")
+    identifier = events.save(token, data)
+    notes = {
+        locale: "Approved occurrence notes " + locale for locale in data["translations"]
+    }
+    events.publish_notes(token, identifier, notes, "Actual board approval", version=1)
+    path = "/veranstaltungen/" + data["slug"] + "?lang=en"
+    assert "Approved occurrence notes en" in client.get(path).text
+    # An unchanged save preserves approval; a changed occurrence requires review.
+    events.save(token, data, identifier=identifier, version=2)
+    assert "Approved occurrence notes en" in client.get(path).text
+    if change == "reschedule":
+        data.update(start="2099-01-10T10:00", end="2099-01-10T11:00")
+    else:
+        data["status"] = "cancelled"
+    events.save(token, data, identifier=identifier, version=3)
+    record = events.list_for_review(token)[0]
+    assert record["notes"] == notes
+    assert record["notes_approved_at"] is None
+    assert record["notes_evidence"] is None
+    assert "Approved occurrence notes" not in client.get(path).text
+    with pytest.raises(events.verein.VereinDenied):
+        events.publish_notes(
+            token, identifier, notes, "New approval attempt", version=4
+        )

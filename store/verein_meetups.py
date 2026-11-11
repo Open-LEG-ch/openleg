@@ -57,10 +57,15 @@ def save(token, data, *, identifier=None, version=None):
             row = cur.fetchone()
         else:
             cur.execute(
-                """UPDATE verein_meetups SET content=%s,status=%s,starts_at=%s,ends_at=%s,
+                """UPDATE verein_meetups SET
+                notes_approved_at=CASE WHEN content=%s THEN notes_approved_at ELSE NULL END,
+                notes_evidence=CASE WHEN content=%s THEN notes_evidence ELSE NULL END,
+                content=%s,status=%s,starts_at=%s,ends_at=%s,
                 version=version+1,updated_at=%s,reviewer_id=%s
                 WHERE id=%s AND slug=%s AND version=%s AND (status='draft' OR %s!='draft') RETURNING version""",
                 (
+                    Json(content),
+                    Json(content),
                     Json(content),
                     content["status"],
                     content["start"],
@@ -121,7 +126,7 @@ def publish_notes(token, identifier, notes, evidence, *, version):
         cur.execute(
             """UPDATE verein_meetups SET notes=%s,notes_approved_at=%s,notes_evidence=%s,
             version=version+1,updated_at=%s,reviewer_id=%s
-            WHERE id=%s AND version=%s AND status!='draft' AND ends_at<=%s RETURNING version""",
+            WHERE id=%s AND version=%s AND status='scheduled' AND ends_at<=%s RETURNING version""",
             (
                 Json(notes),
                 now,

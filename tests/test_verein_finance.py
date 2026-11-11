@@ -676,3 +676,25 @@ def test_correction_cannot_make_a_later_published_commitment_already_paid(member
     assert 'href="#bookings"' in result.text
     assert "2026-Q3" in result.text
     assert client.get("/verein/finanzen/2026-Q2.json").json["version"] == 1
+
+
+def test_large_bounded_multipart_csv_retains_every_input(membership):
+    client, _store = _setup(membership)
+    assert 'enctype="multipart/form-data"' in client.get(PATH).text
+    data = _data()
+    draft = "é" * 600000
+    for field in ("balances", "bookings", "commitments"):
+        data[field] = draft
+    response = client.post(
+        PATH,
+        data={**data, "csrf_token": test_verein_membership._csrf(client, PATH)},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 409
+    for field in ("balances", "bookings", "commitments"):
+        value = re.search(
+            r'<textarea[^>]*name="' + field + r'"[^>]*>(.*?)</textarea>',
+            response.text,
+            re.DOTALL,
+        )[1]
+        assert unescape(value) == draft

@@ -437,3 +437,32 @@ def test_factory_secret_key_cases_ignore_inherited_application_settings(tmp_path
     output = result.stdout + result.stderr
     assert result.returncode == 0, output
     assert "skipped" not in output.lower(), output
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_database_initialization_uses_effective_site_override(
+    secret_key_factory, monkeypatch, enabled
+):
+    import database
+    from locale_policy import extended_locales_enabled
+
+    monkeypatch.setenv("OPENLEG_SITE_RELEASE_ENABLED", "0" if enabled else "1")
+    observed = []
+
+    def available():
+        observed.append(extended_locales_enabled())
+        return True
+
+    monkeypatch.setattr(database, "is_db_available", available)
+    application = secret_key_factory(
+        {
+            "TESTING": True,
+            "SECRET_KEY": "a-real-random-key",
+            "RATELIMIT_STORAGE_URI": "memory://",
+            "SITE_RELEASE_ENABLED": enabled,
+        },
+        load_environment=False,
+        check_database=True,
+    )
+    assert application.config["SITE_RELEASE_ENABLED"] is enabled
+    assert observed == [enabled]
