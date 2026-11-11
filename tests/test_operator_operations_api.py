@@ -212,7 +212,7 @@ def test_retry_runs_only_the_tenant_scoped_eligible_schedule(
     )
     assert response.status_code == 200
     claim.assert_called_once_with("community-a", 7, "retry-7")
-    run.assert_called_once_with("tenant-a", schedule)
+    run.assert_called_once_with("tenant-a", {**schedule, "max_attempts": 1})
     complete.assert_called_once_with(
         "community-a", 7, "retry-7", {"status": "success", "territory": "tenant-a"}
     )

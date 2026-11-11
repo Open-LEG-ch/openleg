@@ -497,13 +497,19 @@ def retry_metering_job(community_id, job_id):
     claim = db.claim_operator_ingestion_retry(community_id, job_id, key)
     if not claim:
         return _error("Resource not found or not eligible", 404)
+    if claim.get("retry_after"):
+        response = _error("Rate limit exceeded", 429)
+        response.headers["Retry-After"] = str(claim["retry_after"])
+        return response
     if claim.get("pending"):
         return _error("Retry already in progress", 409, ErrorCode.RETRY_IN_PROGRESS)
     if claim.get("replay"):
         return jsonify(schema_version=API_SCHEMA_VERSION, **claim["replay"])
     schedule = claim["schedule"]
     try:
-        result = sdat_ingestion.run(schedule["territory"], schedule)
+        result = sdat_ingestion.run(
+            schedule["territory"], {**schedule, "max_attempts": 1}
+        )
     except Exception:
         db.release_operator_ingestion_retry(community_id, job_id, key)
         raise

@@ -63,6 +63,20 @@ asynchron (`202`) und enthalten `case_id`, `state` und `event_id`. Validierung,
 Rechte, Zustandsübergänge und Auditpfad sind dieselben Domain-Aufrufe wie in der
 Bedienoberfläche.
 
+## Messdaten erneut abrufen
+
+`POST /api/operator/v1/communities/{community_id}/metering/jobs/{job_id}/retry`
+startet für einen fehlgeschlagenen Job genau einen Importversuch ohne
+Wartepausen zwischen Versuchen. Geplante Importe behalten ihre konfigurierten
+Wiederholungen. Nach Abschluss gilt für den Job eine Sperrfrist von 15 Minuten,
+auch bei einem Fehler. Ein weiterer Aufruf mit neuem `Idempotency-Key` erhält
+`429`, `Retry-After` mit den verbleibenden Sekunden und
+`{"error":"Rate limit exceeded","schema_version":"operator-api/1"}`.
+Derselbe Schlüssel liefert während der Sperrfrist das gespeicherte Ergebnis.
+Solange ein Versuch läuft, erhalten andere Schlüssel `409`
+(`Retry already in progress`). Eine Reservierung ohne Ergebnis verfällt nach
+15 Minuten, damit ein abgebrochener Worker den Job nicht dauerhaft sperrt.
+
 ## Events und Webhooks
 
 Events tragen `schema_version: operator-event/1`, eine stabile `event_id`, eine

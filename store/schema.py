@@ -1953,6 +1953,10 @@ def create_tables():
                     PRIMARY KEY (community_id, action, idempotency_key)
                 )
             """)
+            cur.execute("""
+                ALTER TABLE operator_action_idempotency
+                ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ
+            """)
             # A case can emit multiple updates. Stable event IDs deduplicate a
             # replay; aggregate IDs must not collapse distinct transitions.
             cur.execute("""

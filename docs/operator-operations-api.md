@@ -68,7 +68,15 @@ hashes, or signing secrets.
 Mutations require an `Idempotency-Key` of 1–128 characters:
 
 - `POST /metering/jobs/{id}/retry` retries only a failed job belonging to the
-  community's tenant.
+  community's tenant. Each API retry makes one ingestion attempt without retry
+  sleeps; scheduled ingestion keeps its configured retry policy. After the retry
+  completes, whether successful or failed, the job has a 15-minute cooldown.
+  A new key during this cooldown returns `429`, `Retry-After` with the remaining
+  seconds, and `{"error":"Rate limit exceeded","schema_version":"operator-api/1"}`.
+  The same key replays its stored result during the cooldown. An in-flight retry
+  blocks other keys with `409` (`Retry already in progress`). A claim without a
+  result expires after 15 minutes, so a worker killed mid-run cannot block the
+  job permanently.
 - `POST /billing/cases/{id}/responses` accepts `message` and the next permitted
   `status` (`acknowledged` or `resolved`).
 - `POST /payments/matches/{id}/confirm` accepts `invoice_id` and confirms only
