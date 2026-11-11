@@ -2094,7 +2094,7 @@ msgstr ""
 msgid "Bereits registriert?"
 msgstr ""
 
-#: store/verein_finance.py:92
+#: store/verein_finance.py:112
 msgid ""
 "Bereits veröffentlichte Quellbelege dürfen nicht verschwinden. Erfassen Sie eine nachvollziehbare"
 " Korrektur."
@@ -4887,7 +4887,7 @@ msgstr ""
 msgid "Ein Messwert dieser Periode ist ungültig."
 msgstr ""
 
-#: store/verein_finance.py:111
+#: store/verein_finance.py:62
 msgid ""
 "Ein Quellbeleg gehört bereits zu einem anderen Quartal. Importieren Sie denselben Beleg nicht "
 "nochmals."
@@ -5138,7 +5138,7 @@ msgstr ""
 msgid "Eine neue LEG gründen"
 msgstr ""
 
-#: store/verein_finance.py:79
+#: store/verein_finance.py:99
 msgid "Eine neue Version braucht eine öffentliche Korrekturbegründung."
 msgstr ""
 

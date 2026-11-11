@@ -349,3 +349,38 @@ def test_reminder_uses_receipt_balance_at_delivery_even_after_batch_fetch(
     assert response.status_code == 303
     reminder = next(item[2] for item in mail if "offen" in item[2])
     assert "CHF 30.00 offen" in reminder
+
+
+@pytest.mark.parametrize("status", ["resigned", "terminated"])
+def test_delayed_renewal_records_only_pre_end_periods_without_notices(
+    membership, monkeypatch, status
+):
+    import database
+    from store import verein
+
+    now = datetime(2024, 6, 1, 12, tzinfo=UTC)
+    monkeypatch.setattr(verein, "now_utc", lambda: now)
+    client, _mail, store, _reviewer_id, _path = _accepted(membership)
+    with client.session_transaction() as session:
+        board = session["verein_session"]
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE verein_members SET status=%s,ended_at=%s",
+            (status, datetime(2026, 6, 2, tzinfo=UTC)),
+        )
+    now = datetime(2028, 6, 1, 12, tzinfo=UTC)
+    assert store.renew_dues(board) == 2
+    assert store.renew_dues(board) == 0
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT period_start FROM verein_dues ORDER BY period_start")
+        assert [row["period_start"].isoformat() for row in cur.fetchall()] == [
+            "2024-06-01",
+            "2025-06-01",
+            "2026-06-01",
+        ]
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT count(*) AS total FROM verein_notifications WHERE kind='renewal'"
+        )
+        assert cur.fetchone()["total"] == 0
+    assert not store.pending_notifications(board)

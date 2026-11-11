@@ -698,3 +698,24 @@ def test_large_bounded_multipart_csv_retains_every_input(membership):
             re.DOTALL,
         )[1]
         assert unescape(value) == draft
+
+
+def test_unpublished_wrong_quarter_does_not_reserve_sources(membership):
+    client, store = _setup(membership)
+    wrong = _data()
+    wrong["quarter"] = "2026-Q2"
+    _change(
+        wrong,
+        "bookings",
+        lambda rows: [
+            row.__setitem__(1, row[1].replace("2026-07", "2026-04")) for row in rows[1:]
+        ],
+    )
+    stale = _prepare(client, wrong)
+    correct = _prepare(client)
+    _other_reviewer(client, store)
+    assert _publish(client, correct).status_code == 303
+    # A stale draft cannot subsequently publish those sources in another quarter.
+    assert _publish(client, stale).status_code == 409
+    assert client.get("/verein/finanzen/2026-Q2.json").status_code == 404
+    assert client.get("/verein/finanzen/2026-Q3.json").status_code == 200
