@@ -22,7 +22,7 @@ const context = {
 };
 vm.runInNewContext(fs.readFileSync(path.resolve(__dirname, '../../static/js/api_reference.js'), 'utf8'), context);
 context.loadApiReference = (target, url, labels) => context.window.initializeApiReference(target, spec, labels);
-const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/gi)]
     .map(match => match[1]).find(source => source.includes('loadApiReference('));
 vm.runInNewContext(script, context);
 function texts(node) {
