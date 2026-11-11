@@ -1247,6 +1247,10 @@ def create_tables():
                 )
             """)
             cur.execute("""
+                ALTER TABLE bank_statement_entries
+                ADD COLUMN IF NOT EXISTS booking_status TEXT
+            """)
+            cur.execute("""
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_community_id
                 ON bank_statement_entries (community_id, id DESC)
             """)
