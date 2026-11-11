@@ -1,0 +1,1191 @@
+openapi: 3.1.0
+info:
+  title: OpenLEG operator API
+  version: 1.0.0
+  description: Authoritative private operator v1 contract for MCP and CLI consumers.
+    Bearer credentials are scoped to one community. Only explicitly listed read fields
+    are exposed. Unhandled internal failures are not part of the JSON error contract.
+security:
+- OperatorBearer: []
+paths:
+  /api/operator/v1/communities/{community_id}/formation:
+    get:
+      operationId: listFormations
+      x-openleg-capability: formation.read
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: &id001
+              schema:
+                const: no-store
+              description: Do not cache operator data.
+            Referrer-Policy: &id002
+              schema:
+                const: no-referrer
+              description: Suppress referrers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormationCollection'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+  /api/operator/v1/communities/{community_id}/membership-mutations:
+    get:
+      operationId: listMemberships
+      x-openleg-capability: membership.read
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipCollection'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+    post:
+      operationId: submitMembershipMutation
+      x-openleg-capability: membership.mutate
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      responses:
+        '202':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '503':
+          $ref: '#/components/responses/Error503'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mutation_id:
+                  type: string
+                  minLength: 1
+                participant_id:
+                  type: string
+                  minLength: 1
+                mutation_type:
+                  enum:
+                  - join
+                  - exit
+                  - change
+                effective_date:
+                  type: string
+                  format: date
+                source_agreement_id:
+                  type: string
+                  minLength: 1
+                after:
+                  type: object
+                  properties:
+                    status: &id003
+                      type: string
+                    role: *id003
+                    access_roles:
+                      type: array
+                      items: *id003
+                  required: []
+                  additionalProperties: false
+              required:
+              - mutation_id
+              - participant_id
+              - mutation_type
+              - effective_date
+              - source_agreement_id
+              additionalProperties: true
+              allOf:
+              - if:
+                  properties:
+                    mutation_type:
+                      const: change
+                  required:
+                  - mutation_type
+                then:
+                  required:
+                  - after
+                  properties:
+                    after:
+                      minProperties: 1
+      description: mutation_id identifies replays within the community. Idempotency-Key
+        is not consumed. For change, after accepts only status, role and access_roles;
+        join and exit derive facts from the LEG record.
+  /api/operator/v1/communities/{community_id}/metering/jobs:
+    get:
+      operationId: listJobs
+      x-openleg-capability: metering.read
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - $ref: '#/components/parameters/limit'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobCollection'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+  /api/operator/v1/communities/{community_id}/metering/calculated-deliveries:
+    get:
+      operationId: listCalculatedDeliverys
+      x-openleg-capability: metering.read
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - $ref: '#/components/parameters/limit'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculatedDeliveryCollection'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+  /api/operator/v1/communities/{community_id}/billing/periods:
+    get:
+      operationId: listPeriods
+      x-openleg-capability: billing.read
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - $ref: '#/components/parameters/limit'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PeriodCollection'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+  /api/operator/v1/communities/{community_id}/billing/invoices:
+    get:
+      operationId: listInvoices
+      x-openleg-capability: billing.read
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - $ref: '#/components/parameters/limit'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceCollection'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+  /api/operator/v1/communities/{community_id}/billing/cases:
+    get:
+      operationId: listCases
+      x-openleg-capability: cases.read
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - $ref: '#/components/parameters/limit'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseCollection'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+  /api/operator/v1/communities/{community_id}/payments/matches:
+    get:
+      operationId: listPayments
+      x-openleg-capability: payments.read
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - $ref: '#/components/parameters/limit'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentCollection'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+  /api/operator/v1/communities/{community_id}/formation/submissions:
+    post:
+      operationId: submitFormation
+      x-openleg-capability: formation.mutate
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      responses:
+        '202':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '503':
+          $ref: '#/components/responses/Error503'
+      description: No request body or Idempotency-Key is consumed. Prepares or sends
+        the signed formation package; its canonical fingerprint identifies replays.
+  /api/operator/v1/communities/{community_id}/metering/jobs/{job_id}/retry:
+    post:
+      operationId: retryMeteringJob
+      x-openleg-capability: metering.mutate
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 0
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetryResult'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+      description: 'Retries a failed job synchronously. No request body is consumed.
+        A replay adds replayed: true; a first result omits replayed.'
+  /api/operator/v1/communities/{community_id}/billing/cases/{case_id}/responses:
+    post:
+      operationId: respondInvoiceCase
+      x-openleg-capability: cases.mutate
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - name: case_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 0
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResult'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 4000
+                status:
+                  enum:
+                  - acknowledged
+                  - resolved
+              required:
+              - message
+              - status
+              additionalProperties: true
+  /api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm:
+    post:
+      operationId: confirmPaymentMatch
+      x-openleg-capability: payments.mutate
+      parameters:
+      - $ref: '#/components/parameters/community_id'
+      - name: entry_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 0
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Successful operation.
+          headers:
+            Cache-Control: *id001
+            Referrer-Policy: *id002
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResult'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                invoice_id: &id005
+                  type: integer
+              required:
+              - invoice_id
+              additionalProperties: true
+components:
+  securitySchemes:
+    OperatorBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: olk_ token
+  parameters:
+    community_id:
+      name: community_id
+      in: path
+      required: true
+      schema: *id003
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        pattern: ^[0-9]+$
+      description: Opaque pagination cursor returned by next_cursor.
+    status:
+      name: status
+      in: query
+      schema: *id003
+  responses:
+    Error400:
+      description: Invalid JSON, pagination, header or payment input.
+      headers:
+        Cache-Control: *id001
+        Referrer-Policy: *id002
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error401:
+      description: Missing, invalid or revoked bearer credential.
+      headers:
+        Cache-Control: *id001
+        Referrer-Policy: *id002
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error403:
+      description: Required capability or domain permission denied.
+      headers:
+        Cache-Control: *id001
+        Referrer-Policy: *id002
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error404:
+      description: Different community, missing resource or ineligible resource.
+      headers:
+        Cache-Control: *id001
+        Referrer-Policy: *id002
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409:
+      description: Validation failure, conflicting request or pending retry.
+      headers:
+        Cache-Control: *id001
+        Referrer-Policy: *id002
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error429:
+      description: Credential hourly request budget exhausted.
+      headers:
+        Cache-Control: *id001
+        Referrer-Policy: *id002
+        Retry-After:
+          description: Seconds until retry; currently always 3600.
+          schema:
+            type: integer
+            const: 3600
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error503:
+      description: VNB exchange store unavailable.
+      headers:
+        Cache-Control: *id001
+        Referrer-Policy: *id002
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        schema_version: &id004
+          const: operator-api/1
+          type: string
+        error: *id003
+      required:
+      - schema_version
+      - error
+      additionalProperties: false
+    Formation:
+      type: object
+      properties:
+        case_id:
+          type:
+          - string
+          - 'null'
+        community_id:
+          type:
+          - string
+          - 'null'
+        adapter_key:
+          type:
+          - string
+          - 'null'
+        contract_version:
+          type:
+          - string
+          - 'null'
+        state:
+          type:
+          - string
+          - 'null'
+        next_action:
+          type:
+          - string
+          - 'null'
+        response_status:
+          type:
+          - string
+          - 'null'
+        retryable:
+          type:
+          - boolean
+          - 'null'
+        failure_code:
+          type:
+          - string
+          - 'null'
+        created_at:
+          type:
+          - string
+          - 'null'
+        delivered_at:
+          type:
+          - string
+          - 'null'
+        acknowledged_at:
+          type:
+          - string
+          - 'null'
+      required: []
+      additionalProperties: false
+      description: Explicit read allowlist. Missing store fields are omitted; null
+        values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    Membership:
+      type: object
+      properties:
+        case_id:
+          type:
+          - string
+          - 'null'
+        mutation_id:
+          type:
+          - string
+          - 'null'
+        community_id:
+          type:
+          - string
+          - 'null'
+        mutation_type:
+          type:
+          - string
+          - 'null'
+        effective_date:
+          type:
+          - string
+          - 'null'
+        source_agreement_id:
+          type:
+          - string
+          - 'null'
+        state:
+          type:
+          - string
+          - 'null'
+        next_action:
+          type:
+          - string
+          - 'null'
+        response_status:
+          type:
+          - string
+          - 'null'
+        created_at:
+          type:
+          - string
+          - 'null'
+        updated_at:
+          type:
+          - string
+          - 'null'
+      required: []
+      additionalProperties: false
+      description: Explicit read allowlist. Missing store fields are omitted; null
+        values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    Job:
+      type: object
+      properties:
+        id:
+          type:
+          - integer
+          - 'null'
+        territory:
+          type:
+          - string
+          - 'null'
+        started_at:
+          type:
+          - string
+          - 'null'
+        finished_at:
+          type:
+          - string
+          - 'null'
+        status:
+          type:
+          - string
+          - 'null'
+        attempts:
+          type:
+          - integer
+          - 'null'
+        downloaded_files:
+          type:
+          - integer
+          - 'null'
+        imported_files:
+          type:
+          - integer
+          - 'null'
+        imported_readings:
+          type:
+          - integer
+          - 'null'
+        error_code:
+          type:
+          - string
+          - 'null'
+      required: []
+      additionalProperties: false
+      description: Explicit read allowlist. Missing store fields are omitted; null
+        values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    CalculatedDelivery:
+      type: object
+      properties:
+        id:
+          type:
+          - integer
+          - 'null'
+        contract_version:
+          type:
+          - string
+          - 'null'
+        format_version:
+          type:
+          - string
+          - 'null'
+        transport:
+          type:
+          - string
+          - 'null'
+        community_id:
+          type:
+          - string
+          - 'null'
+        period_start:
+          type:
+          - string
+          - 'null'
+        period_end:
+          type:
+          - string
+          - 'null'
+        status:
+          type:
+          - string
+          - 'null'
+        diagnostics:
+          type:
+          - array
+          - 'null'
+          items:
+            type: object
+        record_count:
+          type:
+          - integer
+          - 'null'
+        received_at:
+          type:
+          - string
+          - 'null'
+      required: []
+      additionalProperties: false
+      description: Explicit read allowlist. Missing store fields are omitted; null
+        values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    Period:
+      type: object
+      properties:
+        id:
+          type:
+          - integer
+          - 'null'
+        community_id:
+          type:
+          - string
+          - 'null'
+        period_start:
+          type:
+          - string
+          - 'null'
+        period_end:
+          type:
+          - string
+          - 'null'
+        total_production_kwh:
+          type:
+          - string
+          - number
+          - 'null'
+          description: PostgreSQL decimals serialize as JSON strings in Flask.
+        total_allocated_kwh:
+          type:
+          - string
+          - number
+          - 'null'
+          description: PostgreSQL decimals serialize as JSON strings in Flask.
+        total_surplus_kwh:
+          type:
+          - string
+          - number
+          - 'null'
+          description: PostgreSQL decimals serialize as JSON strings in Flask.
+        total_network_discount_chf:
+          type:
+          - string
+          - number
+          - 'null'
+          description: PostgreSQL decimals serialize as JSON strings in Flask.
+        status:
+          type:
+          - string
+          - 'null'
+      required: []
+      additionalProperties: false
+      description: Explicit read allowlist. Missing store fields are omitted; null
+        values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    Invoice:
+      type: object
+      properties:
+        id:
+          type:
+          - integer
+          - 'null'
+        invoice_number:
+          type:
+          - string
+          - 'null'
+        gross_chf:
+          type:
+          - string
+          - number
+          - 'null'
+          description: PostgreSQL decimals serialize as JSON strings in Flask.
+        issue_date:
+          type:
+          - string
+          - 'null'
+        due_date:
+          type:
+          - string
+          - 'null'
+        lifecycle_state:
+          type:
+          - string
+          - 'null'
+      required: []
+      additionalProperties: false
+      description: Explicit read allowlist. Missing store fields are omitted; null
+        values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    Case:
+      type: object
+      properties:
+        id:
+          type:
+          - integer
+          - 'null'
+        invoice_id:
+          type:
+          - integer
+          - 'null'
+        category:
+          type:
+          - string
+          - 'null'
+        status:
+          type:
+          - string
+          - 'null'
+        created_at:
+          type:
+          - string
+          - 'null'
+        updated_at:
+          type:
+          - string
+          - 'null'
+      required: []
+      additionalProperties: false
+      description: Explicit read allowlist. Missing store fields are omitted; null
+        values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    Payment:
+      type: object
+      properties:
+        id:
+          type:
+          - integer
+          - 'null'
+        invoice_id:
+          type:
+          - integer
+          - 'null'
+        entry_reference:
+          type:
+          - string
+          - 'null'
+        booking_date:
+          type:
+          - string
+          - 'null'
+        amount:
+          type:
+          - string
+          - number
+          - 'null'
+          description: PostgreSQL decimals serialize as JSON strings in Flask.
+        currency:
+          type:
+          - string
+          - 'null'
+        payment_reference:
+          type:
+          - string
+          - 'null'
+        is_reversal:
+          type:
+          - boolean
+          - 'null'
+        match_decision:
+          type:
+          - string
+          - 'null'
+      required: []
+      additionalProperties: false
+      description: Explicit read allowlist. Missing store fields are omitted; null
+        values are retained. Dates and timestamps use Flask HTTP-date serialization.
+    Submission:
+      type: object
+      properties:
+        schema_version: *id004
+        case_id: *id003
+        state:
+          type: string
+          enum:
+          - prepared
+          - delivered
+          - acknowledged
+          - rejected
+          - failed
+        event_id:
+          type:
+          - string
+          - 'null'
+      required:
+      - schema_version
+      - case_id
+      - state
+      - event_id
+      additionalProperties: false
+    CaseResult:
+      type: object
+      properties:
+        schema_version: *id004
+        id: *id005
+        status: *id003
+        event_id:
+          type:
+          - string
+          - 'null'
+        replayed: &id006
+          type: boolean
+      required:
+      - schema_version
+      - id
+      - status
+      - event_id
+      - replayed
+      additionalProperties: false
+    PaymentResult:
+      type: object
+      properties:
+        schema_version: *id004
+        id: *id005
+        match_decision:
+          const: matched
+        event_id: *id003
+        replayed: *id006
+      required:
+      - schema_version
+      - id
+      - match_decision
+      - event_id
+      - replayed
+      additionalProperties: false
+    RetryResult:
+      type: object
+      properties:
+        schema_version: *id004
+        status:
+          enum:
+          - locked
+          - success
+          - failure
+        territory: *id003
+        replayed: *id006
+        attempts: *id005
+        downloaded_files: *id005
+        existing_downloads: *id005
+        imported_files: *id005
+        existing_files: *id005
+        imported_readings: *id005
+        started_at: *id003
+        finished_at: *id003
+        error:
+          type:
+          - string
+          - 'null'
+      required:
+      - schema_version
+      - status
+      - territory
+      additionalProperties: false
+    FormationCollection:
+      type: object
+      properties:
+        schema_version: *id004
+        submissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Formation'
+      required:
+      - schema_version
+      - submissions
+      additionalProperties: false
+    MembershipCollection:
+      type: object
+      properties:
+        schema_version: *id004
+        mutations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membership'
+      required:
+      - schema_version
+      - mutations
+      additionalProperties: false
+    JobCollection:
+      type: object
+      properties:
+        schema_version: *id004
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Job'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      required:
+      - schema_version
+      - items
+      - next_cursor
+      additionalProperties: false
+    CalculatedDeliveryCollection:
+      type: object
+      properties:
+        schema_version: *id004
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalculatedDelivery'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      required:
+      - schema_version
+      - items
+      - next_cursor
+      additionalProperties: false
+    PeriodCollection:
+      type: object
+      properties:
+        schema_version: *id004
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Period'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      required:
+      - schema_version
+      - items
+      - next_cursor
+      additionalProperties: false
+    InvoiceCollection:
+      type: object
+      properties:
+        schema_version: *id004
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      required:
+      - schema_version
+      - items
+      - next_cursor
+      additionalProperties: false
+    CaseCollection:
+      type: object
+      properties:
+        schema_version: *id004
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Case'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      required:
+      - schema_version
+      - items
+      - next_cursor
+      additionalProperties: false
+    PaymentCollection:
+      type: object
+      properties:
+        schema_version: *id004
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      required:
+      - schema_version
+      - items
+      - next_cursor
+      additionalProperties: false

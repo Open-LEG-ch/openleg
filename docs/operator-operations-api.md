@@ -1,5 +1,9 @@
 # Operator operations API v1
 
+The authoritative machine-readable contract for MCP and CLI consumers is
+[operator-v1.yaml](openapi/operator-v1.yaml). Route coverage and PostgreSQL-backed
+HTTP response tests check it against the running operator blueprint.
+
 All endpoints use `Authorization: Bearer …`, are scoped by the community in the
 path, and return `schema_version: operator-api/1`. A credential needs the
 matching `*.read` or `*.mutate` capability. Cross-community access returns 404.
