@@ -1,21 +1,19 @@
+{# Optional inputs: address_heading, address_lead, address_variant (default or editorial). #}
+<link rel="stylesheet" href="/static/css/address_intake.css">
   <!-- Bewohner -->
-  <section id="bewohner" class="py-16 bg-[#f6f4ef]">
-    <div class="max-w-6xl mx-auto px-4">
+  <section id="bewohner" data-address-intake class="address-intake address-intake--{{ address_variant|default('default') }}">
+    <div class="address-intake__container">
       <div class="mb-6">
-        <h2 class="text-3xl font-bold">{{ _("Adresse prüfen und Interessierte in Ihrer Gemeinde finden") }}</h2>
-        <p class="text-ink-muted mt-2">{{ _("Wir prüfen Adressen in der ganzen Schweiz und zählen bestätigte Interessierte pro Gemeinde. Sie erhalten eine Nachricht, sobald weitere bestätigte Interessierte aus Ihrer Gemeinde dazukommen.") }}</p>
+        <h2 class="address-intake__heading">{{ address_heading|default(_("Adresse prüfen und Interessierte in Ihrer Gemeinde finden")) }}</h2>
+        <p class="address-intake__lead">{{ address_lead|default(_("Wir prüfen Adressen in der ganzen Schweiz und zählen bestätigte Interessierte pro Gemeinde. Sie erhalten eine Nachricht, sobald weitere bestätigte Interessierte aus Ihrer Gemeinde dazukommen.")) }}</p>
         {% if user_count > 0 %}
         <p class="text-ink-muted mt-2">{% trans num=user_count %}Bereits <strong class="text-ink">{{ num }}</strong> Haushalt registriert{% pluralize %}Bereits <strong class="text-ink">{{ num }}</strong> Haushalte registriert{% endtrans %}</p>
         {% endif %}
       </div>
 
-      <div id="registrieren" class="grid md:grid-cols-2 gap-8">
-        <!-- Map -->
-        <div>
-          <div id="map" class="w-full h-96 rounded-xl shadow-md z-0"></div>
-        </div>
+      <div id="registrieren" class="address-intake__layout">
         <!-- Form -->
-        <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <div class="address-intake__form">
           <ol class="grid grid-cols-3 gap-2 text-xs mb-4">
             <li class="rounded-lg border border-slate-200 bg-slate-50 p-2">
               <div class="font-semibold">{{ _("1. Adresse prüfen") }}</div>
@@ -84,7 +82,7 @@
             <label for="fallback-has-solar" class="block text-sm font-medium mt-3 mb-1">{{ _("Eigene Solaranlage") }}</label><select id="fallback-has-solar" class="w-full border rounded-lg px-3 py-2"><option value="">{{ _("Keine Angabe") }}</option><option value="true">{{ _("Ja") }}</option><option value="false">{{ _("Nein") }}</option></select>
             <button id="btn-interest" class="w-full bg-brand text-white py-2 rounded-lg mt-4 font-semibold hover:bg-brand-dark">{{ _("Interesse anmelden") }}</button>
           </div>
-          <div id="step-success" class="hidden text-center py-6">
+          <div id="step-success" tabindex="-1" class="hidden text-center py-6">
             <div class="text-4xl mb-3">&#9889;</div>
             <h3 class="text-lg font-semibold mb-2">{{ _("Bitte E-Mail bestätigen") }}</h3>
             <p class="text-ink-muted mb-4">{{ _("Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt.") }}</p>
@@ -95,6 +93,38 @@
           </div>
           <div id="form-error" role="alert" aria-live="assertive" class="text-red-600 text-sm mt-2 hidden"></div>
         </div>
+        <!-- Map -->
+        <div class="address-intake__map">
+          <div id="map" class="address-intake__map-canvas"></div>
+        </div>
       </div>
     </div>
+    <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}" type="application/json" data-address-config>{{ {
+      'locale': current_locale,
+      'map': {'center': [map_center_lat, map_center_lon], 'zoom': map_zoom},
+      'messages': {
+        'zoomIn': _('Vergrössern'), 'zoomOut': _('Verkleinern'),
+        'inputHint': _("Adresse eingeben. Ab 3 Zeichen zeigen wir Vorschläge."),
+        'selectedHint': _("Adresse gewählt. Jetzt prüfen."),
+        'noSuggestion': _("Keine passende Adresse gefunden. Sie können die Eingabe prüfen oder Ihr Interesse für die Gemeinde anmelden."),
+        'suggestionUnavailable': _("Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."),
+        'checking': _("Prüfe..."),
+        'checkingHint': _("Wir prüfen Ihre Adresse. Einen Moment bitte."),
+        'rateLimit': _("Zu viele Anfragen. Bitte warten Sie eine Minute."),
+        'checkAddress': _("Adresse prüfen"),
+        'rateLimitHint': _("Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."),
+        'checkFailed': _("Wir konnten die Adresse nicht prüfen."),
+        'memberOne': _("%(count)s interessierte Person in derselben Gemeinde."),
+        'memberMany': _("%(count)s Interessierte in derselben Gemeinde."),
+        'potentialDetail': _(" Geschätztes Autarkie-Potenzial: %(percent)s%. Netzbetreiber und Netzebene müssen noch geprüft werden."),
+        'found': _("Nachbarn gefunden. Sie können sich jetzt registrieren."),
+        'noNeighbours': _("<strong>Noch keine Nachbarn gefunden.</strong> Sie können trotzdem registrieren."),
+        'noNeighboursHint': _("Noch keine Nachbarn gefunden. Sie können trotzdem starten."),
+        'networkRetry': _("Netzwerkfehler. Bitte erneut versuchen."),
+        'emailRequired': _("Bitte E-Mail angeben."),
+        'registrationFailed': _("Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."),
+        'networkError': _("Netzwerkfehler."),
+        'interestFailed': _("Interessenmeldung fehlgeschlagen.")
+      }
+    }|tojson }}</script>
   </section>

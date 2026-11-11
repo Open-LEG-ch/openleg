@@ -1,0 +1,35 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Component rules own layout; DOM and visual order both begin with the form. */
+.address-intake { padding-block: 4rem; background: #f6f4ef; }
+.address-intake__container { max-width: 72rem; margin-inline: auto; padding-inline: 1rem; }
+.address-intake__heading { font-size: 1.875rem; line-height: 1.2; font-weight: 700; }
+.address-intake__lead { margin-top: .5rem; color: #505869; }
+.address-intake__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+.address-intake__layout > * { min-width: 0; }
+.address-intake__form { background: white; border: 1px solid #e2e8f0; border-radius: .75rem; padding: 1.5rem; }
+.address-intake__map-canvas { width: 100%; height: 24rem; border-radius: .75rem; box-shadow: 0 4px 6px #0002; z-index: 0; }
+.address-intake button:disabled { opacity: 1; background: #d8dce4; color: #26324b; cursor: not-allowed; }
+.address-intake button:focus-visible { outline: 2px solid #243b85; outline-offset: 3px; }
+.address-intake [data-address-state], .address-intake [role=alert] { overflow-wrap: anywhere; }
+.address-intake [id=suggestions] button { display: block; width: 100%; text-align: left; }
+@media (min-width: 768px) {
+  .address-intake__layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.address-intake--editorial { background: #f6f2ea; padding-block: clamp(112px, 12vw, 168px) clamp(80px, 9vw, 128px); }
+.address-intake--editorial .address-intake__container { max-width: 1280px; padding-inline: 48px; }
+.address-intake--editorial .address-intake__heading { font: 400 clamp(30px, 3.4vw, 44px)/1.15 Georgia, serif; letter-spacing: -.025em; max-width: 20ch; }
+.address-intake--editorial .address-intake__lead { margin-top: 20px; margin-bottom: 40px; max-width: 40em; }
+.address-intake--editorial .address-intake__map-canvas { border-radius: 16px; box-shadow: none; border: 1px solid #c9d1e3; }
+.address-intake--editorial .address-intake__layout { gap: clamp(32px, 5vw, 64px); }
+.address-intake--editorial .address-intake__form { background: none; border: 0; border-top: 2px solid #243b85; border-radius: 0; padding: 24px 0 0; }
+.address-intake--editorial ol, .address-intake--editorial [data-address-state=empty] { display: none; }
+.address-intake--editorial input[type=text], .address-intake--editorial input[type=email], .address-intake--editorial input[type=tel], .address-intake--editorial select { min-height: 48px; border: 1px solid #70798d; border-radius: 8px; background: #fff; }
+.address-intake--editorial [data-address-state] { border: 0; background: #edf1f9; border-radius: 10px; }
+.address-intake--editorial button { min-height: 48px; border-radius: 999px; background: #243b85; color: #fffdf8; font-weight: 600; }
+.address-intake--editorial button:disabled { background: #d8dce4; color: #26324b; box-shadow: inset 0 0 0 1px #70798d; }
+@media (max-width: 1100px) {
+  .address-intake--editorial .address-intake__layout { grid-template-columns: minmax(0, 1fr); }
+  .address-intake--editorial .address-intake__map-canvas { height: 240px; }
+}
+@media (max-width: 1199px) { .address-intake--editorial .address-intake__container { padding-inline: 32px; } }
+@media (max-width: 767px) { .address-intake--editorial .address-intake__container { padding-inline: 20px; } }
