@@ -146,6 +146,7 @@ also_copy = [
     "municipality.py",
     "municipality_profile.py",
     "neighbor_view.py",
+    "operator_actor.py",
     "operator_api.py",
     "payment_reconciliation.py",
     "pyproject.toml",

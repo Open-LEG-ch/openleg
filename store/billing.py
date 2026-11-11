@@ -17,8 +17,11 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import cast
 
+from psycopg2.extras import Json
+
 import billing_lifecycle
 import billing_policy
+import operator_actor
 import payment_reconciliation
 from billing_types import BillingCursor, InvoiceSnapshot, LineItem, Period
 from store import invoice_query as invoice_query_store
@@ -758,8 +761,8 @@ def _append_invoice_event(
         INSERT INTO invoice_lifecycle_events (
             invoice_id, community_id, actor_id, event_type,
             previous_state, new_state, reason, reference, effective_date,
-            idempotency_key
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            idempotency_key, actor
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (invoice_id, idempotency_key) DO NOTHING
         """,
         (
@@ -773,6 +776,7 @@ def _append_invoice_event(
             reference,
             effective_date,
             idempotency_key,
+            Json(operator_actor.snapshot()),
         ),
     )
     if cur.rowcount > 0:

@@ -75,3 +75,28 @@ Administrationen sehen Zustellversuche unter
 `/leg/community/{community_id}/operator-api/deliveries`. Einen endgültig
 fehlgeschlagenen Versuch können sie über
 `POST …/deliveries/{delivery_id}/retry` kontrolliert erneut freigeben.
+
+## Handelnde Person oder Anwendung
+
+Bei der Ausstellung wählen Sie `actor_kind`: `human` (Mensch), `service`
+(Dienst) oder `agent` (Agent). `agent_label` ist ein optionaler Name mit
+höchstens 200 Zeichen. Bestehende Credentials erhalten `service`.
+Agenten dürfen derzeit weder Gründungsanmeldungen noch Mitgliedermutationen
+einreichen, auch wenn das Credential die entsprechende Capability besitzt.
+Diese Anfragen erhalten die bestehende Antwort mit HTTP 403.
+
+`created_by` bleibt die Gebäudeidentität für die Berechtigungsprüfung.
+API-Schreibvorgänge speichern zusätzlich einen unveränderlichen `actor`:
+`initiating_client_id`, `actor_kind` und `agent_label`. Er steht im
+VNB-Vorgang, in Rechnungsantworten und ihren Ereignissen, in
+Zahlungs-Lebenszyklusereignissen sowie in Messdatenläufen und deren
+transaktionalen Operator-Ereignissen. Rotation, Widerruf und Namensänderungen
+ändern diese Historie nicht. Alte Vorgänge ohne belegte Zuordnung bleiben
+ohne `actor`; OpenLEG leitet ihn nicht nachträglich aus heutigen Credentials ab.
+
+`operator-event/1` ergänzt nur das optionale Feld `actor`. Die
+`client_id` der Webhook-Zustellung bezeichnet weiterhin den Empfänger.
+Sie ist nicht die auslösende Client-ID. OpenLEG sendet `actor` mit auslösender
+Client-ID, Akteursart und Agentenbezeichnung an alle Webhook-Empfänger der
+LEG, deren Capability das Ereignis abdeckt. Eine Agentenbezeichnung enthält
+deshalb keine vertraulichen Angaben.

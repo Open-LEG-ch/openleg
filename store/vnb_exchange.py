@@ -10,6 +10,7 @@ from psycopg2.errors import UniqueViolation
 from psycopg2.extras import Json
 
 import community_access
+import operator_actor
 from store.operator_api import enqueue_event
 from translation_markers import gettext_noop as _N
 
@@ -97,9 +98,9 @@ def claim_mutation(submission: MutationClaim) -> dict:
                    case_id, mutation_id, community_id, participant_id, created_by,
                    mutation_type, effective_date, source_agreement_id,
                    before_facts, after_facts, adapter_key, contract_version,
-                   capability_snapshot, payload_fingerprint, state, next_action
+                   capability_snapshot, payload_fingerprint, actor, state, next_action
                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                         'claimed', 'deliver') RETURNING *""",
+                         %s, 'claimed', 'deliver') RETURNING *""",
                 (
                     case_id,
                     submission.mutation_id,
@@ -115,6 +116,7 @@ def claim_mutation(submission: MutationClaim) -> dict:
                     submission.contract_version,
                     Json(list(submission.capability_snapshot)),
                     submission.payload_fingerprint,
+                    Json(operator_actor.snapshot()),
                 ),
             )
         except UniqueViolation as error:
@@ -130,8 +132,8 @@ def record_mutation_outcome(case_id: str, outcome: MutationOutcome) -> dict:
         cur.execute(
             """INSERT INTO vnb_mutation_events (
                    case_id, state, external_request_id, response_status,
-                   evidence, retryable, failure_code)
-               SELECT case_id, %s, %s, %s, %s, %s, %s
+                   evidence, retryable, failure_code, actor)
+               SELECT case_id, %s, %s, %s, %s, %s, %s, actor
                FROM vnb_mutation_cases WHERE case_id = %s AND state = 'claimed'
                ON CONFLICT (case_id, state, external_request_id, response_status)
                DO NOTHING""",
@@ -176,6 +178,7 @@ def record_mutation_outcome(case_id: str, outcome: MutationOutcome) -> dict:
                 "mutation_id": row["mutation_id"],
                 "state": outcome.state,
             },
+            actor=row.get("actor"),
         )
         return row
 
@@ -184,7 +187,7 @@ def list_mutations(community_id: str, limit: int = 100) -> list[dict]:
     """List the VNB projection with immutable LEG facts, scoped by community."""
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """SELECT case_id, mutation_id, community_id, participant_id,
+            """SELECT case_id, mutation_id, community_id, participant_id, actor,
                       mutation_type, effective_date, source_agreement_id,
                       before_facts, after_facts, state, next_action,
                       response_status, created_at, updated_at
@@ -410,8 +413,8 @@ def claim(submission: SubmissionClaim) -> dict:
                 INSERT INTO vnb_submission_cases (
                     case_id, community_id, created_by, adapter_key,
                     contract_version, payload_fingerprint,
-                    capability_snapshot, state, next_action
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'claimed', 'deliver')
+                    capability_snapshot, actor, state, next_action
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'claimed', 'deliver')
                 ON CONFLICT (community_id, contract_version, payload_fingerprint)
                 DO UPDATE SET
                     state = CASE
@@ -437,6 +440,7 @@ def claim(submission: SubmissionClaim) -> dict:
                     submission.contract_version,
                     submission.payload_fingerprint,
                     Json(list(submission.capability_snapshot)),
+                    Json(operator_actor.snapshot()),
                 ),
             )
             row = cur.fetchone()
@@ -522,6 +526,7 @@ def record_outcome(case_id: str, outcome: SubmissionOutcome) -> dict:
             case_id,
             row["community_id"],
             {"case_id": case_id, "state": outcome.state},
+            actor=row.get("actor"),
         )
         return row
 
@@ -531,7 +536,7 @@ def get_case(community_id: str, case_id: str) -> dict | None:
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                SELECT case_id, community_id, adapter_key, contract_version,
+                SELECT case_id, community_id, actor, adapter_key, contract_version,
                        capability_snapshot, payload_fingerprint, state,
                        next_action, response_status, retryable, failure_code,
                        created_by, delivered_by, created_at, attempted_at, delivered_at,
@@ -627,7 +632,7 @@ def list_cases(community_id: str, limit: int = 20) -> list[dict]:
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                SELECT case_id, community_id, adapter_key, contract_version,
+                SELECT case_id, community_id, actor, adapter_key, contract_version,
                        state, next_action, response_status, retryable,
                        failure_code, created_at, delivered_at, acknowledged_at
                 FROM vnb_submission_cases

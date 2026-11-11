@@ -6,6 +6,8 @@ import uuid
 
 from psycopg2.extras import Json
 
+import operator_actor
+
 
 def _get_connection():
     import database
@@ -34,17 +36,29 @@ def _subscription_capability(event_type):
     return None
 
 
+_CURRENT_ACTOR = object()
+
+
 def enqueue_event(
-    cur, event_type, aggregate_id, community_id, payload, *, event_identity=None
+    cur,
+    event_type,
+    aggregate_id,
+    community_id,
+    payload,
+    *,
+    event_identity=None,
+    actor=_CURRENT_ACTOR,
 ):
     """Write an event and its deliveries through the caller's transaction."""
+    if actor is _CURRENT_ACTOR:
+        actor = operator_actor.snapshot()
     event_id = event_id_for(event_type, event_identity or aggregate_id)
     cur.execute(
         """INSERT INTO operator_events
-                  (event_id,event_type,schema_version,aggregate_id,community_id,payload)
-           VALUES (%s,%s,'operator-event/1',%s,%s,%s)
+                  (event_id,event_type,schema_version,aggregate_id,community_id,payload,actor)
+           VALUES (%s,%s,'operator-event/1',%s,%s,%s,%s)
            ON CONFLICT (event_id) DO NOTHING""",
-        (event_id, event_type, aggregate_id, community_id, Json(payload)),
+        (event_id, event_type, aggregate_id, community_id, Json(payload), Json(actor)),
     )
     capability = _subscription_capability(event_type)
     cur.execute(
@@ -66,12 +80,15 @@ def create_client(
     token_hash,
     webhook_url,
     rate_limit_per_hour=100,
+    *,
+    actor_kind="service",
+    agent_label=None,
 ):
     client_id = str(uuid.uuid4())
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """INSERT INTO operator_api_clients (id,community_id,created_by,name,capabilities,token_hash,webhook_url,rate_limit_per_hour,webhook_secret)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
+            """INSERT INTO operator_api_clients (id,community_id,created_by,name,capabilities,token_hash,webhook_url,rate_limit_per_hour,webhook_secret,actor_kind,agent_label)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
             (
                 client_id,
                 community_id,
@@ -82,6 +99,8 @@ def create_client(
                 webhook_url,
                 rate_limit_per_hour,
                 "olwhsec_" + secrets.token_urlsafe(32),
+                actor_kind,
+                agent_label,
             ),
         )
         return dict(cur.fetchone())
@@ -262,7 +281,7 @@ def list_deliveries(community_id, limit=100):
         cur.execute(
             """SELECT d.delivery_id,d.status,d.attempt_count,d.response_status,
                       d.next_attempt_at,d.last_attempt_at,e.event_id,e.event_type,
-                      e.aggregate_id,e.occurred_at
+                      e.aggregate_id,e.occurred_at,e.actor
                FROM operator_webhook_deliveries d
                JOIN operator_events e ON e.event_id=d.event_id
                WHERE e.community_id=%s ORDER BY e.occurred_at DESC LIMIT %s""",

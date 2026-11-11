@@ -13380,3 +13380,28 @@ msgstr ""
 #: templates/gemeinde/onboarding.html:44
 msgid "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 msgstr ""
+
+msgid "Agent"
+msgstr ""
+
+msgid "Agentenname (optional)"
+msgstr ""
+
+msgid "Ausgelöst durch"
+msgstr ""
+
+msgid "Dienst"
+msgstr ""
+
+msgid "Mensch"
+msgstr ""
+
+msgid "Wer handelt mit diesem Schlüssel?"
+msgstr ""
+
+#: templates/sandbox/operator.html:12
+msgid ""
+"Für die Einreichungsschritte wählen Sie Mensch (human) oder Dienst (service). Ein "
+"Agentenschlüssel wird abgelehnt, solange keine menschliche Bestätigung vorliegt. Diese "
+"Bestätigung ist derzeit noch nicht verfügbar."
+msgstr ""

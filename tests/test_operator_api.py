@@ -237,7 +237,11 @@ def test_credential_lifecycle_shows_secrets_once_and_cuts_access_on_revoke(
     created = client.post(
         "/leg/community/community-a/operator-api/credentials",
         headers=csrf,
-        json={"name": "Integrator", "capabilities": ["formation.read"]},
+        json={
+            "name": "Integrator",
+            "actor_kind": "service",
+            "capabilities": ["formation.read"],
+        },
     )
     listed = client.get(
         "/leg/community/community-a/operator-api/credentials", headers=csrf

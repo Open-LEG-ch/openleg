@@ -2245,4 +2245,23 @@ def create_tables():
                     WHERE {column} IS NOT NULL AND {column} NOT LIKE 'sha256$%'
                 """)
 
+            cur.execute("""
+                ALTER TABLE operator_api_clients
+                ADD COLUMN IF NOT EXISTS actor_kind TEXT NOT NULL DEFAULT 'service'
+                    CHECK (actor_kind IN ('human', 'service', 'agent')),
+                ADD COLUMN IF NOT EXISTS agent_label TEXT
+            """)
+
+            for table in (
+                "vnb_mutation_cases",
+                "vnb_submission_cases",
+                "vnb_mutation_events",
+                "operator_events",
+                "invoice_query_messages",
+                "invoice_query_events",
+                "invoice_lifecycle_events",
+                "sdat_ingestion_runs",
+            ):
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS actor JSONB")
+
             logger.info("[DB] Tables and indexes created successfully")

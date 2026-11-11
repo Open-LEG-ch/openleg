@@ -46,7 +46,7 @@ Dashboard reads use the administrator's session at
 
 | Read resource | Item fields |
 | --- | --- |
-| `GET /credentials` (`credentials`) | `id`, `community_id`, `name`, `capabilities`, `rate_limit_per_hour`, `active`, `created_at`, `updated_at`, `last_used_at`, `webhook_url`, `webhook_requires_rotation` |
+| `GET /credentials` (`credentials`) | `id`, `community_id`, `name`, `capabilities`, `rate_limit_per_hour`, `active`, `created_at`, `updated_at`, `last_used_at`, `webhook_url`, `actor_kind`, `agent_label`, `webhook_requires_rotation` |
 | `GET /deliveries` (`deliveries`) | `delivery_id`, `status`, `attempt_count`, `response_status`, `next_attempt_at`, `last_attempt_at`, `event_id`, `event_type`, `aggregate_id`, `occurred_at` |
 
 Credential listing also requires the dashboard CSRF token.

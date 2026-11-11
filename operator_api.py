@@ -22,6 +22,7 @@ from flask import Blueprint, current_app, g, jsonify, request, session
 import community_access
 import database as db
 import formation_wizard
+import operator_actor
 import sdat_ingestion
 import vnb_exchange
 
@@ -121,7 +122,8 @@ def require_operator(capability):
                 response.headers["Retry-After"] = "3600"
                 return response
             g.operator_client = client
-            return view(community_id, *args, **kwargs)
+            with operator_actor.acting_as(client):
+                return view(community_id, *args, **kwargs)
 
         return wrapped
 
@@ -152,6 +154,8 @@ def formation_status(community_id):
 )
 @require_operator("formation.mutate")
 def submit_formation(community_id):
+    if g.operator_client.get("actor_kind") == "agent":
+        return _error("Formation submission denied", 403)
     try:
         outcome = vnb_exchange.submit_formation(
             vnb_exchange.FormationSubmission(
@@ -189,6 +193,8 @@ def membership_mutations(community_id):
 )
 @require_operator("membership.mutate")
 def submit_membership_mutation(community_id):
+    if g.operator_client.get("actor_kind") == "agent":
+        return _error("Membership mutation denied", 403)
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return _error("JSON object required", 400)
@@ -520,6 +526,8 @@ def _safe_credential(row):
         "updated_at",
         "last_used_at",
         "webhook_url",
+        "actor_kind",
+        "agent_label",
     }
     return {
         **{key: value for key, value in row.items() if key in allowed},
@@ -551,6 +559,15 @@ def create_credential(community_id):
     capabilities = sorted(set(raw_capabilities))
     if not capabilities or not set(capabilities) <= CAPABILITIES:
         return _error("Invalid capabilities", 400)
+    actor_kind = payload.get("actor_kind")
+    agent_label = payload.get("agent_label")
+    if actor_kind not in ("human", "service", "agent"):
+        return _error("Actor kind is required", 400)
+    if agent_label is not None and (
+        not isinstance(agent_label, str) or len(agent_label) > 200
+    ):
+        return _error("Invalid agent label", 400)
+    agent_label = (agent_label or "").strip() or None
     name = str(payload.get("name", "")).strip()
     webhook_url = str(payload.get("webhook_url", "")).strip() or None
     if not name:
@@ -570,6 +587,8 @@ def create_credential(community_id):
         capabilities,
         token_hash,
         webhook_url,
+        actor_kind=actor_kind,
+        agent_label=agent_label,
     )
     webhook_secret = row["webhook_secret"]
     return jsonify(
@@ -761,6 +780,8 @@ def dispatch_pending_webhooks(
                 "occurred_at",
             )
         }
+        if row.get("actor"):
+            payload["actor"] = row["actor"]
         body = json.dumps(
             payload, sort_keys=True, separators=(",", ":"), default=_json_default
         ).encode()

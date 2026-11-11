@@ -244,6 +244,7 @@ def test_founder_without_discovery_consent_can_generate_documents_and_manage_api
         data={
             "csrf_token": "csrf-secret",
             "name": "Synthetic client",
+            "actor_kind": "service",
             "capabilities": "formation.read",
         },
     )
