@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Opt-in entry to the complete site; formation facts require actual evidence."""
 
-from datetime import date, datetime
 from urllib.parse import quote, urlencode
-from zoneinfo import ZoneInfo
 
 from flask import Blueprint, abort, current_app, render_template, request
 
@@ -12,6 +10,7 @@ from cantons import SWISS_CANTONS
 from i18n import gettext as _
 from i18n import localized_url
 from registry_intake import VALID_LEG_STATUSES, normalize_website_url
+from verein_facts import facts
 
 site_bp = Blueprint("site", __name__)
 
@@ -173,34 +172,22 @@ def directory(slug=None):
 
 
 def formation_date():
-    """Only configured actual past/present formation metadata changes the claim."""
-    try:
-        formed = date.fromisoformat(current_app.config.get("VEREIN_FORMATION_DATE", ""))
-    except (ValueError, TypeError):
-        return None
-    return formed if formed <= datetime.now(ZoneInfo("Europe/Zurich")).date() else None
+    return facts(current_app.config).formation_date
 
 
 def accepting_applications():
-    config = current_app.config
+    association = facts(current_app.config)
     return (
-        config.get("VEREIN_ACCEPTING_APPLICATIONS") is True
-        and formation_date() is not None
-        and all(
-            config.get(key)
-            for key in (
-                "VEREIN_CONTACT_ADDRESS",
-                "VEREIN_PRIVACY_VERSION",
-                "VEREIN_STATUTES_URL",
-                "VEREIN_DATA_CONTROLLER",
-            )
-        )
+        current_app.config.get("VEREIN_ACCEPTING_APPLICATIONS") is True
+        and association.public_ready
+        and bool(association.statutes_url)
     )
 
 
 def template_context():
     return {
         "site_release_enabled": current_app.config.get("SITE_RELEASE_ENABLED") is True,
+        "verein_facts": facts(current_app.config),
         "verein_formation_date": formation_date(),
         "verein_accepting_applications": accepting_applications(),
     }

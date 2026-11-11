@@ -523,3 +523,8 @@ from store.verein_finance import history as get_verein_finance_history  # noqa: 
 from store.verein_finance import prepare as prepare_verein_finance_report  # noqa: F401
 from store.verein_finance import publish as publish_verein_finance_report  # noqa: F401
 from store.verein_finance import published as get_published_verein_finance  # noqa: F401
+from store.verein_payments import active as get_active_verein_recipient  # noqa: F401
+from store.verein_payments import approve as approve_verein_recipient  # noqa: F401
+from store.verein_payments import prepare as prepare_verein_recipient  # noqa: F401
+from store.verein_payments import review as get_verein_recipient_review  # noqa: F401
+from store.verein_payments import withdraw as withdraw_verein_recipient  # noqa: F401

@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import verein_facts
 import verein_policy
 
 _DUMMY_PASSWORD = generate_password_hash(secrets.token_urlsafe(32))
@@ -308,7 +309,7 @@ def _receive_resignation(cur, identifier, reason, received_at):
 
 
 def create_tables(cur):
-    cur.execute("""
+    cur.execute(f"""
         CREATE TABLE IF NOT EXISTS verein_applications (
             id UUID PRIMARY KEY,
             email TEXT NOT NULL UNIQUE,
@@ -358,7 +359,7 @@ def create_tables(cur):
             id UUID PRIMARY KEY,
             member_id UUID NOT NULL REFERENCES verein_members(id),
             period_start DATE NOT NULL,
-            amount_chf NUMERIC(12,2) NOT NULL CHECK (amount_chf=50),
+            amount_chf NUMERIC(12,2) NOT NULL CHECK (amount_chf={verein_facts.POLICY.annual_dues_chf}),
             due_on DATE NOT NULL,
             reminder_sent_at TIMESTAMPTZ,
             paid_at TIMESTAMPTZ,
@@ -381,7 +382,7 @@ def create_tables(cur):
         CREATE TABLE IF NOT EXISTS verein_dues_receipts (
             id UUID PRIMARY KEY,
             dues_id UUID NOT NULL REFERENCES verein_dues(id),
-            amount_chf NUMERIC(12,2) NOT NULL CHECK (amount_chf>0 AND amount_chf<=50),
+            amount_chf NUMERIC(12,2) NOT NULL CHECK (amount_chf>0 AND amount_chf<={verein_facts.POLICY.annual_dues_chf}),
             source TEXT NOT NULL,
             reference TEXT NOT NULL,
             evidence_reference TEXT NOT NULL,
@@ -688,7 +689,7 @@ def _admit(cur, identifier, now):
     dues = str(uuid.uuid4())
     cur.execute(
         "INSERT INTO verein_dues(id,member_id,period_start,amount_chf,due_on) VALUES (%s,%s,%s,%s,%s)",
-        (dues, member, day, verein_policy.ANNUAL_DUES_CHF, due_on),
+        (dues, member, day, verein_facts.POLICY.annual_dues_chf, due_on),
     )
     return dues
 
@@ -712,7 +713,13 @@ def renew_dues(token):
                 cur.execute(
                     """INSERT INTO verein_dues(id,member_id,period_start,amount_chf,due_on)
                     VALUES (%s,%s,%s,%s,%s) ON CONFLICT (member_id,period_start) DO NOTHING RETURNING id""",
-                    (dues, member["id"], period, verein_policy.ANNUAL_DUES_CHF, due_on),
+                    (
+                        dues,
+                        member["id"],
+                        period,
+                        verein_facts.POLICY.annual_dues_chf,
+                        due_on,
+                    ),
                 )
                 if not cur.fetchone():
                     continue
@@ -771,7 +778,7 @@ _CURRENT_CONTRIBUTION_NOTICE = """(n.kind NOT IN ('accepted','renewal','reminder
 
 
 _NOTIFICATION_QUERY = """SELECT n.id,n.kind,n.dues_id,a.email,a.preferred_locale,e.reason AS decision_reason,
-            d.period_start,d.amount_chf-(SELECT COALESCE(SUM(r.amount_chf),0)
+            d.period_start,d.amount_chf,d.amount_chf-(SELECT COALESCE(SUM(r.amount_chf),0)
                 FROM verein_dues_receipts r WHERE r.dues_id=d.id) AS outstanding_chf,
             COALESCE(d.due_on,(SELECT first.due_on FROM verein_dues first JOIN verein_members m ON m.id=first.member_id
              WHERE m.application_id=a.id ORDER BY first.period_start LIMIT 1)) AS due_on

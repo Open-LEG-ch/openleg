@@ -3,7 +3,7 @@
 {% block content %}
 <section class="max-w-2xl mx-auto px-4 py-16">
   <h1 class="text-4xl font-bold">{{ _("Mitglied werden") }}</h1>
-  <p class="mt-4">{{ _("Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen Beitragserlass.") }}</p>
+  <p class="mt-4">{{ _("Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der Jahresbeitrag von CHF %(amount)s ist danach innerhalb von %(payment_days)s Tagen fällig. Es gibt keinen Beitragserlass.", amount=verein_facts.annual_dues_chf|numberlabel, payment_days=verein_facts.payment_days|numberlabel) }}</p>
   <form method="post" class="mt-8 grid gap-5">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>{{ _("Name") }}<input class="block w-full border rounded-lg p-3" name="name" autocomplete="name" maxlength="120" required></label>
@@ -13,8 +13,8 @@
     <label><input type="checkbox" name="independent" value="yes" required> {{ _("Ich arbeite nicht für einen Energieversorger, kontrolliere oder vertrete keinen Energieversorger und unterstütze den Vereinszweck.") }}</label>
     <label><input type="checkbox" name="terms" value="yes" required> {{ _("Ich habe die Aufnahmebedingungen und die Datenschutzhinweise gelesen.") }}</label>
     <a class="underline" href="/datenschutz">{{ _("Datenschutz") }}</a>
-    <a class="underline" href="{{ config.VEREIN_STATUTES_URL }}">{{ _("Beschlossene Statuten und Aufnahmebedingungen") }}</a>
-    <p>{{ _("Verantwortlich für die Antragsdaten") }}: {{ config.VEREIN_DATA_CONTROLLER }}. {{ config.VEREIN_CONTACT_ADDRESS }}</p>
+    <a class="underline" href="{{ verein_facts.statutes_url }}">{{ _("Beschlossene Statuten und Aufnahmebedingungen") }}</a>
+    <p>{{ _("Verantwortlich für die Antragsdaten") }}: {{ verein_facts.data_controller }}. {{ verein_facts.contact_address }}</p>
     <button class="bg-brand text-white px-6 py-3 rounded-full" type="submit">{{ _("Antrag senden") }}</button>
   </form>
 </section>
