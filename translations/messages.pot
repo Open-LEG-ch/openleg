@@ -3128,6 +3128,10 @@ msgstr ""
 msgid "Demo-Dashboard öffnen"
 msgstr ""
 
+#: templates/release/footer.html:10
+msgid "Demodorf öffnen"
+msgstr ""
+
 #: templates/leg_gruenden.html:59
 msgid "Den Ablauf zuerst selbst prüfen"
 msgstr ""
@@ -8829,7 +8833,7 @@ msgstr ""
 msgid "LEG value-gap analysis"
 msgstr ""
 
-#: templates/release/home.html:7
+#: templates/release/footer.html:10 templates/release/home.html:7
 msgid "LEG vorbereiten"
 msgstr ""
 

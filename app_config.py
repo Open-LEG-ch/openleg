@@ -114,6 +114,23 @@ def validated_public_site_url(value):
     return _canonical_origin(parsed)
 
 
+def validated_sandbox_url(value):
+    """Return the practice village entry URL, or "" when none is published.
+
+    The village runs as a separate service. Only its bare origin is accepted;
+    the fixed `/sandbox` entry path is appended here so a template never
+    interpolates an operator-supplied path.
+    """
+    normalized = "" if value is None else str(value).strip()
+    if not normalized:
+        return ""
+    try:
+        origin = validated_public_site_url(normalized)
+    except ValueError as error:
+        raise ValueError("OPENLEG_SANDBOX_URL must be a bare HTTP(S) origin") from error
+    return origin + "/sandbox"
+
+
 def validated_matomo_site_id(value):
     """Return the cookieless Matomo site id, or refuse a malformed one.
 
@@ -202,6 +219,7 @@ def build_config(env=None, overrides=None):
         "CRON_SECRET": env.get("CRON_SECRET", "").strip(),
         "RATELIMIT_STORAGE_URI": env.get("REDIS_URL", DEFAULT_REDIS_URL),
         "MATOMO_SITE_ID": env.get("MATOMO_SITE_ID", "").strip(),
+        "SANDBOX_URL": env.get("OPENLEG_SANDBOX_URL", "").strip(),
         "BABEL_DEFAULT_LOCALE": env.get("BABEL_DEFAULT_LOCALE", "de_CH"),
         "SITE_RELEASE_ENABLED": env.get("OPENLEG_SITE_RELEASE_ENABLED", "").lower()
         in TRUTHY,

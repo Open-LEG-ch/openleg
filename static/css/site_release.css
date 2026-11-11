@@ -49,9 +49,16 @@
 .release-footer :where(a, summary):focus-visible { outline-color: #ffc8b8; }
 .release-footer-intro { display: grid; gap: 16px; max-width: 460px; margin-bottom: 40px; }
 .release-footer-links { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; }
-.release-footer nav { display: flex; align-items: flex-start; flex-direction: column; gap: 8px; }
+.release-footer nav { min-width: 0; display: flex; align-items: flex-start; flex-direction: column; gap: 8px; }
 .release-footer h2 { font-family: system-ui, sans-serif !important; font-size: 16px; font-weight: 600 !important; margin-bottom: 8px; }
+.release-footer :where(a, h2, p) { max-width: 100%; overflow-wrap: anywhere; }
 .release-footer a:hover { text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 900px) {
+  .release-footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; }
+}
+@media (max-width: 479px) {
+  .release-footer-links { grid-template-columns: minmax(0, 1fr); }
+}
 .release-section { padding-block: 72px; scroll-margin-top: 108px; }
 .release-reading { max-width: 720px; }
 .release-section h1 { font-size: clamp(36px, 5vw, 64px); }
@@ -142,7 +149,6 @@
   .release-workflow { margin-top: 24px; }
   .release-container { padding-inline: 20px; }
   .release-section { padding-block: 40px; }
-  .release-footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; }
   .release-nav { position: static; }
 }
 @media (prefers-reduced-motion: reduce) { .site-release *, .site-release *::before, .site-release *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

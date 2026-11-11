@@ -16761,6 +16761,9 @@ msgstr "✓ Stromgemeinschaft gründen"
 msgid "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 msgstr "✓ Übersicht über Anmeldungen und Formationsfortschritt"
 
+msgid "Demodorf öffnen"
+msgstr "Demodorf öffnen"
+
 #: billing_workspace.py:65 dashboard.py:214 dashboard.py:455
 msgid "Unlesbar"
 msgstr "Unlesbar"

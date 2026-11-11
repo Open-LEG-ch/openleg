@@ -1138,6 +1138,9 @@ def create_app(config=None, *, load_environment=True, check_database=True):
 
     application.jinja_env.globals["public_site_url"] = public_site_url
     application.jinja_env.globals["matomo_site_id"] = matomo_site_id
+    application.jinja_env.globals["sandbox_url"] = app_config.validated_sandbox_url(
+        application.config.get("SANDBOX_URL", "")
+    )
 
     for blueprint in (
         main_bp,
