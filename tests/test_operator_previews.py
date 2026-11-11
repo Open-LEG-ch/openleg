@@ -33,7 +33,10 @@ def snapshot(db):
 
 
 @pytest.mark.parametrize("suffix,payload", SCENARIOS)
-def test_preview_only_accounts_usage(operator_http, monkeypatch, suffix, payload):
+@pytest.mark.parametrize("actor_kind", ["human", "service", "agent"])
+def test_preview_only_accounts_usage(
+    operator_http, monkeypatch, suffix, payload, actor_kind
+):
     http = operator_http
     ids = helpers.seed_operator_resources(http)
     with http.db.get_connection() as conn, conn.cursor() as cur:
@@ -47,6 +50,8 @@ def test_preview_only_accounts_usage(operator_http, monkeypatch, suffix, payload
         headers={"Idempotency-Key": "existing-evidence"},
     )
     assert seeded.status_code == 200
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE operator_api_clients SET actor_kind=%s", (actor_kind,))
     before = snapshot(http.db)
     assert before["operator_events"]
     assert before["operator_webhook_deliveries"]
@@ -341,8 +346,9 @@ def test_membership_replay_preview_keeps_real_call_validation(
         ("", {"dry_run": "garbage"}),
     ],
 )
+@pytest.mark.parametrize("actor_kind", ["service", "agent"])
 def test_invalid_dry_run_is_rejected_before_domain(
-    operator_http, monkeypatch, suffix, payload, query, body
+    operator_http, monkeypatch, suffix, payload, query, body, actor_kind
 ):
     from unittest.mock import Mock
 
@@ -364,6 +370,8 @@ def test_invalid_dry_run_is_rejected_before_domain(
         == 200
     )
     assert http.request("POST", suffix, json=payload).status_code == 202
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE operator_api_clients SET actor_kind=%s", (actor_kind,))
     before = snapshot(http.db)
     domain_name = (
         "submit_formation"
@@ -490,3 +498,29 @@ def test_receipt_preview_does_not_lock_real_writes(
     assert response.status_code == (409 if invalid_receipt else 200 if dry_run else 202)
     if invalid_receipt:
         assert response.json["code"] == "invalid_formation"
+
+
+@pytest.mark.parametrize("suffix,payload", SCENARIOS)
+@pytest.mark.parametrize("query", ["", "dry_run=false"])
+def test_agent_real_submission_changes_no_business_rows(
+    operator_http, monkeypatch, suffix, payload, query
+):
+    http = operator_http
+    helpers.seed_operator_resources(http)
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE operator_api_clients SET actor_kind='agent'")
+    before = snapshot(http.db)
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Agent real submission reached the domain")
+
+    monkeypatch.setattr(vnb_exchange, "submit_formation", forbidden)
+    monkeypatch.setattr(vnb_exchange, "submit_membership_mutation", forbidden)
+    response = http.request("POST", suffix, json=payload, query_string=query)
+    assert response.status_code == 403
+    assert response.json["code"] == "capability_denied"
+    assert response.json["retryable"] is False
+    after = snapshot(http.db)
+    for table in before:
+        if table not in {"operator_api_clients", "operator_api_usage"}:
+            assert before[table] == after[table], table

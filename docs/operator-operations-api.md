@@ -273,3 +273,8 @@ The development MCP sidecar exposes `preview_formation_submission` and
 `preview_membership_mutation`. They require `formation.mutate` and
 `membership.mutate`, respectively, and always request a dry run. Their inputs
 come from the operator contract; callers cannot disable the dry run.
+
+Agent credentials may preview both VNB-bound writes with `dry_run=true`.
+Real submissions (option absent or `false`) return 403 `capability_denied`.
+Malformed, repeated, or body-supplied `dry_run` options return 400
+`invalid_request` before the actor denial or any domain call.
