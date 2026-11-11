@@ -14,6 +14,8 @@ markers = [
 
 [tool.ruff]
 target-version = "py311"
+# Disposable QA scripts are evidence, outside the application lint scope.
+extend-exclude = [".scratch"]
 
 [tool.ruff.lint]
 # Ruff 0.17 removed these datetime checks from its defaults; retain them.
@@ -137,8 +139,10 @@ also_copy = [
     "verein_commands.py",
     "verein_event_routes.py",
     "verein_events.py",
-    "verein_finance_routes.py",
     "verein_finance.py",
+    "verein_finance_routes.py",
+    "verein_payment_routes.py",
+    "verein_payments.py",
     "verein_policy.py",
     "verein_routes.py",
     "translation_markers.py",
@@ -167,6 +171,8 @@ also_copy = [
     "rangliste.py",
     "ranking.py",
     "registration.py",
+    "release_identity.py",
+    "verein_facts.py",
     "release_mode.py",
     "registry_intake.py",
     "scripts",

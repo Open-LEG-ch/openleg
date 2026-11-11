@@ -190,7 +190,7 @@ msgstr[1] ""
 msgid "%(platform_name)s · LEG für %(city_name)s"
 msgstr "%(platform_name)s · LEG für %(city_name)s"
 
-#: app.py:230 app.py:233 app.py:234 app.py:235
+#: app.py:230 app.py:233 app.py:234 app.py:235 app.py:236
 #, python-format
 msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr "%(platform_name)s: Interessenmeldung bestätigen"
@@ -892,10 +892,12 @@ msgid "Adresse ist zu kurz"
 msgstr "Adresse ist zu kurz"
 
 #: app.py:518 app.py:521 app.py:546 app.py:548 app.py:558 app.py:560 app.py:562 app.py:563
+#: app.py:566
 msgid "Adresse konnte nicht analysiert werden."
 msgstr "Adresse konnte nicht analysiert werden."
 
 #: app.py:510 app.py:513 app.py:538 app.py:540 app.py:550 app.py:552 app.py:554 app.py:555
+#: app.py:558
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr "Adresse konnte nicht eindeutig geprüft werden."
 
@@ -1034,8 +1036,8 @@ msgstr "Alle Dichten"
 msgid "Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung"
 msgstr "Alle Dokumente: Vereinbarung, Verträge, Netzbetreiber-Anmeldung"
 
-#: templates/release/finance.html:13 templates/release/finance.html:14
-#: templates/verein/index.html:13
+#: templates/release/donations.html:2 templates/release/finance.html:13
+#: templates/release/finance.html:14 templates/verein/index.html:13
 msgid "Alle Finanzberichte"
 msgstr "Alle Finanzberichte"
 
@@ -1106,10 +1108,6 @@ msgid ""
 msgstr ""
 "Alle kontrollierten Konten und Anbieter sind vollständig erfasst; es fehlen keine "
 "Fremdwährungsbestände."
-
-#: templates/sandbox/entry.html:9
-msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
-msgstr "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
 
 #: templates/utility/register.html:92
 msgid "Als Netzbetreiber erhalten Sie:"
@@ -1264,19 +1262,11 @@ msgstr "Anhänge müssen PDF-Dateien sein."
 msgid "Anlagen-Matching"
 msgstr "Anlagen-Matching"
 
-#: templates/release/home.html:16
-msgid ""
-"Anlagenbetreiber stellen lokal erzeugten Strom bereit. Die Bedingungen und Vergütung "
-"regelt die Gemeinschaft mit den Beteiligten."
-msgstr ""
-"Anlagenbetreiber stellen lokal erzeugten Strom bereit. Die Bedingungen und Vergütung "
-"regelt die Gemeinschaft mit den Beteiligten."
-
 #: templates/telemetry_dashboard.html:55
 msgid "Anlagenhinweise"
 msgstr "Anlagenhinweise"
 
-#: app.py:134 app.py:137 app.py:138 app.py:139 formation_guide.py:65
+#: app.py:134 app.py:137 app.py:138 app.py:139 app.py:140 formation_guide.py:65
 msgid "Anleitung zum eigenen Betrieb"
 msgstr "Anleitung zum eigenen Betrieb"
 
@@ -1566,14 +1556,6 @@ msgstr "Aufgabe"
 #: templates/release/how_it_works.html:39
 msgid "Aufgaben im Detail"
 msgstr "Aufgaben im Detail"
-
-#: templates/release/home.html:15
-msgid "Aufgaben im Quartier"
-msgstr "Aufgaben im Quartier"
-
-#: templates/release/home.html:27
-msgid "Aufgaben und Zusammenarbeit verstehen"
-msgstr "Aufgaben und Zusammenarbeit verstehen"
 
 #: templates/equipment_form.html:64
 msgid "Aufgabenstatus"
@@ -2203,7 +2185,7 @@ msgstr ""
 "\n"
 "Die Bestätigung ist noch keine Aufnahme. Der Vorstand prüft den Antrag."
 
-#: app.py:235 app.py:238 app.py:239 app.py:240
+#: app.py:235 app.py:238 app.py:239 app.py:240 app.py:241
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre Interessenmeldung für eine Lokale Elektrizitätsgemeinschaft (LEG)"
@@ -2256,6 +2238,7 @@ msgstr ""
 "Fremdwährungsbestände."
 
 #: app.py:740 app.py:743 app.py:768 app.py:770 app.py:780 app.py:782 app.py:784 app.py:785
+#: app.py:788
 #, python-format
 msgid ""
 "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen Gebietsanfrage bei"
@@ -2356,15 +2339,12 @@ msgstr "Bestätigungslink erneut senden"
 msgid "Bestätigungslink senden"
 msgstr "Bestätigungslink senden"
 
-#: templates/release/home.html:29
-msgid "Beteiligte und Anschlüsse klären"
-msgstr "Beteiligte und Anschlüsse klären"
-
 #: templates/release/software.html:14
 msgid "Beteiligte, Vereinbarungen, Dokumente und VNB-Übergaben verwalten."
 msgstr "Beteiligte, Vereinbarungen, Dokumente und VNB-Übergaben verwalten."
 
 #: templates/admin/abrechnungen.html:134 templates/member_invoice_detail.html:223
+#: templates/release/donations.html:6
 msgid "Betrag"
 msgstr "Betrag"
 
@@ -2653,8 +2633,8 @@ msgstr "Bitte senden Sie ein JSON-Objekt."
 msgid "Bitte sicher speichern, wird nur einmal angezeigt:"
 msgstr "Bitte sicher speichern, wird nur einmal angezeigt:"
 
-#: verein_event_routes.py:35 verein_finance_routes.py:41 verein_routes.py:38
-#: verein_routes.py:40 verein_routes.py:64
+#: verein_event_routes.py:35 verein_finance_routes.py:41 verein_payment_routes.py:42
+#: verein_routes.py:38 verein_routes.py:40 verein_routes.py:64
 msgid "Bitte versuchen Sie es später erneut."
 msgstr "Bitte versuchen Sie es später erneut."
 
@@ -2683,7 +2663,7 @@ msgstr "Bitte wählen Sie zuerst eine Gemeinde aus der Suche."
 msgid "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
 msgstr "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
 
-#: app.py:78 app.py:81 app.py:82 app.py:83 formation_guide.py:9
+#: app.py:78 app.py:81 app.py:82 app.py:83 app.py:84 formation_guide.py:9
 msgid "Brauchen die Teilnehmenden eigene Smart Meter?"
 msgstr "Brauchen die Teilnehmenden eigene Smart Meter?"
 
@@ -2816,10 +2796,6 @@ msgstr "Gebäude für eine LEG gruppieren"
 msgid "Code auf GitHub"
 msgstr "Code auf GitHub"
 
-#: templates/release/home.html:50
-msgid "Code beitragen, Wissen teilen und die Gemeinschaft mitgestalten."
-msgstr "Code beitragen, Wissen teilen und die Gemeinschaft mitgestalten."
-
 #: templates/release/community.html:3
 msgid ""
 "Code prüfen, Erfahrungen teilen oder eine Frage stellen. Wählen Sie den passenden Weg"
@@ -2873,7 +2849,7 @@ msgstr "Danke für die Beiträge"
 msgid "Danke für die Bestätigung"
 msgstr "Danke für die Bestätigung"
 
-#: app.py:113 app.py:116 app.py:117 app.py:118 formation_guide.py:44
+#: app.py:113 app.py:116 app.py:117 app.py:118 app.py:119 formation_guide.py:44
 msgid "Darf ich OpenLEG installieren, anpassen oder forken?"
 msgstr "Darf ich OpenLEG installieren, anpassen oder forken?"
 
@@ -3022,14 +2998,6 @@ msgstr ""
 msgid "Das mögliche Gebiet feststeht."
 msgstr "Das mögliche Gebiet feststeht."
 
-#: templates/sandbox/entry.html:10
-msgid ""
-"Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später "
-"erneut."
-msgstr ""
-"Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später "
-"erneut."
-
 #: templates/product_base.html:18 templates/product_base.html:19
 #: templates/utility/settings.html:16
 msgid "Dashboard"
@@ -3074,10 +3042,6 @@ msgstr "Daten hochladen"
 #: templates/gemeinde/profil.html:118
 msgid "Daten melden oder korrigieren"
 msgstr "Daten melden oder korrigieren"
-
-#: templates/release/home.html:31
-msgid "Daten prüfen und Rechnungen freigeben"
-msgstr "Daten prüfen und Rechnungen freigeben"
 
 #: templates/self_host.html:66
 msgid "Daten und Lizenz"
@@ -3141,8 +3105,8 @@ msgstr "Datenqualität"
 #: templates/datenschutz.html:21 templates/emails/day_0_welcome.html:63
 #: templates/emails/day_14_formation.html:86 templates/emails/day_3_smartmeter.html:45
 #: templates/emails/day_7_consumption.html:60 templates/partials/site_footer.html:10
-#: templates/partials/site_footer.html:13 templates/release/footer.html:11
-#: templates/verein/join.html:15
+#: templates/partials/site_footer.html:13 templates/release/donations.html:7
+#: templates/release/footer.html:11 templates/verein/join.html:15
 msgid "Datenschutz"
 msgstr "Datenschutz"
 
@@ -3325,18 +3289,6 @@ msgstr ""
 "Prozentpunkten.\n"
 "        Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt."
 
-#: templates/verein/index.html:7
-msgid ""
-"Der Gründer nahm bei etablierten Energieversorgern Zurückhaltung wahr. Das ist seine "
-"Einschätzung und keine belegte Aussage über deren Motive. Die geplanten "
-"Unabhängigkeitsregeln sollen verhindern, dass einzelne Anbieter die Richtung "
-"bestimmen."
-msgstr ""
-"Der Gründer nahm bei etablierten Energieversorgern Zurückhaltung wahr. Das ist seine "
-"Einschätzung und keine belegte Aussage über deren Motive. Die geplanten "
-"Unabhängigkeitsregeln sollen verhindern, dass einzelne Anbieter die Richtung "
-"bestimmen."
-
 #: templates/release/software.html:8
 msgid ""
 "Der Import ordnet Messpunkte und Viertelstundenwerte den Beteiligten zu. Die Prüfung "
@@ -3356,18 +3308,6 @@ msgid ""
 msgstr ""
 "Der Installer richtet die Anwendung und ihre Datenbank lokal mit Docker ein. Ihre LEG"
 " übernimmt danach Updates, Backups und Verfügbarkeit."
-
-#: templates/verein/index.html:11
-msgid ""
-"Der Jahresbeitrag beträgt CHF 50 und ist innert 30 Tagen nach der Aufnahme fällig. "
-"Ein Beitragserlass ist nicht vorgesehen. Eine tatsächlich versendete Mahnung gewährt "
-"weitere 60 Tage. Erst danach ist eine begründete Beendigung durch den Vorstand mit "
-"Beschwerdemöglichkeit vorgesehen."
-msgstr ""
-"Der Jahresbeitrag beträgt CHF 50 und ist innert 30 Tagen nach der Aufnahme fällig. "
-"Ein Beitragserlass ist nicht vorgesehen. Eine tatsächlich versendete Mahnung gewährt "
-"weitere 60 Tage. Erst danach ist eine begründete Beendigung durch den Vorstand mit "
-"Beschwerdemöglichkeit vorgesehen."
 
 #: payment_reconciliation.py:154
 msgid "Der Kontoauszug enthält keine Zahlungseinträge."
@@ -3536,10 +3476,6 @@ msgstr ""
 "\n"
 "%(url)s"
 
-#: templates/release/event.html:6
-msgid "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
-msgstr "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
-
 #: verein_finance.py:63
 msgid "Der Text ist zu lang oder enthält ungültige Zeichen."
 msgstr "Der Text ist zu lang oder enthält ungültige Zeichen."
@@ -3563,23 +3499,6 @@ msgstr ""
 #: templates/leg_dashboard.html:236
 msgid "Der VNB-Austausch ist derzeit nicht verfügbar."
 msgstr "Der VNB-Austausch ist derzeit nicht verfügbar."
-
-#: templates/verein/index.html:6
-msgid ""
-"Der Verein hat seinen Sitz in Baden. Die Mitglieder tragen Software, Dokumentation "
-"und Austausch gemeinsam."
-msgstr ""
-"Der Verein hat seinen Sitz in Baden. Die Mitglieder tragen Software, Dokumentation "
-"und Austausch gemeinsam."
-
-#: templates/verein/index.html:6 templates/verein/index.html:7
-#: templates/verein/index.html:8
-msgid ""
-"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Statuten und "
-"Vorstand werden an der tatsächlichen Gründung beschlossen."
-msgstr ""
-"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Statuten und "
-"Vorstand werden an der tatsächlichen Gründung beschlossen."
 
 #: templates/verein/index.html:10
 msgid ""
@@ -3626,15 +3545,7 @@ msgstr ""
 "Die eingebrachten Anlagen für erneuerbare Energie müssen zusammen mindestens 5 "
 "Prozent der Anschlussleistung aller teilnehmenden Endverbraucher erreichen."
 
-#: templates/release/home.html:19
-msgid ""
-"Der Verteilnetzbetreiber prüft die Voraussetzungen und liefert die vereinbarten "
-"Messdaten. Datenzugang, Format und Zuständigkeit müssen vor dem Betrieb geklärt sein."
-msgstr ""
-"Der Verteilnetzbetreiber prüft die Voraussetzungen und liefert die vereinbarten "
-"Messdaten. Datenzugang, Format und Zuständigkeit müssen vor dem Betrieb geklärt sein."
-
-#: app.py:104 app.py:107 app.py:108 app.py:109 formation_guide.py:35
+#: app.py:104 app.py:107 app.py:108 app.py:109 app.py:110 formation_guide.py:35
 msgid ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der"
 " Grundversorgung auch den übrigen Strombezug. Die LEG oder ihr Dienstleister rechnet "
@@ -3643,30 +3554,6 @@ msgstr ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der"
 " Grundversorgung auch den übrigen Strombezug. Die LEG oder ihr Dienstleister rechnet "
 "den innerhalb der Gemeinschaft ausgetauschten Strom ab."
-
-#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:362
-#: verein_routes.py:375
-#, python-format
-msgid ""
-"Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
-"\n"
-"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
-"hallo@openleg.ch."
-msgstr ""
-"Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
-"\n"
-"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
-"hallo@openleg.ch."
-
-#: templates/verein/join.html:6
-msgid ""
-"Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
-"Jahresbeitrag von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen "
-"Beitragserlass."
-msgstr ""
-"Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
-"Jahresbeitrag von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen "
-"Beitragserlass."
 
 #: templates/verein/index.html:11
 msgid ""
@@ -3752,6 +3639,7 @@ msgstr ""
 "die Zustellung anschliessend."
 
 #: app.py:814 app.py:817 app.py:842 app.py:844 app.py:854 app.py:856 app.py:858 app.py:859
+#: app.py:862
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist "
 "jetzt erfolgreich gelöscht."
@@ -4075,16 +3963,6 @@ msgstr ""
 #: templates/api_docs.html:250
 msgid "Die Gruppenbildung ist fehlgeschlagen."
 msgstr "Die Gruppenbildung ist fehlgeschlagen."
-
-#: templates/verein/index.html:7
-msgid ""
-"Die Idee zu OpenLEG entstand nach der Teilnahme des Gründers an den Energy Data "
-"Hackdays 2025 in Brugg-Windisch. Lokale Stromgemeinschaften brauchen nachvollziehbare"
-" Software und Menschen, die Wissen teilen und die Werkzeuge pflegen."
-msgstr ""
-"Die Idee zu OpenLEG entstand nach der Teilnahme des Gründers an den Energy Data "
-"Hackdays 2025 in Brugg-Windisch. Lokale Stromgemeinschaften brauchen nachvollziehbare"
-" Software und Menschen, die Wissen teilen und die Werkzeuge pflegen."
 
 #: templates/impressum.html:46
 msgid ""
@@ -4712,26 +4590,10 @@ msgstr ""
 msgid "Die tatsächliche Datenlieferung wird vereinbart."
 msgstr "Die tatsächliche Datenlieferung wird vereinbart."
 
-#: templates/release/home.html:18
-msgid ""
-"Die verantwortlichen Personen pflegen die Beteiligten, prüfen Messdaten und geben "
-"Abrechnungen frei. OpenLEG unterstützt diese Arbeit."
-msgstr ""
-"Die verantwortlichen Personen pflegen die Beteiligten, prüfen Messdaten und geben "
-"Abrechnungen frei. OpenLEG unterstützt diese Arbeit."
-
-#: templates/verein/application.html:24 templates/verein/dues.html:6
-msgid ""
-"Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der "
-"Erinnerung."
-msgstr ""
-"Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der "
-"Erinnerung."
-
 #: i18n.py:80 i18n.py:91 i18n.py:98 i18n.py:99 templates/leg_verzeichnis/leg_check.html:54
 #: templates/leg_verzeichnis/liste.html:17 templates/leg_verzeichnis/liste.html:19
-#: verein_event_routes.py:34 verein_finance_routes.py:40 verein_routes.py:37
-#: verein_routes.py:39 verein_routes.py:63
+#: verein_event_routes.py:34 verein_finance_routes.py:40 verein_payment_routes.py:41
+#: verein_routes.py:37 verein_routes.py:39 verein_routes.py:63
 msgid "Dienst vorübergehend nicht verfügbar"
 msgstr "Dienst vorübergehend nicht verfügbar"
 
@@ -4762,7 +4624,7 @@ msgstr ""
 "Diese Anfrage konnte nicht ausgeführt werden. Prüfen Sie Ihre Angaben und Ihren "
 "Zugang oder versuchen Sie es später erneut."
 
-#: verein_finance.py:67
+#: verein_finance.py:67 verein_payments.py:48
 msgid "Diese Angabe ist erforderlich."
 msgstr "Diese Angabe ist erforderlich."
 
@@ -4838,10 +4700,6 @@ msgid ""
 msgstr ""
 "Diese Meldung wurde im geprüften Katalog zurückgezogen. Frühere Versionen bleiben "
 "unten erhalten."
-
-#: templates/sandbox/inbox.html:6
-msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
-msgstr "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
 
 #: sandbox_metering.py:57
 msgid "Diese Quelle gehört nicht zur vorbereiteten LEG Sonnwil."
@@ -4937,14 +4795,6 @@ msgstr ""
 "Dieser Entwurf ist nicht freigabebereit: Der Abgleich weicht ab oder Quelldokumente "
 "fehlen. Die Freigabe ist erst nach einem vollständigen Abgleich möglich."
 
-#: templates/sandbox/account_unavailable.html:6
-msgid ""
-"Dieser Haushalt ist gelöscht oder noch nicht bestätigt. Wählen Sie ein anderes Konto "
-"oder setzen Sie Ihr Übungsdorf zurück, um die Ausgangsdaten wiederherzustellen."
-msgstr ""
-"Dieser Haushalt ist gelöscht oder noch nicht bestätigt. Wählen Sie ein anderes Konto "
-"oder setzen Sie Ihr Übungsdorf zurück, um die Ausgangsdaten wiederherzustellen."
-
 #: templates/leg_billing.html:24
 msgid ""
 "Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt "
@@ -5015,20 +4865,12 @@ msgstr ""
 "speichern. Öffnen Sie Ihr aktuelles Dorf oder starten Sie neu."
 
 #: templates/release/event.html:6
-msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
-msgstr "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
-
-#: templates/release/event.html:6
 msgid "Dieses Treffen liegt in der Vergangenheit."
 msgstr "Dieses Treffen liegt in der Vergangenheit."
 
 #: templates/release/event.html:6
 msgid "Dieses Treffen wurde abgesagt. Aktualisieren Sie den Eintrag in Ihrem Kalender."
 msgstr "Dieses Treffen wurde abgesagt. Aktualisieren Sie den Eintrag in Ihrem Kalender."
-
-#: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
-msgid "Dieses Übungsdorf ist abgelaufen"
-msgstr "Dieses Übungsdorf ist abgelaufen"
 
 #: templates/admin/abrechnungen.html:106 templates/leg_kalkulator.html:208
 msgid "Differenz"
@@ -5499,14 +5341,6 @@ msgstr "Eindeutige Buchungsreferenz"
 msgid "Eine Abbildung auf dieser Seite zeigt die Oberfläche auf Deutsch."
 msgstr "Eine Abbildung auf dieser Seite zeigt die Oberfläche auf Deutsch."
 
-#: templates/verein/dues.html:6
-msgid ""
-"Eine Beendigung wegen offener Beiträge ist erst nach der tatsächlich versendeten "
-"Erinnerung und weiteren 60 Tagen möglich."
-msgstr ""
-"Eine Beendigung wegen offener Beiträge ist erst nach der tatsächlich versendeten "
-"Erinnerung und weiteren 60 Tagen möglich."
-
 #: templates/telemetry_dashboard.html:56
 msgid ""
 "Eine Bestätigung stellt den Hinweis für eine Stunde zurück. Der Messstatus bleibt "
@@ -5657,26 +5491,6 @@ msgid ""
 msgstr ""
 "Eine interne Bewegung braucht zwei unterschiedliche erfasste Konto-Fonds-"
 "Kombinationen."
-
-#: templates/release/home.html:55
-msgid ""
-"Eine lokale Elektrizitätsgemeinschaft organisiert die gemeinsame Nutzung von lokal "
-"erzeugtem Strom über das öffentliche Netz. Der Netzbetreiber prüft, ob die "
-"beteiligten Anschlüsse die Voraussetzungen erfüllen."
-msgstr ""
-"Eine lokale Elektrizitätsgemeinschaft organisiert die gemeinsame Nutzung von lokal "
-"erzeugtem Strom über das öffentliche Netz. Der Netzbetreiber prüft, ob die "
-"beteiligten Anschlüsse die Voraussetzungen erfüllen."
-
-#: templates/release/home.html:10
-msgid ""
-"Eine lokale Elektrizitätsgemeinschaft, kurz LEG, organisiert die gemeinsame Nutzung "
-"von lokal erzeugtem Strom. Ob Ihre Anschlüsse die Voraussetzungen erfüllen, klären "
-"Sie mit Ihrem Netzbetreiber."
-msgstr ""
-"Eine lokale Elektrizitätsgemeinschaft, kurz LEG, organisiert die gemeinsame Nutzung "
-"von lokal erzeugtem Strom. Ob Ihre Anschlüsse die Voraussetzungen erfüllen, klären "
-"Sie mit Ihrem Netzbetreiber."
 
 #: sandbox_seed.py:53
 msgid "Eine neue LEG gründen"
@@ -5963,10 +5777,6 @@ msgstr ""
 #: templates/gemeinde/verzeichnis.html:47
 msgid "Energiewende-Score"
 msgstr "Energiewende-Score"
-
-#: templates/verein/index.html:7
-msgid "Energy Data Hackdays 2025: Veranstaltung und Hintergrund"
-msgstr "Energy Data Hackdays 2025: Veranstaltung und Hintergrund"
 
 #: templates/api_docs.html:96
 msgid "Energy transition score breakdown"
@@ -6301,6 +6111,7 @@ msgstr ""
 " Bei einem Versandproblem können Sie es erneut versuchen."
 
 #: app.py:757 app.py:760 app.py:785 app.py:787 app.py:797 app.py:799 app.py:801 app.py:802
+#: app.py:805
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 
@@ -6399,22 +6210,6 @@ msgstr "Fernzugriff möglich"
 #: templates/sandbox/accounts.html:5
 msgid "Fiktives Konto wählen"
 msgstr "Fiktives Konto wählen"
-
-#: templates/release/home.html:12
-msgid ""
-"Fiktives Quartier mit Wohnhäusern, Solardächern und einem Gewerbebau. Die farbigen "
-"Linien veranschaulichen Beziehungen und zeigen keine geprüften Netzanschlüsse."
-msgstr ""
-"Fiktives Quartier mit Wohnhäusern, Solardächern und einem Gewerbebau. Die farbigen "
-"Linien veranschaulichen Beziehungen und zeigen keine geprüften Netzanschlüsse."
-
-#: templates/release/home.html:13
-msgid ""
-"Fiktives Quartier. Eine LEG verbindet Beteiligte mit unterschiedlichen Aufgaben. Die "
-"Darstellung belegt keine Netzzugehörigkeit oder bestehende Installation."
-msgstr ""
-"Fiktives Quartier. Eine LEG verbindet Beteiligte mit unterschiedlichen Aufgaben. Die "
-"Darstellung belegt keine Netzzugehörigkeit oder bestehende Installation."
 
 #: templates/api_docs.html:200
 msgid "Financial projections"
@@ -6527,10 +6322,6 @@ msgstr ""
 msgid "Fragen ausserhalb der Gründungsschritte"
 msgstr "Fragen ausserhalb der Gründungsschritte"
 
-#: templates/release/home.html:54
-msgid "Fragen vor dem Start"
-msgstr "Fragen vor dem Start"
-
 #: templates/pricing.html:153
 msgid "Fragen zu Betrieb, Finanzierung oder Self-Hosting?"
 msgstr "Fragen zu Betrieb, Finanzierung oder Self-Hosting?"
@@ -6592,7 +6383,7 @@ msgstr "Freie Software für lokale Elektrizitätsgemeinschaften in der Schweiz."
 msgid "Freigabe widerrufen"
 msgstr "Freigabe widerrufen"
 
-#: billing_lifecycle.py:15
+#: billing_lifecycle.py:15 templates/verein/recipient_edit.html:9
 msgid "Freigegeben"
 msgstr "Freigegeben"
 
@@ -6722,17 +6513,6 @@ msgstr "Für Gemeinden:"
 msgid "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 msgstr "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 
-#: verein_routes.py:350 verein_routes.py:361
-#, python-format
-msgid ""
-"Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am "
-"%(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang."
-" Kontakt: hallo@openleg.ch."
-msgstr ""
-"Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am "
-"%(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang."
-" Kontakt: hallo@openleg.ch."
-
 #: templates/leg_gruenden.html:46
 msgid "Für LEG-Gründerinnen und LEG-Gründer"
 msgstr "Für LEG-Gründerinnen und LEG-Gründer"
@@ -6767,19 +6547,6 @@ msgid ""
 msgstr ""
 "Für alle Teilnehmenden sind Smart Meter der BKW nötig. Fehlende Geräte baut die BKW "
 "im Rahmen der Anmeldung ein."
-
-#: verein_routes.py:341 verein_routes.py:350
-#, python-format
-msgid ""
-"Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie "
-"innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen "
-"begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. "
-"Kontakt: hallo@openleg.ch."
-msgstr ""
-"Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie "
-"innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen "
-"begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. "
-"Kontakt: hallo@openleg.ch."
 
 #: templates/release/finance.html:15 templates/release/finance.html:16
 msgid ""
@@ -6989,6 +6756,7 @@ msgid "Gebiet und Voraussetzungen prüfen"
 msgstr "Gebiet und Voraussetzungen prüfen"
 
 #: app.py:676 app.py:679 app.py:704 app.py:706 app.py:716 app.py:718 app.py:720 app.py:721
+#: app.py:724
 msgid "Gebäude nicht gefunden."
 msgstr "Gebäude nicht gefunden."
 
@@ -7191,10 +6959,6 @@ msgstr ""
 "Gemeinsam gründen Sie Ihre LEG und sparen je nach Situation mehrere hundert Franken "
 "pro Jahr."
 
-#: templates/release/home.html:27
-msgid "Gemeinsam planen. Verantwortlich handeln."
-msgstr "Gemeinsam planen. Verantwortlich handeln."
-
 #: templates/leg_dashboard.html:328
 msgid ""
 "Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit "
@@ -7216,10 +6980,6 @@ msgstr "Gemeinschaft anlegen"
 #: templates/emails/day_14_formation.html:43
 msgid "Gemeinschaft bilden"
 msgstr "Gemeinschaft bilden"
-
-#: templates/release/home.html:18
-msgid "Gemeinschaft organisieren"
-msgstr "Gemeinschaft organisieren"
 
 #: templates/documents/community_agreement.html:13
 msgid "Gemeinschaftsvereinbarung"
@@ -7595,14 +7355,6 @@ msgstr "Grösste Fortschritte bei der Solarnutzung | OpenLEG"
 msgid "Gründen Sie eine"
 msgstr "Gründen Sie eine"
 
-#: templates/release/home.html:27
-msgid ""
-"Gründen Sie eine Stromgemeinschaft mit klaren Rollen. Die Software übernimmt weder "
-"den Entscheid des Netzbetreibers noch die Verantwortung Ihrer LEG."
-msgstr ""
-"Gründen Sie eine Stromgemeinschaft mit klaren Rollen. Die Software übernimmt weder "
-"den Entscheid des Netzbetreibers noch die Verantwortung Ihrer LEG."
-
 #: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:57
 #: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:13
 #: templates/leg_verzeichnis/liste.html:14
@@ -7785,14 +7537,6 @@ msgstr "Haushalte in der LEG"
 #: templates/dashboard.html:84
 msgid "Haushalte in der Nähe"
 msgstr "Haushalte in der Nähe"
-
-#: templates/release/home.html:17
-msgid ""
-"Haushalte und Betriebe verbrauchen Strom. Für ihre Teilnahme braucht es eine "
-"Vereinbarung und die Prüfung der Anschlüsse durch den Netzbetreiber."
-msgstr ""
-"Haushalte und Betriebe verbrauchen Strom. Für ihre Teilnahme braucht es eine "
-"Vereinbarung und die Prüfung der Anschlüsse durch den Netzbetreiber."
 
 #: templates/advisories.html:7
 msgid "Herausgeber"
@@ -8066,32 +7810,6 @@ msgstr "Ihr LEG-Eintrag im offenen Verzeichnis ist weiterhin aktuell."
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 
-#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:335 verein_routes.py:340
-#: verein_routes.py:344
-#, python-format
-msgid ""
-"Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
-"\n"
-"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
-"hallo@openleg.ch."
-msgstr ""
-"Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
-"\n"
-"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
-"hallo@openleg.ch."
-
-#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:329 verein_routes.py:334
-#: verein_routes.py:338
-#, python-format
-msgid ""
-"Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. "
-"Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und "
-"Rückfragen: hallo@openleg.ch."
-msgstr ""
-"Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. "
-"Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und "
-"Rückfragen: hallo@openleg.ch."
-
 #: templates/index.html:202 templates/index.html:205
 msgid "Ihr Recht"
 msgstr "Ihr Recht"
@@ -8104,10 +7822,6 @@ msgstr "Ihr Sparpotenzial"
 msgid "Ihr Stromverbrauch"
 msgstr "Ihr Stromverbrauch"
 
-#: templates/sandbox/entry.html:3 templates/sandbox/entry.html:7
-msgid "Ihr eigenes Übungsdorf"
-msgstr "Ihr eigenes Übungsdorf"
-
 #: sandbox_seed.py:117
 msgid "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
 msgstr "Ihr fiktiver Netzbetreiber ist aktiv und hat noch keinen API-Schlüssel."
@@ -8119,10 +7833,6 @@ msgstr "Ihr neuer Haushalt ist bestätigt."
 #: templates/index.html:408 templates/partials/address_intake.html:31
 msgid "Ihre Adresse"
 msgstr "Ihre Adresse"
-
-#: templates/release/home.html:21
-msgid "Ihre Adresse prüfen und Interessierte in Ihrer Gemeinde finden"
-msgstr "Ihre Adresse prüfen und Interessierte in Ihrer Gemeinde finden"
 
 #: templates/contact_requests.html:31
 msgid "Ihre Anfragen"
@@ -8158,18 +7868,6 @@ msgstr "Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt."
 #: templates/leg_gruenden.html:186 templates/leg_gruenden.html:199
 msgid "Ihre Aufgabe"
 msgstr "Ihre Aufgabe"
-
-#: verein_routes.py:357 verein_routes.py:370
-msgid ""
-"Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und "
-"benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über "
-"Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- "
-"und Entscheidnachweise. Kontakt: hallo@openleg.ch."
-msgstr ""
-"Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und "
-"benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über "
-"Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- "
-"und Entscheidnachweise. Kontakt: hallo@openleg.ch."
 
 #: templates/dashboard.html:238
 msgid "Ihre Daten"
@@ -8223,16 +7921,6 @@ msgstr ""
 #: dashboard_routes.py:153
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr "Ihre Kontaktanfragen bei OpenLEG"
-
-#: templates/release/home.html:58
-msgid ""
-"Ihre LEG bestimmt die verantwortlichen Personen oder beauftragt einen Dienstleister. "
-"Open Source ermöglicht den eigenen Betrieb. Die Veröffentlichung des Codes ist keine "
-"Betriebs- oder Supportzusage."
-msgstr ""
-"Ihre LEG bestimmt die verantwortlichen Personen oder beauftragt einen Dienstleister. "
-"Open Source ermöglicht den eigenen Betrieb. Die Veröffentlichung des Codes ist keine "
-"Betriebs- oder Supportzusage."
 
 #: templates/release/software.html:22
 msgid "Ihre LEG bleibt verantwortlich"
@@ -8313,10 +8001,6 @@ msgstr "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar:
 msgid "Ihre nächste Aufgabe"
 msgstr "Ihre nächste Aufgabe"
 
-#: templates/sandbox/accounts.html:6
-msgid "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
-msgstr "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
-
 #: templates/emails/day_7_consumption.html:43
 msgid "Ihre übliche Verbrauchszeit, tagsüber oder abends"
 msgstr "Ihre übliche Verbrauchszeit, tagsüber oder abends"
@@ -8357,14 +8041,6 @@ msgstr "Im offenen Verzeichnis ist noch keine LEG aus %(profile_name)s eingetrag
 #: templates/sandbox/metering.html:67
 msgid "Import fehlgeschlagen"
 msgstr "Import fehlgeschlagen"
-
-#: templates/release/home.html:31
-msgid ""
-"Importieren Sie Messwerte, prüfen Sie die Periode und kontrollieren Sie den Entwurf, "
-"bevor Rechnungen ausgegeben werden."
-msgstr ""
-"Importieren Sie Messwerte, prüfen Sie die Periode und kontrollieren Sie den Entwurf, "
-"bevor Rechnungen ausgegeben werden."
 
 #: templates/impressum.html:21 templates/partials/site_footer.html:11
 #: templates/partials/site_footer.html:14 templates/release/footer.html:11
@@ -8610,7 +8286,7 @@ msgstr "Intervallenergie"
 msgid "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 msgstr "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 
-#: app.py:141 app.py:144 app.py:145 app.py:146 formation_guide.py:72
+#: app.py:141 app.py:144 app.py:145 app.py:146 app.py:147 formation_guide.py:72
 msgid "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
 msgstr "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
 
@@ -8623,7 +8299,7 @@ msgstr "Ist die Berechnung genau?"
 msgid "Ja"
 msgstr "Ja"
 
-#: app.py:117 app.py:120 app.py:121 app.py:122 formation_guide.py:48
+#: app.py:117 app.py:120 app.py:121 app.py:122 app.py:123 formation_guide.py:48
 msgid ""
 "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG installieren, nutzen und "
 "anpassen. Auch ein Fork ist erlaubt. Wenn Sie eine veränderte Version über ein "
@@ -8772,11 +8448,11 @@ msgstr "Kalenderquartal, z. B. 2026-Q3"
 msgid "Kanal"
 msgstr "Kanal"
 
-#: app.py:152 app.py:155 app.py:156 app.py:157 formation_guide.py:83
+#: app.py:152 app.py:155 app.py:156 app.py:157 app.py:158 formation_guide.py:83
 msgid "Kann OpenLEG unsere Gruppe persönlich unterstützen?"
 msgstr "Kann OpenLEG unsere Gruppe persönlich unterstützen?"
 
-#: app.py:90 app.py:93 app.py:94 app.py:95 formation_guide.py:21
+#: app.py:90 app.py:93 app.py:94 app.py:95 app.py:96 formation_guide.py:21
 msgid "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 msgstr "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 
@@ -8947,8 +8623,9 @@ msgid "Keine Datei ausgewählt"
 msgstr "Keine Datei ausgewählt"
 
 #: app.py:495 app.py:498 app.py:523 app.py:525 app.py:535 app.py:537 app.py:539 app.py:540
-#: app.py:547 app.py:550 app.py:575 app.py:577 app.py:587 app.py:589 app.py:591 app.py:592
-#: app.py:600 app.py:603 app.py:628 app.py:630 app.py:640 app.py:642 app.py:644 app.py:645
+#: app.py:543 app.py:547 app.py:550 app.py:575 app.py:577 app.py:587 app.py:589 app.py:591
+#: app.py:592 app.py:595 app.py:600 app.py:603 app.py:628 app.py:630 app.py:640 app.py:642
+#: app.py:644 app.py:645 app.py:648
 msgid "Keine Daten empfangen."
 msgstr "Keine Daten empfangen."
 
@@ -9069,6 +8746,7 @@ msgid "Keine ausstehenden Einträge"
 msgstr "Keine ausstehenden Einträge"
 
 #: app.py:525 app.py:528 app.py:553 app.py:555 app.py:565 app.py:567 app.py:569 app.py:570
+#: app.py:573
 msgid "Keine direkten Partner gefunden."
 msgstr "Keine direkten Partner gefunden."
 
@@ -9835,10 +9513,6 @@ msgstr "Link anfordern"
 msgid "Link erneut anfordern"
 msgstr "Link erneut anfordern"
 
-#: templates/sandbox/inbox.html:13
-msgid "Link im Übungsdorf öffnen"
-msgstr "Link im Übungsdorf öffnen"
-
 #: templates/gemeinde/dashboard.html:106
 msgid "Link teilen, Interessierte sammeln"
 msgstr "Link teilen, Interessierte sammeln"
@@ -9860,7 +9534,7 @@ msgstr "Live ansehen"
 msgid "Lizenz"
 msgstr "Lizenz"
 
-#: app.py:126 app.py:129 app.py:130 app.py:131 formation_guide.py:57
+#: app.py:126 app.py:129 app.py:130 app.py:131 app.py:132 formation_guide.py:57
 #: templates/release/pricing.html:6
 msgid "Lizenz lesen"
 msgstr "Lizenz lesen"
@@ -10350,14 +10024,6 @@ msgstr ""
 "Mit OpenLEG eine lokale Elektrizitätsgemeinschaft vorbereiten, Beteiligte verwalten "
 "und Abrechnungen prüfen. Freie Software für den eigenen Betrieb."
 
-#: templates/release/home.html:6
-msgid ""
-"Mit OpenLEG verwalten Sie Mitglieder und bereiten Abrechnungen vor. Sie können die "
-"Software selbst betreiben."
-msgstr ""
-"Mit OpenLEG verwalten Sie Mitglieder und bereiten Abrechnungen vor. Sie können die "
-"Software selbst betreiben."
-
 #: templates/leg_kalkulator.html:157
 msgid "Mit Spannungstransformation"
 msgstr "Mit Spannungstransformation"
@@ -10686,7 +10352,7 @@ msgstr "Navigation öffnen"
 msgid "Nein"
 msgstr "Nein"
 
-#: app.py:94 app.py:97 app.py:98 app.py:99 formation_guide.py:25
+#: app.py:94 app.py:97 app.py:98 app.py:99 app.py:100 formation_guide.py:25
 msgid ""
 "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im Netzgebiet eines "
 "Verteilnetzbetreibers. Für mehrere Gemeinden oder VNB-Gebiete braucht es separate "
@@ -10696,7 +10362,7 @@ msgstr ""
 "Verteilnetzbetreibers. Für mehrere Gemeinden oder VNB-Gebiete braucht es separate "
 "lokale LEGs."
 
-#: app.py:81 app.py:84 app.py:85 app.py:86 formation_guide.py:12
+#: app.py:81 app.py:84 app.py:85 app.py:86 app.py:87 formation_guide.py:12
 msgid ""
 "Nein. Vorhandene gesetzeskonforme Smart Meter des Verteilnetzbetreibers werden "
 "weiterverwendet. Fehlende erforderliche Geräte installiert der Verteilnetzbetreiber "
@@ -10717,10 +10383,6 @@ msgstr "Netz"
 #: templates/sandbox/metering.html:40
 msgid "Netz (kWh)"
 msgstr "Netz (kWh)"
-
-#: templates/release/home.html:19
-msgid "Netz und Messdaten"
-msgstr "Netz und Messdaten"
 
 #: sandbox_seed.py:111
 msgid "Netzbetreiber"
@@ -11142,7 +10804,7 @@ msgstr "Noch mehr Nachbarn einladen?"
 msgid "Noch nicht angenommene Finanzierung muss im Fonds held mit Kategorie held stehen."
 msgstr "Noch nicht angenommene Finanzierung muss im Fonds held mit Kategorie held stehen."
 
-#: templates/verein/finance_edit.html:13
+#: templates/verein/finance_edit.html:13 templates/verein/recipient_edit.html:9
 msgid "Noch nicht freigegeben"
 msgstr "Noch nicht freigegeben"
 
@@ -11634,16 +11296,6 @@ msgstr ""
 "OpenLEG ist freie Infrastruktur für Schweizer Stromgemeinschaften. Keine versteckten "
 "Kosten, keine Abhängigkeit von einem Anbieter, kein Datenverkauf."
 
-#: templates/release/home.html:56
-msgid ""
-"OpenLEG ist freie Software unter AGPL-3.0-or-later. Für Server, Einrichtung und "
-"Unterstützung können Kosten entstehen. Klären Sie vor dem Start, wer diese Aufgaben "
-"übernimmt."
-msgstr ""
-"OpenLEG ist freie Software unter AGPL-3.0-or-later. Für Server, Einrichtung und "
-"Unterstützung können Kosten entstehen. Klären Sie vor dem Start, wer diese Aufgaben "
-"übernimmt."
-
 #: templates/index.html:389 templates/index.html:485
 msgid ""
 "OpenLEG ist freie Software unter AGPL-3.0-or-later. Sie können den Code prüfen, die "
@@ -11660,7 +11312,7 @@ msgstr ""
 "OpenLEG ist kostenlose Open Source Infrastruktur für Schweizer Stromgemeinschaften: "
 "für Bewohner, Gemeinden und Entwickler, ohne Lizenzkosten oder Datenverkauf."
 
-#: app.py:145 app.py:148 app.py:149 app.py:150 formation_guide.py:76
+#: app.py:145 app.py:148 app.py:149 app.py:150 app.py:151 formation_guide.py:76
 #: templates/leg_gruenden.html:87
 msgid ""
 "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. Noch ist nicht jede VNB-"
@@ -11802,16 +11454,6 @@ msgstr ""
 "OpenLEG unterstützt Ihre LEG bei Beteiligten, Dokumenten, Messdaten und Rechnungen. "
 "Die verantwortlichen Personen prüfen die Grundlagen und geben die Ergebnisse frei."
 
-#: templates/release/home.html:38
-msgid ""
-"OpenLEG unterstützt den Import von Messdaten und die Vorbereitung von Rechnungen. "
-"Fehlende Daten bleiben sichtbar. Die Freigabe liegt bei den dafür berechtigten "
-"Personen."
-msgstr ""
-"OpenLEG unterstützt den Import von Messdaten und die Vorbereitung von Rechnungen. "
-"Fehlende Daten bleiben sichtbar. Die Freigabe liegt bei den dafür berechtigten "
-"Personen."
-
 #: templates/leg_gruenden.html:72
 msgid ""
 "OpenLEG unterstützt die Gründung und den Betrieb von LEGs. Für vZEV bietet OpenLEG "
@@ -11903,6 +11545,7 @@ msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr "OpenLEG: Interessenmeldung bestätigen"
 
 #: app.py:738 app.py:741 app.py:766 app.py:768 app.py:778 app.py:780 app.py:782 app.py:783
+#: app.py:786
 msgid "OpenLEG: Löschung bestätigen"
 msgstr "OpenLEG: Löschung bestätigen"
 
@@ -11927,7 +11570,7 @@ msgid "Originalveröffentlichung öffnen"
 msgstr "Originalveröffentlichung öffnen"
 
 #: templates/admin/ops.html:121 templates/leg_verzeichnis/eintragen.html:52
-#: templates/release/event.html:5
+#: templates/release/event.html:5 templates/verein/recipient_edit.html:7
 msgid "Ort"
 msgstr "Ort"
 
@@ -11957,6 +11600,10 @@ msgstr "PLZ"
 #: templates/api_docs.html:214
 msgid "PLZ range e.g. 8000-8999"
 msgstr "PLZ-Bereich, z. B. 8000-8999"
+
+#: document_generator.py:160
+msgid "PV-Anlage:"
+msgstr "PV-Anlage:"
 
 #: templates/equipment_form.html:46
 msgid "PV-DC-Leistung (kWp, optional)"
@@ -12002,6 +11649,7 @@ msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr "Parse-Fehler mit Delimiter '%(delimiter)s'."
 
 #: app.py:532 app.py:535 app.py:560 app.py:562 app.py:572 app.py:574 app.py:576 app.py:577
+#: app.py:580
 msgid "Partner gefunden!"
 msgstr "Partner gefunden!"
 
@@ -12010,7 +11658,7 @@ msgid "Passwort"
 msgstr "Passwort"
 
 #: app.py:1001 app.py:1004 app.py:1029 app.py:1031 app.py:1041 app.py:1043 app.py:1045
-#: app.py:1046
+#: app.py:1046 app.py:1049
 msgid "Period not found"
 msgstr "Period not found"
 
@@ -12178,7 +11826,7 @@ msgstr ""
 "Private Referenz zur tatsächlich beschlossenen Berichtsordnung und zum vollständigen "
 "Kontenumfang"
 
-#: templates/verein/finance_review.html:11
+#: templates/verein/finance_review.html:11 templates/verein/recipient_review.html:7
 msgid "Private Referenz zur tatsächlichen zweiten Prüfung und Freigabe"
 msgstr "Private Referenz zur tatsächlichen zweiten Prüfung und Freigabe"
 
@@ -12847,10 +12495,6 @@ msgstr "Referenz zur tatsächlichen Freigabe"
 msgid "Referenz:"
 msgstr "Referenz:"
 
-#: templates/release/home.html:30
-msgid "Regeln und Zuständigkeiten festlegen"
-msgstr "Regeln und Zuständigkeiten festlegen"
-
 #: templates/utility/login.html:47 templates/utility/register.html:106
 msgid "Registrieren"
 msgstr "Registrieren"
@@ -12908,7 +12552,7 @@ msgstr "Registrierung fehlgeschlagen."
 msgid "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 msgstr "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 
-#: app.py:130 app.py:133 app.py:134 app.py:135 formation_guide.py:61
+#: app.py:130 app.py:133 app.py:134 app.py:135 app.py:136 formation_guide.py:61
 msgid "Repository öffnen"
 msgstr "Repository öffnen"
 
@@ -13087,16 +12731,6 @@ msgstr "Schnellstart öffnen"
 msgid "Schnellstart, manuelle Installation und privates Netzwerk"
 msgstr "Schnellstart, manuelle Installation und privates Netzwerk"
 
-#: templates/release/community.html:6
-msgid ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
-" an hallo@openleg.ch. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden "
-"Sie keine Passwörter oder privaten Messdaten."
-msgstr ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
-" an hallo@openleg.ch. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden "
-"Sie keine Passwörter oder privaten Messdaten."
-
 #: templates/gemeinde/dashboard.html:115
 msgid "Schritt für Schritt zur Stromgemeinschaft"
 msgstr "Schritt für Schritt zur Stromgemeinschaft"
@@ -13274,10 +12908,12 @@ msgstr ""
 "und können laufende Kosten verursachen."
 
 #: app.py:691 app.py:694 app.py:719 app.py:721 app.py:731 app.py:733 app.py:735 app.py:736
+#: app.py:739
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr "Server-Fehler beim Verarbeiten der Messdaten."
 
 #: app.py:540 app.py:543 app.py:568 app.py:570 app.py:580 app.py:582 app.py:584 app.py:585
+#: app.py:588
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr "Server-Fehler. Bitte später erneut versuchen."
 
@@ -13468,16 +13104,6 @@ msgid ""
 msgstr ""
 "Sie unterstützt die Verwaltung, den Datenimport und die prüfbare Vorbereitung von "
 "Abrechnungen."
-
-#: templates/release/home.html:57
-msgid ""
-"Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber "
-"liefert dasselbe Format. Prüfen Sie den Import mit Ihren Daten, bevor Sie eine "
-"Abrechnung vorbereiten."
-msgstr ""
-"Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber "
-"liefert dasselbe Format. Prüfen Sie den Import mit Ihren Daten, bevor Sie eine "
-"Abrechnung vorbereiten."
 
 #: templates/release/how_it_works.html:16
 msgid ""
@@ -13813,14 +13439,6 @@ msgstr "Solothurn"
 msgid "Sonnendach solar data"
 msgstr "Solardaten von Sonnendach"
 
-#: templates/sandbox/start_evidence.html:8
-msgid ""
-"Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der "
-"erfundenen LEG. Es wurde kein realer Netzbetreiber kontaktiert."
-msgstr ""
-"Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der "
-"erfundenen LEG. Es wurde kein realer Netzbetreiber kontaktiert."
-
 #: templates/sandbox/home.html:2 templates/sandbox/home.html:5
 msgid "Sonnwil ausprobieren"
 msgstr "Sonnwil ausprobieren"
@@ -13870,14 +13488,6 @@ msgstr "Sprache für E-Mails"
 #: templates/dashboard.html:203 templates/utility/settings.html:14
 msgid "Sprache speichern"
 msgstr "Sprache speichern"
-
-#: templates/release/home.html:29
-msgid ""
-"Sprechen Sie mit Nachbarn und dem Netzbetreiber. Halten Sie fest, wer teilnimmt und "
-"welche Daten gebraucht werden."
-msgstr ""
-"Sprechen Sie mit Nachbarn und dem Netzbetreiber. Halten Sie fest, wer teilnimmt und "
-"welche Daten gebraucht werden."
 
 #: templates/utility/register.html:48
 msgid "St. Gallen"
@@ -14015,14 +13625,6 @@ msgstr "Strasse, PLZ Ort"
 #: templates/member_invoice_detail.html:192
 msgid "Strom aus dem Quartierakku"
 msgstr "Strom aus dem Quartierakku"
-
-#: templates/release/home.html:16
-msgid "Strom erzeugen"
-msgstr "Strom erzeugen"
-
-#: templates/release/home.html:17
-msgid "Strom nutzen"
-msgstr "Strom nutzen"
 
 #: templates/emails/day_14_formation.html:64
 msgid "Strom teilen und sparen"
@@ -14202,10 +13804,6 @@ msgstr "Tatsächliche Gesprächssprachen"
 #: templates/release/knowledge.html:21
 msgid "Technische Betriebsdokumentation"
 msgstr "Technische Betriebsdokumentation"
-
-#: templates/release/home.html:57
-msgid "Technischen Betrieb vorbereiten"
-msgstr "Technischen Betrieb vorbereiten"
 
 #: templates/index.html:469 templates/partials/address_intake.html:92
 msgid "Teilen Sie Ihren Einladungslink"
@@ -14577,7 +14175,7 @@ msgstr "Unterstützt werden nur camt.053 und camt.054."
 msgid "Unterstützung"
 msgstr "Unterstützung"
 
-#: app.py:159 app.py:162 app.py:163 app.py:164 formation_guide.py:90
+#: app.py:159 app.py:162 app.py:163 app.py:164 app.py:165 formation_guide.py:90
 msgid "Unterstützung anfragen"
 msgstr "Unterstützung anfragen"
 
@@ -14740,29 +14338,6 @@ msgstr "Verbrauchskosten dieser Rechnung"
 msgid "Verein"
 msgstr "Verein"
 
-#: templates/verein/index.html:2 templates/verein/index.html:3
-#: templates/verein/index.html:5 templates/verein/index.html:6
-msgid "Verein openLEG Schweiz"
-msgstr "Verein openLEG Schweiz"
-
-#: templates/release/home.html:50
-msgid ""
-"Verein openLEG Schweiz pflegt Software, Dokumentation und Austausch. Der Verein mit "
-"Sitz in Baden übernimmt nicht den Betrieb des gehosteten Produkts."
-msgstr ""
-"Verein openLEG Schweiz pflegt Software, Dokumentation und Austausch. Der Verein mit "
-"Sitz in Baden übernimmt nicht den Betrieb des gehosteten Produkts."
-
-#: templates/release/home.html:50
-msgid ""
-"Verein openLEG Schweiz soll die Software, Dokumentation und den Austausch pflegen. "
-"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Der Betrieb des "
-"gehosteten Produkts gehört nicht zu seinem vorgesehenen Auftrag."
-msgstr ""
-"Verein openLEG Schweiz soll die Software, Dokumentation und den Austausch pflegen. "
-"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Der Betrieb des "
-"gehosteten Produkts gehört nicht zu seinem vorgesehenen Auftrag."
-
 #: templates/release/home.html:50
 msgid "Verein und Mitgliedschaft"
 msgstr "Verein und Mitgliedschaft"
@@ -14778,22 +14353,6 @@ msgstr "Verein: Mitgliedschaft und Jahresbeitrag"
 #: verein_routes.py:66 verein_routes.py:68 verein_routes.py:92
 msgid "Verein: persönlicher Zugang"
 msgstr "Verein: persönlicher Zugang"
-
-#: templates/release/home.html:30
-msgid ""
-"Vereinbaren Sie Vertretung, Tarife, Abrechnung und den Umgang mit Fragen. Benennen "
-"Sie die verantwortlichen Personen."
-msgstr ""
-"Vereinbaren Sie Vertretung, Tarife, Abrechnung und den Umgang mit Fragen. Benennen "
-"Sie die verantwortlichen Personen."
-
-#: templates/release/home.html:40
-msgid ""
-"Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem "
-"Netzbetreiber. Ein Entwurf ist noch keine freigegebene Rechnung."
-msgstr ""
-"Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem "
-"Netzbetreiber. Ein Entwurf ist noch keine freigegebene Rechnung."
 
 #: verein_finance_routes.py:223 verein_finance_routes.py:235
 msgid "Vereinsfinanzen"
@@ -14893,7 +14452,8 @@ msgstr "Verknüpft mit Korrektur:"
 #: templates/release/finance.html:13 templates/release/finance.html:14
 #: templates/release/finance.html:16 templates/release/finance.html:17
 #: templates/verein/events.html:11 templates/verein/finance_edit.html:13
-#: templates/verein/finance_review.html:3
+#: templates/verein/finance_review.html:3 templates/verein/recipient_edit.html:9
+#: templates/verein/recipient_review.html:3
 msgid "Version"
 msgstr "Version"
 
@@ -15239,7 +14799,7 @@ msgstr ""
 msgid "Vorlage"
 msgstr "Vorlage"
 
-#: templates/verein/finance_review.html:6
+#: templates/verein/finance_review.html:6 templates/verein/recipient_review.html:4
 msgid "Vorschau der öffentlichen Angaben"
 msgstr "Vorschau der öffentlichen Angaben"
 
@@ -15247,7 +14807,7 @@ msgstr "Vorschau der öffentlichen Angaben"
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 
-#: app.py:155 app.py:158 app.py:159 app.py:160 formation_guide.py:86
+#: app.py:155 app.py:158 app.py:159 app.py:160 app.py:161 formation_guide.py:86
 msgid ""
 "Vorträge, Workshops und Projektunterstützung bieten wir nach vorgängiger Vereinbarung"
 " gegen Honorar an."
@@ -15351,10 +14911,6 @@ msgstr "Was ist in Ihrer Gemeinde möglich?"
 msgid "Was ist in meiner Gemeinde möglich?"
 msgstr "Was ist in meiner Gemeinde möglich?"
 
-#: templates/release/home.html:46
-msgid "Was kann Ihre Gemeinde ermöglichen?"
-msgstr "Was kann Ihre Gemeinde ermöglichen?"
-
 #: templates/pricing.html:96
 msgid "Was kostenlos bleibt"
 msgstr "Was kostenlos bleibt"
@@ -15366,10 +14922,6 @@ msgstr "Was kostet der Einsatz?"
 #: templates/how-it-works.html:46 templates/how-it-works.html:123
 msgid "Was kostet die Gründung mit OpenLEG?"
 msgstr "Was kostet die Gründung mit OpenLEG?"
-
-#: templates/release/home.html:56
-msgid "Was kostet die Software?"
-msgstr "Was kostet die Software?"
 
 #: templates/how-it-works.html:56 templates/how-it-works.html:131
 msgid "Was macht OpenLEG, was der Netzbetreiber?"
@@ -15496,10 +15048,6 @@ msgstr ""
 msgid "Wer Entscheidungen trifft und welche Aufgabe beim Netzbetreiber bleibt."
 msgstr "Wer Entscheidungen trifft und welche Aufgabe beim Netzbetreiber bleibt."
 
-#: templates/release/home.html:58
-msgid "Wer betreibt unsere Gemeinschaft?"
-msgstr "Wer betreibt unsere Gemeinschaft?"
-
 #: templates/open_source.html:65 templates/pricing.html:39
 msgid ""
 "Wer eine veränderte Version über ein Netzwerk anbietet, muss den Nutzenden den "
@@ -15516,7 +15064,7 @@ msgstr ""
 "Wer einen Fehler verfolgt oder einen Pull Request plant, findet hier den passenden "
 "Einstieg."
 
-#: app.py:101 app.py:104 app.py:105 app.py:106 formation_guide.py:32
+#: app.py:101 app.py:104 app.py:105 app.py:106 app.py:107 formation_guide.py:32
 msgid "Wer ist für die Abrechnung zuständig?"
 msgstr "Wer ist für die Abrechnung zuständig?"
 
@@ -15685,6 +15233,7 @@ msgstr ""
 " entsteht, erhalten Sie die nächsten Schritte."
 
 #: app.py:802 app.py:805 app.py:830 app.py:832 app.py:842 app.py:844 app.py:846 app.py:847
+#: app.py:850
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene "
 "Gebietsanfrage) nicht gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie "
@@ -16064,23 +15613,11 @@ msgstr "Ziel:"
 msgid "Zielgruppe"
 msgstr "Zielgruppe"
 
-#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:373
-#: verein_routes.py:386
-#, python-format
-msgid ""
-"Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die "
-"Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter "
-"%(access_url)s. Kontakt: hallo@openleg.ch."
-msgstr ""
-"Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die "
-"Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter "
-"%(access_url)s. Kontakt: hallo@openleg.ch."
-
 #: templates/advisories_error.html:7
 msgid "Zu meinen Solargeräten"
 msgstr "Zu meinen Solargeräten"
 
-#: app.py:171 app.py:174 app.py:175 app.py:176 templates/index.html:553
+#: app.py:171 app.py:174 app.py:175 app.py:176 app.py:177 templates/index.html:553
 #: templates/index.html:648
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 msgstr "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
@@ -16163,15 +15700,6 @@ msgstr "Zum Schnellstart"
 msgid "Zum Verein"
 msgstr "Zum Verein"
 
-#: templates/sandbox/home.html:19
-#, python-format
-msgid ""
-"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an"
-" und öffnen Sie ihn im Postfach dieses Übungsdorfs."
-msgstr ""
-"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an"
-" und öffnen Sie ihn im Postfach dieses Übungsdorfs."
-
 #: templates/sandbox/metering.html:15
 msgid "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum."
 msgstr "Zuordnung nicht vollständig bestätigt. Prüfen Sie die Teilnahme und den Zeitraum."
@@ -16202,6 +15730,7 @@ msgid "Zur Unterschrift versendet"
 msgstr "Zur Unterschrift versendet"
 
 #: templates/verein/events.html:11 templates/verein/finance_edit.html:13
+#: templates/verein/recipient_edit.html:10
 msgid "Zur Vereinsverwaltung"
 msgstr "Zur Vereinsverwaltung"
 
@@ -16251,10 +15780,6 @@ msgstr "Zurück zum LEG-Check"
 msgid "Zurück zum LEG-Dashboard"
 msgstr "Zurück zum LEG-Dashboard"
 
-#: templates/sandbox/manage.html:28
-msgid "Zurück zum Übungsdorf"
-msgstr "Zurück zum Übungsdorf"
-
 #: templates/gemeinde/methodik.html:22 templates/gemeinde/vergleich.html:23
 msgid "Zurück zur Rangliste"
 msgstr "Zurück zur Rangliste"
@@ -16263,17 +15788,13 @@ msgstr "Zurück zur Rangliste"
 msgid "Zurück zur Startseite"
 msgstr "Zurück zur Startseite"
 
-#: templates/sandbox/metering.html:48
+#: templates/sandbox/metering.html:48 templates/verein/recipient_edit.html:9
 msgid "Zurückgezogen"
 msgstr "Zurückgezogen"
 
 #: templates/gemeinde/rangliste.html:70 templates/gemeinde/rangliste_fortschritte.html:74
 msgid "Zurücksetzen"
 msgstr "Zurücksetzen"
-
-#: templates/release/home.html:55
-msgid "Zusammenarbeit verstehen"
-msgstr "Zusammenarbeit verstehen"
 
 #: templates/leg_billing.html:113
 msgid "Zustellen"
@@ -16401,6 +15922,7 @@ msgid "bis 40"
 msgstr "bis 40"
 
 #: app.py:670 app.py:673 app.py:698 app.py:700 app.py:710 app.py:712 app.py:714 app.py:715
+#: app.py:718
 msgid "building_id und csv_content erforderlich."
 msgstr "building_id und csv_content erforderlich."
 
@@ -16648,6 +16170,7 @@ msgstr ""
 "durchgängiger Ablauf."
 
 #: app.py:667 app.py:670 app.py:695 app.py:697 app.py:707 app.py:709 app.py:711 app.py:712
+#: app.py:715
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr "tier muss 1, 2 oder 3 sein."
 
@@ -16925,14 +16448,6 @@ msgstr "Öffentliche Beitragshistorie ansehen"
 msgid "Öffentliche Dienste und Fernzugriff mit dem Betreiber klären."
 msgstr "Öffentliche Dienste und Fernzugriff mit dem Betreiber klären."
 
-#: templates/release/home.html:46
-msgid ""
-"Öffentliche Energie- und Solardaten helfen, Fragen vor Ort einzuordnen. Vergleichen "
-"Sie Gemeinden und finden Sie den Einstieg für Ihre Verwaltung."
-msgstr ""
-"Öffentliche Energie- und Solardaten helfen, Fragen vor Ort einzuordnen. Vergleichen "
-"Sie Gemeinden und finden Sie den Einstieg für Ihre Verwaltung."
-
 #: templates/verein/events.html:11
 msgid "Öffentliche Seite"
 msgstr "Öffentliche Seite"
@@ -17077,14 +16592,6 @@ msgstr "Üblicher Bereich: zwischen"
 #: templates/sandbox/metering.html:18
 msgid "Übungsdateien"
 msgstr "Übungsdateien"
-
-#: templates/sandbox/banner.html:4 templates/sandbox/onboarding.html:25
-msgid "Übungsdorf"
-msgstr "Übungsdorf"
-
-#: templates/sandbox/manage.html:2 templates/sandbox/manage.html:6
-msgid "Übungsdorf verwalten"
-msgstr "Übungsdorf verwalten"
 
 #: templates/gemeinde/profil.html:118
 msgid "öffentlich gemeldeten PV-Anlagen"
@@ -18372,3 +17879,518 @@ msgstr "Freigeben"
 #: templates/sandbox/telemetry.html:25
 msgid "Freigabe entziehen"
 msgstr "Freigabe entziehen"
+
+#: templates/sandbox/entry.html:9
+msgid "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
+msgstr "Alle Übungsdörfer sind gerade belegt. Bitte versuchen Sie es später erneut."
+
+#: templates/release/home.html:16
+msgid ""
+"Anlagenbetreiber stellen lokal erzeugten Strom bereit. Die Bedingungen und Vergütung "
+"regelt die Gemeinschaft mit den Beteiligten."
+msgstr ""
+"Anlagenbetreiber stellen lokal erzeugten Strom bereit. Die Bedingungen und Vergütung "
+"regelt die Gemeinschaft mit den Beteiligten."
+
+#: templates/release/home.html:15
+msgid "Aufgaben im Quartier"
+msgstr "Aufgaben im Quartier"
+
+#: templates/release/home.html:27
+msgid "Aufgaben und Zusammenarbeit verstehen"
+msgstr "Aufgaben und Zusammenarbeit verstehen"
+
+#: templates/release/home.html:29
+msgid "Beteiligte und Anschlüsse klären"
+msgstr "Beteiligte und Anschlüsse klären"
+
+#: templates/release/home.html:50
+msgid "Code beitragen, Wissen teilen und die Gemeinschaft mitgestalten."
+msgstr "Code beitragen, Wissen teilen und die Gemeinschaft mitgestalten."
+
+#: templates/sandbox/entry.html:10
+msgid ""
+"Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später "
+"erneut."
+msgstr ""
+"Das Übungsdorf kann gerade nicht gestartet werden. Bitte versuchen Sie es später "
+"erneut."
+
+#: templates/release/home.html:31
+msgid "Daten prüfen und Rechnungen freigeben"
+msgstr "Daten prüfen und Rechnungen freigeben"
+
+#: templates/verein/index.html:7
+msgid ""
+"Der Gründer nahm bei etablierten Energieversorgern Zurückhaltung wahr. Das ist seine "
+"Einschätzung und keine belegte Aussage über deren Motive. Die geplanten "
+"Unabhängigkeitsregeln sollen verhindern, dass einzelne Anbieter die Richtung "
+"bestimmen."
+msgstr ""
+"Der Gründer nahm bei etablierten Energieversorgern Zurückhaltung wahr. Das ist seine "
+"Einschätzung und keine belegte Aussage über deren Motive. Die geplanten "
+"Unabhängigkeitsregeln sollen verhindern, dass einzelne Anbieter die Richtung "
+"bestimmen."
+
+#: templates/verein/index.html:11
+msgid ""
+"Der Jahresbeitrag beträgt CHF 50 und ist innert 30 Tagen nach der Aufnahme fällig. "
+"Ein Beitragserlass ist nicht vorgesehen. Eine tatsächlich versendete Mahnung gewährt "
+"weitere 60 Tage. Erst danach ist eine begründete Beendigung durch den Vorstand mit "
+"Beschwerdemöglichkeit vorgesehen."
+msgstr ""
+"Der Jahresbeitrag beträgt CHF 50 und ist innert 30 Tagen nach der Aufnahme fällig. "
+"Ein Beitragserlass ist nicht vorgesehen. Eine tatsächlich versendete Mahnung gewährt "
+"weitere 60 Tage. Erst danach ist eine begründete Beendigung durch den Vorstand mit "
+"Beschwerdemöglichkeit vorgesehen."
+
+#: templates/release/event.html:6
+msgid "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
+msgstr "Der Teilnahmeweg ist noch nicht freigegeben. Fragen dazu: hallo@openleg.ch."
+
+#: templates/verein/index.html:6
+msgid ""
+"Der Verein hat seinen Sitz in Baden. Die Mitglieder tragen Software, Dokumentation "
+"und Austausch gemeinsam."
+msgstr ""
+"Der Verein hat seinen Sitz in Baden. Die Mitglieder tragen Software, Dokumentation "
+"und Austausch gemeinsam."
+
+#: templates/verein/index.html:6 templates/verein/index.html:7
+#: templates/verein/index.html:8
+msgid ""
+"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Statuten und "
+"Vorstand werden an der tatsächlichen Gründung beschlossen."
+msgstr ""
+"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Statuten und "
+"Vorstand werden an der tatsächlichen Gründung beschlossen."
+
+#: templates/release/home.html:19
+msgid ""
+"Der Verteilnetzbetreiber prüft die Voraussetzungen und liefert die vereinbarten "
+"Messdaten. Datenzugang, Format und Zuständigkeit müssen vor dem Betrieb geklärt sein."
+msgstr ""
+"Der Verteilnetzbetreiber prüft die Voraussetzungen und liefert die vereinbarten "
+"Messdaten. Datenzugang, Format und Zuständigkeit müssen vor dem Betrieb geklärt sein."
+
+#: verein_routes.py:328 verein_routes.py:345 verein_routes.py:351 verein_routes.py:362
+#: verein_routes.py:375
+#, python-format
+msgid ""
+"Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
+"\n"
+"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
+"hallo@openleg.ch."
+msgstr ""
+"Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
+"\n"
+"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
+"hallo@openleg.ch."
+
+#: templates/verein/join.html:6
+msgid ""
+"Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
+"Jahresbeitrag von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen "
+"Beitragserlass."
+msgstr ""
+"Der Vorstand prüft Ihren Antrag. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
+"Jahresbeitrag von CHF 50 ist danach innerhalb von 30 Tagen fällig. Es gibt keinen "
+"Beitragserlass."
+
+#: templates/verein/index.html:7
+msgid ""
+"Die Idee zu OpenLEG entstand nach der Teilnahme des Gründers an den Energy Data "
+"Hackdays 2025 in Brugg-Windisch. Lokale Stromgemeinschaften brauchen nachvollziehbare"
+" Software und Menschen, die Wissen teilen und die Werkzeuge pflegen."
+msgstr ""
+"Die Idee zu OpenLEG entstand nach der Teilnahme des Gründers an den Energy Data "
+"Hackdays 2025 in Brugg-Windisch. Lokale Stromgemeinschaften brauchen nachvollziehbare"
+" Software und Menschen, die Wissen teilen und die Werkzeuge pflegen."
+
+#: templates/release/home.html:18
+msgid ""
+"Die verantwortlichen Personen pflegen die Beteiligten, prüfen Messdaten und geben "
+"Abrechnungen frei. OpenLEG unterstützt diese Arbeit."
+msgstr ""
+"Die verantwortlichen Personen pflegen die Beteiligten, prüfen Messdaten und geben "
+"Abrechnungen frei. OpenLEG unterstützt diese Arbeit."
+
+#: templates/verein/application.html:24 templates/verein/dues.html:6
+msgid ""
+"Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der "
+"Erinnerung."
+msgstr ""
+"Die weitere Frist von 60 Tagen beginnt erst mit dem erfolgreichen Versand der "
+"Erinnerung."
+
+#: templates/sandbox/inbox.html:6
+msgid "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
+msgstr "Diese Nachrichten bleiben in Ihrem Übungsdorf. Es wird keine E-Mail versendet."
+
+#: templates/sandbox/account_unavailable.html:6
+msgid ""
+"Dieser Haushalt ist gelöscht oder noch nicht bestätigt. Wählen Sie ein anderes Konto "
+"oder setzen Sie Ihr Übungsdorf zurück, um die Ausgangsdaten wiederherzustellen."
+msgstr ""
+"Dieser Haushalt ist gelöscht oder noch nicht bestätigt. Wählen Sie ein anderes Konto "
+"oder setzen Sie Ihr Übungsdorf zurück, um die Ausgangsdaten wiederherzustellen."
+
+#: templates/release/event.html:6
+msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
+msgstr "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: hallo@openleg.ch."
+
+#: templates/sandbox/expired.html:2 templates/sandbox/expired.html:6
+msgid "Dieses Übungsdorf ist abgelaufen"
+msgstr "Dieses Übungsdorf ist abgelaufen"
+
+#: templates/verein/dues.html:6
+msgid ""
+"Eine Beendigung wegen offener Beiträge ist erst nach der tatsächlich versendeten "
+"Erinnerung und weiteren 60 Tagen möglich."
+msgstr ""
+"Eine Beendigung wegen offener Beiträge ist erst nach der tatsächlich versendeten "
+"Erinnerung und weiteren 60 Tagen möglich."
+
+#: templates/release/home.html:55
+msgid ""
+"Eine lokale Elektrizitätsgemeinschaft organisiert die gemeinsame Nutzung von lokal "
+"erzeugtem Strom über das öffentliche Netz. Der Netzbetreiber prüft, ob die "
+"beteiligten Anschlüsse die Voraussetzungen erfüllen."
+msgstr ""
+"Eine lokale Elektrizitätsgemeinschaft organisiert die gemeinsame Nutzung von lokal "
+"erzeugtem Strom über das öffentliche Netz. Der Netzbetreiber prüft, ob die "
+"beteiligten Anschlüsse die Voraussetzungen erfüllen."
+
+#: templates/release/home.html:10
+msgid ""
+"Eine lokale Elektrizitätsgemeinschaft, kurz LEG, organisiert die gemeinsame Nutzung "
+"von lokal erzeugtem Strom. Ob Ihre Anschlüsse die Voraussetzungen erfüllen, klären "
+"Sie mit Ihrem Netzbetreiber."
+msgstr ""
+"Eine lokale Elektrizitätsgemeinschaft, kurz LEG, organisiert die gemeinsame Nutzung "
+"von lokal erzeugtem Strom. Ob Ihre Anschlüsse die Voraussetzungen erfüllen, klären "
+"Sie mit Ihrem Netzbetreiber."
+
+#: templates/verein/index.html:7
+msgid "Energy Data Hackdays 2025: Veranstaltung und Hintergrund"
+msgstr "Energy Data Hackdays 2025: Veranstaltung und Hintergrund"
+
+#: templates/release/home.html:12
+msgid ""
+"Fiktives Quartier mit Wohnhäusern, Solardächern und einem Gewerbebau. Die farbigen "
+"Linien veranschaulichen Beziehungen und zeigen keine geprüften Netzanschlüsse."
+msgstr ""
+"Fiktives Quartier mit Wohnhäusern, Solardächern und einem Gewerbebau. Die farbigen "
+"Linien veranschaulichen Beziehungen und zeigen keine geprüften Netzanschlüsse."
+
+#: templates/release/home.html:13
+msgid ""
+"Fiktives Quartier. Eine LEG verbindet Beteiligte mit unterschiedlichen Aufgaben. Die "
+"Darstellung belegt keine Netzzugehörigkeit oder bestehende Installation."
+msgstr ""
+"Fiktives Quartier. Eine LEG verbindet Beteiligte mit unterschiedlichen Aufgaben. Die "
+"Darstellung belegt keine Netzzugehörigkeit oder bestehende Installation."
+
+#: templates/release/home.html:54
+msgid "Fragen vor dem Start"
+msgstr "Fragen vor dem Start"
+
+#: verein_routes.py:350 verein_routes.py:361
+#, python-format
+msgid ""
+"Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am "
+"%(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang."
+" Kontakt: hallo@openleg.ch."
+msgstr ""
+"Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF 50 und ist am "
+"%(due_on)s fällig. Ihren Beitragsstand sehen Sie über den persönlichen Vereinszugang."
+" Kontakt: hallo@openleg.ch."
+
+#: verein_routes.py:341 verein_routes.py:350
+#, python-format
+msgid ""
+"Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie "
+"innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen "
+"begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. "
+"Kontakt: hallo@openleg.ch."
+msgstr ""
+"Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie "
+"innerhalb von weiteren 60 Tagen ab dieser Erinnerung. Danach kann der Vorstand einen "
+"begründeten Entscheid zur Beendigung treffen. Sie können Beschwerde einlegen. "
+"Kontakt: hallo@openleg.ch."
+
+#: templates/release/home.html:27
+msgid "Gemeinsam planen. Verantwortlich handeln."
+msgstr "Gemeinsam planen. Verantwortlich handeln."
+
+#: templates/release/home.html:18
+msgid "Gemeinschaft organisieren"
+msgstr "Gemeinschaft organisieren"
+
+#: templates/release/home.html:27
+msgid ""
+"Gründen Sie eine Stromgemeinschaft mit klaren Rollen. Die Software übernimmt weder "
+"den Entscheid des Netzbetreibers noch die Verantwortung Ihrer LEG."
+msgstr ""
+"Gründen Sie eine Stromgemeinschaft mit klaren Rollen. Die Software übernimmt weder "
+"den Entscheid des Netzbetreibers noch die Verantwortung Ihrer LEG."
+
+#: templates/release/home.html:17
+msgid ""
+"Haushalte und Betriebe verbrauchen Strom. Für ihre Teilnahme braucht es eine "
+"Vereinbarung und die Prüfung der Anschlüsse durch den Netzbetreiber."
+msgstr ""
+"Haushalte und Betriebe verbrauchen Strom. Für ihre Teilnahme braucht es eine "
+"Vereinbarung und die Prüfung der Anschlüsse durch den Netzbetreiber."
+
+#: verein_routes.py:317 verein_routes.py:334 verein_routes.py:335 verein_routes.py:340
+#: verein_routes.py:344
+#, python-format
+msgid ""
+"Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
+"\n"
+"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
+"hallo@openleg.ch."
+msgstr ""
+"Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
+"\n"
+"Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: "
+"hallo@openleg.ch."
+
+#: verein_routes.py:311 verein_routes.py:328 verein_routes.py:329 verein_routes.py:334
+#: verein_routes.py:338
+#, python-format
+msgid ""
+"Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. "
+"Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und "
+"Rückfragen: hallo@openleg.ch."
+msgstr ""
+"Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. "
+"Der Jahresbeitrag von CHF 50 ist am %(due_on)s fällig. Zahlungsangaben und "
+"Rückfragen: hallo@openleg.ch."
+
+#: templates/sandbox/entry.html:3 templates/sandbox/entry.html:7
+msgid "Ihr eigenes Übungsdorf"
+msgstr "Ihr eigenes Übungsdorf"
+
+#: templates/release/home.html:21
+msgid "Ihre Adresse prüfen und Interessierte in Ihrer Gemeinde finden"
+msgstr "Ihre Adresse prüfen und Interessierte in Ihrer Gemeinde finden"
+
+#: verein_routes.py:357 verein_routes.py:370
+msgid ""
+"Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und "
+"benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über "
+"Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- "
+"und Entscheidnachweise. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und "
+"benötigt keine Bewilligung des Vorstands. Datum und Beitragsstand sehen Sie über "
+"Ihren persönlichen Vereinszugang. Die Erklärung löscht nicht automatisch Buchungs- "
+"und Entscheidnachweise. Kontakt: hallo@openleg.ch."
+
+#: templates/release/home.html:58
+msgid ""
+"Ihre LEG bestimmt die verantwortlichen Personen oder beauftragt einen Dienstleister. "
+"Open Source ermöglicht den eigenen Betrieb. Die Veröffentlichung des Codes ist keine "
+"Betriebs- oder Supportzusage."
+msgstr ""
+"Ihre LEG bestimmt die verantwortlichen Personen oder beauftragt einen Dienstleister. "
+"Open Source ermöglicht den eigenen Betrieb. Die Veröffentlichung des Codes ist keine "
+"Betriebs- oder Supportzusage."
+
+#: templates/sandbox/accounts.html:6
+msgid "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
+msgstr "Ihre Änderungen bleiben beim Kontowechsel in diesem Übungsdorf erhalten."
+
+#: templates/release/home.html:31
+msgid ""
+"Importieren Sie Messwerte, prüfen Sie die Periode und kontrollieren Sie den Entwurf, "
+"bevor Rechnungen ausgegeben werden."
+msgstr ""
+"Importieren Sie Messwerte, prüfen Sie die Periode und kontrollieren Sie den Entwurf, "
+"bevor Rechnungen ausgegeben werden."
+
+#: templates/sandbox/inbox.html:13
+msgid "Link im Übungsdorf öffnen"
+msgstr "Link im Übungsdorf öffnen"
+
+#: templates/release/home.html:6
+msgid ""
+"Mit OpenLEG verwalten Sie Mitglieder und bereiten Abrechnungen vor. Sie können die "
+"Software selbst betreiben."
+msgstr ""
+"Mit OpenLEG verwalten Sie Mitglieder und bereiten Abrechnungen vor. Sie können die "
+"Software selbst betreiben."
+
+#: templates/release/home.html:19
+msgid "Netz und Messdaten"
+msgstr "Netz und Messdaten"
+
+#: templates/release/home.html:56
+msgid ""
+"OpenLEG ist freie Software unter AGPL-3.0-or-later. Für Server, Einrichtung und "
+"Unterstützung können Kosten entstehen. Klären Sie vor dem Start, wer diese Aufgaben "
+"übernimmt."
+msgstr ""
+"OpenLEG ist freie Software unter AGPL-3.0-or-later. Für Server, Einrichtung und "
+"Unterstützung können Kosten entstehen. Klären Sie vor dem Start, wer diese Aufgaben "
+"übernimmt."
+
+#: templates/release/home.html:38
+msgid ""
+"OpenLEG unterstützt den Import von Messdaten und die Vorbereitung von Rechnungen. "
+"Fehlende Daten bleiben sichtbar. Die Freigabe liegt bei den dafür berechtigten "
+"Personen."
+msgstr ""
+"OpenLEG unterstützt den Import von Messdaten und die Vorbereitung von Rechnungen. "
+"Fehlende Daten bleiben sichtbar. Die Freigabe liegt bei den dafür berechtigten "
+"Personen."
+
+#: templates/release/home.html:30
+msgid "Regeln und Zuständigkeiten festlegen"
+msgstr "Regeln und Zuständigkeiten festlegen"
+
+#: templates/release/community.html:6
+msgid ""
+"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
+" an hallo@openleg.ch. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden "
+"Sie keine Passwörter oder privaten Messdaten."
+msgstr ""
+"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
+" an hallo@openleg.ch. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden "
+"Sie keine Passwörter oder privaten Messdaten."
+
+#: templates/release/home.html:57
+msgid ""
+"Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber "
+"liefert dasselbe Format. Prüfen Sie den Import mit Ihren Daten, bevor Sie eine "
+"Abrechnung vorbereiten."
+msgstr ""
+"Sie vereinbaren den Datenzugang mit dem Verteilnetzbetreiber. Nicht jeder Betreiber "
+"liefert dasselbe Format. Prüfen Sie den Import mit Ihren Daten, bevor Sie eine "
+"Abrechnung vorbereiten."
+
+#: templates/sandbox/start_evidence.html:8
+msgid ""
+"Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der "
+"erfundenen LEG. Es wurde kein realer Netzbetreiber kontaktiert."
+msgstr ""
+"Sonnwil Energie bestätigt nur innerhalb dieses Übungsdorfs den simulierten Start der "
+"erfundenen LEG. Es wurde kein realer Netzbetreiber kontaktiert."
+
+#: templates/release/home.html:29
+msgid ""
+"Sprechen Sie mit Nachbarn und dem Netzbetreiber. Halten Sie fest, wer teilnimmt und "
+"welche Daten gebraucht werden."
+msgstr ""
+"Sprechen Sie mit Nachbarn und dem Netzbetreiber. Halten Sie fest, wer teilnimmt und "
+"welche Daten gebraucht werden."
+
+#: templates/release/home.html:16
+msgid "Strom erzeugen"
+msgstr "Strom erzeugen"
+
+#: templates/release/home.html:17
+msgid "Strom nutzen"
+msgstr "Strom nutzen"
+
+#: templates/release/home.html:57
+msgid "Technischen Betrieb vorbereiten"
+msgstr "Technischen Betrieb vorbereiten"
+
+#: templates/verein/index.html:2 templates/verein/index.html:3
+#: templates/verein/index.html:5 templates/verein/index.html:6
+msgid "Verein openLEG Schweiz"
+msgstr "Verein openLEG Schweiz"
+
+#: templates/release/home.html:50
+msgid ""
+"Verein openLEG Schweiz pflegt Software, Dokumentation und Austausch. Der Verein mit "
+"Sitz in Baden übernimmt nicht den Betrieb des gehosteten Produkts."
+msgstr ""
+"Verein openLEG Schweiz pflegt Software, Dokumentation und Austausch. Der Verein mit "
+"Sitz in Baden übernimmt nicht den Betrieb des gehosteten Produkts."
+
+#: templates/release/home.html:50
+msgid ""
+"Verein openLEG Schweiz soll die Software, Dokumentation und den Austausch pflegen. "
+"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Der Betrieb des "
+"gehosteten Produkts gehört nicht zu seinem vorgesehenen Auftrag."
+msgstr ""
+"Verein openLEG Schweiz soll die Software, Dokumentation und den Austausch pflegen. "
+"Der Verein mit geplantem Sitz in Baden ist noch nicht gegründet. Der Betrieb des "
+"gehosteten Produkts gehört nicht zu seinem vorgesehenen Auftrag."
+
+#: templates/release/home.html:30
+msgid ""
+"Vereinbaren Sie Vertretung, Tarife, Abrechnung und den Umgang mit Fragen. Benennen "
+"Sie die verantwortlichen Personen."
+msgstr ""
+"Vereinbaren Sie Vertretung, Tarife, Abrechnung und den Umgang mit Fragen. Benennen "
+"Sie die verantwortlichen Personen."
+
+#: templates/release/home.html:40
+msgid ""
+"Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem "
+"Netzbetreiber. Ein Entwurf ist noch keine freigegebene Rechnung."
+msgstr ""
+"Vereinfachter Ablauf. Die verfügbaren Daten und das Format klären Sie mit Ihrem "
+"Netzbetreiber. Ein Entwurf ist noch keine freigegebene Rechnung."
+
+#: templates/release/home.html:46
+msgid "Was kann Ihre Gemeinde ermöglichen?"
+msgstr "Was kann Ihre Gemeinde ermöglichen?"
+
+#: templates/release/home.html:56
+msgid "Was kostet die Software?"
+msgstr "Was kostet die Software?"
+
+#: templates/release/home.html:58
+msgid "Wer betreibt unsere Gemeinschaft?"
+msgstr "Wer betreibt unsere Gemeinschaft?"
+
+#: verein_routes.py:339 verein_routes.py:356 verein_routes.py:362 verein_routes.py:373
+#: verein_routes.py:386
+#, python-format
+msgid ""
+"Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die "
+"Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter "
+"%(access_url)s. Kontakt: hallo@openleg.ch."
+msgstr ""
+"Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die "
+"Beitragsfrist und Ihre Gesuche sehen Sie über Ihren persönlichen Zugang unter "
+"%(access_url)s. Kontakt: hallo@openleg.ch."
+
+#: templates/sandbox/home.html:19
+#, python-format
+msgid ""
+"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an"
+" und öffnen Sie ihn im Postfach dieses Übungsdorfs."
+msgstr ""
+"Zum erneuten Anmelden verwenden Sie %(email)s. Fordern Sie damit einen Zugangslink an"
+" und öffnen Sie ihn im Postfach dieses Übungsdorfs."
+
+#: templates/sandbox/manage.html:28
+msgid "Zurück zum Übungsdorf"
+msgstr "Zurück zum Übungsdorf"
+
+#: templates/release/home.html:55
+msgid "Zusammenarbeit verstehen"
+msgstr "Zusammenarbeit verstehen"
+
+#: templates/release/home.html:46
+msgid ""
+"Öffentliche Energie- und Solardaten helfen, Fragen vor Ort einzuordnen. Vergleichen "
+"Sie Gemeinden und finden Sie den Einstieg für Ihre Verwaltung."
+msgstr ""
+"Öffentliche Energie- und Solardaten helfen, Fragen vor Ort einzuordnen. Vergleichen "
+"Sie Gemeinden und finden Sie den Einstieg für Ihre Verwaltung."
+
+#: templates/sandbox/banner.html:4 templates/sandbox/onboarding.html:25
+msgid "Übungsdorf"
+msgstr "Übungsdorf"
+
+#: templates/sandbox/manage.html:2 templates/sandbox/manage.html:6
+msgid "Übungsdorf verwalten"
+msgstr "Übungsdorf verwalten"
