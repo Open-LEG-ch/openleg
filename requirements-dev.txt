@@ -10,3 +10,4 @@ mutmut==3.7.0
 # OpenAPI contract validation (test only)
 jsonschema==4.26.0
 openapi-spec-validator==0.7.2
+-r requirements-mcp.txt
