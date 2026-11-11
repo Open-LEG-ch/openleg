@@ -145,6 +145,10 @@ def claim_usage(client_id, endpoint, limit):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (client_id,))
         cur.execute(
+            "DELETE FROM operator_api_usage WHERE client_id=%s AND called_at<=CURRENT_TIMESTAMP-INTERVAL '1 hour'",
+            (client_id,),
+        )
+        cur.execute(
             "SELECT COUNT(*) AS count FROM operator_api_usage WHERE client_id=%s AND called_at>CURRENT_TIMESTAMP-INTERVAL '1 hour'",
             (client_id,),
         )
