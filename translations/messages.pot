@@ -14,7 +14,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: templates/index.html:582
+#: templates/partials/address_intake.html:119
 #, python-format
 msgid ""
 " Geschätztes Autarkie-Potenzial: %(percent)s%. Netzbetreiber und Netzebene müssen noch geprüft "
@@ -34,7 +34,7 @@ msgstr ""
 msgid "## Seiten"
 msgstr ""
 
-#: templates/index.html:580
+#: templates/partials/address_intake.html:118
 #, python-format
 msgid "%(count)s Interessierte in derselben Gemeinde."
 msgstr ""
@@ -64,7 +64,7 @@ msgid_plural "%(count)s Tage"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/index.html:579
+#: templates/partials/address_intake.html:117
 #, python-format
 msgid "%(count)s interessierte Person in derselben Gemeinde."
 msgstr ""
@@ -238,7 +238,7 @@ msgstr ""
 msgid "+%(format_improvement_needed_kw_int_replace)s kW"
 msgstr ""
 
-#: templates/partials/address_intake.html:50
+#: templates/partials/address_intake.html:48
 msgid "+41 79 ..."
 msgstr ""
 
@@ -405,7 +405,7 @@ msgstr ""
 msgid "1'000 kWh"
 msgstr ""
 
-#: templates/partials/address_intake.html:21
+#: templates/partials/address_intake.html:19
 msgid "1. Adresse prüfen"
 msgstr ""
 
@@ -477,7 +477,7 @@ msgstr ""
 msgid "2. Kontoauszüge herunterladen und importieren"
 msgstr ""
 
-#: templates/partials/address_intake.html:24
+#: templates/partials/address_intake.html:22
 msgid "2. Nachbarn finden"
 msgstr ""
 
@@ -513,7 +513,7 @@ msgstr ""
 msgid "3. Gemeinde anmelden"
 msgstr ""
 
-#: templates/partials/address_intake.html:27
+#: templates/partials/address_intake.html:25
 msgid "3. LEG starten"
 msgstr ""
 
@@ -585,7 +585,7 @@ msgstr ""
 msgid "< 3 bestätigte Interessierte"
 msgstr ""
 
-#: templates/index.html:586
+#: templates/partials/address_intake.html:121
 msgid "<strong>Noch keine Nachbarn gefunden.</strong> Sie können trotzdem registrieren."
 msgstr ""
 
@@ -905,15 +905,15 @@ msgstr ""
 msgid "Adresse"
 msgstr ""
 
-#: templates/partials/address_intake.html:75
+#: templates/partials/address_intake.html:73
 msgid "Adresse (optional)"
 msgstr ""
 
-#: templates/index.html:491
+#: templates/partials/address_intake.html:107
 msgid "Adresse eingeben. Ab 3 Zeichen zeigen wir Vorschläge."
 msgstr ""
 
-#: templates/partials/address_intake.html:33
+#: templates/partials/address_intake.html:31
 msgid "Adresse eingeben. Wir zeigen Vorschläge und prüfen dann Nachbarschaft und Solarpotenzial."
 msgstr ""
 
@@ -921,7 +921,7 @@ msgstr ""
 msgid "Adresse enthält ungültige Zeichen"
 msgstr ""
 
-#: templates/index.html:517
+#: templates/partials/address_intake.html:108
 msgid "Adresse gewählt. Jetzt prüfen."
 msgstr ""
 
@@ -952,8 +952,8 @@ msgstr ""
 #: templates/fuer_bewohner.html:36 templates/fuer_bewohner.html:60 templates/fuer_bewohner.html:73
 #: templates/gemeinde/pilotgemeinde.html:38 templates/gemeinde/pilotgemeinde.html:42
 #: templates/how-it-works.html:84 templates/how-it-works.html:166 templates/index.html:70
-#: templates/index.html:257 templates/index.html:552 templates/index.html:565 templates/index.html:595
-#: templates/partials/address_intake.html:43 templates/pricing.html:60
+#: templates/index.html:257 templates/partials/address_intake.html:41
+#: templates/partials/address_intake.html:114 templates/pricing.html:60
 msgid "Adresse prüfen"
 msgstr ""
 
@@ -961,7 +961,7 @@ msgstr ""
 msgid "Adresse prüfen und Interesse anmelden."
 msgstr ""
 
-#: templates/partials/address_intake.html:5
+#: templates/partials/address_intake.html:7
 msgid "Adresse prüfen und Interessierte in Ihrer Gemeinde finden"
 msgstr ""
 
@@ -1528,7 +1528,7 @@ msgid ""
 "Abrechnungslauf bleibt abgelehnt. Setzen Sie danach das Übungsdorf zurück."
 msgstr ""
 
-#: templates/partials/address_intake.html:72
+#: templates/partials/address_intake.html:70
 msgid ""
 "Auch ohne eindeutigen Adresstreffer können wir Nachfrage sammeln. Der Eintrag wird nicht als "
 "Gebäude behandelt."
@@ -2079,7 +2079,7 @@ msgid ""
 "nicht zahlungsberechtigt."
 msgstr ""
 
-#: templates/partials/address_intake.html:8
+#: templates/partials/address_intake.html:10
 #, python-format
 msgid "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalt registriert"
 msgid_plural "Bereits <strong class=\"text-ink\">%(num)s</strong> Haushalte registriert"
@@ -2462,11 +2462,11 @@ msgstr ""
 msgid "Bisherige Versionen"
 msgstr ""
 
-#: templates/index.html:607
+#: templates/partials/address_intake.html:124
 msgid "Bitte E-Mail angeben."
 msgstr ""
 
-#: templates/partials/address_intake.html:89
+#: templates/partials/address_intake.html:87
 msgid "Bitte E-Mail bestätigen"
 msgstr ""
 
@@ -4660,8 +4660,8 @@ msgid "Drucken"
 msgstr ""
 
 #: billing_policy.py:100 templates/admin/ops.html:87 templates/leg_dashboard.html:353
-#: templates/leg_dashboard.html:375 templates/partials/address_intake.html:47
-#: templates/partials/address_intake.html:73 templates/utility/dashboard.html:136
+#: templates/leg_dashboard.html:375 templates/partials/address_intake.html:45
+#: templates/partials/address_intake.html:71 templates/utility/dashboard.html:136
 #: templates/verein/application.html:7 templates/verein/join.html:10 templates/verein/login.html:8
 #: templates/verein/member_access.html:4
 msgid "E-Mail"
@@ -4807,7 +4807,7 @@ msgstr ""
 msgid "Eigene Seite und Onboarding starten."
 msgstr ""
 
-#: templates/partials/address_intake.html:61 templates/partials/address_intake.html:84
+#: templates/partials/address_intake.html:59 templates/partials/address_intake.html:82
 msgid "Eigene Solaranlage"
 msgstr ""
 
@@ -4839,8 +4839,8 @@ msgstr ""
 msgid "Eigentümer-Dashboard"
 msgstr ""
 
-#: municipality.py:132 municipality.py:308 templates/partials/address_intake.html:54
-#: templates/partials/address_intake.html:82
+#: municipality.py:132 municipality.py:308 templates/partials/address_intake.html:52
+#: templates/partials/address_intake.html:80
 msgid "Eigentümer/in"
 msgstr ""
 
@@ -6463,7 +6463,7 @@ msgstr ""
 
 #: templates/admin/ops.html:88 templates/fuer_gemeinden.html:54 templates/gemeinde/rangliste.html:83
 #: templates/index.html:62 templates/index.html:172 templates/leg_verzeichnis/leg_check.html:23
-#: templates/partials/address_intake.html:79
+#: templates/partials/address_intake.html:77
 msgid "Gemeinde"
 msgstr ""
 
@@ -6549,8 +6549,8 @@ msgstr ""
 msgid "Gemeinde-Dashboard öffnen"
 msgstr ""
 
-#: municipality.py:136 templates/partials/address_intake.html:58
-#: templates/partials/address_intake.html:82
+#: municipality.py:136 templates/partials/address_intake.html:56
+#: templates/partials/address_intake.html:80
 msgid "Gemeinde/Organisation"
 msgstr ""
 
@@ -7422,7 +7422,7 @@ msgstr ""
 msgid "Ich habe geprüft, dass der Netzbetreiber den Start der LEG zu diesem Datum bestätigt."
 msgstr ""
 
-#: templates/partials/address_intake.html:65
+#: templates/partials/address_intake.html:63
 msgid "Ich möchte Updates per E-Mail erhalten. (optional)"
 msgstr ""
 
@@ -7524,7 +7524,7 @@ msgstr ""
 msgid "Ihr neuer Haushalt ist bestätigt."
 msgstr ""
 
-#: templates/partials/address_intake.html:31
+#: templates/partials/address_intake.html:29
 msgid "Ihre Adresse"
 msgstr ""
 
@@ -7553,7 +7553,7 @@ msgid ""
 "Interessierte aus derselben Gemeinde dazukommen."
 msgstr ""
 
-#: templates/partials/address_intake.html:90
+#: templates/partials/address_intake.html:88
 msgid "Ihre Anmeldung wird erst nach dem Klick auf den Link anonym gezählt."
 msgstr ""
 
@@ -7660,7 +7660,7 @@ msgstr ""
 msgid "Ihre Rechnung %(invoice_number)s"
 msgstr ""
 
-#: templates/partials/address_intake.html:81
+#: templates/partials/address_intake.html:79
 msgid "Ihre Rolle"
 msgstr ""
 
@@ -7886,7 +7886,7 @@ msgstr ""
 msgid "Interesse an einer LEG"
 msgstr ""
 
-#: templates/partials/address_intake.html:68 templates/partials/address_intake.html:85
+#: templates/partials/address_intake.html:66 templates/partials/address_intake.html:83
 msgid "Interesse anmelden"
 msgstr ""
 
@@ -7903,11 +7903,11 @@ msgstr ""
 msgid "Interesse für %(profile_name)s anmelden"
 msgstr ""
 
-#: templates/partials/address_intake.html:71
+#: templates/partials/address_intake.html:69
 msgid "Interesse für Ihre Gemeinde anmelden"
 msgstr ""
 
-#: templates/index.html:666
+#: templates/partials/address_intake.html:127
 msgid "Interessenmeldung fehlgeschlagen."
 msgstr ""
 
@@ -7999,8 +7999,8 @@ msgstr ""
 msgid "JSON-Inhalt"
 msgstr ""
 
-#: templates/dashboard.html:167 templates/partials/address_intake.html:62
-#: templates/partials/address_intake.html:84
+#: templates/dashboard.html:167 templates/partials/address_intake.html:60
+#: templates/partials/address_intake.html:82
 msgid "Ja"
 msgstr ""
 
@@ -8264,7 +8264,7 @@ msgstr ""
 
 #: templates/admin/ops.html:69 templates/admin/ops.html:70 templates/admin/ops.html:98
 #: templates/admin/ops.html:99 templates/leg_dashboard.html:254
-#: templates/partials/address_intake.html:62 templates/partials/address_intake.html:84
+#: templates/partials/address_intake.html:60 templates/partials/address_intake.html:82
 msgid "Keine Angabe"
 msgstr ""
 
@@ -8420,7 +8420,7 @@ msgstr ""
 msgid "Keine direkten Partner gefunden."
 msgstr ""
 
-#: templates/partials/address_intake.html:39
+#: templates/partials/address_intake.html:37
 msgid "Keine eindeutige Adresse gefunden. Sie können Ihr Interesse trotzdem für Ihre Gemeinde anmelden."
 msgstr ""
 
@@ -8456,7 +8456,7 @@ msgstr ""
 msgid "Keine offenen Schritte."
 msgstr ""
 
-#: templates/index.html:525
+#: templates/partials/address_intake.html:109
 msgid ""
 "Keine passende Adresse gefunden. Sie können die Eingabe prüfen oder Ihr Interesse für die "
 "Gemeinde anmelden."
@@ -9284,8 +9284,8 @@ msgstr ""
 msgid "Lokale Stromgemeinschaften seit dem 1. Januar erlaubt."
 msgstr ""
 
-#: municipality.py:135 templates/partials/address_intake.html:57
-#: templates/partials/address_intake.html:82
+#: municipality.py:135 templates/partials/address_intake.html:55
+#: templates/partials/address_intake.html:80
 msgid "Lokales Unternehmen"
 msgstr ""
 
@@ -9398,7 +9398,7 @@ msgid ""
 "Kontaktdaten bleiben privat."
 msgstr ""
 
-#: templates/partials/address_intake.html:64
+#: templates/partials/address_intake.html:62
 msgid "Meine Anmeldung darf als verschobener, anonymer Punkt auf der Karte erscheinen. (optional)"
 msgstr ""
 
@@ -9606,8 +9606,8 @@ msgstr ""
 msgid "Methodik und Datenquellen"
 msgstr ""
 
-#: municipality.py:133 municipality.py:309 templates/partials/address_intake.html:55
-#: templates/partials/address_intake.html:82
+#: municipality.py:133 municipality.py:309 templates/partials/address_intake.html:53
+#: templates/partials/address_intake.html:80
 msgid "Mieter/in"
 msgstr ""
 
@@ -9890,7 +9890,7 @@ msgstr ""
 msgid "Nachbarn finden"
 msgstr ""
 
-#: templates/index.html:584 templates/partials/address_intake.html:38
+#: templates/partials/address_intake.html:36 templates/partials/address_intake.html:120
 msgid "Nachbarn gefunden. Sie können sich jetzt registrieren."
 msgstr ""
 
@@ -9962,8 +9962,8 @@ msgstr ""
 msgid "Navigation öffnen"
 msgstr ""
 
-#: templates/dashboard.html:168 templates/partials/address_intake.html:62
-#: templates/partials/address_intake.html:84
+#: templates/dashboard.html:168 templates/partials/address_intake.html:60
+#: templates/partials/address_intake.html:82
 msgid "Nein"
 msgstr ""
 
@@ -10137,12 +10137,12 @@ msgstr ""
 msgid "Netztrennung"
 msgstr ""
 
-#: templates/gemeinde/onboarding.html:168 templates/index.html:646 templates/utility/dashboard.html:180
-#: templates/utility/login.html:77
+#: templates/gemeinde/onboarding.html:168 templates/partials/address_intake.html:126
+#: templates/utility/dashboard.html:180 templates/utility/login.html:77
 msgid "Netzwerkfehler."
 msgstr ""
 
-#: templates/api_docs.html:238 templates/index.html:592 templates/index.html:596
+#: templates/api_docs.html:238 templates/partials/address_intake.html:123
 #: templates/utility/register.html:154
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr ""
@@ -10333,7 +10333,7 @@ msgstr ""
 msgid "Noch keine LEG aus %(profile_name)s eingetragen. Vielleicht gründen Sie die erste?"
 msgstr ""
 
-#: templates/index.html:587
+#: templates/partials/address_intake.html:122
 msgid "Noch keine Nachbarn gefunden. Sie können trotzdem starten."
 msgstr ""
 
@@ -11085,7 +11085,7 @@ msgid "PDF-Download"
 msgstr ""
 
 #: templates/admin/ops.html:89 templates/leg_verzeichnis/eintragen.html:47
-#: templates/leg_verzeichnis/liste.html:12 templates/partials/address_intake.html:78
+#: templates/leg_verzeichnis/liste.html:12 templates/partials/address_intake.html:76
 msgid "PLZ"
 msgstr ""
 
@@ -11441,7 +11441,7 @@ msgstr ""
 msgid "Prüfdatum der Quelle"
 msgstr ""
 
-#: templates/index.html:539
+#: templates/partials/address_intake.html:111
 msgid "Prüfe..."
 msgstr ""
 
@@ -12018,7 +12018,7 @@ msgstr ""
 msgid "Registrierung fehlgeschlagen."
 msgstr ""
 
-#: templates/index.html:642
+#: templates/partials/address_intake.html:125
 msgid "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 msgstr ""
 
@@ -12852,8 +12852,8 @@ msgstr ""
 msgid "Solarpotenzial sehen."
 msgstr ""
 
-#: municipality.py:134 templates/partials/address_intake.html:56
-#: templates/partials/address_intake.html:82
+#: municipality.py:134 templates/partials/address_intake.html:54
+#: templates/partials/address_intake.html:80
 msgid "Solarstromproduzent/in"
 msgstr ""
 
@@ -13004,7 +13004,7 @@ msgstr ""
 msgid "Starten Sie dort, wo Sie heute stehen."
 msgstr ""
 
-#: templates/partials/address_intake.html:36
+#: templates/partials/address_intake.html:34
 msgid "Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert."
 msgstr ""
 
@@ -13077,7 +13077,7 @@ msgstr ""
 msgid "Stornierungsgrund"
 msgstr ""
 
-#: templates/partials/address_intake.html:32
+#: templates/partials/address_intake.html:30
 msgid "Strasse, PLZ Ort"
 msgstr ""
 
@@ -13262,7 +13262,7 @@ msgstr ""
 msgid "Technischen Betrieb vorbereiten"
 msgstr ""
 
-#: templates/partials/address_intake.html:92
+#: templates/partials/address_intake.html:90
 msgid "Teilen Sie Ihren Einladungslink"
 msgstr ""
 
@@ -13325,7 +13325,7 @@ msgstr ""
 msgid "Telefon"
 msgstr ""
 
-#: templates/partials/address_intake.html:49
+#: templates/partials/address_intake.html:47
 msgid "Telefon (optional)"
 msgstr ""
 
@@ -13908,7 +13908,7 @@ msgstr ""
 msgid "Vergleichsjahr"
 msgstr ""
 
-#: templates/index.html:437
+#: templates/partials/address_intake.html:106
 msgid "Vergrössern"
 msgstr ""
 
@@ -13916,7 +13916,7 @@ msgstr ""
 msgid "Verifiziert"
 msgstr ""
 
-#: templates/index.html:437
+#: templates/partials/address_intake.html:106
 msgid "Verkleinern"
 msgstr ""
 
@@ -14289,7 +14289,7 @@ msgstr ""
 msgid "Vorschau der öffentlichen Angaben"
 msgstr ""
 
-#: templates/index.html:529
+#: templates/partials/address_intake.html:110
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr ""
 
@@ -14427,7 +14427,7 @@ msgstr ""
 msgid "Was passiert bei einem Austritt?"
 msgstr ""
 
-#: templates/partials/address_intake.html:52
+#: templates/partials/address_intake.html:50
 msgid "Was trifft auf Sie zu? Mehrfachauswahl möglich."
 msgstr ""
 
@@ -14698,7 +14698,7 @@ msgstr ""
 msgid "Wir erstellen die Unterlagen für %(utility_name)s. Sie müssen nur unterschreiben."
 msgstr ""
 
-#: templates/partials/address_intake.html:67
+#: templates/partials/address_intake.html:65
 msgid ""
 "Wir geben Ihre Daten nicht an Gemeinden oder Netzbetreiber weiter. Netzbetreiber und Netzebene "
 "müssen vor einer LEG-Gründung separat geprüft werden. Ihre Daten"
@@ -14735,7 +14735,7 @@ msgstr ""
 msgid "Wir haben genug Interessierte in Ihrer Nähe gefunden. Jetzt geht es an die Gründung."
 msgstr ""
 
-#: templates/index.html:566
+#: templates/partials/address_intake.html:116
 msgid "Wir konnten die Adresse nicht prüfen."
 msgstr ""
 
@@ -14743,7 +14743,7 @@ msgstr ""
 msgid "Wir konnten die Registrierung nicht speichern. Bitte versuchen Sie es später erneut."
 msgstr ""
 
-#: templates/partials/address_intake.html:42
+#: templates/partials/address_intake.html:40
 msgid ""
 "Wir nutzen Ihre Adresse nur für die Prüfung. Ihre Smart-Meter-Daten bleiben in Ihrer LEG, wir "
 "verkaufen sie nicht."
@@ -14756,17 +14756,17 @@ msgid ""
 "und Abgaben."
 msgstr ""
 
-#: templates/partials/address_intake.html:6
+#: templates/partials/address_intake.html:8
 msgid ""
 "Wir prüfen Adressen in der ganzen Schweiz und zählen bestätigte Interessierte pro Gemeinde. Sie "
 "erhalten eine Nachricht, sobald weitere bestätigte Interessierte aus Ihrer Gemeinde dazukommen."
 msgstr ""
 
-#: templates/partials/address_intake.html:37
+#: templates/partials/address_intake.html:35
 msgid "Wir prüfen Ihre Adresse und laden Solarpotenzial und Nachbarschaft."
 msgstr ""
 
-#: templates/index.html:540
+#: templates/partials/address_intake.html:112
 msgid "Wir prüfen Ihre Adresse. Einen Moment bitte."
 msgstr ""
 
@@ -15087,11 +15087,11 @@ msgstr ""
 msgid "Zu meinen Solargeräten"
 msgstr ""
 
-#: app.py:176 templates/index.html:553
+#: app.py:176 templates/partials/address_intake.html:115
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 msgstr ""
 
-#: templates/index.html:549 templates/index.html:641
+#: templates/partials/address_intake.html:113
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute."
 msgstr ""
 
@@ -15453,7 +15453,7 @@ msgstr ""
 msgid "höchste Solarnutzung"
 msgstr ""
 
-#: templates/partials/address_intake.html:48
+#: templates/partials/address_intake.html:46
 msgid "ihre@email.ch"
 msgstr ""
 
@@ -15502,7 +15502,7 @@ msgstr ""
 msgid "lokalerstrom.ch"
 msgstr ""
 
-#: templates/partials/address_intake.html:67
+#: templates/partials/address_intake.html:65
 msgid "löschen Sie jederzeit"
 msgstr ""
 
