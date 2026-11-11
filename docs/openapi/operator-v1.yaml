@@ -577,19 +577,25 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Error429:
-      description: Credential hourly request budget exhausted.
+      description: >-
+        Credential hourly request budget or application-wide IP limit exhausted.
+        The credential budget returns the operator error envelope with Retry-After
+        3600; the IP limiter returns error and retry_after_seconds without
+        schema_version, with Retry-After 60.
       headers:
         Cache-Control: *id001
         Referrer-Policy: *id002
         Retry-After:
-          description: Seconds until retry; currently always 3600.
+          description: Seconds to wait before retrying.
           schema:
             type: integer
-            const: 3600
+            minimum: 0
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            oneOf:
+            - $ref: '#/components/schemas/Error'
+            - $ref: '#/components/schemas/ApplicationRateLimitError'
     Error503:
       description: VNB exchange store unavailable.
       headers:
@@ -600,6 +606,18 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    ApplicationRateLimitError:
+      type: object
+      properties:
+        error:
+          type: string
+        retry_after_seconds:
+          type: integer
+          const: 60
+      required:
+      - error
+      - retry_after_seconds
+      additionalProperties: false
     Error:
       type: object
       properties:

@@ -25,12 +25,44 @@ def make_operator_app():
     return app
 
 
+@pytest.fixture
+def full_operator_app():
+    from app import create_app
+
+    return create_app(
+        {
+            "TESTING": True,
+            "SECRET_KEY": "synthetic-contract-session",
+            "APP_BASE_URL": "http://localhost",
+            "RATELIMIT_STORAGE_URI": "memory://",
+            "RATELIMIT_ENABLED": True,
+        },
+        load_environment=False,
+        check_database=False,
+    )
+
+
+def test_application_rate_limit_response_matches_contract(full_operator_app):
+    from tests.operator_contract_helpers import validate_response
+
+    path = "/api/operator/v1/communities/{community_id}/formation"
+    client = full_operator_app.test_client()
+    # Missing credentials avoid store access while exercising the real IP limit.
+    for _ in range(500):
+        assert client.get(path.format(community_id="x")).status_code == 401
+    response = client.get(path.format(community_id="x"))
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "60"
+    assert response.get_json()["retry_after_seconds"] == 60
+    assert "schema_version" not in response.get_json()
+    validate_response(load_contract(), path, "get", response)
+
+
 def assert_route_coverage(app, spec):
     actual = {
         (method.lower(), re.sub(r"<(?:[^:<>]+:)?([^<>]+)>", r"{\1}", rule.rule))
         for rule in app.url_map.iter_rules()
-        if rule.endpoint.startswith("operator_api.")
-        and rule.rule.startswith("/api/operator/v1/")
+        if rule.rule.startswith("/api/operator/v1")
         for method in rule.methods - {"HEAD", "OPTIONS"}
     }
     documented = {
@@ -44,14 +76,14 @@ def assert_route_coverage(app, spec):
     )
 
 
-def test_operator_route_coverage():
-    assert_route_coverage(make_operator_app(), load_contract())
+def test_operator_route_coverage(full_operator_app):
+    assert_route_coverage(full_operator_app, load_contract())
 
 
 @pytest.mark.parametrize("mutation", ["remove", "add_route", "stale_spec"])
-def test_route_coverage_rejects_drift(mutation):
+def test_route_coverage_rejects_drift(mutation, full_operator_app):
     spec = load_contract()
-    app = make_operator_app()
+    app = full_operator_app
     if mutation == "remove":
         del spec["paths"][next(iter(spec["paths"]))]["get"]
     elif mutation == "add_route":
@@ -62,6 +94,14 @@ def test_route_coverage_rejects_drift(mutation):
         spec["paths"]["/api/operator/v1/stale"] = {"post": {}}
     with pytest.raises(AssertionError, match="Undocumented:"):
         assert_route_coverage(app, spec)
+
+
+def test_route_coverage_rejects_route_outside_operator_blueprint(full_operator_app):
+    full_operator_app.add_url_rule(
+        "/api/operator/v1/undocumented", "undocumented", dict
+    )
+    with pytest.raises(AssertionError, match="undocumented"):
+        assert_route_coverage(full_operator_app, load_contract())
 
 
 def test_operation_metadata_and_schema_references():
