@@ -37,7 +37,7 @@ python3.11 -m venv /tmp/openleg-861-py311
 /tmp/openleg-861-py311/bin/pip install -r requirements-dev.txt
 export PATH=/tmp/openleg-861-py311/bin:$PATH
 export DATABASE_URL=postgresql://postgres@127.0.0.1:5861/postgres
-skill=/home/t3code/.claude/skills/crap-analysis/scripts
+skill="$CRAP_ANALYSIS_SKILL_DIR/scripts"  # local crap-analysis skill checkout
 python "$skill/run_python.py" --repo . --scope store \
   --run-id "$(git rev-parse HEAD)" \
   --output-dir /tmp/openleg-861-utf8-evidence \
