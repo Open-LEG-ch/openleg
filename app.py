@@ -72,6 +72,7 @@ from translation_markers import gettext_noop
 from utility_portal import utility_bp
 from verein_event_routes import events_bp
 from verein_finance_routes import finance_bp
+from verein_payment_routes import payments_bp
 from verein_routes import verein_bp
 
 logger = logging.getLogger(__name__)
@@ -487,6 +488,8 @@ def sitemap_xml():
                 "/mitmachen",
                 "/kontakt",
                 "/verein",
+                "/verein/finanzen",
+                "/verein/spenden",
                 "/veranstaltungen",
                 "/leg-verzeichnis",
                 "/leg-check",
@@ -1164,6 +1167,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         verein_bp,
         events_bp,
         finance_bp,
+        payments_bp,
     ):
         application.register_blueprint(blueprint)
     tenant_module.init_tenant_middleware(application, db=db)

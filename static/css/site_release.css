@@ -196,3 +196,10 @@
 .release-finance a{color:var(--color-brand);text-decoration:underline;text-underline-offset:3px}
 
 .release-finance-edit [aria-invalid="true"]{border:2px solid #982f40}
+
+.release-recipient-form [aria-invalid="true"]{border:2px solid #982f40}
+.release-bank-details{padding:1.5rem;border:1px solid var(--color-line);border-radius:.75rem;background:#fffdf8;margin-block:1.5rem}
+.release-bank-iban{display:block;width:100%;max-width:32rem;padding:.75rem;border:1px solid #70798d;font-size:1.125rem;font-family:var(--font-mono)}
+.release-donation-amount{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-block:2rem}.release-donation-amount input{max-width:100%;padding:.75rem;border:1px solid #70798d}
+.release-donation-qr{display:grid;grid-template-columns:212px minmax(0,1fr);gap:2rem;align-items:start;margin-top:1rem}.release-donation-qr img{width:212px;height:212px;background:white}
+@media(max-width:700px){.release-donation-qr{grid-template-columns:1fr}}

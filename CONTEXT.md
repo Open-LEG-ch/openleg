@@ -26,6 +26,7 @@ concept never travels under two labels.
 | LEA | The AI agent persona served through the OpenClaw gateway. |
 | Neighbour view | The resident-visible map and match summary: jittered coordinates, no identities, consent-gated. |
 | Verified interest | A confirmed email's interest in a LEG within one BFS municipality, counted once across the address-check and coverage-request journeys. |
+| Demodorf | The fictional village Sonnwil that visitors open without an account to try OpenLEG (fr: village de démonstration, en: demo village, it: villaggio demo). Each visit gets its own disposable sandbox workspace; code and URLs keep the name `sandbox`. Formerly called Übungsdorf. |
 | Coverage request | An interest submission whose address could not be resolved. It can contribute to municipality demand after email confirmation. |
 
 ## Seams

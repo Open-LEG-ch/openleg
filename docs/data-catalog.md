@@ -762,3 +762,19 @@ Reset, discard and expiry remove the entire capture directory and database.
   automated financial retention horizon or statutory audit is asserted. Actual
   source access, scope approval, redaction and retention must be reviewed before
   importing real finances. No account or fixture balance is seeded in production.
+
+## store/verein_payments
+
+- `verein_payment_profiles` keeps immutable recipient versions, private bank and
+  address evidence references, preparation/review identities, actual QR review
+  evidence and withdrawal metadata. It contains no bank login credentials or
+  outgoing payment authority. No fixture recipient is seeded by initialization.
+- Access: active individually provisioned board accounts. A different authorised
+  person must approve the latest recipient candidate after actual bank, address
+  and QR checks. Public reads select only recipient payment fields from the most
+  recent approved version, excluding private evidence and reviewer identities.
+- Withdrawal disables that recipient without falling back to an older account.
+  Payment pages and files use no-store. Historical recipient versions remain
+  private for traceability; no automated retention horizon is asserted. Account
+  opening, signing mandates, actual source verification and privacy review remain
+  external prerequisites.

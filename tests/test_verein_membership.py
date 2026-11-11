@@ -6,6 +6,7 @@ import re
 import uuid
 from contextlib import contextmanager
 from datetime import UTC, datetime
+from urllib.parse import parse_qs, urlsplit
 
 import psycopg2
 import pytest
@@ -274,15 +275,18 @@ def test_retry_confirmation_binds_corrected_identity_and_current_terms(membershi
         }
 
 
-def test_successful_refusal_appeal_supersedes_notice_and_admits_once(membership):
-    _client, _mail, store = membership
+@pytest.mark.parametrize("locale", ["de_CH", "en", "fr_CH", "it_CH"])
+def test_successful_refusal_appeal_supersedes_notice_and_admits_once(
+    membership, locale
+):
+    client, mail, store = membership
     import database
 
     token = store.apply(
         email="owner@example.org",
         name="Owner",
         affiliation="",
-        locale="de_CH",
+        locale=locale,
         privacy_version="current",
     )
     store.confirm(token)
@@ -317,6 +321,22 @@ def test_successful_refusal_appeal_supersedes_notice_and_admits_once(membership)
         store.applicant_profile(owner)["decision_reason"]
         == "Assembly approved admission"
     )
+    with client.session_transaction() as session:
+        session["verein_session"] = board
+    client.get("/verein/vorstand/antraege?lang=de-CH")
+    sent = client.post(
+        "/verein/vorstand/benachrichtigungen",
+        data={"csrf_token": _csrf(client, "/verein/vorstand/antraege")},
+    )
+    assert sent.status_code == 303
+    link = re.search(
+        r"http://localhost/verein/mitglied/zugang(?:\?[^\s.]+)?", mail[-1][2]
+    )[0]
+    language = locale.replace("_", "-")
+    assert parse_qs(urlsplit(link).query) == {"lang": [language]}
+    opened = client.application.test_client().get(link)
+    assert opened.status_code == 200
+    assert opened.headers["Content-Language"] == language
 
 
 def test_terminated_owner_sees_actual_reason_and_date(membership, monkeypatch):

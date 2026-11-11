@@ -12,6 +12,7 @@ from store import (
     verein,
     verein_finance,
     verein_meetups,
+    verein_payments,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,6 +101,7 @@ def create_tables():
             verein.create_tables(cur)
             verein_meetups.create_tables(cur)
             verein_finance.create_tables(cur)
+            verein_payments.create_tables(cur)
             equipment.create_tables(cur)
             advisories.create_tables(cur)
 
