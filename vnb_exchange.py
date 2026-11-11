@@ -709,7 +709,9 @@ def submit_formation(
     if any(item.get("has_participant_receipts") for item in metadata):
         try:
             db.validate_formation_signature_receipts(
-                command.community_id, command.actor_building_id
+                command.community_id,
+                command.actor_building_id,
+                **({"snapshot": True} if dry_run else {}),
             )
         except db.SignatureDenied as error:
             raise FormationSubmissionForbidden from error

@@ -172,13 +172,26 @@ def formation_status(community_id):
     )
 
 
+def _dry_run_option():
+    """Accept only one exact query boolean; never silently submit a body option."""
+    values = request.args.getlist("dry_run")
+    payload = request.get_json(silent=True)
+    if (
+        len(values) > 1
+        or (values and values[0] not in {"true", "false"})
+        or (isinstance(payload, dict) and "dry_run" in payload)
+    ):
+        return None
+    return values[0] if values else "false"
+
+
 @operator_api_bp.post(
     "/api/operator/v1/communities/<community_id>/formation/submissions"
 )
 @require_operator("formation.mutate")
 def submit_formation(community_id):
-    dry_run = request.args.get("dry_run", "false")
-    if dry_run not in {"true", "false"}:
+    dry_run = _dry_run_option()
+    if dry_run is None:
         return _error("Invalid dry_run option", 400)
     if dry_run != "true" and g.operator_client.get("actor_kind") == "agent":
         return _error("Formation submission denied", 403)
@@ -222,8 +235,8 @@ def membership_mutations(community_id):
 )
 @require_operator("membership.mutate")
 def submit_membership_mutation(community_id):
-    dry_run = request.args.get("dry_run", "false")
-    if dry_run not in {"true", "false"}:
+    dry_run = _dry_run_option()
+    if dry_run is None:
         return _error("Invalid dry_run option", 400)
     if dry_run != "true" and g.operator_client.get("actor_kind") == "agent":
         return _error("Membership mutation denied", 403)

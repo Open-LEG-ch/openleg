@@ -254,7 +254,9 @@ bearer flow does not implement the OAuth HTTP challenge planned in #838.
 ## VNB previews
 
 Both VNB write endpoints accept the query option `dry_run=true` (default
-`false`). A successful preview returns HTTP 200 with `schema_version`,
+`false`). The option must appear at most once, with the exact value `true`
+or `false`. Repeated values, other values and a `dry_run` key in the JSON
+body return 400 with `invalid_request` before domain validation. A successful preview returns HTTP 200 with `schema_version`,
 `intended_action` (`prepare_manual_package` or `send_through_adapter`),
 `payload_fingerprint` and `recipient`. The recipient comes from the adapter's
 `ExchangeContract.recipient_description`; absent descriptions return

@@ -323,3 +323,170 @@ def test_membership_replay_preview_keeps_real_call_validation(
     )
     assert real.status_code == 202
     assert preview.status_code == 200, preview.json
+
+
+@pytest.mark.parametrize("suffix,payload", SCENARIOS)
+@pytest.mark.parametrize(
+    "query,body",
+    [
+        ("dry_run=false&dry_run=garbage", {}),
+        ("dry_run=garbage&dry_run=false", {}),
+        ("dry_run=true&dry_run=false", {}),
+        ("dry_run=false&dry_run=true", {}),
+        ("dry_run=true&dry_run=true", {}),
+        ("dry_run=garbage", {}),
+        ("dry_run=", {}),
+        ("dry_run=True", {}),
+        ("", {"dry_run": True}),
+        ("", {"dry_run": "garbage"}),
+    ],
+)
+def test_invalid_dry_run_is_rejected_before_domain(
+    operator_http, monkeypatch, suffix, payload, query, body
+):
+    from unittest.mock import Mock
+
+    from operator_errors import ErrorCode
+
+    http = operator_http
+    ids = helpers.seed_operator_resources(http)
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE operator_api_clients SET webhook_url='https://example.invalid/events'"
+        )
+    assert (
+        http.request(
+            "POST",
+            f"/billing/cases/{ids['case_id']}/responses",
+            json={"message": "Existing evidence", "status": "acknowledged"},
+            headers={"Idempotency-Key": "existing-evidence"},
+        ).status_code
+        == 200
+    )
+    assert http.request("POST", suffix, json=payload).status_code == 202
+    before = snapshot(http.db)
+    domain_name = (
+        "submit_formation"
+        if suffix == "/formation/submissions"
+        else "submit_membership_mutation"
+    )
+    domain = Mock(wraps=getattr(vnb_exchange, domain_name))
+    monkeypatch.setattr(vnb_exchange, domain_name, domain)
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Malformed dry_run reached package or transport")
+
+    monkeypatch.setattr(vnb_exchange, "_manual_package", forbidden)
+    monkeypatch.setattr(vnb_exchange, "_manual_mutation_package", forbidden)
+    monkeypatch.setattr(vnb_exchange.ManualHandoverAdapter, "submit", forbidden)
+    response = http.request(
+        "POST", suffix, json={**payload, **body}, query_string=query
+    )
+    assert response.status_code == 400, response.json
+    assert response.json["code"] == ErrorCode.INVALID_REQUEST.value
+    domain.assert_not_called()
+    after = snapshot(http.db)
+    for table in before:
+        if table not in {"operator_api_clients", "operator_api_usage"}:
+            assert before[table] == after[table], table
+
+
+def seed_participant_receipts(http):
+    import json
+
+    from store.formation_signatures import bundle_fingerprint, participant_manifest
+
+    db, cid = http.db, http.community_id
+    for name in ("second", "third"):
+        assert db.save_building(
+            name,
+            name + "@example.invalid",
+            {"address": name, "lat": 47.2, "lon": 8.2},
+            {"share_with_neighbors": True},
+            verified=True,
+        )
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO community_members(community_id,building_id,status) VALUES (%s,%s,'confirmed')",
+                (cid, name),
+            )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        manifest = participant_manifest(cur, cid)
+        for index in range(4):
+            cur.execute(
+                """INSERT INTO leg_documents
+                   (community_id,doc_type,filename,pdf_data,signing_status,participant_manifest)
+                   VALUES (%s,%s,%s,%s,'completed',%s)""",
+                (
+                    cid,
+                    "gemeinschaftsvereinbarung" if index == 0 else "contract",
+                    f"{index}.pdf",
+                    b"signed bytes",
+                    json.dumps(manifest),
+                ),
+            )
+        cur.execute("SELECT id,pdf_data FROM leg_documents ORDER BY id")
+        fingerprint = bundle_fingerprint(
+            cur.fetchall(), [p["building_id"] for p in manifest]
+        )
+        for person in manifest:
+            cur.execute(
+                """INSERT INTO leg_signature_receipts
+                   (community_id,bundle_fingerprint,building_id,provider,evidence)
+                   VALUES (%s,%s,%s,'test','receipt')""",
+                (cid, fingerprint, person["building_id"]),
+            )
+
+
+@pytest.mark.parametrize("dry_run", [True, False])
+@pytest.mark.parametrize("invalid_receipt", [False, True])
+def test_receipt_preview_does_not_lock_real_writes(
+    operator_http, monkeypatch, dry_run, invalid_receipt
+):
+    import psycopg2
+
+    from store import formation_signatures
+
+    http = operator_http
+    seed_participant_receipts(http)
+    if invalid_receipt:
+        with http.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM leg_signature_receipts WHERE building_id='third'")
+    original = formation_signatures.bundle_fingerprint
+    checked = []
+
+    def check_concurrent_writer(documents, signers):
+        # This hook runs inside receipt validation, after all bundle reads,
+        # while its transaction (and any row locks) is still open.
+        with http.db.get_connection() as conn:
+            for table in (
+                "communities",
+                "leg_documents",
+                "community_members",
+                "buildings",
+                "consents",
+            ):
+                with conn.cursor() as cur:
+                    try:
+                        cur.execute(f"SELECT * FROM {table} FOR UPDATE NOWAIT")
+                    except psycopg2.errors.LockNotAvailable:
+                        conn.rollback()
+                        assert not dry_run, f"Preview locked {table}"
+                    else:
+                        conn.rollback()
+                        assert dry_run, f"Real submission did not lock {table}"
+        checked.append(True)
+        return original(documents, signers)
+
+    monkeypatch.setattr(
+        formation_signatures, "bundle_fingerprint", check_concurrent_writer
+    )
+    response = http.request(
+        "POST",
+        "/formation/submissions",
+        query_string={"dry_run": "true" if dry_run else "false"},
+    )
+    assert checked
+    assert response.status_code == (409 if invalid_receipt else 200 if dry_run else 202)
+    if invalid_receipt:
+        assert response.json["code"] == "invalid_formation"

@@ -77,7 +77,7 @@ paths:
         schema:
           type: boolean
           default: false
-        description: Validate and check existing conflicts without claiming cases. Usage accounting still applies.
+        description: Accepts a single query parameter with exact value true or false. Repeated values, other spellings, and a dry_run key in the JSON body return 400 invalid_request. Validates and checks conflicts without claiming cases. Usage accounting still applies.
       responses:
         '200':
           description: Preview only. No package, transport, case, event or idempotency writes.
@@ -367,7 +367,7 @@ paths:
         schema:
           type: boolean
           default: false
-        description: Validate and check existing conflicts without claiming cases. Usage accounting still applies.
+        description: Accepts a single query parameter with exact value true or false. Repeated values, other spellings, and a dry_run key in the JSON body return 400 invalid_request. Validates and checks conflicts without claiming cases. Usage accounting still applies.
       responses:
         '200':
           description: Preview only. No package, transport, case, event or idempotency writes.
