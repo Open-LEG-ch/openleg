@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Translation validation fails on missing text, stale builds or placeholders."""
 
+import json
 import os
 import subprocess
 import sys
@@ -305,4 +306,47 @@ def test_german_api_description_preserves_authored_paragraphs():
     assert (
         translated
         == "Open-Source-API für Schweizer Energiedaten. Sie bündelt öffentliche Behördendaten (ElCom-Tarife, Solarpotenzial von Sonnendach, Energie Reporter) in aufbereiteten, abfragbaren Schnittstellen und ergänzt sie um Werkzeuge zur LEG-Gründung.\n\nAlle Schnittstellen liefern JSON. Keine Anmeldung erforderlich. Höchstens 60 Anfragen pro Minute und IP-Adresse.\n\n**Datenquellen:** ElCom (LINDAS SPARQL), BFE Sonnendach, Energie Reporter, Swisstopo\n\n**Lizenz:** Offene Daten, DSG-konform. Keine Personendaten."
+    )
+
+
+@pytest.mark.parametrize(
+    "plural_forms", ["nplurals=2; plural=(n != 1);", "nplurals=3; plural=(n > 1);"]
+)
+def test_plural_forms_change_invalidates_only_affected_locale_review(
+    tmp_path, monkeypatch, plural_forms
+):
+    from scripts import translations
+
+    source = Catalog()
+    source.add(("Ein Haushalt", "Haushalte"))
+    catalog_artifacts(tmp_path, monkeypatch, source, {})
+    path = translations.TRANSLATIONS / "review-status.json"
+    state = json.loads(path.read_text())
+    for entry in state["locales"].values():
+        entry.update(
+            native_review_status="approved",
+            reviewer="Reviewer",
+            evidence_reference="review-123",
+        )
+    path.write_text(json.dumps(state))
+    french_path = translations.TRANSLATIONS / "fr_CH/LC_MESSAGES/messages.po"
+    original = french_path.read_text()
+    french_path.write_text(
+        original.replace("nplurals=2; plural=(n > 1);", plural_forms)
+    )
+    catalogs = {
+        locale: translations.load(
+            translations.TRANSLATIONS / locale / "LC_MESSAGES/messages.po", locale
+        )
+        for locale in translations.LOCALES
+    }
+    with pytest.raises(ValueError, match="Stale review digests"):
+        translations.review_state(source, catalogs, check=True)
+    translations.review_state(source, catalogs, check=False)
+    updated = json.loads(path.read_text())
+    assert updated["locales"]["fr_CH"]["native_review_status"] == "pending"
+    assert updated["locales"]["de_CH"] == state["locales"]["de_CH"]
+    assert (
+        updated["superseded_reviews"][-1]["locales"]["fr_CH"]
+        == state["locales"]["fr_CH"]
     )
