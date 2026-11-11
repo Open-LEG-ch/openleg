@@ -414,6 +414,7 @@ from store.utility import (  # noqa: F401
     update_utility_client_status,
 )
 
+OperatorCredentialLimitReached = _operator_api.CredentialLimitReached
 create_operator_api_client = _operator_api.create_client
 claim_operator_api_usage = _operator_api.claim_usage
 create_operator_event = _operator_api.create_event
