@@ -29,6 +29,11 @@ _PUBLIC_ENDPOINTS = frozenset(
         "rangliste.hub",
         "rangliste.methodik",
         "self_host.self_host_page",
+        "site.verein",
+        "site.software",
+        "site.knowledge",
+        "site.community",
+        "site.directory",
     }
 )
 
