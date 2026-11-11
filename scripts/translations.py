@@ -254,7 +254,7 @@ def merge(path, expected, locale):
 
 
 def semantic(catalog):
-    """Digest semantic text and contexts, excluding generated metadata and locations."""
+    """Digest text, contexts and plural rules, excluding generated metadata and locations."""
     items = [
         {"id": message.id, "context": message.context, "string": message.string}
         for message in catalog
@@ -267,7 +267,15 @@ def semantic(catalog):
         )
     )
     return len(items), hashlib.sha256(
-        json.dumps(items, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        json.dumps(
+            {
+                "messages": items,
+                "num_plurals": catalog.num_plurals,
+                "plural_expr": catalog.plural_expr,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ).encode("utf-8")
     ).hexdigest()
 
 
