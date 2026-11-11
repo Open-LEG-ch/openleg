@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """HTTP contracts for the dashboard product entry point."""
 
+import json
 import re
 
 import pytest
@@ -50,6 +51,17 @@ def app_module(monkeypatch):
         web.before_request_funcs[None] = hooks
 
 
+def _address_map(html):
+    configs = re.findall(
+        r'<script\b[^>]* type="application/json" data-address-config>(.*?)</script>',
+        html,
+        re.DOTALL,
+    )
+    assert len(configs) == 1
+    assert 'src="/static/js/address_intake.js"' in html
+    return json.loads(configs[0])["map"]
+
+
 def _hrefs(html):
     return re.findall(r'href="([^"]+)"', html)
 
@@ -82,7 +94,7 @@ def test_public_default_uses_nationwide_map_and_neutral_grid_operator(
     )
     client = app_module.web.test_client()
     home = client.get("/").get_data(as_text=True)
-    assert "setView([46.8, 8.2], 7)" in home
+    assert _address_map(home) == {"center": [46.8, 8.2], "zoom": 7}
     dashboard = client.get("/dashboard/demo").get_data(as_text=True)
     assert "LEG-Anmeldung mit VNB" in dashboard
 
@@ -104,7 +116,7 @@ def test_explicit_regional_tenant_keeps_its_map_and_grid_operator(
     )
     client = app_module.web.test_client()
     home = client.get("/").get_data(as_text=True)
-    assert "setView([47.5, 8.3], 12)" in home
+    assert _address_map(home) == {"center": [47.5, 8.3], "zoom": 12}
     assert "LEG-Anmeldung mit AEW" in client.get("/dashboard/demo").get_data(
         as_text=True
     )
