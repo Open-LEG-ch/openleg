@@ -19791,6 +19791,11 @@ msgid "Demodorf öffnen"
 msgstr "Open the demo village"
 
 #. Draft translation; native language and domain review pending.
+#: templates/partials/release_identity.html:5
+msgid "Release-Details"
+msgstr "Release details"
+
+#. Draft translation; native language and domain review pending.
 #: billing_workspace.py:65 dashboard.py:214 dashboard.py:455
 msgid "Unlesbar"
 msgstr "Unreadable"
