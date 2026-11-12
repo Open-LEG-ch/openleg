@@ -3316,11 +3316,11 @@ msgid ""
 " Beschwerdemöglichkeit vorgesehen."
 msgstr ""
 
-#: payment_reconciliation.py:176
+#: payment_reconciliation.py:306
 msgid "Der Kontoauszug enthält keine Zahlungseinträge."
 msgstr ""
 
-#: payment_reconciliation.py:129
+#: payment_reconciliation.py:212
 msgid "Der Kontoauszug enthält keinen Auszug."
 msgstr ""
 
@@ -3554,23 +3554,26 @@ msgid ""
 "Netzbetreiber genehmigt sie (20 Prozentpunkte)."
 msgstr ""
 
-#: payment_reconciliation.py:137 payment_reconciliation.py:144
+#: payment_reconciliation.py:225 payment_reconciliation.py:232
 msgid "Der Zahlungseintrag enthält kein gültiges Buchungsdatum."
 msgstr ""
 
-#: payment_reconciliation.py:150
+#: payment_reconciliation.py:133 payment_reconciliation.py:238 payment_reconciliation.py:257
 msgid "Der Zahlungseintrag enthält keine gültige Richtung."
 msgstr ""
 
-#: payment_reconciliation.py:106
+#: payment_reconciliation.py:97 payment_reconciliation.py:108 payment_reconciliation.py:181
+#: payment_reconciliation.py:246
 msgid "Der Zahlungseintrag enthält keine gültige Währung."
 msgstr ""
 
-#: payment_reconciliation.py:95
+#: payment_reconciliation.py:169
 msgid "Der Zahlungseintrag enthält keinen Betrag."
 msgstr ""
 
-#: payment_reconciliation.py:100 payment_reconciliation.py:103
+#: payment_reconciliation.py:149 payment_reconciliation.py:161 payment_reconciliation.py:175
+#: payment_reconciliation.py:178 payment_reconciliation.py:186 payment_reconciliation.py:189
+#: payment_reconciliation.py:268 payment_reconciliation.py:279
 msgid "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgstr ""
 
@@ -3896,11 +3899,11 @@ msgstr ""
 msgid "Die Interessenmeldung konnte nicht gespeichert werden."
 msgstr ""
 
-#: payment_reconciliation.py:118
+#: payment_reconciliation.py:201
 msgid "Die Kontoauszugsdatei ist kein gültiges XML."
 msgstr ""
 
-#: payment_reconciliation.py:113
+#: payment_reconciliation.py:196
 msgid "Die Kontoauszugsdatei ist leer."
 msgstr ""
 
@@ -14051,7 +14054,7 @@ msgstr ""
 msgid "Unterschriften ausstehend"
 msgstr ""
 
-#: payment_reconciliation.py:126
+#: payment_reconciliation.py:209
 msgid "Unterstützt werden nur camt.053 und camt.054."
 msgstr ""
 
