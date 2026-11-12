@@ -15,9 +15,16 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: ci/test
+  # Each shard runs a round-robin slice of the suite on its own runner, with
+  # its own PostgreSQL and Redis. The COUNT in --shard must equal the matrix size.
+  shard:
+    name: ci/test shard ${{ matrix.shard }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
 
     services:
       redis:
@@ -63,8 +70,41 @@ jobs:
 
       - name: Run tests
         env:
-          PYTEST_ADDOPTS: "--durations=30 -o faulthandler_timeout=120"
+          PYTEST_ADDOPTS: "--durations=30 -o faulthandler_timeout=120 --shard=${{ matrix.shard }}/6"
           DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
           OPENLEG_TEST_VEREIN_DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
           OPENLEG_TEST_FORECAST_REDIS_URL: redis://127.0.0.1:6379/15
         run: bash scripts/test.sh full
+
+  # The required check. It always runs, so a failed or cancelled shard can
+  # never leave ci/test skipped (GitHub treats a skipped check as passing).
+  # The matrix result alone can read success when a leg never got a runner,
+  # so it also requires every expected shard job to have succeeded.
+  test:
+    name: ci/test
+    needs: shard
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: Require every shard to pass
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RESULT: ${{ needs.shard.result }}
+          RUN: ${{ github.run_id }}
+          SHARDS: "6"
+        run: |
+          set -euo pipefail
+          echo "Matrix result: ${RESULT}"
+          test "${RESULT}" = success
+          jobs=$(gh api --paginate "repos/${REPO}/actions/runs/${RUN}/jobs?filter=latest&per_page=100")
+          passed=$(printf '%s' "${jobs}" | jq -r '.jobs[] | select(.name | startswith("ci/test shard ")) | select(.conclusion == "success") | .name' | sort -u)
+          expected=$(seq 1 "${SHARDS}" | sed 's|^|ci/test shard |' | sort -u)
+          if [ "${passed}" != "${expected}" ]; then
+            echo "::error::Not every shard passed. Passed: $(printf '%s' "${passed}" | tr '\n' ',')"
+            exit 1
+          fi
+          echo "All ${SHARDS} shards passed."
