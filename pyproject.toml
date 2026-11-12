@@ -161,6 +161,7 @@ also_copy = [
     "ranking.py",
     "registration.py",
     "release_mode.py",
+    "release_identity.py",
     "registry_intake.py",
     "scripts",
     "sdat_datahub.py",
