@@ -710,8 +710,8 @@ def get_invoice_for_participant(invoice_id: int, building_id: str) -> dict | Non
         raise BillingStoreError("Could not load invoice") from e
 
 
-def _locked_invoice(cur, invoice_id, community_id):
-    """Lock a community-scoped invoice and resolve its original registration's recipient."""
+def _locked_invoice(cur, invoice_id, community_id, *, locking=True):
+    """Read a scoped invoice and recipient, locking except for snapshot previews."""
     cur.execute(
         f"""
         SELECT i.*, b.building_id AS matched_building_id,
@@ -720,7 +720,7 @@ def _locked_invoice(cur, invoice_id, community_id):
         LEFT JOIN buildings b ON b.building_id = i.participant_id
           AND {REGISTRATION_MATCH_SQL}
         WHERE i.id = %s AND i.community_id = %s AND i.status = 'issued'
-        FOR UPDATE OF i
+        {"FOR UPDATE OF i" if locking else ""}
         """,
         (invoice_id, community_id),
     )
@@ -1133,10 +1133,13 @@ def confirm_payment(
     action = f"payment.confirm:{entry_id}"
     fingerprint = operator_operations.request_hash({"invoice_id": invoice_id})
     with _get_connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT pg_advisory_xact_lock(hashtext(%s))",
-            (f"{community_id}:{action}:{key}",),
-        )
+        if dry_run:
+            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+        else:
+            cur.execute(
+                "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                (f"{community_id}:{action}:{key}",),
+            )
         replay = (
             None
             if dry_run
@@ -1147,7 +1150,8 @@ def confirm_payment(
         if replay:
             return replay
         cur.execute(
-            "SELECT * FROM bank_statement_entries WHERE id=%s AND community_id=%s FOR UPDATE",
+            "SELECT * FROM bank_statement_entries WHERE id=%s AND community_id=%s"
+            + (" FOR UPDATE" if not dry_run else ""),
             (entry_id, community_id),
         )
         entry = cur.fetchone()
@@ -1157,8 +1161,9 @@ def confirm_payment(
             "mismatch",
         }:
             return None
-        invoice = _locked_invoice(cur, invoice_id, community_id)
-        # This separate statement sees lifecycle commits made while the lock waited.
+        invoice = _locked_invoice(cur, invoice_id, community_id, locking=not dry_run)
+        # Real confirmations see lifecycle commits made while the lock waited.
+        # Previews read all validation inputs from the same non-locking snapshot.
         invoice["lifecycle_state"] = _current_invoice_state(cur, invoice_id)
         if payment_reconciliation.payment_eligibility(entry, invoice) != "matched":
             raise billing_lifecycle.InvoiceLifecycleError(

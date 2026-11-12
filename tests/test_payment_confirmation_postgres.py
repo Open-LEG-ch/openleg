@@ -260,3 +260,104 @@ def test_mcp_payment_tool(operator_http, monkeypatch):
                 assert replay.structuredContent["replayed"] is True
 
         asyncio.run(check())
+
+
+@pytest.fixture
+def paused_confirmation(operator_http, monkeypatch):
+    """Pause one HTTP request during real eligibility validation, holding its transaction."""
+    from concurrent.futures import ThreadPoolExecutor
+    from contextlib import contextmanager
+    from threading import Event, current_thread
+
+    import payment_reconciliation
+
+    http = operator_http
+    original_connection = http.db.get_connection
+    original_eligibility = payment_reconciliation.payment_eligibility
+    main_thread = current_thread()
+    entered, release = Event(), Event()
+
+    @contextmanager
+    def connection():
+        with original_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SET LOCAL lock_timeout = '200ms'")
+            yield conn
+
+    def eligibility(*args):
+        if current_thread() is not main_thread:
+            entered.set()
+            assert release.wait(10), "paused confirmation was not released"
+        return original_eligibility(*args)
+
+    monkeypatch.setattr(http.db, "get_connection", connection)
+    monkeypatch.setattr(payment_reconciliation, "payment_eligibility", eligibility)
+
+    @contextmanager
+    def pause(ids, *, dry_run):
+        def request():
+            with http.app.test_client() as client:
+                return client.post(
+                    f"/api/operator/v1/communities/{http.community_id}/payments/matches/{ids['entry_id']}/confirm",
+                    query_string={"dry_run": str(dry_run).lower()},
+                    headers={**http.headers, "Idempotency-Key": "paused"},
+                    json={"invoice_id": ids["invoice_id"]},
+                )
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(request)
+            try:
+                assert entered.wait(5), "confirmation did not reach validation"
+                yield future
+            finally:
+                release.set()
+            assert future.result(timeout=5).status_code == 200
+
+    return pause
+
+
+@pytest.mark.parametrize("key", ["different", "paused"])
+def test_paused_preview_does_not_block_confirmation(
+    operator_http, paused_confirmation, key
+):
+    ids = seed_operator_resources(operator_http)
+    with paused_confirmation(ids, dry_run=True) as preview:
+        response = confirm(operator_http, ids, headers={"Idempotency-Key": key})
+        assert response.status_code == 200
+        assert response.json["match_decision"] == "matched"
+    assert preview.result().json["eligible"] is True
+
+
+@pytest.mark.parametrize("same_entry", [True, False])
+def test_real_confirmation_keeps_payment_locks(
+    operator_http, paused_confirmation, same_entry
+):
+    from psycopg2.errors import LockNotAvailable
+
+    http = operator_http
+    ids = seed_operator_resources(http)
+    contender = dict(ids)
+    if not same_entry:
+        with http.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO bank_statement_entries(
+                       statement_import_id,community_id,entry_reference,booking_date,
+                       amount,currency,payment_reference,credit_debit_indicator,
+                       match_decision,booking_status)
+                   SELECT statement_import_id,community_id,'ENTRY-2',booking_date,
+                          amount,currency,payment_reference,credit_debit_indicator,
+                          match_decision,booking_status
+                   FROM bank_statement_entries WHERE id=%s RETURNING id""",
+                (ids["entry_id"],),
+            )
+            contender["entry_id"] = cur.fetchone()["id"]
+    with paused_confirmation(ids, dry_run=False):
+        with pytest.raises(LockNotAvailable, match="lock timeout"):
+            confirm(http, contender, headers={"Idempotency-Key": "contender"})
+    rejected = confirm(http, contender, headers={"Idempotency-Key": "contender"})
+    assert rejected.status_code == (404 if same_entry else 409)
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM invoice_lifecycle_events WHERE event_type='paid'"
+        )
+        assert cur.fetchone()["n"] == 1
