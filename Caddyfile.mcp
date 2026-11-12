@@ -1,7 +1,9 @@
 # Loaded only by the optional local mcp-proxy service.
 :8081 {
     handle /mcp {
-        reverse_proxy mcp:8000
+        reverse_proxy mcp:8000 {
+            header_up X-Real-IP {http.request.remote.host}
+        }
     }
     handle {
         respond 404

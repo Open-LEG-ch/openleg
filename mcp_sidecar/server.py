@@ -23,6 +23,7 @@ from mcp.shared.exceptions import McpError
 from starlette.applications import Starlette
 from starlette.routing import Route
 
+from mcp_sidecar.limits import PublicLimits
 from mcp_sidecar.payment import payment_tool
 from mcp_sidecar.public import public_operations
 
@@ -298,6 +299,7 @@ def create_app():
             ),
         )
     public = public_operations()
+    public_limits = PublicLimits()
 
     @server.list_tools()
     async def list_tools():
@@ -372,6 +374,11 @@ def create_app():
     @server.call_tool(validate_input=False)
     async def call_tool(name, arguments):
         if name in public:
+            retry = public_limits.retry_after(server.request_context.request)
+            if retry:
+                result = error("rate_limited", retryable=True)
+                result.structuredContent["retry_after"] = retry
+                return result
             public_path, path_parameters, tool = public[name]
             if not Draft202012Validator(tool.inputSchema).is_valid(arguments):
                 return error("invalid_arguments")

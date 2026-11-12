@@ -112,3 +112,58 @@ A 429 returns the tool error `rate_limited` with structured content
 delay in seconds. A 400 returns `invalid_arguments`, a 404 `not_found`, other
 statuses `public_error`, and an unreachable upstream `public_unavailable`.
 Upstream error text is never returned.
+
+## Per-client public budgets
+
+The sidecar allows 60 public tool calls per client in a fixed 60-second window.
+All nine public tools share that budget, including calls with invalid arguments
+and calls carrying an operator credential. Initialization and tool discovery do
+not consume it. Operator tools retain their upstream per-credential budgets.
+
+| Environment variable | Default | Meaning |
+| --- | --- | --- |
+| `OPENLEG_MCP_PUBLIC_CALLS` | `60` | Calls allowed per window |
+| `OPENLEG_MCP_PUBLIC_WINDOW_SECONDS` | `60` | Window length from the first call |
+| `OPENLEG_MCP_PUBLIC_MAX_CLIENTS` | `10000` | Maximum stored client budgets |
+| `OPENLEG_MCP_TRUSTED_PROXY` | empty | Exact IP address of one trusted proxy |
+
+Numeric settings must be positive integers. Invalid settings prevent startup.
+Limits live in memory per sidecar process: restarting resets them, and multiple
+processes multiply the available budget. Clients sharing an IP share a budget.
+Expired entries are removed on the next public call. When the table is full,
+new clients receive a rate limit until the earliest entry expires; active
+budgets are never evicted to admit new addresses.
+
+A rejected call never reaches Flask. It returns `isError: true`, text
+`rate_limited`, and structured content
+`{"code": "rate_limited", "retry_after": 60}`. The delay is the remaining
+window rounded up to whole seconds, with the same shape as an upstream 429.
+The app's shared upstream limits still apply: enough distinct clients can
+exhaust them. This local limit does not reserve upstream capacity per client.
+
+### One trusted Caddy hop
+
+By default the key is the connecting peer in ASGI `scope["client"]`.
+The entry point disables Uvicorn's automatic proxy-header processing. If you
+launch Uvicorn yourself, use `--no-proxy-headers` to preserve that boundary.
+
+To distinguish clients behind Caddy, set `OPENLEG_MCP_TRUSTED_PROXY` to
+Caddy's exact connecting IP on the sidecar network. The local Compose overlay
+passes this variable through. Find the proxy's address with
+`docker inspect` after starting it; recreate the sidecar with the setting.
+For a persistent setup, pin the proxy address in the deployment network
+configuration and update the setting if that address changes. Do not use
+a hostname, CIDR, wildcard, or the public address of the proxy.
+
+`Caddyfile.mcp` overwrites `X-Real-IP` with
+`{http.request.remote.host}`, the peer Caddy actually sees. Only when the
+sidecar peer matches the configured proxy does the sidecar accept that header.
+It requires exactly one valid IP value; absent, malformed, duplicated, or
+comma-separated values fall back to the proxy's shared budget.
+`Forwarded` and `X-Forwarded-For` are never used. These addresses are never
+forwarded to Flask.
+
+Without the trusted-proxy setting, the local Caddy users share Caddy's peer
+budget. This setup supports one proxy hop; adding another proxy requires a
+separate trust design. Production network configuration remains in
+`openleg-ops`.

@@ -270,6 +270,10 @@ def test_local_packaging_is_opt_in():
     env = config["services"]["mcp"]["environment"]
     assert env == {
         "OPENLEG_MCP_ENABLED": "${OPENLEG_MCP_ENABLED:-false}",
+        "OPENLEG_MCP_PUBLIC_CALLS": "${OPENLEG_MCP_PUBLIC_CALLS:-60}",
+        "OPENLEG_MCP_PUBLIC_WINDOW_SECONDS": "${OPENLEG_MCP_PUBLIC_WINDOW_SECONDS:-60}",
+        "OPENLEG_MCP_PUBLIC_MAX_CLIENTS": "${OPENLEG_MCP_PUBLIC_MAX_CLIENTS:-10000}",
+        "OPENLEG_MCP_TRUSTED_PROXY": "${OPENLEG_MCP_TRUSTED_PROXY:-}",
         "OPENLEG_OPERATOR_ORIGIN": "http://flask:5000",
         "OPENLEG_MCP_BIND_HOST": "0.0.0.0",
         "OPENLEG_MCP_ALLOWED_HOSTS": "localhost:8081,127.0.0.1:8081",
