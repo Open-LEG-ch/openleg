@@ -17,7 +17,17 @@ from functools import wraps
 from ipaddress import ip_address
 from urllib.parse import urlparse
 
-from flask import Blueprint, current_app, g, jsonify, request, session
+from flask import (
+    Blueprint,
+    current_app,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from psycopg2.errors import DeadlockDetected, SerializationFailure
 
 import community_access
@@ -770,6 +780,21 @@ def create_credential(community_id):
 def list_credentials(community_id):
     if not _admin_for(community_id, session.get("dashboard_building_id")):
         return _error("Forbidden", 403)
+    if request.accept_mimetypes.best == "text/html":
+        from i18n import gettext as _
+
+        session.setdefault("dashboard_csrf_token", secrets.token_urlsafe(32))
+        return render_template(
+            "operator_credentials.html",
+            community=community_id,
+            credentials=[
+                _safe_credential(r) for r in db.list_operator_api_clients(community_id)
+            ],
+            grants=db.list_oauth_grants(community_id),
+            csrf=session["dashboard_csrf_token"],
+            _=_,
+            private_page=True,
+        )
     if not _require_csrf():
         return _error("Invalid CSRF token", 400)
     return jsonify(
@@ -986,63 +1011,15 @@ def dispatch_pending_webhooks(
     return totals
 
 
-@operator_api_bp.route(
-    "/leg/community/<community_id>/operator-api/confirmations/<request_id>",
-    methods=["GET", "POST"],
+@operator_api_bp.post(
+    "/leg/community/<community_id>/operator-api/credentials/grants/<grant_id>/revoke"
 )
-@_retryable_submission_errors
-def agent_confirmation_page(community_id, request_id):
-    from flask import redirect, render_template, url_for
-
-    import agent_confirmation
-
-    building_id = session.get("dashboard_building_id")
-    row = db.get_agent_confirmation_request(community_id, request_id)
-    if not row:
-        return _error("Not found", 404)
-    if not building_id:
-        return _error("Confirmation denied", 403)
-    if not _admin_for(community_id, building_id):
-        community = db.fetch_community_with_members(community_id)
-        if not any(
-            member.get("building_id") == building_id
-            for member in (community or {}).get("members", [])
-        ):
-            return _error("Not found", 404)
-        return _error("Confirmation denied", 403)
-    if request.method == "GET":
-        return render_template(
-            "agent_confirmation.html",
-            pending=row,
-            csrf_token=session.get("dashboard_csrf_token", ""),
-        )
+def revoke_oauth_grant(community_id, grant_id):
+    if not _admin_for(community_id, session.get("dashboard_building_id")):
+        return _error("Forbidden", 403)
     if not _require_csrf():
-        return _error("Confirmation denied", 403)
-    try:
-        result = agent_confirmation.confirm(community_id, request_id, building_id)
-    except LookupError:
-        return _error("Not found", 404)
-    except PermissionError:
-        return _error("Confirmation denied", 403)
-    except (
-        db.VnbSubmissionConflict,
-        vnb_exchange.FormationSubmissionInvalid,
-        vnb_exchange.ParticipantMutationInvalid,
-        ValueError,
-    ):
-        return _error("Confirmation changed; preview again", 409)
-    except db.VnbExchangeStoreError:
-        return _error("Confirmation unavailable", 503)
-    if request.form and result["state"] == "confirmed":
-        # Build the location from the stored request, not the request URL.
-        return redirect(
-            url_for(
-                "operator_api.agent_confirmation_page",
-                community_id=row["community_id"],
-                request_id=row["request_id"],
-            ),
-            code=303,
-        )
-    return jsonify(schema_version=API_SCHEMA_VERSION, **result), (
-        409 if result["state"] == "expired" else 200
-    )
+        return _error("Invalid CSRF token", 400)
+    if not db.revoke_oauth_grant(community_id, grant_id):
+        return _error("Grant not found", 404)
+    return redirect(url_for("operator_api.list_credentials", community_id=community_id))
+from psycopg2.errors import DeadlockDetected, SerializationFailure

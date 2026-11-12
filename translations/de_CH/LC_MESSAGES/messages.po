@@ -19029,3 +19029,32 @@ msgstr "LEG auswählen"
 
 msgid "Rechte auswählen"
 msgstr "Rechte auswählen"
+
+
+#: templates/operator_credentials.html:1
+msgid "Integrationskonten"
+msgstr "Integrationskonten"
+
+#: templates/operator_credentials.html:1
+msgid "OAuth-Freigaben"
+msgstr "OAuth-Freigaben"
+
+#: templates/operator_credentials.html:1
+msgid "Berechtigungen"
+msgstr "Berechtigungen"
+
+#: templates/operator_credentials.html:1
+msgid "Erstellt am"
+msgstr "Erstellt am"
+
+#: templates/operator_credentials.html:1
+msgid "Zuletzt verwendet"
+msgstr "Zuletzt verwendet"
+
+#: templates/operator_credentials.html:1
+msgid "Agentenzugriff widerrufen"
+msgstr "Agentenzugriff widerrufen"
+
+#: templates/operator_credentials.html:1
+msgid "Keine OAuth-Freigaben vorhanden."
+msgstr "Keine OAuth-Freigaben vorhanden."

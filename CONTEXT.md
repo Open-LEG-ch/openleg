@@ -187,3 +187,7 @@ An **OAuth grant** records one administrator's delegation to a pre-registered
 MCP host for exactly one community and explicit operator capabilities.
 Its downstream operator credential has actor kind `agent`. An **MCP access
 token** identifies that grant for one MCP resource; it is not an operator token.
+
+An **OAuth refresh-token family** contains all rotating refresh tokens for one
+grant. Reusing a consumed token revokes the grant and its operator credential.
+Rotation preserves the original 30-day expiry and the approved scope.

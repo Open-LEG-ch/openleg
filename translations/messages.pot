@@ -1156,6 +1156,7 @@ msgid ""
 msgstr ""
 
 #: templates/how-it-works.html:52
+#, python-format
 msgid ""
 "Alle Teilnehmenden gehören derselben politischen Gemeinde an, sind an derselben Netzebene und im "
 "selben Netzgebiet angeschlossen, nutzen höchstens 36 kV, haben ein intelligentes Messsystem und "
@@ -1537,6 +1538,7 @@ msgid "Art. 19h StromVV"
 msgstr ""
 
 #: templates/leg_kalkulator.html:267
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom\n"
 "          einen gesetzlichen Rabatt auf das Netznutzungsentgelt: 40% ohne "
@@ -1552,6 +1554,7 @@ msgid ""
 msgstr ""
 
 #: templates/leg_kalkulator.html:288
+#, python-format
 msgid ""
 "Art. 19h StromVV gewährt für innerhalb der LEG produzierten und verbrauchten Strom einen "
 "gesetzlichen Rabatt\n"
@@ -3377,6 +3380,7 @@ msgid "Der Messpunkt-Teilnehmer des Quartierakkus darf keinen Kostenanteil trage
 msgstr ""
 
 #: templates/gemeinde/methodik.html:95
+#, python-format
 msgid ""
 "Der Nenner ist ein geschätztes Dachpotenzial. Deshalb überschreiten einzelne Gemeinden 100 %. Wir"
 " deckeln die Anzeige bei 100 % und markieren diese Fälle."
@@ -6471,6 +6475,7 @@ msgid "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutz
 msgstr ""
 
 #: templates/how-it-works.html:42
+#, python-format
 msgid ""
 "Für Strom, den die LEG selbst erzeugt und verbraucht, sinkt das Netznutzungsentgelt um 40% ohne "
 "Spannungstransformation und um 20% mit Spannungstransformation (Art. 19h StromVV)."
@@ -13358,6 +13363,7 @@ msgid ""
 msgstr ""
 
 #: templates/gemeinde/rangliste.html:127
+#, python-format
 msgid ""
 "Solarnutzung = installierte PV-Leistung geteilt durch geschätztes Dachpotenzial.\n"
 "      Werte über 100 % sind mit + markiert und im Balken schraffiert."

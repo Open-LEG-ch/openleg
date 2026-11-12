@@ -19,7 +19,7 @@ def test_metadata():
     assert body["authorization_endpoint"] == "https://auth.example/oauth/authorize"
     assert body["token_endpoint"] == "https://auth.example/oauth/token"
     assert body["response_types_supported"] == ["code"]
-    assert body["grant_types_supported"] == ["authorization_code"]
+    assert body["grant_types_supported"] == ["authorization_code", "refresh_token"]
     assert body["code_challenge_methods_supported"] == ["S256"]
     assert body["token_endpoint_auth_methods_supported"] == ["none"]
 
@@ -577,3 +577,14 @@ def test_client_name_matches_storage_limit():
     init_oauth(configured("n" * 128))
     with pytest.raises(ValueError, match="client name"):
         init_oauth(configured("n" * 129))
+
+
+def test_refresh_secret_redacted(caplog):
+    import logging
+
+    from mcp_sidecar.server import redact_transport_logs
+
+    redact_transport_logs()
+    with caplog.at_level(logging.WARNING):
+        logging.getLogger(__name__).warning("refresh token olr_refreshsecret")
+    assert "olr_refreshsecret" not in caplog.text

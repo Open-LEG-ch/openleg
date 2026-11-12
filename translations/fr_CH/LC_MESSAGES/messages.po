@@ -19984,3 +19984,32 @@ msgstr "Choisir la CEL"
 
 msgid "Rechte auswählen"
 msgstr "Choisir les droits"
+
+
+#: templates/operator_credentials.html:1
+msgid "Integrationskonten"
+msgstr "Comptes d’intégration"
+
+#: templates/operator_credentials.html:1
+msgid "OAuth-Freigaben"
+msgstr "Autorisations OAuth"
+
+#: templates/operator_credentials.html:1
+msgid "Berechtigungen"
+msgstr "Autorisations"
+
+#: templates/operator_credentials.html:1
+msgid "Erstellt am"
+msgstr "Créé le"
+
+#: templates/operator_credentials.html:1
+msgid "Zuletzt verwendet"
+msgstr "Dernière utilisation"
+
+#: templates/operator_credentials.html:1
+msgid "Agentenzugriff widerrufen"
+msgstr "Révoquer l’accès de l’agent"
+
+#: templates/operator_credentials.html:1
+msgid "Keine OAuth-Freigaben vorhanden."
+msgstr "Aucune autorisation OAuth."

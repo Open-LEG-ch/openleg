@@ -270,9 +270,30 @@ Callback-Querystrings aufzeichnen.
 
 Die Implementierung nutzt Zufallswerte, SHA-256, HMAC und URL-Verarbeitung aus
 der Python-Standardbibliothek; sie implementiert kein eigenes JWT-Format.
-Refresh-Tokens und die Grant-Widerrufsoberfläche folgen in #852.
-`oauth_grants` besitzt dafür eine stabile ID, Ausstellungszeit und
-`revoked_at`. OAuth bleibt bis zur vollständigen Bereitschaftsprüfung aus
+Der Codeaustausch liefert auch ein opakes Refresh-Token (`olr_`).
+Der Host erneuert per Formular-POST an `/oauth/token` mit
+`grant_type=refresh_token`, `refresh_token`, `client_id` und derselben
+`resource`. Jede erfolgreiche Erneuerung ersetzt Zugriffs- und Refresh-Token
+atomar; auch das vorherige Zugriffstoken wird sofort ungültig.
+Der Scope bleibt unverändert. Ein optionaler `scope` muss dieselbe Menge von
+Berechtigungen enthalten; auch engere Scopes werden abgewiesen.
+Refresh-Tokens gelten ab Codeaustausch absolut 30 Tage. Rotation verlängert
+diese Frist nicht. Danach ist eine neue Zustimmung nötig.
+
+Die Rotation für öffentliche Clients folgt
+[RFC 9700, Abschnitt 4.14](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.14).
+OpenLEG speichert nur SHA-256-Hashes und behält verbrauchte Hashes zur
+Wiederverwendungserkennung. Ein erneut verwendetes Refresh-Token widerruft
+die ganze Freigabe samt Downstream-Credential. Bei zwei gleichzeitigen
+Refreshes kann höchstens einer erfolgreich sein; der zweite widerruft auch
+die gerade ausgegebenen Tokens. Hosts müssen Refreshes deshalb serialisieren.
+Ein verlorenes Refresh-Ergebnis erfordert neue Zustimmung statt Wiederholung.
+
+Die bestätigte LEG-Administration sieht und widerruft Freigaben unter
+`/leg/community/{community_id}/operator-api/credentials`. Die HTML-Ansicht
+zeigt Client, LEG, Scope, Erstellungszeit und letzte erfolgreiche Introspektion
+oder Erneuerung. Widerruf benötigt Sitzung und CSRF-Token; Introspektion und
+Refresh prüfen ihn bei jeder Anfrage. OAuth bleibt bis zur vollständigen Bereitschaftsprüfung aus
 #838 für Produktion deaktiviert.
 
 Das Zustimmungsformular übernimmt nur die expliziten OAuth-Protokollfelder

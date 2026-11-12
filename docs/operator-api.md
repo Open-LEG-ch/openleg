@@ -154,4 +154,9 @@ die bestätigten Capabilities. Die Zustimmung zeigt jede Capability in Deutsch o
 Der MCP-Zugriffstoken gilt fünf Minuten und wird nie an die Betreiber-API
 weitergegeben. Ein separates Credential pro Grant trägt `actor_kind=agent`.
 Bestehende `olk_`-Credentials für Dienste funktionieren unverändert.
-Refresh-Tokens und eine eigene Grant-Widerrufsoberfläche folgen in #852.
+Die Antwort enthält ein rotierendes Refresh-Token. Unter der bestehenden
+Credentials-Adresse sehen Sie OAuth-Freigaben mit LEG, Client, Berechtigungen,
+Erstellungszeit und letzter Verwendung. «Agentenzugriff widerrufen» sperrt
+die Freigabe und ihr separates Credential. Die nächste MCP-Anfrage und der
+nächste Refresh werden abgewiesen. Die Aktion erfordert Ihre bestätigte
+Administrationssitzung und ein CSRF-Token.
