@@ -22224,3 +22224,87 @@ msgstr "Public Swiss energy data and LEG tools. No sign-in; requests are rate-li
 #, python-format
 msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
 msgstr "- [OpenAPI contract](%(url)s): Machine-readable contract of the public API (JSON)"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:4
+msgid "Agentenanfrage bestätigen"
+msgstr "Confirm agent request"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:5
+msgid ""
+"Prüfen Sie diese Anfrage. Erst Ihre Bestätigung erstellt das VNB-Paket oder sendet es an den "
+"Netzbetreiber."
+msgstr ""
+"Review this request. Only your confirmation creates the VNB package or sends it to the network "
+"operator."
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:7
+msgid "Gründungsanmeldung"
+msgstr "Formation registration"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:7
+msgid "Mitgliedermutation"
+msgstr "Member mutation"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:8
+msgid "Ausführung"
+msgstr "Execution"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:8
+msgid "Manuelles Paket vorbereiten"
+msgstr "Prepare manual package"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:8
+msgid "Über den VNB-Adapter senden"
+msgstr "Send through the VNB adapter"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:9
+msgid "Empfänger"
+msgstr "Recipient"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:10
+msgid "Fingerabdruck"
+msgstr "Fingerprint"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:15
+msgid "Teilnehmenden-ID"
+msgstr "Participant ID"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:16
+msgid "Mutations-ID"
+msgstr "Mutation ID"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:17
+msgid "Mutationstyp"
+msgstr "Mutation type"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:19
+msgid "Änderungen"
+msgstr "Changes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:25
+msgid "Anfrage bestätigen"
+msgstr "Confirm request"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:27
+msgid "Diese Anfrage wurde bestätigt."
+msgstr "This request has been confirmed."
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:28
+msgid "Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau."
+msgstr "This request has expired. Create a new preview."

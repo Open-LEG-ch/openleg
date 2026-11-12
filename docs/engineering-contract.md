@@ -36,8 +36,10 @@ callers use `import database as db`.
 
 ### Billing operation transactions
 
-Billing operations are the only exception to calling storage through `database`
-exports. `billing_approval.approve_billing_period` opens its transaction through
+Billing operations and the VNB confirmation case adapter are the exceptions
+to calling storage through `database` exports. The confirmation adapter delegates
+to the existing VNB case store under the pending request transaction; case,
+package, event and confirmation completion commit together. `billing_approval.approve_billing_period` opens its transaction through
 `database.get_connection` and hands its cursor to storage helpers. The operation
 owns approval decisions and errors, replay, numbering, and snapshot preparation;
 storage only reads, locks, and writes rows. Keep the community-then-period lock

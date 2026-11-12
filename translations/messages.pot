@@ -1012,6 +1012,10 @@ msgstr ""
 msgid "Agent Health"
 msgstr ""
 
+#: templates/agent_confirmation.html:4
+msgid "Agentenanfrage bestätigen"
+msgstr ""
+
 #: templates/sandbox/operator.html:16
 msgid "Agentenname (optional)"
 msgstr ""
@@ -1020,7 +1024,7 @@ msgstr ""
 msgid "Aggregierte Auswertung für Energieversorger freigeben"
 msgstr ""
 
-#: templates/admin/ops.html:125
+#: templates/admin/ops.html:125 templates/agent_confirmation.html:7
 msgid "Aktion"
 msgstr ""
 
@@ -1264,6 +1268,10 @@ msgstr ""
 
 #: templates/api_docs.html:109 templates/sandbox/operator.html:30
 msgid "Anfrage ausführen"
+msgstr ""
+
+#: templates/agent_confirmation.html:25
+msgid "Anfrage bestätigen"
 msgstr ""
 
 #: templates/api_docs.html:115
@@ -1653,6 +1661,10 @@ msgstr ""
 
 #: templates/gemeinde/methodik.html:103
 msgid "Ausblick: zentrales LEG-Register"
+msgstr ""
+
+#: templates/agent_confirmation.html:8
+msgid "Ausführung"
 msgstr ""
 
 #: verein_finance_routes.py:64
@@ -3798,7 +3810,7 @@ msgid ""
 "Verwenden Sie ausschliesslich Beispieldaten."
 msgstr ""
 
-#: store/formation_signatures.py:179 store/vnb_exchange.py:384
+#: store/formation_signatures.py:179 store/vnb_exchange.py:402
 msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 msgstr ""
 
@@ -4462,10 +4474,18 @@ msgid ""
 "          (Verbrauchsprofil, Produktionsprofil, LEG-Grösse, Verteilschlüssel)."
 msgstr ""
 
+#: templates/agent_confirmation.html:28
+msgid "Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau."
+msgstr ""
+
 #: templates/http_error.html:19
 msgid ""
 "Diese Anfrage konnte nicht ausgeführt werden. Prüfen Sie Ihre Angaben und Ihren Zugang oder "
 "versuchen Sie es später erneut."
+msgstr ""
+
+#: templates/agent_confirmation.html:27
+msgid "Diese Anfrage wurde bestätigt."
 msgstr ""
 
 #: verein_finance.py:67 verein_payments.py:48
@@ -4752,8 +4772,8 @@ msgstr ""
 msgid "Dokumentablauf im Assistenten öffnen"
 msgstr ""
 
-#: community_access.py:62 templates/leg_dashboard.html:209 templates/release/footer.html:9
-#: templates/release/navigation.html:11
+#: community_access.py:62 templates/agent_confirmation.html:13 templates/leg_dashboard.html:209
+#: templates/release/footer.html:9 templates/release/navigation.html:11
 msgid "Dokumente"
 msgstr ""
 
@@ -5555,6 +5575,10 @@ msgstr ""
 msgid "Empfangene Signatur prüfen"
 msgstr ""
 
+#: templates/agent_confirmation.html:9
+msgid "Empfänger"
+msgstr ""
+
 #: templates/verein/recipient_edit.html:8
 msgid "Empfänger zur zweiten Prüfung vorbereiten"
 msgstr ""
@@ -6106,6 +6130,10 @@ msgstr ""
 
 #: templates/verein/finance_edit.html:2 templates/verein/finance_edit.html:3
 msgid "Finanzbericht vorbereiten"
+msgstr ""
+
+#: templates/agent_confirmation.html:10
+msgid "Fingerabdruck"
 msgstr ""
 
 #: templates/admin/abrechnungen.html:97
@@ -7364,6 +7392,10 @@ msgstr ""
 msgid "Gründung vorbereiten"
 msgstr ""
 
+#: templates/agent_confirmation.html:7
+msgid "Gründungsanmeldung"
+msgstr ""
+
 #: templates/leg_gruenden.html:162
 msgid "Gründungsassistent und Vorlagen ansehen"
 msgstr ""
@@ -7426,7 +7458,7 @@ msgstr ""
 msgid "Gültig ab"
 msgstr ""
 
-#: templates/contact_requests.html:37
+#: templates/agent_confirmation.html:11 templates/contact_requests.html:37
 msgid "Gültig bis"
 msgstr ""
 
@@ -8590,7 +8622,7 @@ msgstr ""
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1113 store/vnb_exchange.py:417
+#: dashboard.py:1113 store/vnb_exchange.py:435
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
@@ -9701,6 +9733,10 @@ msgstr ""
 msgid "Manuelle Übergabe bereit"
 msgstr ""
 
+#: templates/agent_confirmation.html:8
+msgid "Manuelles Paket vorbereiten"
+msgstr ""
+
 #: templates/api_docs.html:89
 msgid "Max number of results"
 msgstr ""
@@ -10079,6 +10115,10 @@ msgstr ""
 msgid "Mitglieder und LEG-Einstellungen verwalten"
 msgstr ""
 
+#: templates/agent_confirmation.html:7
+msgid "Mitgliedermutation"
+msgstr ""
+
 #: templates/leg_dashboard.html:248
 msgid "Mitgliedermutationen und deren VNB-Verarbeitungsstatus"
 msgstr ""
@@ -10202,6 +10242,14 @@ msgstr ""
 
 #: templates/sandbox/telemetry.html:14
 msgid "Musterquelle anmelden"
+msgstr ""
+
+#: templates/agent_confirmation.html:16
+msgid "Mutations-ID"
+msgstr ""
+
+#: templates/agent_confirmation.html:17
+msgid "Mutationstyp"
 msgstr ""
 
 #: templates/leg_billing_policy.html:110
@@ -11986,6 +12034,12 @@ msgstr ""
 msgid "Prüfen Sie die vollständigen datierten Messwerte und die aktuelle Mitgliedschaft."
 msgstr ""
 
+#: templates/agent_confirmation.html:5
+msgid ""
+"Prüfen Sie diese Anfrage. Erst Ihre Bestätigung erstellt das VNB-Paket oder sendet es an den "
+"Netzbetreiber."
+msgstr ""
+
 #: templates/fuer_bewohner.html:8
 msgid ""
 "Prüfen Sie kostenlos, ob sich eine Lokale Elektrizitätsgemeinschaft (LEG) an Ihrer Adresse lohnt:"
@@ -13731,6 +13785,10 @@ msgstr ""
 msgid "Teilnehmende und Anlagen erfassen"
 msgstr ""
 
+#: templates/agent_confirmation.html:15
+msgid "Teilnehmenden-ID"
+msgstr ""
+
 #: templates/admin/abrechnungen.html:112 templates/admin/abrechnungen.html:134
 #: templates/documents/participant_contract.html:14 templates/leg_dashboard.html:100
 msgid "Teilnehmer"
@@ -15303,7 +15361,8 @@ msgstr ""
 msgid "Wirksam"
 msgstr ""
 
-#: templates/leg_dashboard.html:267 templates/sandbox/formation.html:72
+#: templates/agent_confirmation.html:18 templates/leg_dashboard.html:267
+#: templates/sandbox/formation.html:72
 msgid "Wirksamkeitsdatum"
 msgstr ""
 
@@ -16401,6 +16460,10 @@ msgstr ""
 msgid "Änderung dieser Katalogversion"
 msgstr ""
 
+#: templates/agent_confirmation.html:19
+msgid "Änderungen"
+msgstr ""
+
 #: templates/leg_dashboard.html:269
 msgid "Änderungsdaten (nur bei Änderung; JSON mit status, role oder access_roles)"
 msgstr ""
@@ -16524,6 +16587,10 @@ msgid ""
 "Öffnen Sie die gewöhnliche Geräteliste. Erfassen Sie Hersteller SIMULATION und Modell SONNWIL, "
 "ohne echte Seriennummer oder Netzwerkangaben. Melden Sie danach hier eine getrennte Musterquelle "
 "an. Geräteangaben und Messwerte sind keine Installateurprüfung."
+msgstr ""
+
+#: templates/agent_confirmation.html:8
+msgid "Über den VNB-Adapter senden"
 msgstr ""
 
 #: templates/release/homepage.html:161

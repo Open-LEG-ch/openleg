@@ -197,3 +197,9 @@ def api_cron_invoice_query_reminders():
         if invoice_query.mark_invoice_query_reminded(case["id"], "system"):
             reminded += 1
     return jsonify({"reminded": reminded})
+
+
+@cron_bp.post("/api/cron/expire-agent-confirmations")
+def expire_agent_confirmations():
+    _require_cron_secret()
+    return jsonify(expired=db.expire_agent_confirmation_requests())

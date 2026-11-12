@@ -25,3 +25,12 @@ def acting_as(client):
         yield
     finally:
         _actor.reset(token)
+
+
+@contextmanager
+def confirmed_by(actor, building_id):
+    token = _actor.set({**actor, "confirming_building_id": building_id})
+    try:
+        yield
+    finally:
+        _actor.reset(token)

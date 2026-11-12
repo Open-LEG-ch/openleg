@@ -2308,4 +2308,28 @@ def create_tables():
             ):
                 cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS actor JSONB")
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS agent_confirmation_requests (
+                    request_id TEXT PRIMARY KEY,
+                    community_id TEXT NOT NULL REFERENCES communities(community_id),
+                    client_id TEXT NOT NULL REFERENCES operator_api_clients(id),
+                    kind TEXT NOT NULL CHECK (kind IN ('formation','membership')),
+                    identity TEXT NOT NULL,
+                    command JSONB NOT NULL,
+                    canonical_payload JSONB NOT NULL,
+                    payload_fingerprint TEXT NOT NULL CHECK (length(payload_fingerprint)=64),
+                    adapter_key TEXT NOT NULL,
+                    preview JSONB NOT NULL,
+                    actor JSONB NOT NULL,
+                    state TEXT NOT NULL DEFAULT 'awaiting_confirmation'
+                        CHECK (state IN ('awaiting_confirmation','confirmed','expired')),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + interval '72 hours',
+                    confirmed_by TEXT,
+                    result JSONB,
+                    UNIQUE (community_id,kind,identity),
+                    CHECK ((state='confirmed') = (confirmed_by IS NOT NULL AND result IS NOT NULL))
+                )
+            """)
+
             logger.info("[DB] Tables and indexes created successfully")

@@ -779,3 +779,22 @@ Reset, discard and expiry remove the entire capture directory and database.
   private for traceability; no automated retention horizon is asserted. Account
   opening, signing mandates, actual source verification and privacy review remain
   external prerequisites.
+
+## store/agent_confirmation
+
+- **Tables:** `agent_confirmation_requests`.
+- **Holds:** community and originating credential, canonical VNB payload,
+  command, fingerprint, adapter, preview, actor snapshot, request state,
+  expiry timestamp, confirming building identity and safe completion result.
+- **Purpose:** durable human confirmation before an agent can create a VNB case,
+  package or delivery. Formation uses fingerprint identity; membership uses
+  `mutation_id`. Expiry changes state after 72 hours and emits an event.
+- **Owner:** the LEG.
+- **Sensitivity:** private participant identifiers and membership facts. The
+  dashboard shows only the action, recipient, fingerprint and necessary summary;
+  API responses do not expose canonical payloads.
+- **Resident-visible:** only to the community administration.
+- **Consent gate:** confirmed community administration and dashboard CSRF for
+  confirmation; originating credential activity and capability are rechecked.
+- **Retention:** expiry retains the immutable request and attribution for replay
+  and audit. This migration does not add automatic deletion.

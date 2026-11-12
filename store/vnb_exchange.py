@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import contextmanager, nullcontext
+from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 from psycopg2.errors import UniqueViolation
@@ -359,10 +361,26 @@ def record_mutation_response(
         return row
 
 
+_confirmation_connection = ContextVar("vnb_confirmation_connection", default=None)
+
+
+@contextmanager
+def confirmation_transaction(connection):
+    """Keep case, event, package and confirmation completion in one transaction."""
+    token = _confirmation_connection.set(connection)
+    try:
+        yield
+    finally:
+        _confirmation_connection.reset(token)
+
+
 def _get_connection():
     import database
 
-    return database.get_connection()
+    connection = _confirmation_connection.get()
+    return (
+        nullcontext(connection) if connection is not None else database.get_connection()
+    )
 
 
 def _guard_current_formation_bundle(cursor, submission):

@@ -34,6 +34,15 @@ def test_agent_cannot_reach_vnb(path, message):
             return_value={**CLIENT, "actor_kind": "agent"},
         ),
         patch.object(operator_api.db, "claim_operator_api_usage", return_value=True),
+        patch.object(
+            operator_api.db,
+            "create_agent_confirmation_request",
+            return_value={
+                "state": "awaiting_confirmation",
+                "request_id": "pending",
+                "payload_fingerprint": "f" * 64,
+            },
+        ),
         patch.object(operator_api.vnb_exchange, "submit_formation") as formation,
         patch.object(
             operator_api.vnb_exchange, "submit_membership_mutation"
@@ -47,10 +56,10 @@ def test_agent_cannot_reach_vnb(path, message):
             headers={"Authorization": "Bearer secret"},
             json={},
         )
-    assert response.status_code == 403
-    assert response.json["error"] == message
-    formation.assert_not_called()
-    membership.assert_not_called()
+    assert response.status_code == 202
+    assert response.json["state"] == "awaiting_confirmation"
+    for call in formation.call_args_list + membership.call_args_list:
+        assert call.kwargs == {"dry_run": True}
 
 
 @pytest.mark.integration
@@ -144,8 +153,12 @@ def test_http_membership_attribution_survives_credential_changes(
     app = Flask(__name__)
     app.register_blueprint(operator_api.operator_api_bp)
 
-    def submit(command):
+    def submit(command, *, dry_run=False):
         assert command.actor_building_id == "building"
+        if dry_run:
+            return vnb_exchange.SubmissionPreview(
+                "prepare_manual_package", "f" * 64, "manual", {}, "manual"
+            )
         row = store.claim_mutation(
             vnb_exchange.MutationClaim(
                 "mutation",
@@ -183,7 +196,8 @@ def test_http_membership_attribution_survives_credential_changes(
             json={},
         )
     if kind == "agent":
-        assert response.status_code == 403
+        assert response.status_code == 202
+        assert response.json["state"] == "awaiting_confirmation"
         with db.get_connection() as conn, conn.cursor() as cur:
             for table in (
                 "vnb_mutation_cases",
@@ -382,8 +396,12 @@ def test_formation_gate_prevents_package_and_event_creation(interest_database, k
     app = Flask(__name__)
     app.register_blueprint(operator_api.operator_api_bp)
 
-    def submit(command):
+    def submit(command, *, dry_run=False):
         assert command.actor_building_id == "building"
+        if dry_run:
+            return vnb_exchange.SubmissionPreview(
+                "prepare_manual_package", "f" * 64, "manual", {}, "manual"
+            )
         with patch.object(store, "_guard_current_formation_bundle", return_value=None):
             row = store.claim(
                 vnb_exchange.SubmissionClaim(
@@ -414,7 +432,9 @@ def test_formation_gate_prevents_package_and_event_creation(interest_database, k
             "/api/operator/v1/communities/leg/formation/submissions",
             headers={"Authorization": "Bearer token"},
         )
-    assert response.status_code == (403 if kind == "agent" else 202)
+    assert response.status_code == 202
+    if kind == "agent":
+        assert response.json["state"] == "awaiting_confirmation"
     with db.get_connection() as conn, conn.cursor() as cur:
         for table in ("vnb_submission_cases", "operator_events"):
             cur.execute(f"SELECT * FROM {table}")

@@ -18907,3 +18907,67 @@ msgstr "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; A
 #, python-format
 msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
 msgstr "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
+
+#: templates/agent_confirmation.html
+msgid "Agentenanfrage bestätigen"
+msgstr "Agentenanfrage bestätigen"
+
+#: templates/agent_confirmation.html
+msgid "Prüfen Sie diese Anfrage. Erst Ihre Bestätigung erstellt das VNB-Paket oder sendet es an den Netzbetreiber."
+msgstr "Prüfen Sie diese Anfrage. Erst Ihre Bestätigung erstellt das VNB-Paket oder sendet es an den Netzbetreiber."
+
+#: templates/agent_confirmation.html
+msgid "Ausführung"
+msgstr "Ausführung"
+
+#: templates/agent_confirmation.html
+msgid "Manuelles Paket vorbereiten"
+msgstr "Manuelles Paket vorbereiten"
+
+#: templates/agent_confirmation.html
+msgid "Über den VNB-Adapter senden"
+msgstr "Über den VNB-Adapter senden"
+
+#: templates/agent_confirmation.html
+msgid "Fingerabdruck"
+msgstr "Fingerabdruck"
+
+#: templates/agent_confirmation.html
+msgid "Mutationstyp"
+msgstr "Mutationstyp"
+
+#: templates/agent_confirmation.html
+msgid "Änderungen"
+msgstr "Änderungen"
+
+#: templates/agent_confirmation.html
+msgid "Anfrage bestätigen"
+msgstr "Anfrage bestätigen"
+
+#: templates/agent_confirmation.html
+msgid "Diese Anfrage wurde bestätigt."
+msgstr "Diese Anfrage wurde bestätigt."
+
+#: templates/agent_confirmation.html
+msgid "Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau."
+msgstr "Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau."
+
+#: templates/agent_confirmation.html
+msgid "Gründungsanmeldung"
+msgstr "Gründungsanmeldung"
+
+#: templates/agent_confirmation.html
+msgid "Mitgliedermutation"
+msgstr "Mitgliedermutation"
+
+#: templates/agent_confirmation.html
+msgid "Empfänger"
+msgstr "Empfänger"
+
+#: templates/agent_confirmation.html
+msgid "Teilnehmenden-ID"
+msgstr "Teilnehmenden-ID"
+
+#: templates/agent_confirmation.html
+msgid "Mutations-ID"
+msgstr "Mutations-ID"

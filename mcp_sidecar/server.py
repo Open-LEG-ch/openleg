@@ -277,6 +277,25 @@ def create_app():
     )
     server = Server("openleg-mcp")
     previews = preview_operations()
+    for preview_name, submit_name in (
+        ("preview_formation_submission", "submit_formation"),
+        ("preview_membership_mutation", "submit_membership_mutation"),
+    ):
+        path_, cap_, schema_, description_ = previews[preview_name]
+        previews[submit_name] = (
+            path_,
+            cap_,
+            schema_,
+            description_.replace("Preview", "Submit")
+            .replace(
+                "Does not submit or predict delivery.",
+                "Agent credentials return awaiting_confirmation and a dashboard confirmation URL.",
+            )
+            .replace(
+                "Checks authorization and conflicts; does not submit or predict delivery.",
+                "Agent credentials return awaiting_confirmation and a dashboard confirmation URL.",
+            ),
+        )
 
     @server.list_tools()
     async def list_tools():
@@ -303,7 +322,9 @@ def create_app():
                     description=description,
                     inputSchema=input_schema,
                     annotations=types.ToolAnnotations(
-                        readOnlyHint=True, destructiveHint=False, idempotentHint=True
+                        readOnlyHint=name.startswith("preview_"),
+                        destructiveHint=not name.startswith("preview_"),
+                        idempotentHint=True,
                     ),
                     _meta={"x-openleg-capability": required_capability},
                 )
@@ -417,7 +438,9 @@ def create_app():
                 elif preview:
                     response = await client.post(
                         origin + preview[0].format(community_id=community),
-                        params={"dry_run": "true"},
+                        params={"dry_run": "true"}
+                        if name.startswith("preview_")
+                        else {},
                         json={
                             k: v for k, v in arguments.items() if k != "community_id"
                         },
@@ -433,7 +456,7 @@ def create_app():
                     )
             if response.status_code == 401:
                 return error("invalid_credential")
-            if response.status_code != 200:
+            if response.status_code not in (200, 202):
                 body = response.json()
                 if not error_validator.is_valid(body):
                     return error("operator_error")
@@ -479,10 +502,14 @@ def create_app():
                 )
                 result = {key: body[key] for key in fields}
             elif preview:
-                result = {
-                    key: body[key]
-                    for key in ("intended_action", "payload_fingerprint", "recipient")
-                }
+                keys = (
+                    ("state", "request_id", "confirmation_url", "payload_fingerprint")
+                    if name.startswith("submit_") and "confirmation_url" in body
+                    else ("state", "case_id", "event_id")
+                    if name.startswith("submit_")
+                    else ("intended_action", "payload_fingerprint", "recipient")
+                )
+                result = {key: body[key] for key in keys}
             else:
                 result = {key: body[key] for key in op["result_keys"]}
                 if not all(

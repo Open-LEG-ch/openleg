@@ -93,6 +93,7 @@ also_copy = [
     "admin.py",
     "advisories.py",
     "advisory_routes.py",
+    "agent_confirmation.py",
     "agentmail_event.py",
     "api_public.py",
     "app.py",
