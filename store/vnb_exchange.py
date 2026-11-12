@@ -383,6 +383,34 @@ def _get_connection():
     )
 
 
+def lock_confirmation_facts(community_id, kind):
+    """Hold the current facts until the confirmation transaction completes."""
+    if _confirmation_connection.get() is None:
+        raise RuntimeError("Confirmation requires its owning transaction")
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT community_id FROM communities WHERE community_id=%s FOR UPDATE",
+            (community_id,),
+        )
+        cur.fetchall()
+        from store.formation_signatures import participant_manifest
+
+        participant_manifest(cur, community_id)
+        if kind == "formation":
+            cur.execute(
+                """SELECT id FROM leg_documents WHERE community_id=%s
+                   ORDER BY id FOR UPDATE""",
+                (community_id,),
+            )
+            cur.fetchall()
+            cur.execute(
+                """SELECT building_id FROM leg_signature_receipts
+                   WHERE community_id=%s ORDER BY building_id FOR SHARE""",
+                (community_id,),
+            )
+            cur.fetchall()
+
+
 def _guard_current_formation_bundle(cursor, submission):
     """Serialize a new package claim with document replacement before delivery."""
     if not submission.document_ids:

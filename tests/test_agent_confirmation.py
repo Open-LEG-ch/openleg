@@ -484,3 +484,203 @@ def test_request_is_not_visible_to_another_community_admin(operator_http):
         ).status_code
         == 404
     )
+
+
+def test_membership_facts_change_before_claim(operator_http, monkeypatch):
+    import agent_confirmation
+
+    http = operator_http
+    prepare(http)
+    assert http.db.save_building(
+        "review-participant",
+        "review@example.invalid",
+        {"address": "Fictional 2", "lat": 47.2, "lon": 8.2},
+        {"share_with_neighbors": True},
+        verified=True,
+    )
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO community_members(community_id,building_id,role,status) VALUES (%s,'review-participant','member','confirmed')",
+            (http.community_id,),
+        )
+    payload = {
+        **MEMBERSHIP,
+        "participant_id": "review-participant",
+        "after": {"role": "member"},
+    }
+    pending = http.request("POST", "/membership-mutations", json=payload).json
+    original = agent_confirmation.BoundCases.claim_mutation
+
+    def claim(self, command):
+        with http.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE community_members SET access_roles='[\"documents\"]' WHERE building_id='review-participant'"
+            )
+        return original(self, command)
+
+    monkeypatch.setattr(agent_confirmation.BoundCases, "claim_mutation", claim)
+    response = http.client.post(
+        pending["confirmation_url"], headers={"X-CSRF-Token": "csrf"}
+    )
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT before_facts FROM vnb_mutation_cases")
+        case = cur.fetchone()
+        cur.execute(
+            "SELECT access_roles FROM community_members WHERE building_id='review-participant'"
+        )
+        current = cur.fetchone()
+    assert response.status_code == 409, (response.json, case, current)
+    assert_confirmation_has_no_writes(http)
+
+
+def test_formation_adapter_change_before_claim(operator_http, monkeypatch):
+    import agent_confirmation
+
+    http = operator_http
+    prepare(http)
+    pending = http.request("POST", "/formation/submissions", json={}).json
+    original = agent_confirmation.BoundCases.claim
+
+    def claim(self, command):
+        with http.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE communities SET vnb_adapter_key='unavailable' WHERE community_id=%s",
+                (http.community_id,),
+            )
+        return original(self, command)
+
+    monkeypatch.setattr(agent_confirmation.BoundCases, "claim", claim)
+    response = http.client.post(
+        pending["confirmation_url"], headers={"X-CSRF-Token": "csrf"}
+    )
+    assert response.status_code == 409, response.json
+    assert_confirmation_has_no_writes(http)
+
+
+def assert_confirmation_has_no_writes(http):
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        for table in (
+            "vnb_submission_cases",
+            "vnb_mutation_cases",
+            "vnb_mutation_events",
+            "operator_events",
+            "operator_webhook_deliveries",
+        ):
+            cur.execute(f"SELECT count(*) AS n FROM {table}")
+            assert cur.fetchone()["n"] == 0
+        cur.execute("SELECT state FROM agent_confirmation_requests")
+        assert cur.fetchone()["state"] == "awaiting_confirmation"
+
+
+def test_intervening_direct_membership_keeps_owner(operator_http, monkeypatch):
+    import vnb_exchange
+
+    http = operator_http
+    prepare(http)
+    pending = http.request("POST", "/membership-mutations", json=MEMBERSHIP).json
+    headers, credential = http.credential_headers(["membership.mutate"])
+    direct_rows = {}
+    original = vnb_exchange.submit_membership_mutation
+
+    def submit(command, **kwargs):
+        if kwargs.get("cases") is not None:
+            from concurrent.futures import ThreadPoolExecutor
+
+            # A real competing HTTP request has its own transaction/context.
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                direct = pool.submit(
+                    http.request,
+                    "POST",
+                    "/membership-mutations",
+                    json=MEMBERSHIP,
+                    headers=headers,
+                ).result(timeout=10)
+            assert direct.status_code == 202, direct.json
+            with http.db.get_connection() as conn, conn.cursor() as cur:
+                for table in (
+                    "vnb_mutation_cases",
+                    "vnb_mutation_events",
+                    "operator_events",
+                ):
+                    cur.execute(f"SELECT * FROM {table}")
+                    direct_rows[table] = cur.fetchall()
+        return original(command, **kwargs)
+
+    monkeypatch.setattr(vnb_exchange, "submit_membership_mutation", submit)
+    response = http.client.post(
+        pending["confirmation_url"], headers={"X-CSRF-Token": "csrf"}
+    )
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT actor FROM vnb_mutation_cases")
+        actor = cur.fetchone()["actor"]
+    assert response.status_code == 409, (response.json, actor, credential["id"])
+    assert actor["initiating_client_id"] == credential["id"]
+    assert "confirming_building_id" not in actor
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT state, result FROM agent_confirmation_requests")
+        row = cur.fetchone()
+        assert row["state"] == "awaiting_confirmation"
+        assert row["result"] is None
+        cur.execute("SELECT count(*) AS n FROM vnb_mutation_cases")
+        assert cur.fetchone()["n"] == 1
+        for table, expected in direct_rows.items():
+            cur.execute(f"SELECT * FROM {table}")
+            assert cur.fetchall() == expected
+
+
+@pytest.mark.parametrize("fact", ["participant", "adapter", "document"])
+def test_confirmation_holds_facts_until_case_claim(operator_http, monkeypatch, fact):
+    import psycopg2
+
+    from store import vnb_exchange as cases
+
+    http = operator_http
+    prepare(http)
+    assert http.db.save_building(
+        "locked-participant",
+        "locked@example.invalid",
+        {"address": "Fictional 2", "lat": 47.2, "lon": 8.2},
+        {"share_with_neighbors": True},
+        verified=True,
+    )
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO community_members(community_id,building_id,role,status)
+               VALUES (%s,'locked-participant','member','confirmed')""",
+            (http.community_id,),
+        )
+    suffix = (
+        "/membership-mutations" if fact == "participant" else "/formation/submissions"
+    )
+    payload = (
+        {**MEMBERSHIP, "participant_id": "locked-participant"}
+        if fact == "participant"
+        else {}
+    )
+    pending = http.request("POST", suffix, json=payload).json
+    name = "claim_mutation" if fact == "participant" else "claim"
+    original = getattr(cases, name)
+    checked = []
+
+    def claim(command):
+        # Another connection must be unable to change facts between final
+        # validation and package creation. NOWAIT makes this deterministic.
+        query = {
+            "participant": "SELECT * FROM community_members WHERE building_id='locked-participant' FOR UPDATE NOWAIT",
+            "adapter": "SELECT * FROM communities WHERE community_id=%s FOR UPDATE NOWAIT",
+            "document": "SELECT * FROM leg_documents WHERE community_id=%s FOR UPDATE NOWAIT",
+        }[fact]
+        with pytest.raises(psycopg2.errors.LockNotAvailable):
+            with http.db.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    query, () if fact == "participant" else (http.community_id,)
+                )
+        checked.append(fact)
+        return original(command)
+
+    monkeypatch.setattr(cases, name, claim)
+    response = http.client.post(
+        pending["confirmation_url"], headers={"X-CSRF-Token": "csrf"}
+    )
+    assert response.status_code == 200, response.json
+    assert checked == [fact]
