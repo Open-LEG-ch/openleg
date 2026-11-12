@@ -29,6 +29,28 @@ from translation_markers import gettext_noop as _N
 
 oauth_bp = Blueprint("oauth", __name__)
 
+PROTOCOL_FIELDS = frozenset(
+    {
+        "response_type",
+        "client_id",
+        "redirect_uri",
+        "scope",
+        "state",
+        "code_challenge",
+        "code_challenge_method",
+        "resource",
+    }
+)
+CONSENT_FIELDS = frozenset(
+    {
+        "capabilities",
+        "community_id",
+        "capabilities_present",
+        "csrf_token",
+        "decision",
+    }
+)
+
 
 @oauth_bp.get("/.well-known/oauth-authorization-server")
 def metadata():
@@ -57,10 +79,14 @@ def private_headers(response):
 
 
 def downstream_token(access_token):
-    # Domain separation keeps the downstream bearer distinct from the random MCP token.
+    # Only the authorization server holds the key for the operator audience.
     return (
         "olk_"
-        + hashlib.sha256(("oauth-downstream:" + access_token).encode()).hexdigest()
+        + hmac.new(
+            bytes.fromhex(current_app.config["OAUTH_DOWNSTREAM_KEY"]),
+            ("oauth-downstream:" + access_token).encode(),
+            hashlib.sha256,
+        ).hexdigest()
     )
 
 
@@ -86,6 +112,8 @@ def scopes(value):
 @oauth_bp.route("/oauth/authorize", methods=["GET", "POST"])
 def authorize():
     p = request.args if request.method == "GET" else request.form
+    if request.method == "POST" and set(p) - PROTOCOL_FIELDS - CONSENT_FIELDS:
+        return invalid()
     if any(len(p.getlist(k)) != 1 for k in p if k != "capabilities"):
         return invalid()
     if p.get("resource") != current_app.config["OAUTH_RESOURCE"]:
@@ -111,7 +139,7 @@ def authorize():
         for row in formation_wizard.get_user_communities(building)
         if _admin_for(row["community_id"], building)
     ]
-    chosen = p.get("community_id", community)
+    chosen = p.get("community_id", community) if request.method == "POST" else community
     if not communities or (
         chosen and chosen not in {r["community_id"] for r in communities}
     ):
@@ -120,7 +148,7 @@ def authorize():
         community = chosen
         if not community:
             return invalid("invalid_scope")
-        selected = p.getlist("capabilities") if p.get("capabilities_present") else caps
+        selected = p.getlist("capabilities")
         if not selected or not set(selected) <= set(caps):
             return invalid("invalid_scope")
         caps = list(dict.fromkeys(selected))
@@ -132,7 +160,7 @@ def authorize():
             community=chosen,
             communities=communities,
             capabilities=[(c, _(LABELS[c])) for c in caps],
-            fields=p,
+            fields={k: p[k] for k in PROTOCOL_FIELDS if k in p},
             csrf=session["dashboard_csrf_token"],
             _=_,
             private_page=True,
@@ -255,7 +283,7 @@ def init_oauth(app):
     if not issuer:
         return
     app.config.setdefault("OAUTH_ISSUER", issuer)
-    for key in ("RESOURCE", "INTROSPECTION_SECRET"):
+    for key in ("RESOURCE", "INTROSPECTION_SECRET", "DOWNSTREAM_KEY"):
         app.config.setdefault(
             "OAUTH_" + key, os.environ.get("OPENLEG_OAUTH_" + key, "")
         )
@@ -284,6 +312,14 @@ def init_oauth(app):
     for key in ("OAUTH_INTROSPECTION_SECRET",):
         if len(app.config[key]) < 32:
             raise ValueError("OAuth secrets require at least 32 random characters")
+    key = app.config["OAUTH_DOWNSTREAM_KEY"]
+    if (
+        not isinstance(key, str)
+        or not re.fullmatch(r"[0-9a-f]{64}", key)
+        or len(set(key)) < 12
+        or key == app.config["OAUTH_INTROSPECTION_SECRET"]
+    ):
+        raise ValueError("OAuth downstream key requires independent random 32-byte hex")
     for client in app.config["OAUTH_CLIENTS"].values():
         if not isinstance(client["name"], str) or not 1 <= len(client["name"]) <= 200:
             raise ValueError("OAuth client name is required")

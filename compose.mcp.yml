@@ -4,6 +4,7 @@ services:
     environment:
       OPENLEG_OAUTH_ISSUER: http://localhost:8081
       OPENLEG_OAUTH_RESOURCE: http://localhost:8081/mcp
+      OPENLEG_OAUTH_DOWNSTREAM_KEY: ${OPENLEG_OAUTH_DOWNSTREAM_KEY:?Set an independent random 32-byte hex key}
       OPENLEG_OAUTH_CLIENTS: ${OPENLEG_OAUTH_CLIENTS:?Register a local OAuth client}
       OPENLEG_OAUTH_INTROSPECTION_SECRET: ${OPENLEG_OAUTH_INTROSPECTION_SECRET:?Set a random introspection secret}
   mcp:

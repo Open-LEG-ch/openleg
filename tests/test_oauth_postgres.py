@@ -30,7 +30,7 @@ def oauth(operator_http):
     app.config.update(
         OAUTH_ISSUER="https://auth.example",
         OAUTH_RESOURCE="https://mcp.example/mcp",
-        OAUTH_DOWNSTREAM_KEY="k" * 64,
+        OAUTH_DOWNSTREAM_KEY="0123456789abcdef" * 4,  # gitleaks:allow
         OAUTH_INTROSPECTION_SECRET="s" * 64,
         OAUTH_CLIENTS={
             "host": {
@@ -80,7 +80,15 @@ def grant(f):
     assert consent.status_code == 200
     assert "Abrechnungen lesen" in consent.text
     response = f.client.post(
-        "/oauth/authorize", data={**data, "csrf_token": "csrf", "decision": "approve"}
+        "/oauth/authorize",
+        data={
+            **data,
+            "csrf_token": "csrf",
+            "decision": "approve",
+            "capabilities": [
+                c for c in data["scope"].split() if not c.startswith("community:")
+            ],
+        },
     )
     assert response.status_code == 302
     query = parse_qs(urlsplit(response.location).query)
@@ -170,7 +178,8 @@ def test_admin_and_csrf_required(oauth):
     data = authorize(oauth)
     assert (
         oauth.client.post(
-            "/oauth/authorize", data={**data, "decision": "approve"}
+            "/oauth/authorize",
+            data={**data, "decision": "approve", "capabilities": "billing.read"},
         ).status_code
         == 403
     )
@@ -248,7 +257,15 @@ def test_mcp_host_flow(oauth, monkeypatch):
 def test_scope_cannot_expand_at_exchange(oauth):
     data = authorize(oauth, scope="community:contract-leg payments.read")
     r = oauth.client.post(
-        "/oauth/authorize", data={**data, "csrf_token": "csrf", "decision": "approve"}
+        "/oauth/authorize",
+        data={
+            **data,
+            "csrf_token": "csrf",
+            "decision": "approve",
+            "capabilities": [
+                c for c in data["scope"].split() if not c.startswith("community:")
+            ],
+        },
     )
     code = parse_qs(urlsplit(r.location).query)["code"][0]
     token = exchange(oauth, code, scope="community:contract-leg billing.read").json[
@@ -301,7 +318,15 @@ def test_sidecar_enforces_capability(oauth, monkeypatch):
 
     data = authorize(oauth, scope="community:contract-leg payments.read")
     r = oauth.client.post(
-        "/oauth/authorize", data={**data, "csrf_token": "csrf", "decision": "approve"}
+        "/oauth/authorize",
+        data={
+            **data,
+            "csrf_token": "csrf",
+            "decision": "approve",
+            "capabilities": [
+                c for c in data["scope"].split() if not c.startswith("community:")
+            ],
+        },
     )
     code = parse_qs(urlsplit(r.location).query)["code"][0]
     access = exchange(oauth, code).json["access_token"]
@@ -655,6 +680,7 @@ def test_consent_binds_selected_community(oauth):
         data={
             **data,
             "community_id": "second-leg",
+            "capabilities": "billing.read",
             "decision": "approve",
             "csrf_token": "csrf",
         },
@@ -690,12 +716,13 @@ def test_consent_binds_selected_community(oauth):
     [
         {"community_id": "other"},
         {"capabilities": "payments.read", "capabilities_present": "1"},
-        {"capabilities_present": "1"},
+        {"capabilities_present": "1", "capabilities": []},
     ],
 )
 def test_consent_rejects_invalid_selection(oauth, changes):
     data = {
         **authorize(oauth, scope="billing.read"),
+        "capabilities": "billing.read",
         "community_id": "contract-leg",
         "decision": "approve",
         "csrf_token": "csrf",
@@ -704,3 +731,97 @@ def test_consent_rejects_invalid_selection(oauth, changes):
     response = oauth.client.post("/oauth/authorize", data=data)
     assert response.status_code in (400, 403)
     assert "Location" not in response.headers
+
+
+@pytest.mark.integration
+def test_mcp_token_cannot_compute_operator_bearer(oauth):
+    access = exchange(oauth, grant(oauth)).json["access_token"]
+    public_derivation = (
+        "olk_" + hashlib.sha256(("oauth-downstream:" + access).encode()).hexdigest()
+    )
+    for candidate in (access, public_derivation):
+        assert (
+            oauth.client.get(
+                "/api/operator/v1/communities/contract-leg/billing/periods",
+                headers={"Authorization": "Bearer " + candidate},
+            ).status_code
+            == 401
+        )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("check_hidden", [True, False])
+def test_consent_query_cannot_restore_unchecked_capability(oauth, check_hidden):
+    from html.parser import HTMLParser
+
+    from werkzeug.datastructures import MultiDict
+
+    class Inputs(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.hidden = []
+
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            if tag == "input" and attrs.get("type") == "hidden":
+                self.hidden.append((attrs["name"], attrs["value"]))
+
+    query = authorize(
+        oauth,
+        scope="billing.read payments.read",
+        capabilities="payments.read",
+    )
+    if check_hidden:
+        query.update(
+            community_id="contract-leg", capabilities_present="0", unexpected="injected"
+        )
+    page = oauth.client.get("/oauth/authorize", query_string=query)
+    assert page.status_code == 200
+    inputs = Inputs()
+    inputs.feed(page.text)
+    allowed = {
+        "response_type",
+        "client_id",
+        "redirect_uri",
+        "scope",
+        "state",
+        "code_challenge",
+        "code_challenge_method",
+        "resource",
+        "csrf_token",
+        "capabilities_present",
+    }
+    if check_hidden:
+        assert {k for k, _ in inputs.hidden} <= allowed
+    form = MultiDict(inputs.hidden)
+    form.add("capabilities", "billing.read")
+    form.add("community_id", "contract-leg")
+    form.add("decision", "approve")
+    response = oauth.client.post("/oauth/authorize", data=form, query_string=query)
+    assert response.status_code == 302
+    code = parse_qs(urlsplit(response.location).query)["code"][0]
+    assert exchange(oauth, code).json["scope"] == "community:contract-leg billing.read"
+
+
+@pytest.mark.integration
+def test_consent_post_rejects_unknown_fields(oauth):
+    response = oauth.client.post(
+        "/oauth/authorize",
+        data={
+            **authorize(oauth),
+            "csrf_token": "csrf",
+            "decision": "approve",
+            "capabilities": "billing.read",
+            "unexpected": "value",
+        },
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.integration
+def test_consent_requires_explicit_capability_selection(oauth):
+    response = oauth.client.post(
+        "/oauth/authorize",
+        data={**authorize(oauth), "csrf_token": "csrf", "decision": "approve"},
+    )
+    assert response.status_code == 400

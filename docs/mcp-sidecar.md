@@ -43,6 +43,7 @@ create an introspection secret, then start Flask with the overlay as well:
 ```sh
 export OPENLEG_MCP_ENABLED=true
 export OPENLEG_OAUTH_INTROSPECTION_SECRET="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+export OPENLEG_OAUTH_DOWNSTREAM_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
 export OPENLEG_OAUTH_CLIENTS='{"host":{"name":"Local MCP host","redirect_uris":["http://localhost:6274/oauth/callback"]}}'
 docker compose -f docker-compose.yml -f compose.mcp.yml --profile mcp up --build flask mcp mcp-proxy
 ```
@@ -217,10 +218,18 @@ Das gemeinsame Secret authentifiziert den Sidecar. Die Antwort enthält neben
 Issuer, Audience, Ablauf, Scope und LEG ein separates Downstream-Credential.
 Introspektion vermeidet Signaturschlüssel im Sidecar und prüft Widerruf sofort;
 sie benötigt dafür pro Anfrage einen zusätzlichen HTTP-Aufruf. Das
-Downstream-Credential wird mit SHA-256 und einem eigenen Präfix aus dem
-zufälligen MCP-Zugriffstoken abgeleitet. Die Datenbank speichert nur Hashes.
-Es gibt keinen globalen Ableitungsschlüssel. Ein Grant-ID-Wert reicht nicht,
-um das Credential zu berechnen. Der Betreiber-Client trägt `actor_kind=agent`
+Downstream-Credential wird mit HMAC-SHA-256 aus dem zufälligen MCP-Zugriffstoken
+und einem separaten Serverschlüssel abgeleitet. So kann die App das Credential
+bei authentifizierter Introspektion erneut ausgeben und nur Hashes speichern.
+Das MCP-Token allein reicht nicht zur Berechnung des Betreiber-Credentials.
+Nur die Flask-App erhält `OPENLEG_OAUTH_DOWNSTREAM_KEY`: 32 zufällige Bytes als
+64 kleingeschriebene Hexzeichen, ohne Standardwert. Der Sidecar erhält diesen
+Schlüssel nie. Die App verweigert den Start bei fehlendem, falsch formatiertem,
+offensichtlich schwachem Schlüssel (weniger als zwölf verschiedene Hexzeichen)
+oder Wiederverwendung des Introspektionsschlüssels. Die Prüfung ersetzt keine
+zufällige Erzeugung. Ein Schlüsselwechsel sperrt die Introspektion bestehender
+Grants; bereits ausgegebene Betreiber-Credentials gelten bis Ablauf oder Widerruf.
+Der Betreiber-Client trägt `actor_kind=agent`
 und exakt die bewilligten Capabilities. Das Credential gilt höchstens so lange
 wie der Grant. Codeaustausch, Introspektion und Betreiberzugriff prüfen, dass
 die zustimmende Person weiterhin bestätigte Administration dieser LEG ist.
@@ -250,3 +259,9 @@ Refresh-Tokens und die Grant-Widerrufsoberfläche folgen in #852.
 `oauth_grants` besitzt dafür eine stabile ID, Ausstellungszeit und
 `revoked_at`. OAuth bleibt bis zur vollständigen Bereitschaftsprüfung aus
 #838 für Produktion deaktiviert.
+
+Das Zustimmungsformular übernimmt nur die expliziten OAuth-Protokollfelder
+aus der Autorisierungsanfrage. Query-Parameter steuern keine Checkboxen oder
+LEG-Auswahl. Der POST akzeptiert nur Protokollfelder und Formular-Steuerelemente.
+Die bewilligten Capabilities müssen im angefragten Scope liegen; nur eine
+aktuell bestätigte Administration kann sie für ihre LEG delegieren.

@@ -148,7 +148,7 @@ def test_oauth_startup_and_metadata_shapes():
     app.config.update(
         OAUTH_ISSUER="https://auth.example",
         OAUTH_RESOURCE="https://mcp.example/mcp",
-        OAUTH_DOWNSTREAM_KEY="k" * 64,
+        OAUTH_DOWNSTREAM_KEY="0123456789abcdef" * 4,  # gitleaks:allow
         OAUTH_INTROSPECTION_SECRET="s" * 64,
         OAUTH_CLIENTS={
             "host": {"name": "Host", "redirect_uris": ["https://host.example/cb"]}
@@ -221,6 +221,8 @@ def test_compose_oauth_configuration():
     assert env["OPENLEG_OPERATOR_ORIGIN"] == "http://127.0.0.1:5000"
     assert config["mcp"]["network_mode"] == "service:flask"
     assert config["flask"]["environment"]["OPENLEG_OAUTH_CLIENTS"]
+    assert config["flask"]["environment"]["OPENLEG_OAUTH_DOWNSTREAM_KEY"]
+    assert "OPENLEG_OAUTH_DOWNSTREAM_KEY" not in env
     routes = Path("Caddyfile.mcp").read_text()
     for path in (
         "/.well-known/oauth-protected-resource*",
@@ -228,3 +230,23 @@ def test_compose_oauth_configuration():
         "/oauth/*",
     ):
         assert path in routes
+
+
+def test_downstream_key_required_at_startup(monkeypatch):
+    import pytest
+
+    from oauth_server import init_oauth
+
+    monkeypatch.delenv("OPENLEG_OAUTH_DOWNSTREAM_KEY", raising=False)
+    for key in (None, "", "short", "k" * 64, "0" * 64, "0123456789abcdef" * 4):
+        app = Flask(__name__)
+        app.config.update(
+            OAUTH_ISSUER="https://auth.example",
+            OAUTH_RESOURCE="https://mcp.example/mcp",
+            OAUTH_INTROSPECTION_SECRET="0123456789abcdef" * 4,  # gitleaks:allow
+            OAUTH_CLIENTS={},
+        )
+        if key is not None:
+            app.config["OAUTH_DOWNSTREAM_KEY"] = key
+        with pytest.raises(ValueError, match="downstream key"):
+            init_oauth(app)
