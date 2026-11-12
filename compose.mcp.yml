@@ -1,0 +1,23 @@
+# Optional local overlay. Never use this as production enablement.
+services:
+  mcp:
+    profiles: [mcp]
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    environment:
+      OPENLEG_MCP_ENABLED: ${OPENLEG_MCP_ENABLED:-false}
+      OPENLEG_MCP_BIND_HOST: 0.0.0.0
+      OPENLEG_OPERATOR_ORIGIN: http://flask:5000
+      OPENLEG_MCP_ALLOWED_HOSTS: localhost:8081,127.0.0.1:8081
+      OPENLEG_MCP_ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081,http://localhost:6274,http://127.0.0.1:6274
+    networks: [web]
+    depends_on: [flask]
+  mcp-proxy:
+    profiles: [mcp]
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
+    ports: ["127.0.0.1:8081:8081"]
+    volumes:
+      - ./Caddyfile.mcp:/etc/caddy/Caddyfile:ro
+    networks: [web]
+    depends_on: [mcp]

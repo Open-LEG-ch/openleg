@@ -1,0 +1,9 @@
+# Loaded only by the optional local mcp-proxy service.
+:8081 {
+    handle /mcp {
+        reverse_proxy mcp:8000
+    }
+    handle {
+        respond 404
+    }
+}
