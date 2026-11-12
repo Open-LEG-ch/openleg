@@ -684,3 +684,121 @@ def test_confirmation_holds_facts_until_case_claim(operator_http, monkeypatch, f
     )
     assert response.status_code == 200, response.json
     assert checked == [fact]
+
+
+@pytest.mark.parametrize("attempt", range(3))
+@pytest.mark.parametrize("suffix,payload", SCENARIOS)
+def test_confirmation_vs_direct_submission_lock_order(
+    operator_http, monkeypatch, suffix, payload, attempt
+):
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    import agent_confirmation
+    from store import vnb_exchange as cases
+
+    http = operator_http
+    prepare(http)
+    pending = http.request("POST", suffix, json=payload).json
+    headers, _ = http.credential_headers(["formation.mutate", "membership.mutate"])
+    original = agent_confirmation.BoundCases._check
+    futures = []
+
+    def direct():
+        return http.app.test_client().post(
+            "/api/operator/v1/communities/" + http.community_id + suffix,
+            json=payload,
+            headers=headers,
+        )
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+
+        def check(self, claim):
+            original(self, claim)
+            owner_pid = cases._confirmation_connection.get().get_backend_pid()
+            futures.append(pool.submit(direct))
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                with http.db.get_connection() as conn, conn.cursor() as cur:
+                    cur.execute(
+                        """SELECT pid FROM pg_stat_activity
+                           WHERE datname=current_database()
+                           AND wait_event_type='Lock'
+                           AND %s = ANY(pg_blocking_pids(pid))""",
+                        (owner_pid,),
+                    )
+                    if cur.fetchall():
+                        return
+                time.sleep(0.01)
+            pytest.fail("Direct submission never blocked on confirmation")
+
+        monkeypatch.setattr(agent_confirmation.BoundCases, "_check", check)
+        confirmed = http.client.post(
+            pending["confirmation_url"], headers={"X-CSRF-Token": "csrf"}
+        )
+        submitted = futures[0].result(timeout=10)
+
+    # The confirmation already owns the community lock, so it must win.
+    # A retryable response here would conceal the lock-order regression.
+    assert confirmed.status_code == 200, confirmed.json
+    assert submitted.status_code in (202, 409), submitted.json
+    table = (
+        "vnb_submission_cases"
+        if suffix.startswith("/formation")
+        else "vnb_mutation_cases"
+    )
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(f"SELECT * FROM {table}")
+        rows = cur.fetchall()
+        assert len(rows) == 1
+        assert rows[0]["actor"]["initiating_client_id"] == http.credential["id"]
+        assert rows[0]["actor"]["confirming_building_id"] == "contract-admin"
+        cur.execute("SELECT count(*) AS n FROM operator_events")
+        assert cur.fetchone()["n"] == 1
+    if submitted.status_code == 202:
+        assert submitted.json["case_id"] == confirmed.json["result"]["case_id"]
+
+
+@pytest.mark.parametrize("error_name", ["DeadlockDetected", "SerializationFailure"])
+@pytest.mark.parametrize("confirm", [False, True])
+@pytest.mark.parametrize("suffix,payload", SCENARIOS)
+@pytest.mark.parametrize("stage", ["claim", "outcome", "entry"])
+def test_submission_transaction_conflicts_are_retryable(
+    operator_http, monkeypatch, suffix, payload, confirm, error_name, stage
+):
+    import psycopg2.errors
+
+    from store import vnb_exchange as cases
+
+    http = operator_http
+    prepare(http)
+    pending = http.request("POST", suffix, json=payload).json
+    headers, _ = http.credential_headers(["formation.mutate", "membership.mutate"])
+    formation = suffix.startswith("/formation")
+    names = {
+        "claim": "claim" if formation else "claim_mutation",
+        "outcome": "record_outcome" if formation else "record_mutation_outcome",
+        "entry": (
+            "get_agent_confirmation_request" if confirm else "claim_operator_api_usage"
+        ),
+    }
+
+    def fail(*args, **kwargs):
+        raise getattr(psycopg2.errors, error_name)("internal database detail")
+
+    monkeypatch.setattr(http.db if stage == "entry" else cases, names[stage], fail)
+    response = (
+        http.client.post(pending["confirmation_url"], headers={"X-CSRF-Token": "csrf"})
+        if confirm
+        else http.request("POST", suffix, json=payload, headers=headers)
+    )
+    assert response.status_code == 503
+    assert response.json == {
+        "schema_version": "operator-api/1",
+        "error": "Submission temporarily unavailable; retry",
+        "code": "unavailable",
+        "retryable": True,
+    }
+    assert response.headers["Cache-Control"] == "no-store"
+    if confirm:
+        assert_confirmation_has_no_writes(http)

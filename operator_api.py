@@ -18,6 +18,7 @@ from ipaddress import ip_address
 from urllib.parse import urlparse
 
 from flask import Blueprint, current_app, g, jsonify, request, session
+from psycopg2.errors import DeadlockDetected, SerializationFailure
 
 import community_access
 import database as db
@@ -120,6 +121,17 @@ def _error(message, status, code=None, *, field=None):
     return response
 
 
+def _retryable_submission_errors(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        try:
+            return view(*args, **kwargs)
+        except (DeadlockDetected, SerializationFailure):
+            return _error("Submission temporarily unavailable; retry", 503)
+
+    return wrapped
+
+
 def require_operator(capability):
     def decorator(view):
         @wraps(view)
@@ -208,6 +220,7 @@ def _submit_vnb(kind, command, *, dry_run=False):
 @operator_api_bp.post(
     "/api/operator/v1/communities/<community_id>/formation/submissions"
 )
+@_retryable_submission_errors
 @require_operator("formation.mutate")
 def submit_formation(community_id):
     dry_run = _dry_run_option()
@@ -260,6 +273,7 @@ def membership_mutations(community_id):
 @operator_api_bp.post(
     "/api/operator/v1/communities/<community_id>/membership-mutations"
 )
+@_retryable_submission_errors
 @require_operator("membership.mutate")
 def submit_membership_mutation(community_id):
     dry_run = _dry_run_option()
@@ -963,6 +977,7 @@ def dispatch_pending_webhooks(
     "/leg/community/<community_id>/operator-api/confirmations/<request_id>",
     methods=["GET", "POST"],
 )
+@_retryable_submission_errors
 def agent_confirmation_page(community_id, request_id):
     from flask import redirect, render_template
 
