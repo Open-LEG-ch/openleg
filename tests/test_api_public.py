@@ -5,12 +5,16 @@ import re
 from typing import ClassVar
 from unittest.mock import patch
 
+import pytest
+
 from tests.conftest import (
     MOCK_ELCOM_TARIFFS,
     MOCK_MUNICIPALITY_PROFILE,
     MOCK_PROFILES_LIST,
     MOCK_SONNENDACH,
 )
+
+pytestmark = pytest.mark.usefixtures("validate_public_api_responses")
 
 
 class TestMunicipalityEndpoints:

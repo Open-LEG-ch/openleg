@@ -1,0 +1,2664 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenLEG Public API",
+    "version": "1.0.0",
+    "description": "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert.",
+    "contact": {
+      "name": "OpenLEG",
+      "url": "https://openleg.ch",
+      "email": "hallo@openleg.ch"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Municipalities",
+      "description": "Municipality energy profiles and data"
+    },
+    {
+      "name": "LEG Toolkit",
+      "description": "LEG formation tools: value-gap, clustering, financial model"
+    },
+    {
+      "name": "Address",
+      "description": "Address lookup and energy profiles"
+    }
+  ],
+  "paths": {
+    "/municipalities": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "List all municipalities",
+        "parameters": [
+          {
+            "name": "kanton",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "all"
+            },
+            "description": "Canton code (e.g. ZH) or all"
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "population",
+                "energy_transition_score",
+                "leg_value_gap_chf"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of municipality profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "municipalities": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Municipality"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "kanton": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "municipalities",
+                    "count",
+                    "kanton"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_municipalities"
+      }
+    },
+    "/municipalities/{bfs}": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "Get municipality profile",
+        "parameters": [
+          {
+            "name": "bfs",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "BFS municipality number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Municipality profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Municipality"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_municipalities_bfs"
+      }
+    },
+    "/municipalities/{bfs}/tariffs": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "ElCom tariffs",
+        "parameters": [
+          {
+            "name": "bfs",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tariff records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bfs_number": {
+                      "type": "integer"
+                    },
+                    "tariffs": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Tariff"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "bfs_number",
+                    "tariffs",
+                    "count"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_municipalities_bfs_tariffs"
+      }
+    },
+    "/municipalities/{bfs}/solar": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "Sonnendach solar data",
+        "parameters": [
+          {
+            "name": "bfs",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Solar potential data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Solar"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_municipalities_bfs_solar"
+      }
+    },
+    "/municipalities/{bfs}/score": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "Energy transition score breakdown",
+        "parameters": [
+          {
+            "name": "bfs",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Score with component breakdown",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bfs_number": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "total_score": {
+                      "type": "number"
+                    },
+                    "breakdown": {
+                      "type": "object",
+                      "properties": {
+                        "solar": {
+                          "$ref": "#/components/schemas/ScoreComponent"
+                        },
+                        "ev": {
+                          "$ref": "#/components/schemas/ScoreComponent"
+                        },
+                        "heating": {
+                          "$ref": "#/components/schemas/ScoreComponent"
+                        },
+                        "production": {
+                          "$ref": "#/components/schemas/ScoreComponent"
+                        }
+                      },
+                      "required": [
+                        "solar",
+                        "ev",
+                        "heating",
+                        "production"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "bfs_number",
+                    "name",
+                    "total_score",
+                    "breakdown"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_municipalities_bfs_score"
+      }
+    },
+    "/municipalities/{bfs}/leg-potential": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "LEG value-gap analysis",
+        "parameters": [
+          {
+            "name": "bfs",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 2026
+            }
+          },
+          {
+            "name": "grid_reduction_pct",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "default": 40
+            }
+          },
+          {
+            "name": "participants",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "consumption_kwh",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "default": 4500
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Value-gap calculation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValueGap"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_municipalities_bfs_leg_potential"
+      }
+    },
+    "/tariffs": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "Tariffs across municipalities",
+        "parameters": [
+          {
+            "name": "kanton",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "all"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 2026
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All tariffs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tariffs": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Tariff"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "kanton": {
+                      "type": "string"
+                    },
+                    "year": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "tariffs",
+                    "count",
+                    "kanton",
+                    "year"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_tariffs"
+      }
+    },
+    "/rankings": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "Ranked municipalities",
+        "parameters": [
+          {
+            "name": "kanton",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "all"
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "energy_transition_score",
+                "leg_value_gap_chf",
+                "population",
+                "name"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ranked list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rankings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "bfs_number": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "kanton": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "population": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "solar_potential_pct": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "solar_installed_kwp": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "ev_share_pct": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "renewable_heating_pct": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "electricity_consumption_mwh": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "renewable_production_mwh": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "leg_value_gap_chf": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "energy_transition_score": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "rank": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "bfs_number",
+                          "name",
+                          "kanton",
+                          "population",
+                          "solar_potential_pct",
+                          "solar_installed_kwp",
+                          "ev_share_pct",
+                          "renewable_heating_pct",
+                          "electricity_consumption_mwh",
+                          "renewable_production_mwh",
+                          "leg_value_gap_chf",
+                          "energy_transition_score",
+                          "rank"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "metric": {
+                      "type": "string"
+                    },
+                    "kanton": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "rankings",
+                    "metric",
+                    "kanton"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_rankings"
+      }
+    },
+    "/search": {
+      "get": {
+        "tags": [
+          "Municipalities"
+        ],
+        "summary": "Search municipalities",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query (min 2 chars)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 50
+            },
+            "description": "Max number of results"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Municipality"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "query",
+                    "results",
+                    "count",
+                    "limit"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_search"
+      }
+    },
+    "/leg/value-gap": {
+      "post": {
+        "tags": [
+          "LEG Toolkit"
+        ],
+        "summary": "Calculate LEG value gap",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "bfs_number"
+                ],
+                "properties": {
+                  "bfs_number": {
+                    "type": "integer",
+                    "example": 261
+                  },
+                  "num_participants": {
+                    "type": "integer",
+                    "default": 10
+                  },
+                  "avg_consumption_kwh": {
+                    "type": "number",
+                    "default": 4500
+                  },
+                  "grid_level": {
+                    "type": "string",
+                    "enum": [
+                      "NE7",
+                      "NE5"
+                    ],
+                    "default": "NE7"
+                  },
+                  "year": {
+                    "type": "integer",
+                    "default": 2026
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Value-gap analysis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bfs_number": {
+                      "type": [
+                        "integer",
+                        "string"
+                      ]
+                    },
+                    "annual_savings_per_household": {
+                      "type": "number"
+                    },
+                    "total_community_savings": {
+                      "type": "number"
+                    },
+                    "grid_fee_reduction": {
+                      "type": "number"
+                    },
+                    "grid_level": {
+                      "type": "string"
+                    },
+                    "num_participants": {
+                      "type": "number"
+                    },
+                    "avg_consumption_kwh": {
+                      "type": "number"
+                    },
+                    "assumptions": {
+                      "type": "object",
+                      "properties": {
+                        "grid_fee_rp_kwh": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "grid_reduction_pct": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "assumed_consumption_kwh": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "grid_fee_rp_kwh",
+                        "grid_reduction_pct",
+                        "assumed_consumption_kwh"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "bfs_number",
+                    "annual_savings_per_household",
+                    "total_community_savings",
+                    "grid_fee_reduction",
+                    "grid_level",
+                    "num_participants",
+                    "avg_consumption_kwh",
+                    "assumptions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_leg_value_gap"
+      }
+    },
+    "/leg/cluster": {
+      "post": {
+        "tags": [
+          "LEG Toolkit"
+        ],
+        "summary": "Cluster buildings for LEG",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "buildings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number",
+                          "minimum": -90,
+                          "maximum": 90,
+                          "example": 47.37
+                        },
+                        "lon": {
+                          "type": "number",
+                          "minimum": -180,
+                          "maximum": 180,
+                          "example": 8.54
+                        },
+                        "building_id": {
+                          "type": "string",
+                          "example": "building-1"
+                        },
+                        "annual_consumption_kwh": {
+                          "type": "number",
+                          "default": 4500
+                        },
+                        "potential_pv_kwp": {
+                          "type": "number",
+                          "default": 5
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lon",
+                        "building_id",
+                        "annual_consumption_kwh",
+                        "potential_pv_kwp"
+                      ]
+                    },
+                    "minItems": 2,
+                    "maxItems": 300
+                  }
+                },
+                "required": [
+                  "buildings"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cluster assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clusters": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "cluster_id": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "members": {
+                            "type": "array",
+                            "items": {
+                              "type": "object"
+                            }
+                          },
+                          "centroid": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "autarky_pct": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "recommended_size": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "cluster_id",
+                          "members",
+                          "centroid",
+                          "autarky_pct",
+                          "recommended_size"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "clusters",
+                    "count"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_leg_cluster"
+      }
+    },
+    "/leg/financial-model": {
+      "post": {
+        "tags": [
+          "LEG Toolkit"
+        ],
+        "summary": "10-year financial projection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bfs_number": {
+                    "type": "integer"
+                  },
+                  "scenario": {
+                    "type": "object",
+                    "properties": {
+                      "community_size": {
+                        "type": "integer",
+                        "default": 10
+                      },
+                      "pv_kwp": {
+                        "type": "number",
+                        "default": 30
+                      },
+                      "consumption_kwh": {
+                        "type": "number",
+                        "default": 4500
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Financial projections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bfs_number": {
+                      "type": [
+                        "integer",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "scenario": {
+                      "type": "object"
+                    },
+                    "projections": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "year": {
+                            "type": "integer"
+                          },
+                          "annual_savings_chf": {
+                            "type": "number"
+                          },
+                          "cumulative_savings_chf": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "year",
+                          "annual_savings_chf",
+                          "cumulative_savings_chf"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 10,
+                      "maxItems": 10
+                    },
+                    "roi_years": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "co2_reduction_kg_year": {
+                      "type": "number"
+                    },
+                    "grid_fee_savings_total_10y": {
+                      "type": "number"
+                    },
+                    "assumptions": {
+                      "$ref": "#/components/schemas/FormationAssumptions"
+                    }
+                  },
+                  "required": [
+                    "bfs_number",
+                    "scenario",
+                    "projections",
+                    "roi_years",
+                    "co2_reduction_kg_year",
+                    "grid_fee_savings_total_10y",
+                    "assumptions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_leg_financial_model"
+      }
+    },
+    "/leg/templates": {
+      "get": {
+        "tags": [
+          "LEG Toolkit"
+        ],
+        "summary": "LEG contract templates",
+        "responses": {
+          "200": {
+            "description": "Available templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contracts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "language": {
+                            "type": "string"
+                          },
+                          "sections": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "description",
+                          "language",
+                          "sections"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "contracts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_leg_templates"
+      }
+    },
+    "/address/suggest": {
+      "get": {
+        "tags": [
+          "Address"
+        ],
+        "summary": "Address autocomplete",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "plz_range",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "PLZ range e.g. 8000-8999"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Address suggestions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "suggestions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "lat": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "lon": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "plz": {
+                            "type": [
+                              "string",
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "lat",
+                          "lon",
+                          "plz"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "suggestions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_address_suggest"
+      }
+    },
+    "/address/profile": {
+      "get": {
+        "tags": [
+          "Address"
+        ],
+        "summary": "Address energy profile",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Building energy profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "building_id": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "plz": {
+                      "type": [
+                        "integer",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lat": {
+                      "type": "number"
+                    },
+                    "lon": {
+                      "type": "number"
+                    },
+                    "building_type": {
+                      "type": "string"
+                    },
+                    "annual_consumption_kwh": {
+                      "type": "number"
+                    },
+                    "potential_pv_kwp": {
+                      "type": "number"
+                    },
+                    "bfs_number": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "municipality_name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "kanton": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "building_id",
+                    "address",
+                    "plz",
+                    "lat",
+                    "lon",
+                    "building_type",
+                    "annual_consumption_kwh",
+                    "potential_pv_kwp"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_address_profile"
+      }
+    },
+    "/site/home": {
+      "get": {
+        "summary": "Kennzahlen der Startseite",
+        "responses": {
+          "200": {
+            "description": "Erfolgreiche Antwort",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": {
+                      "const": 1
+                    },
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "registered_buildings": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "registered_buildings"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "ranking": {
+                      "type": "object",
+                      "properties": {
+                        "best": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rank": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "bfs_number": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "kanton": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "score": {
+                                "type": [
+                                  "number",
+                                  "string",
+                                  "null"
+                                ],
+                                "pattern": "^-?\\d+(\\.\\d+)?$",
+                                "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
+                              }
+                            },
+                            "required": [
+                              "rank",
+                              "bfs_number",
+                              "name",
+                              "kanton",
+                              "score"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "needs_action": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rank": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "bfs_number": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "kanton": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "score": {
+                                "type": [
+                                  "number",
+                                  "string",
+                                  "null"
+                                ],
+                                "pattern": "^-?\\d+(\\.\\d+)?$",
+                                "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
+                              }
+                            },
+                            "required": [
+                              "rank",
+                              "bfs_number",
+                              "name",
+                              "kanton",
+                              "score"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "best",
+                        "needs_action",
+                        "total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "schema_version",
+                    "stats",
+                    "ranking"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_site_home"
+      }
+    },
+    "/site/rankings": {
+      "get": {
+        "summary": "Solarnutzungs-Rangliste",
+        "responses": {
+          "200": {
+            "description": "Erfolgreiche Antwort",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rankings": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SiteRanking"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "rankings",
+                    "count",
+                    "limit"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_site_rankings",
+        "parameters": [
+          {
+            "name": "kanton",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "small",
+                "medium",
+                "large",
+                "xl"
+              ]
+            }
+          },
+          {
+            "name": "density",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "mid",
+                "high",
+                "very_high"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 250,
+              "minimum": 1,
+              "maximum": 3000
+            }
+          }
+        ]
+      }
+    },
+    "/site/rankings/movers": {
+      "get": {
+        "summary": "Veränderung der Solarnutzung",
+        "responses": {
+          "200": {
+            "description": "Erfolgreiche Antwort",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "movers": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SiteMover"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "movers",
+                    "count",
+                    "limit"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_site_rankings_movers",
+        "parameters": [
+          {
+            "name": "kanton",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "small",
+                "medium",
+                "large",
+                "xl"
+              ]
+            }
+          },
+          {
+            "name": "density",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "mid",
+                "high",
+                "very_high"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "minimum": 1,
+              "maximum": 3000
+            }
+          }
+        ]
+      }
+    },
+    "/registry": {
+      "get": {
+        "summary": "LEG-Verzeichnis",
+        "responses": {
+          "200": {
+            "description": "Erfolgreiche Antwort",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RegistryEntry"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "entries",
+                    "count"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_registry",
+        "parameters": [
+          {
+            "name": "kanton",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "plz",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "leg_status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planung",
+                "gruendung",
+                "aktiv",
+                "pausiert"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        ]
+      }
+    },
+    "/registry/{slug}": {
+      "get": {
+        "summary": "LEG-Verzeichniseintrag",
+        "responses": {
+          "200": {
+            "description": "Erfolgreiche Antwort",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistryEntry"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ungültige Anfrage oder keine Daten verfügbar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "get_registry_slug"
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "summary": "OpenAPI-Vertrag",
+        "responses": {
+          "200": {
+            "description": "Erfolgreiche Antwort",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "openapi": {
+                      "const": "3.1.0"
+                    },
+                    "info": {
+                      "type": "object"
+                    },
+                    "servers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "paths": {
+                      "type": "object"
+                    },
+                    "components": {
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "openapi",
+                    "info",
+                    "servers",
+                    "paths",
+                    "components"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Anfragelimit erreicht.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_openapi_json"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Municipality": {
+        "type": "object",
+        "properties": {
+          "bfs_number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kanton": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "population": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "solar_potential_pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "solar_installed_kwp": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ev_share_pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "renewable_heating_pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "electricity_consumption_mwh": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "renewable_production_mwh": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "leg_value_gap_chf": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "energy_transition_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "bfs_number",
+          "name",
+          "kanton",
+          "population",
+          "solar_potential_pct",
+          "solar_installed_kwp",
+          "ev_share_pct",
+          "renewable_heating_pct",
+          "electricity_consumption_mwh",
+          "renewable_production_mwh",
+          "leg_value_gap_chf",
+          "energy_transition_score"
+        ],
+        "additionalProperties": false
+      },
+      "Tariff": {
+        "type": "object",
+        "properties": {
+          "bfs_number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "operator_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipality_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "category": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total_rp_kwh": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "energy_rp_kwh": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "grid_rp_kwh": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "municipality_fee_rp_kwh": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "kev_rp_kwh": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "bfs_number",
+          "operator_name",
+          "municipality_name",
+          "year",
+          "category",
+          "total_rp_kwh",
+          "energy_rp_kwh",
+          "grid_rp_kwh",
+          "municipality_fee_rp_kwh",
+          "kev_rp_kwh"
+        ],
+        "additionalProperties": false
+      },
+      "Solar": {
+        "type": "object",
+        "properties": {
+          "bfs_number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "total_roof_area_m2": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "suitable_roof_area_m2": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "potential_kwh_year": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "potential_kwp": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "utilization_pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "bfs_number",
+          "total_roof_area_m2",
+          "suitable_roof_area_m2",
+          "potential_kwh_year",
+          "potential_kwp",
+          "utilization_pct"
+        ],
+        "additionalProperties": false
+      },
+      "RegistryEntry": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kanton": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "plz": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ort": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vnb_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "leg_status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "website_url": {
+            "type": "string"
+          },
+          "member_count_estimate": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "kanton",
+          "plz",
+          "ort",
+          "vnb_name",
+          "leg_status",
+          "description",
+          "website_url",
+          "member_count_estimate"
+        ],
+        "additionalProperties": false
+      },
+      "SiteRanking": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "bfs_number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kanton": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "population": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "pv_score_pct": {
+            "type": [
+              "number",
+              "string",
+              "null"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
+          },
+          "display_score": {
+            "type": [
+              "number",
+              "string",
+              "null"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
+          },
+          "score_over_100": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "pv_untapped_kw": {
+            "type": [
+              "number",
+              "string",
+              "null"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
+          }
+        },
+        "required": [
+          "rank",
+          "bfs_number",
+          "name",
+          "kanton",
+          "population",
+          "pv_score_pct",
+          "display_score",
+          "score_over_100",
+          "pv_untapped_kw"
+        ],
+        "additionalProperties": false
+      },
+      "SiteMover": {
+        "type": "object",
+        "properties": {
+          "bfs_number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kanton": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "score_now": {
+            "type": [
+              "number",
+              "string",
+              "null"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
+          },
+          "score_prev": {
+            "type": [
+              "number",
+              "string",
+              "null"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
+          },
+          "delta": {
+            "type": [
+              "number",
+              "string",
+              "null"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
+          }
+        },
+        "required": [
+          "bfs_number",
+          "name",
+          "kanton",
+          "year",
+          "score_now",
+          "score_prev",
+          "delta"
+        ],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "bfs_number": {
+            "type": "integer"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Municipality"
+            }
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "ScoreComponent": {
+        "type": "object",
+        "properties": {
+          "weight": {
+            "type": "number"
+          },
+          "raw_pct": {
+            "type": "number"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "weight",
+          "raw_pct",
+          "score"
+        ],
+        "additionalProperties": false
+      },
+      "ValueGap": {
+        "type": "object",
+        "properties": {
+          "grid_fee_rp_kwh": {
+            "type": "number"
+          },
+          "savings_rp_kwh": {
+            "type": "number"
+          },
+          "annual_savings_chf": {
+            "type": "number"
+          },
+          "monthly_savings_chf": {
+            "type": "number"
+          },
+          "savings_pct": {
+            "type": "number"
+          },
+          "grid_reduction_pct": {
+            "type": "number"
+          },
+          "assumed_consumption_kwh": {
+            "type": "number"
+          },
+          "num_participants": {
+            "type": "number"
+          },
+          "total_community_savings_chf": {
+            "type": "number"
+          },
+          "avg_consumption_kwh": {
+            "type": "number"
+          },
+          "bfs_number": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "annual_savings_chf",
+          "monthly_savings_chf",
+          "savings_pct",
+          "num_participants",
+          "total_community_savings_chf",
+          "avg_consumption_kwh",
+          "bfs_number"
+        ],
+        "additionalProperties": true
+      },
+      "FormationAssumptions": {
+        "type": "object",
+        "properties": {
+          "grid_buy_price_rp": {
+            "type": "number"
+          },
+          "grid_sell_price_rp": {
+            "type": "number"
+          },
+          "leg_price_rp": {
+            "type": "number"
+          },
+          "community_size": {
+            "type": "number"
+          },
+          "solar_kwh_per_kwp": {
+            "type": "number"
+          },
+          "self_consumption_share_pct": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "grid_buy_price_rp",
+          "grid_sell_price_rp",
+          "leg_price_rp",
+          "community_size",
+          "solar_kwh_per_kwp",
+          "self_consumption_share_pct"
+        ],
+        "additionalProperties": true
+      },
+      "RateLimitError": {
+        "type": "object",
+        "required": [
+          "error",
+          "retry_after_seconds"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "retry_after_seconds": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "security": []
+}

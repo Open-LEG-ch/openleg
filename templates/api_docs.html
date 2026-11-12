@@ -42,191 +42,67 @@
 {% block scripts %}
 <script src="/static/js/api_reference.js" nonce="{{ csp_nonce() if csp_nonce is defined else '' }}"></script>
 <script nonce="{{ csp_nonce() if csp_nonce is defined else '' }}">
-const spec = {
-    openapi: "3.0.3",
-    info: {
-        title: {{ _("OpenLEG Public API")|tojson }},
-        version: "1.0.0",
-        description: {{ _("Open-source Swiss energy data API. Aggregates public government data (ElCom tariffs, Sonnendach solar potential, Energie Reporter) into clean, queryable endpoints. Plus LEG formation toolkit.\n\nAll endpoints return JSON. No authentication required. Rate limited to 60 requests/minute per IP.\n\n**Data Sources:** ElCom (LINDAS SPARQL), BFE Sonnendach, Energie Reporter, Swisstopo\n\n**License:** Open data, DSG-compliant. No PII.")|tojson }},
-        contact: { name: {{ _("OpenLEG")|tojson }}, url: "https://openleg.ch", email: "hallo@openleg.ch" }
+loadApiReference(document.getElementById('swagger-ui'), "/api/v1/openapi.json", {
+    text: {
+        "Anfragelimit erreicht.": {{ _("Anfragelimit erreicht.")|tojson }},
+        "Erfolgreiche Antwort": {{ _("Erfolgreiche Antwort")|tojson }},
+        "Kennzahlen der Startseite": {{ _("Kennzahlen der Startseite")|tojson }},
+        "LEG-Verzeichnis": {{ _("LEG-Verzeichnis")|tojson }},
+        "LEG-Verzeichniseintrag": {{ _("LEG-Verzeichniseintrag")|tojson }},
+        "OpenAPI-Vertrag": {{ _("OpenAPI-Vertrag")|tojson }},
+        "Solarnutzungs-Rangliste": {{ _("Solarnutzungs-Rangliste")|tojson }},
+        "Ungültige Anfrage oder keine Daten verfügbar.": {{ _("Ungültige Anfrage oder keine Daten verfügbar.")|tojson }},
+        "Veränderung der Solarnutzung": {{ _("Veränderung der Solarnutzung")|tojson }},
+        "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert.": {{ _("Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert.")|tojson }},
+        "OpenLEG Public API": {{ _("OpenLEG Public API")|tojson }},
+        "OpenLEG": {{ _("OpenLEG")|tojson }},
+        "Production": {{ _("Production")|tojson }},
+        "Municipalities": {{ _("Municipalities")|tojson }},
+        "Municipality energy profiles and data": {{ _("Municipality energy profiles and data")|tojson }},
+        "LEG Toolkit": {{ _("LEG Toolkit")|tojson }},
+        "LEG formation tools: value-gap, clustering, financial model": {{ _("LEG formation tools: value-gap, clustering, financial model")|tojson }},
+        "Address": {{ _("Address")|tojson }},
+        "Address lookup and energy profiles": {{ _("Address lookup and energy profiles")|tojson }},
+        "List all municipalities": {{ _("List all municipalities")|tojson }},
+        "Canton code (e.g. ZH) or all": {{ _("Canton code (e.g. ZH) or all")|tojson }},
+        "List of municipality profiles": {{ _("List of municipality profiles")|tojson }},
+        "Get municipality profile": {{ _("Get municipality profile")|tojson }},
+        "BFS municipality number": {{ _("BFS municipality number")|tojson }},
+        "Municipality profile": {{ _("Municipality profile")|tojson }},
+        "Not found": {{ _("Not found")|tojson }},
+        "ElCom tariffs": {{ _("ElCom tariffs")|tojson }},
+        "Tariff records": {{ _("Tariff records")|tojson }},
+        "Sonnendach solar data": {{ _("Sonnendach solar data")|tojson }},
+        "Solar potential data": {{ _("Solar potential data")|tojson }},
+        "No data": {{ _("No data")|tojson }},
+        "Energy transition score breakdown": {{ _("Energy transition score breakdown")|tojson }},
+        "Score with component breakdown": {{ _("Score with component breakdown")|tojson }},
+        "LEG value-gap analysis": {{ _("LEG value-gap analysis")|tojson }},
+        "Value-gap calculation": {{ _("Value-gap calculation")|tojson }},
+        "No H4 tariff": {{ _("No H4 tariff")|tojson }},
+        "Tariffs across municipalities": {{ _("Tariffs across municipalities")|tojson }},
+        "All tariffs": {{ _("All tariffs")|tojson }},
+        "Ranked municipalities": {{ _("Ranked municipalities")|tojson }},
+        "Ranked list": {{ _("Ranked list")|tojson }},
+        "Search municipalities": {{ _("Search municipalities")|tojson }},
+        "Search query (min 2 chars)": {{ _("Search query (min 2 chars)")|tojson }},
+        "Max number of results": {{ _("Max number of results")|tojson }},
+        "Search results": {{ _("Search results")|tojson }},
+        "Query too short": {{ _("Query too short")|tojson }},
+        "Calculate LEG value gap": {{ _("Calculate LEG value gap")|tojson }},
+        "Value-gap analysis": {{ _("Value-gap analysis")|tojson }},
+        "Cluster buildings for LEG": {{ _("Cluster buildings for LEG")|tojson }},
+        "Cluster assignments": {{ _("Cluster assignments")|tojson }},
+        "10-year financial projection": {{ _("10-year financial projection")|tojson }},
+        "Financial projections": {{ _("Financial projections")|tojson }},
+        "LEG contract templates": {{ _("LEG contract templates")|tojson }},
+        "Available templates": {{ _("Available templates")|tojson }},
+        "Address autocomplete": {{ _("Address autocomplete")|tojson }},
+        "PLZ range e.g. 8000-8999": {{ _("PLZ range e.g. 8000-8999")|tojson }},
+        "Address suggestions": {{ _("Address suggestions")|tojson }},
+        "Address energy profile": {{ _("Address energy profile")|tojson }},
+        "Building energy profile": {{ _("Building energy profile")|tojson }}
     },
-    servers: [{ url: "/api/v1", description: {{ _("Production")|tojson }} }],
-    tags: [
-        { name: {{ _("Municipalities")|tojson }}, description: {{ _("Municipality energy profiles and data")|tojson }} },
-        { name: {{ _("LEG Toolkit")|tojson }}, description: {{ _("LEG formation tools: value-gap, clustering, financial model")|tojson }} },
-        { name: {{ _("Address")|tojson }}, description: {{ _("Address lookup and energy profiles")|tojson }} }
-    ],
-    paths: {
-        "/municipalities": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("List all municipalities")|tojson }},
-                parameters: [
-                    { name: "kanton", in: "query", schema: { type: "string", default: "all" }, description: {{ _("Canton code (e.g. ZH) or all")|tojson }} },
-                    { name: "order_by", in: "query", schema: { type: "string", enum: ["name", "population", "energy_transition_score", "leg_value_gap_chf"] } }
-                ],
-                responses: { "200": { description: {{ _("List of municipality profiles")|tojson }} } }
-            }
-        },
-        "/municipalities/{bfs}": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("Get municipality profile")|tojson }},
-                parameters: [{ name: "bfs", in: "path", required: true, schema: { type: "integer" }, description: {{ _("BFS municipality number")|tojson }} }],
-                responses: { "200": { description: {{ _("Municipality profile")|tojson }} }, "404": { description: {{ _("Not found")|tojson }} } }
-            }
-        },
-        "/municipalities/{bfs}/tariffs": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("ElCom tariffs")|tojson }},
-                parameters: [
-                    { name: "bfs", in: "path", required: true, schema: { type: "integer" } },
-                    { name: "year", in: "query", schema: { type: "integer", default: 2026 } }
-                ],
-                responses: { "200": { description: {{ _("Tariff records")|tojson }} } }
-            }
-        },
-        "/municipalities/{bfs}/solar": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("Sonnendach solar data")|tojson }},
-                parameters: [{ name: "bfs", in: "path", required: true, schema: { type: "integer" } }],
-                responses: { "200": { description: {{ _("Solar potential data")|tojson }} }, "404": { description: {{ _("No data")|tojson }} } }
-            }
-        },
-        "/municipalities/{bfs}/score": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("Energy transition score breakdown")|tojson }},
-                parameters: [{ name: "bfs", in: "path", required: true, schema: { type: "integer" } }],
-                responses: { "200": { description: {{ _("Score with component breakdown")|tojson }} } }
-            }
-        },
-        "/municipalities/{bfs}/leg-potential": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("LEG value-gap analysis")|tojson }},
-                parameters: [
-                    { name: "bfs", in: "path", required: true, schema: { type: "integer" } },
-                    { name: "year", in: "query", schema: { type: "integer", default: 2026 } },
-                    { name: "grid_reduction_pct", in: "query", schema: { type: "number", default: 40.0 } },
-                    { name: "participants", in: "query", schema: { type: "integer", default: 10 } }
-                ],
-                responses: { "200": { description: {{ _("Value-gap calculation")|tojson }} }, "404": { description: {{ _("No H4 tariff")|tojson }} } }
-            }
-        },
-        "/tariffs": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("Tariffs across municipalities")|tojson }},
-                parameters: [
-                    { name: "kanton", in: "query", schema: { type: "string", default: "all" } },
-                    { name: "year", in: "query", schema: { type: "integer", default: 2026 } }
-                ],
-                responses: { "200": { description: {{ _("All tariffs")|tojson }} } }
-            }
-        },
-        "/rankings": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("Ranked municipalities")|tojson }},
-                parameters: [
-                    { name: "kanton", in: "query", schema: { type: "string", default: "all" } },
-                    { name: "metric", in: "query", schema: { type: "string", enum: ["energy_transition_score", "leg_value_gap_chf", "population"] } },
-                    { name: "limit", in: "query", schema: { type: "integer", default: 20 } }
-                ],
-                responses: { "200": { description: {{ _("Ranked list")|tojson }} } }
-            }
-        },
-        "/search": {
-            get: {
-                tags: [{{ _("Municipalities")|tojson }}], summary: {{ _("Search municipalities")|tojson }},
-                parameters: [
-                    { name: "q", in: "query", required: true, schema: { type: "string" }, description: {{ _("Search query (min 2 chars)")|tojson }} },
-                    { name: "limit", in: "query", schema: { type: "integer", default: 10, minimum: 1, maximum: 50 }, description: {{ _("Max number of results")|tojson }} }
-                ],
-                responses: { "200": { description: {{ _("Search results")|tojson }} }, "400": { description: {{ _("Query too short")|tojson }} } }
-            }
-        },
-        "/leg/value-gap": {
-            post: {
-                tags: [{{ _("LEG Toolkit")|tojson }}], summary: {{ _("Calculate LEG value gap")|tojson }},
-                requestBody: {
-                    required: true,
-                    content: { "application/json": { schema: {
-                        type: "object",
-                        required: ["bfs_number"],
-                        properties: {
-                            bfs_number: { type: "integer", example: 261 },
-                            num_participants: { type: "integer", default: 10 },
-                            avg_consumption_kwh: { type: "number", default: 4500 },
-                            pv_kwp: { type: "number", default: 0 },
-                            grid_level: { type: "string", enum: ["NE7", "NE5"], default: "NE7" }
-                        }
-                    }}}
-                },
-                responses: { "200": { description: {{ _("Value-gap analysis")|tojson }} } }
-            }
-        },
-        "/leg/cluster": {
-            post: {
-                tags: [{{ _("LEG Toolkit")|tojson }}], summary: {{ _("Cluster buildings for LEG")|tojson }},
-                requestBody: {
-                    required: true,
-                    content: { "application/json": { schema: {
-                        type: "object",
-                        properties: {
-                            buildings: { type: "array", items: {
-                                type: "object",
-                                properties: { lat: { type: "number" }, lon: { type: "number" }, consumption_kwh: { type: "number" }, pv_kwp: { type: "number" } }
-                            }}
-                        }
-                    }}}
-                },
-                responses: { "200": { description: {{ _("Cluster assignments")|tojson }} } }
-            }
-        },
-        "/leg/financial-model": {
-            post: {
-                tags: [{{ _("LEG Toolkit")|tojson }}], summary: {{ _("10-year financial projection")|tojson }},
-                requestBody: {
-                    required: true,
-                    content: { "application/json": { schema: {
-                        type: "object",
-                        properties: {
-                            bfs_number: { type: "integer" },
-                            scenario: { type: "object", properties: {
-                                num_legs: { type: "integer", default: 1 },
-                                community_size: { type: "integer", default: 10 },
-                                pv_kwp: { type: "number", default: 30 },
-                                consumption_kwh: { type: "number", default: 4500 }
-                            }}
-                        }
-                    }}}
-                },
-                responses: { "200": { description: {{ _("Financial projections")|tojson }} } }
-            }
-        },
-        "/leg/templates": {
-            get: {
-                tags: [{{ _("LEG Toolkit")|tojson }}], summary: {{ _("LEG contract templates")|tojson }},
-                responses: { "200": { description: {{ _("Available templates")|tojson }} } }
-            }
-        },
-        "/address/suggest": {
-            get: {
-                tags: [{{ _("Address")|tojson }}], summary: {{ _("Address autocomplete")|tojson }},
-                parameters: [
-                    { name: "q", in: "query", required: true, schema: { type: "string" } },
-                    { name: "plz_range", in: "query", schema: { type: "string" }, description: {{ _("PLZ range e.g. 8000-8999")|tojson }} }
-                ],
-                responses: { "200": { description: {{ _("Address suggestions")|tojson }} } }
-            }
-        },
-        "/address/profile": {
-            get: {
-                tags: [{{ _("Address")|tojson }}], summary: {{ _("Address energy profile")|tojson }},
-                parameters: [{ name: "address", in: "query", required: true, schema: { type: "string" } }],
-                responses: { "200": { description: {{ _("Building energy profile")|tojson }} } }
-            }
-        }
-    }
-};
-
-initializeApiReference(document.getElementById('swagger-ui'), spec, {
     parameters: {{ _('Parameter')|tojson }},
     schema: {{ _('Schema')|tojson }},
     requestBody: {{ _('Anfrageinhalt (JSON)')|tojson }},

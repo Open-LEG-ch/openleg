@@ -26,6 +26,7 @@ RUN pip install --no-cache-dir --upgrade "setuptools>=84.0.0"
 COPY *.py ./
 COPY store/ store/
 COPY templates/ templates/
+COPY docs/openapi/ docs/openapi/
 COPY translations/ translations/
 COPY static/ static/
 COPY scripts/ scripts/

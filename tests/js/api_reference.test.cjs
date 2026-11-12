@@ -81,3 +81,35 @@ test('non-object JSON and inherited property names always use the localized fall
         assert.equal(descendants(root,'pre').at(-1).textContent,JSON.stringify(payload,null,2));
     }
 });
+
+test('reference loads the served contract before rendering operations', async () => {
+    const root = new Element('root');
+    const requests = [];
+    const spec = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../docs/openapi/public-v1.json')));
+    const context = {window:{}, document:{createElement:tag => new Element(tag),createTextNode:text => text},
+        fetch:async url => {requests.push(url);return {ok:true,json:async () => spec};}};
+    vm.runInNewContext(fs.readFileSync(path.resolve(__dirname,'../../static/js/api_reference.js'),'utf8'),context);
+    let rendered;
+    context.window.initializeApiReference = (_root, value) => {rendered=value;};
+    await context.window.loadApiReference(root, '/api/v1/openapi.json', labels);
+    assert.deepEqual(requests, ['/api/v1/openapi.json']);
+    assert.equal(rendered, spec);
+});
+
+test('failed contract fetch displays a localized error', async () => {
+    for (const fetch of [async () => ({ok:false}), async () => {throw Error('offline');}]) {
+        const root = new Element('root');
+        const context = {window:{},fetch};
+        vm.runInNewContext(fs.readFileSync(path.resolve(__dirname,'../../static/js/api_reference.js'),'utf8'),context);
+        await context.window.loadApiReference(root, '/api/v1/openapi.json', labels);
+        assert.equal(root.textContent, labels.networkError);
+    }
+});
+
+test('contract summaries retain translated labels without changing protocol paths', () => {
+    labels.text = {'List all municipalities':'Lister les communes'};
+    const {root} = widget({summary:'List all municipalities'});
+    assert.ok(descendants(root,'summary')[0].children.includes('Lister les communes'));
+    assert.equal(descendants(root,'code')[0].textContent, 'GET /test');
+    delete labels.text;
+});
