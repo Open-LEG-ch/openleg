@@ -50,7 +50,7 @@ jobs:
             local issues issue_number title body current_title current_body body_file
             # Read open issues directly to avoid search-index delay between runs.
             issues="$(gh api --paginate --slurp "repos/${owner}/${name}/issues?state=open&per_page=100")"
-            issues="$(jq -c --arg marker "${issue_marker}" '[.[][] | select(has("pull_request") | not) | select((.body // "") | contains($marker))]' <<< "${issues}")"
+            issues="$(jq -c --arg marker "${issue_marker}" '[.[][] | select(has("pull_request") | not) | select(.user.login == "github-actions[bot]") | select((.body // "") | contains($marker))]' <<< "${issues}")"
             issue_number="$(jq -r '.[0].number // empty' <<< "${issues}")"
             if [[ -z "${gap}" ]]; then
               while IFS= read -r number; do

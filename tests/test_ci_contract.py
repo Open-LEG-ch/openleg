@@ -343,9 +343,12 @@ endpoint = next((arg for arg in args if arg.startswith('repos/')), '')
 if '/issues?' in endpoint:
     assert 'state=open' in endpoint
     existing = os.environ['EXISTING']
-    issues = [{'number': 1, 'title': 'unrelated', 'body': 'Other issue'}]
+    issues = [{'number': 1, 'title': 'unrelated', 'body': 'Other issue'},
+              {'number': 99, 'title': 'human issue', 'body': '<!-- openleg-release-watchdog -->',
+               'user': {'login': 'contributor'}}]
     if existing:
-        issues.append({'number': 42, 'title': os.environ.get('SAME_TITLE', 'old'),
+        issues.append({'number': 42, 'user': {'login': 'github-actions[bot]'},
+                       'title': os.environ.get('SAME_TITLE', 'old'),
                        'body': os.environ.get('SAME_BODY', '<!-- openleg-release-watchdog -->')})
     print(json.dumps([issues]))
 elif endpoint:
