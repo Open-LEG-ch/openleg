@@ -120,7 +120,14 @@ jobs:
             exit 1
           fi
           rm -f "${error_file}"
-          jq -e 'type == "object" and (.draft | type == "boolean")' <<< "${release}" > /dev/null
+          if ! jq -e '
+            type == "object" and (.draft | type == "boolean") and
+            ([.html_url, .node_id, .published_at] | all(type == "string" and length > 0)) and
+            (try (.published_at | fromdateiso8601 | type == "number") catch false)
+          ' <<< "${release}" > /dev/null; then
+            echo "::error::Malformed GitHub Release response for ${tag}"
+            exit 1
+          fi
           if [[ "$(jq -r '.draft' <<< "${release}")" != "false" ]]; then
             verdict="warning: no published Release"
             report "- Keine veröffentlichte GitHub Release für ${tag}. Nächster Schritt: [Release-Entwürfe](https://github.com/${owner}/${name}/releases) prüfen und den passenden Entwurf veröffentlichen."
@@ -130,8 +137,6 @@ jobs:
           age=$(( $(date -u +%s) - published_at ))
           release_url="$(jq -er '.html_url' <<< "${release}")"
           RELEASE_ID="$(jq -er '.node_id' <<< "${release}")"
-          RELEASE_NAME="$(jq -r '.name | select(. != "") // empty' <<< "${release}")"
-          RELEASE_NAME="${RELEASE_NAME:-${tag}}"
           marker="<!-- openleg-release:${RELEASE_ID} -->"
 
           category_id="$(gh api graphql \
@@ -149,7 +154,7 @@ jobs:
               pagination_args=(-f after="${after}")
             fi
             response="$(gh api graphql \
-              -f query='query($owner: String!, $name: String!, $categoryId: ID!, $after: String) { repository(owner: $owner, name: $name) { discussions(first: 100, after: $after, categoryId: $categoryId) { nodes { title body url } pageInfo { hasNextPage endCursor } } } }' \
+              -f query='query($owner: String!, $name: String!, $categoryId: ID!, $after: String) { repository(owner: $owner, name: $name) { discussions(first: 100, after: $after, categoryId: $categoryId) { nodes { body url } pageInfo { hasNextPage endCursor } } } }' \
               -f owner="${owner}" \
               -f name="${name}" \
               -f categoryId="${category_id}" \
@@ -177,9 +182,14 @@ jobs:
           fi
 
           thread_url="$(jq -er '.url' <<< "${thread}")"
-          # Existing announcements keep their original title after a Release rename.
-          announced_name="$(jq -r '.title // "" | select(startswith("Neue Version: ")) | ltrimstr("Neue Version: ")' <<< "${thread}")"
-          RELEASE_NAME="${announced_name:-${RELEASE_NAME}}"
+          # Match the publisher's body structure; both titles and Release names are editable.
+          first_line="$(jq -r '.body | split("\n")[0]' <<< "${thread}" | tr -d '[:space:]')"
+          suffix="istveröffentlicht:${release_url}"
+          RELEASE_NAME=""
+          if [[ "${first_line}" == OpenLEG*"${suffix}" ]]; then
+            RELEASE_NAME="${first_line#OpenLEG}"
+            RELEASE_NAME="${RELEASE_NAME%"${suffix}"}"
+          fi
           body="OpenLEG ${RELEASE_NAME} ist veröffentlicht: ${release_url}
 
           Fragen, Ideen und die aktuelle Arbeit der Community: https://openleg.ch/community

@@ -276,6 +276,21 @@ def test_release_announcement_watchdog_contract():
         ("bare", 7201, "", 0, "create"),
         ("renamed", 10800, "", 0, "create"),
         ("bare", 10800, "different", 0, "edit"),
+        ("retitled", 10800, "different", 0, "edit"),
+        *[
+            (f"bad-release:{field}:{value}", 10800, "different", 1, "")
+            for field in ("html_url", "node_id", "published_at")
+            for value in (
+                "missing",
+                "null",
+                "empty",
+                "number",
+                "object",
+                "array",
+                "boolean",
+            )
+        ],
+        ("bad-release:published_at:invalid", 10800, "different", 1, ""),
         ("bare", 10800, "same", 0, ""),
         ("enriched", 10800, "", 0, ""),
         ("enriched", 10800, "different", 0, "close"),
@@ -314,6 +329,22 @@ def test_release_watchdog_script(tmp_path, scenario, age, existing, status, acti
             "url": thread_url,
         },
     }
+    if scenario == "retitled":
+        fixture["thread"]["title"] = "Neue Version: v0.1.24 - Hinweise"
+    if scenario.startswith("bad-release:"):
+        _, field, value = scenario.split(":")
+        if value == "missing":
+            fixture["release"].pop(field)
+        else:
+            fixture["release"][field] = {
+                "null": None,
+                "empty": "",
+                "number": 42,
+                "object": {},
+                "array": [],
+                "boolean": True,
+                "invalid": "not a timestamp",
+            }[value]
     (tmp_path / "fixture.json").write_text(json.dumps(fixture))
     stub = r"""#!/usr/bin/env python3
 import json, os, pathlib, sys
@@ -404,6 +435,7 @@ else:
         env["SAME_TITLE"] = call[call.index("--title") + 1]
         env["SAME_BODY"] = last_body.read_text()
         writes.unlink()
+        summary.write_text("")
     result = subprocess.run(
         ["bash", "-c", script],
         check=False,
@@ -423,11 +455,37 @@ else:
         assert "::warning::" in result.stdout
         assert "<!-- openleg-release-watchdog -->" in last_body.read_text()
         assert "v0.1.24" in last_body.read_text()
+    if action in ("edit", "close"):
+        assert calls[0][2] == "42"
     if action == "close":
         assert "--comment" in calls[0]
-        assert "42" in calls[0]
     report = summary.read_text()
     assert all(field in report for field in ("Tag:", "Release:", "Thread:", "Verdict:"))
+    expected_verdict = {
+        "unreachable": "warning: production health unreachable",
+        "missing": "warning: production release identity missing or null",
+        "null": "warning: production release identity missing or null",
+        "malformed": "failed: API or response error (5)",
+        "404": "warning: no published Release",
+        "draft": "warning: no published Release",
+        "api-error": "failed: API or response error (1)",
+        "no-thread": (
+            "passed: announcement publication grace period"
+            if age <= 1800
+            else "warning: no announcement thread"
+        ),
+        "bare": (
+            "passed: announcement enrichment grace period"
+            if age <= 7200
+            else "warning: announcement not enriched"
+        ),
+        "renamed": "warning: announcement not enriched",
+        "retitled": "warning: announcement not enriched",
+        "enriched": "passed: announcement enriched",
+    }.get(scenario, "failed: API or response error (1)")
+    assert [line for line in report.splitlines() if line.startswith("Verdict:")] == [
+        f"Verdict: {expected_verdict}"
+    ]
     if scenario in ("bare", "enriched"):
         assert release_url in report
         assert thread_url in report
