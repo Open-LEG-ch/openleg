@@ -195,6 +195,7 @@ def _payment_entry(**overrides):
         "currency": "CHF",
         "credit_debit_indicator": "CRDT",
         "booking_status": "BOOK",
+        "amount_basis": "entry",
         "is_reversal": False,
         "amount": Decimal("42.50"),
         "payment_reference": "BANK-1",

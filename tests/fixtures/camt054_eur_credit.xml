@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic conversion example. No real account or bank transaction. -->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08">
+  <BkToCstmrDbtCdtNtfctn>
+    <GrpHdr>
+      <MsgId>synthetic-fx-1</MsgId>
+      <CreDtTm>2026-11-04T12:00:00Z</CreDtTm>
+    </GrpHdr>
+    <Ntfctn>
+      <Id>synthetic-statement-1</Id>
+      <Acct>
+        <Id><Othr><Id>SYNTHETIC-EUR-ACCOUNT</Id></Othr></Id>
+        <Ccy>EUR</Ccy>
+      </Acct>
+      <Ntry>
+        <Amt Ccy="EUR">110.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-11-04</Dt></BookgDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>RCDT</Cd><SubFmlyCd>ESCT</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><AcctSvcrRef>synthetic-entry-1</AcctSvcrRef></Refs>
+            <CdtDbtInd>CRDT</CdtDbtInd>
+            <AmtDtls>
+              <InstdAmt>
+                <Amt Ccy="CHF">120.50</Amt>
+                <CcyXchg><SrcCcy>CHF</SrcCcy><TrgtCcy>EUR</TrgtCcy><UnitCcy>CHF</UnitCcy><XchgRate>0.91286307</XchgRate></CcyXchg>
+              </InstdAmt>
+              <TxAmt><Amt Ccy="EUR">110.00</Amt></TxAmt>
+            </AmtDtls>
+            <RmtInf><Ustrd>LEG-2026-000042</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Ntfctn>
+  </BkToCstmrDbtCdtNtfctn>
+</Document>

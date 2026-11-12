@@ -54,8 +54,8 @@ def payment_client(billing_database):
     return app
 
 
-def _invoice():
-    invoice_id = _insert_issued_invoice("LEG-PAYMENT-1")
+def _invoice(invoice_number="LEG-PAYMENT-1"):
+    invoice_id = _insert_issued_invoice(invoice_number)
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """INSERT INTO invoice_lifecycle_events
@@ -77,6 +77,7 @@ def _import(*, direction="CRDT", reference="unknown reference", **overrides):
         "is_reversal": False,
         "credit_debit_indicator": direction,
         "booking_status": "BOOK",
+        "amount_basis": "entry",
         **overrides,
     }
     result = db.reconcile_bank_statement(
@@ -369,9 +370,9 @@ def test_two_reviewed_entries_cannot_pay_one_invoice_twice(payment_client):
         cur.execute(
             """INSERT INTO bank_statement_entries(
                    statement_import_id,community_id,entry_reference,booking_date,
-                   amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision,booking_status)
+                   amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision,booking_status,amount_basis)
                SELECT statement_import_id,community_id,'bank-entry-2',booking_date,
-                      amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision,booking_status
+                      amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision,booking_status,amount_basis
                FROM bank_statement_entries WHERE id=%s RETURNING id""",
             (first_id,),
         )
@@ -447,3 +448,148 @@ def test_legacy_rows_stay_unknown_after_idempotent_schema_upgrade(payment_client
     assert db.list_bank_statement_entries(COMMUNITY)[0]["booking_status"] is None
     assert _confirm(payment_client, entry_id, invoice_id).status_code == 409
     assert _events("invoice.paid") == _events("payment.match.confirmed") == []
+
+
+@pytest.mark.parametrize("adapter", ["import", "review"])
+def test_booked_eur_credit_cannot_use_instructed_chf_amount(payment_client, adapter):
+    import payment_reconciliation
+    from sandbox_payment_fixtures import fixture
+
+    invoice_id = _invoice()
+    xml = fixture(
+        {"id": invoice_id, "gross_chf": "9.67", "invoice_number": "LEG-PAYMENT-1"},
+        "exact",
+        "054",
+    )
+    xml = xml.replace(b'<Amt Ccy="CHF">9.67</Amt>', b'<Amt Ccy="EUR">8.00</Amt>')
+    xml = xml.replace(
+        b"</Refs>",
+        b'</Refs><AmtDtls><InstdAmt><Amt Ccy="CHF">9.67</Amt></InstdAmt><TxAmt><Amt Ccy="EUR">8.00</Amt></TxAmt></AmtDtls>',
+    )
+    result = payment_reconciliation.import_statement(
+        COMMUNITY, "operator-a", "fx.xml", xml, db
+    )
+    row = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert row["amount_basis"] == "entry"
+    assert row["amount"] == Decimal("8.00")
+    assert row["currency"] == "EUR"
+    assert result["entries"][0]["match_decision"] == "mismatch"
+    if adapter == "review":
+        assert _confirm(payment_client, row["id"], invoice_id).status_code == 409
+    assert _events("invoice.paid") == _events("payment.match.confirmed") == []
+
+
+def test_legacy_amounts_stay_untrusted_after_schema_upgrade(payment_client):
+    invoice_id = _invoice()
+    entry_id, _ = _import(amount_basis=None)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("ALTER TABLE bank_statement_entries DROP COLUMN amount_basis")
+    db.create_tables()
+    db.create_tables()
+    row = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert row["amount_basis"] is None
+    assert _confirm(payment_client, entry_id, invoice_id).status_code == 409
+    assert _events("invoice.paid") == _events("payment.match.confirmed") == []
+
+
+def test_reconciled_chf_batch_pays_each_invoice_once(payment_client):
+    from copy import deepcopy
+    from xml.etree import ElementTree
+
+    import payment_reconciliation
+    from sandbox_payment_fixtures import fixture
+
+    _invoice()
+    _invoice("LEG-PAYMENT-2")
+    xml = fixture(
+        {"id": 1, "gross_chf": "9.67", "invoice_number": "LEG-PAYMENT-1"},
+        "exact",
+        "054",
+    )
+    root = ElementTree.fromstring(xml)
+    ns = "{urn:iso:std:iso:20022:tech:xsd:camt.054.001.08}"
+    entry = root.find(".//" + ns + "Ntry")
+    entry.find(ns + "Amt").text = "19.34"
+    details = entry.find(ns + "NtryDtls")
+    transaction = details.find(ns + "TxDtls")
+    amount = ElementTree.Element(ns + "Amt", {"Ccy": "CHF"})
+    amount.text = "9.67"
+    transaction.insert(1, amount)
+    second = deepcopy(transaction)
+    second.find(".//" + ns + "EndToEndId").text = "LEG-PAYMENT-2"
+    second.find(".//" + ns + "Ustrd").text = "LEG-PAYMENT-2"
+    details.append(second)
+    content = ElementTree.tostring(root)
+    first = payment_reconciliation.import_statement(
+        COMMUNITY, "operator-a", "batch.xml", content, db
+    )
+    replay = payment_reconciliation.import_statement(
+        COMMUNITY, "operator-a", "batch.xml", content, db
+    )
+    assert [row["match_decision"] for row in first["entries"]] == ["matched", "matched"]
+    assert [row["amount"] for row in first["entries"]] == [
+        Decimal("9.67"),
+        Decimal("9.67"),
+    ]
+    assert {
+        row["amount_basis"] for row in db.list_bank_statement_entries(COMMUNITY)
+    } == {"reconciled_batch"}
+    assert replay["duplicate"] is True
+    assert len(_events("invoice.paid")) == 2
+
+
+@pytest.mark.parametrize(
+    "batch,currency,direct_amount,charges,accepted",
+    [
+        ("<NbOfTxs>1</NbOfTxs><CdtDbtInd>DBIT</CdtDbtInd>", None, True, "", False),
+        ("<NbOfTxs>1</NbOfTxs>", None, False, "", False),
+        ("<NbOfTxs>1</NbOfTxs>", None, True, "<Chrgs/>", False),
+        ('<NbOfTxs>1</NbOfTxs><TtlAmt Ccy="CHF">8.00</TtlAmt>', None, True, "", False),
+        ("", "EUR", False, "", False),
+        (
+            '<NbOfTxs>1</NbOfTxs><TtlAmt Ccy="CHF">9.67</TtlAmt><CdtDbtInd>CRDT</CdtDbtInd>',
+            "CHF",
+            True,
+            "",
+            True,
+        ),
+    ],
+)
+def test_contradictory_bank_metadata_cannot_create_a_payment(
+    payment_client, batch, currency, direct_amount, charges, accepted
+):
+    import payment_reconciliation
+    from sandbox_payment_fixtures import fixture
+
+    _invoice()
+    xml = fixture(
+        {"id": 1, "gross_chf": "9.67", "invoice_number": "LEG-PAYMENT-1"},
+        "exact",
+        "054",
+    )
+    if batch:
+        xml = xml.replace(
+            b"<NtryDtls>", b"<NtryDtls><Btch>" + batch.encode() + b"</Btch>"
+        )
+    if currency:
+        xml = xml.replace(b"</Acct>", f"<Ccy>{currency}</Ccy></Acct>".encode())
+    if direct_amount:
+        xml = xml.replace(b"</Refs>", b'</Refs><Amt Ccy="CHF">9.67</Amt>')
+    if charges:
+        xml = xml.replace(b"<NtryDtls>", charges.encode() + b"<NtryDtls>")
+    if accepted:
+        result = payment_reconciliation.import_statement(
+            COMMUNITY, "operator-a", "metadata.xml", xml, db
+        )
+        assert result["entries"][0]["match_decision"] == "matched"
+        assert len(_events("invoice.paid")) == 1
+    else:
+        with pytest.raises(payment_reconciliation.StatementError):
+            payment_reconciliation.import_statement(
+                COMMUNITY, "operator-a", "metadata.xml", xml, db
+            )
+        assert db.list_bank_statement_entries(COMMUNITY) == []
+        assert _events("invoice.paid") == _events("payment.match.confirmed") == []
+        invoice = db.get_invoices_for_participant("member-building")[0]
+        assert invoice["lifecycle_state"] == "delivered"
+        assert invoice["gross_chf"] == Decimal("9.67")

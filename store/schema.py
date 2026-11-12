@@ -1248,6 +1248,10 @@ def create_tables():
             """)
             cur.execute("""
                 ALTER TABLE bank_statement_entries
+                ADD COLUMN IF NOT EXISTS amount_basis TEXT
+            """)
+            cur.execute("""
+                ALTER TABLE bank_statement_entries
                 ADD COLUMN IF NOT EXISTS booking_status TEXT
             """)
             cur.execute("""
