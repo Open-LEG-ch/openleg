@@ -2,6 +2,7 @@
 """Pytest fixtures and mock data for OpenLEG tests."""
 
 import os
+import re
 import sys
 from unittest.mock import MagicMock, patch
 
@@ -34,10 +35,10 @@ def pytest_configure(config):
     value = config.getoption("--shard")
     if value is None:
         return
-    index, separator, count = value.partition("/")
-    if not (separator and index.isdigit() and count.isdigit()):
+    match = re.fullmatch(r"([0-9]+)/([0-9]+)", value)
+    if match is None:
         raise pytest.UsageError(f"--shard expects INDEX/COUNT, not {value!r}")
-    index, count = int(index), int(count)
+    index, count = int(match[1]), int(match[2])
     if not 1 <= index <= count:
         raise pytest.UsageError(f"--shard needs 1 <= INDEX <= COUNT, not {value!r}")
     config.stash[_SHARD] = index, count

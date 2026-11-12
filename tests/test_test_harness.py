@@ -87,7 +87,7 @@ def test_shards_partition_the_collected_tests_evenly():
     assert all(shards)
 
 
-@pytest.mark.parametrize("value", ["0/3", "4/3", "1/0", "one/3", "1"])
+@pytest.mark.parametrize("value", ["0/3", "4/3", "1/0", "one/3", "1", "²/3", "1/3/3"])
 def test_invalid_shard_is_a_usage_error(value):
     result, selected = _collected(f"--shard={value}")
     assert result.returncode == pytest.ExitCode.USAGE_ERROR
