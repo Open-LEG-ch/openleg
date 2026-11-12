@@ -14,6 +14,12 @@ pip install -r requirements-mcp.txt
 OPENLEG_MCP_ENABLED=true OPENLEG_OPERATOR_ORIGIN=http://localhost:5000 python -m mcp_sidecar
 ```
 
+The standalone listener binds to `127.0.0.1:8000` by default.
+`OPENLEG_MCP_BIND_HOST` overrides the bind address. The Compose overlay sets
+it to `0.0.0.0` inside the container so Caddy can connect; only Caddy publishes
+a host port, bound to loopback. Host and Origin checks do not restrict which
+network clients can reach the listener.
+
 The process refuses to start unless `OPENLEG_MCP_ENABLED=true`. The configured
 origin must contain only a scheme, host and optional port. Requests use the
 fixed operator API path and never follow redirects. Do not give this process

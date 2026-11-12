@@ -91,6 +91,8 @@ def create_app():
         or parsed.path
         or parsed.query
         or parsed.fragment
+        or "?" in origin
+        or "#" in origin
     ):
         raise ValueError("Operator origin must contain only scheme, host and port")
     if (
@@ -125,6 +127,13 @@ def create_app():
             arguments
         ):
             return error("invalid_arguments")
+        arguments = {
+            key: int(value)
+            if schema["properties"][key].get("type") == "integer"
+            and isinstance(value, float)
+            else value
+            for key, value in arguments.items()
+        }
         community = arguments["community_id"]
         if not re.fullmatch(r"[A-Za-z0-9_-]+", community):
             return error("invalid_arguments")
@@ -152,6 +161,11 @@ def create_app():
                 )
             body = response.json()
             result = {key: body[key] for key in ("items", "next_cursor")}
+            if not isinstance(result["items"], list) or (
+                result["next_cursor"] is not None
+                and not isinstance(result["next_cursor"], str)
+            ):
+                raise ValueError("Malformed operator page")
             if re.search(r"olk_[A-Za-z0-9_-]+", json.dumps(result)):
                 return error("operator_error")
             return result

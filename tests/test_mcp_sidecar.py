@@ -75,6 +75,8 @@ def test_contract_tool(monkeypatch):
         "https://example.org?url=evil",
         "file:///tmp/socket",
         "https://example.org/#fragment",
+        "http://host:5000?",
+        "http://host:5000#",
     ],
 )
 def test_origin_rejects_non_origins(monkeypatch, origin):
@@ -219,6 +221,7 @@ def test_local_packaging_is_opt_in():
     assert env == {
         "OPENLEG_MCP_ENABLED": "${OPENLEG_MCP_ENABLED:-false}",
         "OPENLEG_OPERATOR_ORIGIN": "http://flask:5000",
+        "OPENLEG_MCP_BIND_HOST": "0.0.0.0",
         "OPENLEG_MCP_ALLOWED_HOSTS": "localhost:8081,127.0.0.1:8081",
         "OPENLEG_MCP_ALLOWED_ORIGINS": (
             "http://localhost:8081,http://127.0.0.1:8081,"
@@ -374,3 +377,75 @@ def test_redaction_preserves_unrelated_record_semantics(monkeypatch):
     assert record.exc_info is exception
     assert record.exc_text is None
     assert record.stack_info == "ordinary stack"
+
+
+@pytest.mark.parametrize(
+    "bind_host,expected", [(None, "127.0.0.1"), ("0.0.0.0", "0.0.0.0")]
+)
+def test_standalone_bind_host(monkeypatch, bind_host, expected):
+    import runpy
+    from unittest.mock import Mock
+
+    import uvicorn
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.delenv("OPENLEG_MCP_BIND_HOST", raising=False)
+    if bind_host is not None:
+        monkeypatch.setenv("OPENLEG_MCP_BIND_HOST", bind_host)
+    run = Mock()
+    monkeypatch.setattr(uvicorn, "run", run)
+    runpy.run_module("mcp_sidecar", run_name="__main__")
+    assert run.call_args.kwargs["host"] == expected
+
+
+def test_operator_origin_accepts_scheme_host_port(monkeypatch):
+    from mcp_sidecar.server import create_app
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", "http://host:5000")
+    assert create_app() is not None
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"items": {}, "next_cursor": None},
+        {"items": None, "next_cursor": None},
+        {"items": "not-an-array", "next_cursor": None},
+        {"items": 1, "next_cursor": None},
+        {"items": [], "next_cursor": 1},
+        {"items": [], "next_cursor": False},
+        {"items": [], "next_cursor": []},
+        {"items": [], "next_cursor": {}},
+    ],
+)
+def test_malformed_upstream_page(monkeypatch, body):
+    from flask import Flask, jsonify
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+
+    @upstream.get("/api/operator/v1/communities/one/billing/periods")
+    def periods():
+        return jsonify(body)
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(app, {"Authorization": "Bearer olk_test"}) as sdk,
+            ):
+                result = await sdk.call_tool(
+                    "list_billing_periods", {"community_id": "one"}
+                )
+                assert result.isError
+                assert result.content[0].text == "operator_unavailable"
+                assert result.structuredContent is None
+
+        asyncio.run(check())

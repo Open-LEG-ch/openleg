@@ -63,6 +63,16 @@ def test_real_http_pagination_and_scope(operator_http, monkeypatch, caplog):
                 assert first.structuredContent == {
                     k: expected[k] for k in ("items", "next_cursor")
                 }
+                floating = await sdk.call_tool(
+                    "list_billing_periods", {**args, "limit": 1.0}
+                )
+                assert not floating.isError
+                assert floating.structuredContent == first.structuredContent
+                fractional = await sdk.call_tool(
+                    "list_billing_periods", {**args, "limit": 1.5}
+                )
+                assert fractional.isError
+                assert fractional.content[0].text == "invalid_arguments"
                 assert first.structuredContent["next_cursor"] is not None
                 args["cursor"] = first.structuredContent["next_cursor"]
                 second = await sdk.call_tool("list_billing_periods", args)
