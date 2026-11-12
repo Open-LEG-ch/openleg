@@ -420,7 +420,7 @@ def test_refresh_replaces_downstream_secret(oauth):
 
 @pytest.mark.integration
 @pytest.mark.parametrize(
-    "invalidity", ["role", "status", "removed", "unavailable", "expired"]
+    "invalidity", ["role", "status", "removed", "unavailable", "family_expired"]
 )
 def test_refresh_requires_valid_grant(oauth, monkeypatch, invalidity):
     import formation_wizard
@@ -435,8 +435,10 @@ def test_refresh_requires_valid_grant(oauth, monkeypatch, invalidity):
             cur.execute("UPDATE community_members SET status='pending'")
         elif invalidity == "removed":
             cur.execute("DELETE FROM community_members")
-        elif invalidity == "expired":
-            cur.execute("UPDATE oauth_grants SET expires_at=NOW()-INTERVAL '1 second'")
+        elif invalidity == "family_expired":
+            cur.execute(
+                "UPDATE oauth_refresh_tokens SET expires_at=NOW()-INTERVAL '1 second'"
+            )
     if invalidity == "unavailable":
 
         def unavailable(*args):
@@ -452,3 +454,90 @@ def test_legacy_grant_requires_new_consent(oauth):
     with oauth.db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("UPDATE oauth_grants SET downstream_hash=NULL")
     assert refresh(oauth, tokens["refresh_token"]).json == {"error": "invalid_grant"}
+
+
+@pytest.mark.integration
+def test_refresh_after_access_expiry(oauth, monkeypatch):
+    import asyncio
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar import session
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    first = exchange(oauth, grant(oauth)).json
+    assert first["expires_in"] == 300
+    old = introspect(oauth, first["access_token"])["downstream_token"]
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE oauth_grants SET expires_at=NOW()-INTERVAL '1 second'")
+        cur.execute("SELECT expires_at FROM oauth_refresh_tokens")
+        family_expiry = cur.fetchone()["expires_at"]
+    assert introspect(oauth, first["access_token"]) == {"active": False}
+    path = "/api/operator/v1/communities/contract-leg/billing/periods"
+    assert (
+        oauth.client.get(path, headers={"Authorization": "Bearer " + old}).status_code
+        == 401
+    )
+    renewed = refresh(oauth, first["refresh_token"])
+    assert renewed.status_code == 200
+    renewed = renewed.json
+    assert renewed["expires_in"] == 300
+    assert renewed["access_token"] != first["access_token"]
+    assert renewed["refresh_token"] != first["refresh_token"]
+    new = introspect(oauth, renewed["access_token"])["downstream_token"]
+    assert new != old
+    for secret, status in [(old, 401), (new, 200)]:
+        assert (
+            oauth.client.get(
+                path, headers={"Authorization": "Bearer " + secret}
+            ).status_code
+            == status
+        )
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT expires_at FROM oauth_refresh_tokens")
+        assert all(row["expires_at"] == family_expiry for row in cur.fetchall())
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_OAUTH_ISSUER", "https://auth.example")
+    monkeypatch.setenv("OPENLEG_MCP_RESOURCE", "https://mcp.example/mcp")
+    monkeypatch.setenv("OPENLEG_OAUTH_INTROSPECTION_SECRET", "s" * 64)
+    with operator_server(oauth.app) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(
+                    app, {"Authorization": "Bearer " + renewed["access_token"]}
+                ) as sdk,
+            ):
+                result = await sdk.call_tool(
+                    "list_billing_periods", {"community_id": "contract-leg"}
+                )
+                assert not result.isError
+
+        asyncio.run(check())
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("seam", ["introspection", "operator", "refresh"])
+def test_family_expiry_ends_access(oauth, seam):
+    tokens = exchange(oauth, grant(oauth)).json
+    downstream = introspect(oauth, tokens["access_token"])["downstream_token"]
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE oauth_refresh_tokens SET expires_at=NOW()-INTERVAL '1 second'"
+        )
+    if seam == "introspection":
+        assert introspect(oauth, tokens["access_token"]) == {"active": False}
+    elif seam == "operator":
+        assert (
+            oauth.client.get(
+                "/api/operator/v1/communities/contract-leg/billing/periods",
+                headers={"Authorization": "Bearer " + downstream},
+            ).status_code
+            == 401
+        )
+    else:
+        assert refresh(oauth, tokens["refresh_token"]).json == {
+            "error": "invalid_grant"
+        }

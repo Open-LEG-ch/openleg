@@ -276,10 +276,12 @@ Der Host erneuert per Formular-POST an `/oauth/token` mit
 `resource`. Jede erfolgreiche Erneuerung ersetzt Zugriffs- und Refresh-Token
 atomar. Aus jedem neuen Zugriffstoken entsteht ein neues Downstream-Credential.
 Das vorherige Zugriffstoken und sein Downstream-Credential werden sofort ungültig.
-Refresh prüft Ablauf und Widerruf der Freigabe sowie die aktuelle bestätigte
-Administrationsrolle der zustimmenden Person. Der Host muss vor Ablauf der
-300 Sekunden erneuern; eine abgelaufene Freigabe erfordert neue Zustimmung.
-Die 30 Tage begrenzen zusätzlich die gesamte Refresh-Familie.
+Refresh funktioniert auch nach Ablauf des Zugriffstokens (300 Sekunden).
+Es prüft die absolute Laufzeit der Refresh-Familie, Widerruf und
+Wiederverwendung sowie die aktuelle bestätigte Administrationsrolle der
+zustimmenden Person in der bewilligten LEG. Introspektion und Operator-Zugriff
+prüfen zusätzlich die Laufzeit des aktuellen Zugriffstokens. Nach Ablauf der
+Refresh-Familie erfordert weiterer Zugriff neue Zustimmung.
 Der Scope bleibt unverändert. Ein optionaler `scope` muss dieselbe Menge von
 Berechtigungen enthalten; auch engere Scopes werden abgewiesen.
 Refresh-Tokens gelten ab Codeaustausch absolut 30 Tage. Rotation verlängert
@@ -306,6 +308,7 @@ aus der Autorisierungsanfrage. Query-Parameter steuern keine Checkboxen oder
 LEG-Auswahl. Der POST akzeptiert nur Protokollfelder und Formular-Steuerelemente.
 Die bewilligten Capabilities müssen im angefragten Scope liegen; nur eine
 aktuell bestätigte Administration kann sie für ihre LEG delegieren.
+
 Bestehende Freigaben ohne gespeicherten Downstream-Hash können nicht erneuert
 werden und benötigen neue Zustimmung. Die Migration übernimmt keine aktuellen
 Credential-Hashes, da diese bereits ausserhalb von OAuth rotiert worden sein können.

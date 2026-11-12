@@ -104,7 +104,10 @@ def introspect(token_hash):
                       c.token_hash AS downstream_hash
             FROM oauth_grants g JOIN operator_api_clients c ON c.id=g.id
             WHERE g.token_hash=%s AND g.revoked_at IS NULL
-            AND g.expires_at>CURRENT_TIMESTAMP AND c.active=TRUE""",
+            AND g.expires_at>CURRENT_TIMESTAMP AND c.active=TRUE
+            AND EXISTS (SELECT 1 FROM oauth_refresh_tokens r
+                        WHERE r.grant_id=g.id AND r.used_at IS NULL
+                        AND r.expires_at>CURRENT_TIMESTAMP)""",
             (token_hash,),
         )
         row = cur.fetchone()
@@ -136,7 +139,7 @@ def refresh(
         # Every refresh and dashboard revocation locks the grant first. Retain
         # consumed hashes so a replay can revoke the entire token family.
         cur.execute(
-            """SELECT g.*, g.expires_at>CURRENT_TIMESTAMP AS unexpired FROM oauth_grants g
+            """SELECT g.* FROM oauth_grants g
             JOIN oauth_refresh_tokens r ON r.grant_id=g.id
             WHERE r.token_hash=%s FOR UPDATE OF g""",
             (token_hash,),
@@ -154,11 +157,7 @@ def refresh(
         if token["used_at"] is not None:
             _revoke(cur, grant["id"])
             return None
-        if (
-            grant["revoked_at"] is not None
-            or not grant["unexpired"]
-            or not approving_admin_valid(p)
-        ):
+        if grant["revoked_at"] is not None or not approving_admin_valid(p):
             return None
         cur.execute(
             """SELECT id FROM operator_api_clients
@@ -247,7 +246,11 @@ def credential_grant_valid(client_id):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """SELECT payload, revoked_at IS NULL AND
-            expires_at > CURRENT_TIMESTAMP AS valid FROM oauth_grants WHERE id=%s""",
+            g.expires_at > CURRENT_TIMESTAMP AND
+            EXISTS (SELECT 1 FROM oauth_refresh_tokens r
+                    WHERE r.grant_id=g.id AND r.used_at IS NULL
+                    AND r.expires_at>CURRENT_TIMESTAMP) AS valid
+            FROM oauth_grants g WHERE g.id=%s""",
             (client_id,),
         )
         row = cur.fetchone()
