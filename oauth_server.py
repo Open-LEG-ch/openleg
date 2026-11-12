@@ -221,7 +221,7 @@ def token():
             p.get("scope"),
             _token_hash(access),
             _token_hash(refresh),
-            lambda grant_id: _token_hash(downstream_token(grant_id)),
+            _token_hash(downstream_token(access)),
         )
         if not grant:
             return invalid("invalid_grant")

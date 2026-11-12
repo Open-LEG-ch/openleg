@@ -45,10 +45,23 @@ def test_rotation_and_reuse(oauth):
     second = second.json
     assert second["refresh_token"] != first["refresh_token"]
     assert second["access_token"] != first["access_token"]
-    assert introspect(oauth, second["access_token"])["active"] is True
+    current = introspect(oauth, second["access_token"])
+    assert current["active"] is True
     assert refresh(oauth, first["refresh_token"]).json == {"error": "invalid_grant"}
     assert introspect(oauth, second["access_token"]) == {"active": False}
+    credentials = oauth.client.get(
+        "/leg/community/contract-leg/operator-api/credentials",
+        headers={"X-CSRF-Token": "csrf"},
+    ).json["credentials"]
+    assert all(not row["active"] for row in credentials if row["actor_kind"] == "agent")
     assert refresh(oauth, second["refresh_token"]).status_code == 400
+    assert (
+        oauth.client.get(
+            "/api/operator/v1/communities/contract-leg/billing/periods",
+            headers={"Authorization": "Bearer " + current["downstream_token"]},
+        ).status_code
+        == 401
+    )
     assert (
         oauth.client.get(
             "/api/operator/v1/communities/contract-leg/billing/periods",
@@ -165,7 +178,6 @@ def test_refresh_expiry_hashes_and_credential_revocation(oauth):
             == hashlib.sha256(tokens["refresh_token"].encode()).hexdigest()
         )
         expires = row["expires_at"]
-        cur.execute("UPDATE oauth_grants SET expires_at=NOW()-INTERVAL '1 second'")
     renewed = refresh(oauth, tokens["refresh_token"]).json
     assert introspect(oauth, renewed["access_token"])["active"]
     with oauth.db.get_connection() as conn, conn.cursor() as cur:
@@ -207,7 +219,7 @@ def test_dashboard_requires_confirmed_admin(oauth, identity):
         ).status_code
         == 403
     )
-    assert introspect(oauth, tokens["access_token"])["active"]
+    assert introspect(oauth, tokens["access_token"])["active"] is (identity == "absent")
 
 
 @pytest.mark.integration
@@ -385,3 +397,58 @@ def test_reuse_only_revokes_its_grant(oauth):
     assert refresh(oauth, compromised["refresh_token"]).status_code == 400
     assert introspect(oauth, independent["access_token"])["active"]
     assert refresh(oauth, independent["refresh_token"]).status_code == 200
+
+
+@pytest.mark.integration
+def test_refresh_replaces_downstream_secret(oauth):
+    first = exchange(oauth, grant(oauth)).json
+    old = introspect(oauth, first["access_token"])["downstream_token"]
+    second = refresh(oauth, first["refresh_token"])
+    assert second.status_code == 200
+    new = introspect(oauth, second.json["access_token"])["downstream_token"]
+    assert new != old
+    assert introspect(oauth, first["access_token"]) == {"active": False}
+    for secret, status in [(old, 401), (new, 200)]:
+        assert (
+            oauth.client.get(
+                "/api/operator/v1/communities/contract-leg/billing/periods",
+                headers={"Authorization": "Bearer " + secret},
+            ).status_code
+            == status
+        )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "invalidity", ["role", "status", "removed", "unavailable", "expired"]
+)
+def test_refresh_requires_valid_grant(oauth, monkeypatch, invalidity):
+    import formation_wizard
+
+    tokens = exchange(oauth, grant(oauth)).json
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        if invalidity == "role":
+            cur.execute(
+                "UPDATE community_members SET role='member',access_roles='[]'::jsonb"
+            )
+        elif invalidity == "status":
+            cur.execute("UPDATE community_members SET status='pending'")
+        elif invalidity == "removed":
+            cur.execute("DELETE FROM community_members")
+        elif invalidity == "expired":
+            cur.execute("UPDATE oauth_grants SET expires_at=NOW()-INTERVAL '1 second'")
+    if invalidity == "unavailable":
+
+        def unavailable(*args):
+            raise RuntimeError("community unavailable")
+
+        monkeypatch.setattr(formation_wizard, "get_community_status", unavailable)
+    assert refresh(oauth, tokens["refresh_token"]).json == {"error": "invalid_grant"}
+
+
+@pytest.mark.integration
+def test_legacy_grant_requires_new_consent(oauth):
+    tokens = exchange(oauth, grant(oauth)).json
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE oauth_grants SET downstream_hash=NULL")
+    assert refresh(oauth, tokens["refresh_token"]).json == {"error": "invalid_grant"}

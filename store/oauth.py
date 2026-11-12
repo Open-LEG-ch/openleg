@@ -86,9 +86,9 @@ def redeem(
             ),
         )
         cur.execute(
-            """INSERT INTO oauth_grants(id,token_hash,payload)
-            VALUES (%s,%s,%s)""",
-            (grant_id, token_hash, Json(p)),
+            """INSERT INTO oauth_grants(id,token_hash,payload,downstream_hash)
+            VALUES (%s,%s,%s,%s)""",
+            (grant_id, token_hash, Json(p), downstream_hash),
         )
         cur.execute(
             "INSERT INTO oauth_refresh_tokens(token_hash,grant_id) VALUES (%s,%s)",
@@ -136,7 +136,7 @@ def refresh(
         # Every refresh and dashboard revocation locks the grant first. Retain
         # consumed hashes so a replay can revoke the entire token family.
         cur.execute(
-            """SELECT g.* FROM oauth_grants g
+            """SELECT g.*, g.expires_at>CURRENT_TIMESTAMP AS unexpired FROM oauth_grants g
             JOIN oauth_refresh_tokens r ON r.grant_id=g.id
             WHERE r.token_hash=%s FOR UPDATE OF g""",
             (token_hash,),
@@ -154,12 +154,16 @@ def refresh(
         if token["used_at"] is not None:
             _revoke(cur, grant["id"])
             return None
-        if grant["revoked_at"] is not None:
+        if (
+            grant["revoked_at"] is not None
+            or not grant["unexpired"]
+            or not approving_admin_valid(p)
+        ):
             return None
         cur.execute(
             """SELECT id FROM operator_api_clients
             WHERE id=%s AND active=TRUE AND token_hash=%s FOR UPDATE""",
-            (grant["id"], downstream_hash(grant["id"])),
+            (grant["id"], grant["downstream_hash"]),
         )
         if not cur.fetchone():
             return None
@@ -180,10 +184,14 @@ def refresh(
             (refresh_hash, grant["id"], valid["expires_at"]),
         )
         cur.execute(
-            """UPDATE oauth_grants SET token_hash=%s,
+            """UPDATE oauth_grants SET token_hash=%s,downstream_hash=%s,
             expires_at=CURRENT_TIMESTAMP + INTERVAL '300 seconds',
             last_used_at=CURRENT_TIMESTAMP WHERE id=%s""",
-            (access_hash, grant["id"]),
+            (access_hash, downstream_hash, grant["id"]),
+        )
+        cur.execute(
+            "UPDATE operator_api_clients SET token_hash=%s,updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+            (downstream_hash, grant["id"]),
         )
         return p
 

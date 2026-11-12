@@ -2357,6 +2357,7 @@ def create_tables():
                 );
                 CREATE INDEX IF NOT EXISTS oauth_refresh_grant_idx
                     ON oauth_refresh_tokens(grant_id);
-                ALTER TABLE oauth_grants ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ
+                ALTER TABLE oauth_grants ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ;
+                ALTER TABLE oauth_grants ADD COLUMN IF NOT EXISTS downstream_hash TEXT
             """)
             logger.info("[DB] Tables and indexes created successfully")
