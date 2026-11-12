@@ -160,7 +160,7 @@ def seed_operator_resources(http):
         )
         statement = cur.fetchone()["id"]
         cur.execute(
-            "INSERT INTO bank_statement_entries(statement_import_id,community_id,entry_reference,booking_date,amount,currency,payment_reference,credit_debit_indicator,match_decision,booking_status) VALUES (%s,%s,'ENTRY-1','2026-01-15',42.50,'CHF','CONTRACT-1','CRDT','unmatched','BOOK') RETURNING id",
+            "INSERT INTO bank_statement_entries(statement_import_id,community_id,entry_reference,booking_date,amount,currency,payment_reference,credit_debit_indicator,match_decision,booking_status,amount_basis) VALUES (%s,%s,'ENTRY-1','2026-01-15',42.50,'CHF','CONTRACT-1','CRDT','unmatched','BOOK','entry') RETURNING id",
             (statement, cid),
         )
         entry = cur.fetchone()["id"]
