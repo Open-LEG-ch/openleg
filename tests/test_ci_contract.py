@@ -4,6 +4,7 @@
 import json
 import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -14,6 +15,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = PROJECT_ROOT / ".github" / "workflows"
 DEPENDABOT_CONFIG = PROJECT_ROOT / ".github" / "dependabot.yml"
 DOCKERFILE = PROJECT_ROOT / "Dockerfile"
+SHARD_PREFIX = "ci/test shard "
+SHARDS = [1, 2, 3, 4, 5, 6]
 
 
 def _on_section(data):
@@ -53,11 +56,114 @@ def test_exactly_three_required_check_workflows_with_expected_job_names():
         required_workflows.append(path.name)
         jobs = data.get("jobs", {})
         for job_data in jobs.values():
-            if "name" in job_data:
+            if "name" in job_data and not job_data["name"].startswith(SHARD_PREFIX):
                 seen_job_names.add(job_data["name"])
 
     assert len(required_workflows) == 3, required_workflows
     assert seen_job_names == expected_jobs, seen_job_names
+
+
+def _ci_test_jobs():
+    data = yaml.safe_load((WORKFLOWS_DIR / "deploy.yml").read_text(encoding="utf-8"))
+    jobs = data["jobs"]
+    required = next(job for job in jobs.values() if job.get("name") == "ci/test")
+    return jobs, required
+
+
+def test_ci_test_runs_six_shards_and_reports_their_joint_result():
+    """Six shards split the suite; the required ci/test job always reports on them."""
+    jobs, required = _ci_test_jobs()
+    assert [
+        key for key, job in jobs.items() if job["name"].startswith(SHARD_PREFIX)
+    ] == ["shard"]
+    shard = jobs["shard"]
+    assert shard["name"] == SHARD_PREFIX + "${{ matrix.shard }}"
+    assert shard["strategy"] == {"fail-fast": False, "matrix": {"shard": SHARDS}}
+    run = next(step for step in shard["steps"] if step.get("name") == "Run tests")
+    assert run["env"]["SHARD"] == "${{ matrix.shard }}"
+    assert "--shard" not in run["env"]["PYTEST_ADDOPTS"]
+    assert run["run"] == 'bash scripts/test.sh full --shard="${SHARD}/6"'
+
+    assert required["needs"] == "shard"
+    assert required["if"] == "always()"
+    assert required["permissions"] == {"actions": "read"}
+    (check,) = required["steps"]
+    assert check["env"]["SHARDS"] == str(len(SHARDS))
+    assert check["env"]["RESULT"] == "${{ needs.shard.result }}"
+    assert check["env"]["RUN"] == "${{ github.run_id }}"
+    assert "${{" not in check["run"]
+
+
+def _shard_job(index, conclusion="success"):
+    return {"name": f"{SHARD_PREFIX}{index}", "conclusion": conclusion}
+
+
+@pytest.mark.parametrize(
+    ("result", "pages", "status"),
+    [
+        ("success", [[_shard_job(index) for index in SHARDS]], 0),
+        (
+            "success",
+            [
+                [_shard_job(index) for index in SHARDS[:3]],
+                [_shard_job(index) for index in SHARDS[3:]],
+            ],
+            0,
+        ),
+        ("success", [[_shard_job(index) for index in SHARDS[:-1]]], 1),
+        (
+            "success",
+            [[*map(_shard_job, SHARDS[:-1]), _shard_job(SHARDS[-1], "cancelled")]],
+            1,
+        ),
+        ("success", None, 1),
+        ("failure", [[_shard_job(index) for index in SHARDS]], 1),
+        ("cancelled", [[_shard_job(index) for index in SHARDS]], 1),
+    ],
+    ids=[
+        "all-passed",
+        "paginated",
+        "missing-shard",
+        "cancelled-shard",
+        "api-error",
+        "matrix-failed",
+        "matrix-cancelled",
+    ],
+)
+def test_ci_test_gate_fails_closed(tmp_path, result, pages, status):
+    """Run the gate with recorded API pages; anything short of six passes fails."""
+    if shutil.which("jq") is None:
+        pytest.skip("requires jq, as on GitHub-hosted runners")
+    _, required = _ci_test_jobs()
+    (check,) = required["steps"]
+    gh = tmp_path / "gh"
+    gh.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, os, sys\n"
+        "pages = json.loads(os.environ['PAGES'])\n"
+        "if pages is None:\n"
+        "    print('gh: Forbidden (HTTP 403)', file=sys.stderr)\n"
+        "    sys.exit(1)\n"
+        "for jobs in pages:\n"
+        "    print(json.dumps({'jobs': jobs}))\n"
+    )
+    gh.chmod(0o755)
+    env = {
+        **os.environ,
+        **{key: str(value) for key, value in check["env"].items()},
+        "PATH": f"{tmp_path}:{os.environ['PATH']}",
+        "PAGES": json.dumps(pages),
+        "RESULT": result,
+    }
+    completed = subprocess.run(
+        ["bash", "-c", check["run"]],
+        check=False,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert completed.returncode == status, completed.stdout + completed.stderr
 
 
 def test_no_mainline_workflow_pushes_directly():

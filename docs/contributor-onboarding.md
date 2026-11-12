@@ -187,8 +187,16 @@ scripts/contribute: error: unrecognized arguments: -k
 suite, ruff lint and ruff formatting checks. Without `DATABASE_URL`, the suite
 skips PostgreSQL tests; a green local gate does not prove those queries work.
 
-The `ci/test` job in `.github/workflows/deploy.yml` supplies PostgreSQL 16 and
-`DATABASE_URL`, so those tests execute in CI. The `ci/lint` job also runs:
+The `ci/test` workflow in `.github/workflows/deploy.yml` supplies PostgreSQL 16
+and `DATABASE_URL`, so those tests execute in CI. It splits the suite into six
+shards, each on its own runner, and the required `ci/test` check passes only
+when every shard passes. To rerun one shard locally, use the same command:
+
+```bash
+scripts/test.sh full --shard=3/6
+```
+
+The `ci/lint` job also runs:
 
 ```bash
 npm ci

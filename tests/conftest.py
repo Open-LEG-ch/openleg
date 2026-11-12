@@ -2,6 +2,7 @@
 """Pytest fixtures and mock data for OpenLEG tests."""
 
 import os
+import re
 import sys
 from unittest.mock import MagicMock, patch
 
@@ -14,6 +15,47 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DATABASE_URL", "")
 os.environ.setdefault("ADMIN_TOKEN", "test-admin-token")
 os.environ.setdefault("CRON_SECRET", "test-cron-secret")
+
+
+# === Test sharding ===
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--shard",
+        metavar="INDEX/COUNT",
+        help="Run every COUNT-th selected test, starting with test INDEX (1-based).",
+    )
+
+
+_SHARD = pytest.StashKey[tuple[int, int]]()
+
+
+def pytest_configure(config):
+    value = config.getoption("--shard")
+    if value is None:
+        return
+    match = re.fullmatch(r"([0-9]+)/([0-9]+)", value)
+    if match is None:
+        raise pytest.UsageError(f"--shard expects INDEX/COUNT, not {value!r}")
+    index, count = int(match[1]), int(match[2])
+    if not 1 <= index <= count:
+        raise pytest.UsageError(f"--shard needs 1 <= INDEX <= COUNT, not {value!r}")
+    config.stash[_SHARD] = index, count
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config, items):
+    """Keep one round-robin slice so slow neighbouring tests spread across shards."""
+    if _SHARD not in config.stash:
+        return
+    index, count = config.stash[_SHARD]
+    selected = items[index - 1 :: count]
+    kept = {id(item) for item in selected}
+    config.hook.pytest_deselected(
+        items=[item for item in items if id(item) not in kept]
+    )
+    items[:] = selected
 
 
 # === Mock Data ===
