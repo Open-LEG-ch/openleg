@@ -433,3 +433,32 @@ def test_real_archive_preserves_binary_json_and_next_generated_id(
         with admin.cursor() as cur:
             cur.execute(f'DROP DATABASE "{target}" WITH (FORCE)')
         admin.close()
+
+
+def test_export_bytes_do_not_depend_on_storage_order(interest_database):
+    """Rows leave in key order, so moving a row on disk keeps the archive identical."""
+    db = interest_database
+    assert db.save_building(
+        "ordered-founder",
+        "ordered@example.invalid",
+        {"address": "Synthetic ordered 1", "lat": 47.2, "lon": 8.2},
+        {},
+        verified=True,
+    )
+    cid = db.create_community_record("Ordered LEG", "ordered-founder", "simple", "")
+    first = db.log_correspondence(cid, "in", "email", "Synthetic VNB", "First")
+    assert db.log_correspondence(cid, "out", "email", "Synthetic VNB", "Second")
+    before = community_archive.export_community_archive(cid)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        # Reinsert the older entry unchanged. Its new row version and index
+        # entries come after the later entry, so any scan without ORDER BY
+        # now returns it last.
+        cur.execute(
+            "CREATE TEMP TABLE moved AS SELECT * FROM correspondence_log WHERE id = %s",
+            (first,),
+        )
+        cur.execute("DELETE FROM correspondence_log WHERE id = %s", (first,))
+        cur.execute("INSERT INTO correspondence_log SELECT * FROM moved")
+        cur.execute("SELECT id FROM correspondence_log WHERE community_id = %s", (cid,))
+        assert cur.fetchall()[-1]["id"] == first
+    assert community_archive.export_community_archive(cid) == before

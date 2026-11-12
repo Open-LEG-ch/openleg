@@ -7,6 +7,7 @@ import json
 import re
 import signal
 import time
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 
@@ -44,6 +45,35 @@ def _result(client, prefix):
     )
     assert match
     return json.loads(html.unescape(match[1]))
+
+
+def _rows(rows):
+    """Count each row's canonical JSON, so a reordering compares equal."""
+    return Counter(json.dumps(row, sort_keys=True) for row in rows)
+
+
+def _assert_same_datasets(actual, expected):
+    """Compare archive datasets per table with a short, bounded failure report."""
+    report = []
+    for table in sorted(actual.keys() | expected.keys()):
+        left, right = actual.get(table), expected.get(table)
+        if left == right:
+            continue
+        if left is None or right is None:
+            report.append(
+                f"{table}: present only in {'expected' if left is None else 'actual'}"
+            )
+            continue
+        extra, missing = _rows(left) - _rows(right), _rows(right) - _rows(left)
+        if not extra and not missing:
+            report.append(f"{table}: same {len(left)} rows in a different order")
+            continue
+        report.append(
+            f"{table}: {len(left)} actual rows, {len(right)} expected rows; "
+            f"unexpected {sorted(extra)[:2]}; missing {sorted(missing)[:2]}"
+        )
+    if report:
+        pytest.fail("Archive datasets differ:\n" + "\n".join(report)[:4000])
 
 
 def _destination(village, prefix):
@@ -208,7 +238,7 @@ def test_real_archive_round_trip_rollback_replay_conflict_and_private_discard(vi
     restored = client.get(destination + export_path)
     assert restored.status_code == 200
     assert destination + export_path in client.get(destination + "/sandbox/manage").text
-    assert restored.json["datasets"] == exported.json["datasets"]
+    _assert_same_datasets(restored.json["datasets"], exported.json["datasets"])
     invoice = invoices["sonnwil-neighbour"]
     for location in (prefix, destination):
         invoice_page = client.get(location + f"/dashboard/invoices/{invoice}")
@@ -217,9 +247,9 @@ def test_real_archive_round_trip_rollback_replay_conflict_and_private_discard(vi
         assert client.get(location + "/sandbox/metering").status_code == 200
     assert _command(client, prefix, "restore", confirm="restore").status_code == 303
     assert _result(client, prefix)["restored"] is True
-    assert (
-        client.get(destination + export_path).json["datasets"]
-        == restored.json["datasets"]
+    _assert_same_datasets(
+        client.get(destination + export_path).json["datasets"],
+        restored.json["datasets"],
     )
     profile = client.get(destination + "/dashboard")
     assert (
@@ -237,15 +267,19 @@ def test_real_archive_round_trip_rollback_replay_conflict_and_private_discard(vi
     assert _command(client, prefix, "restore", confirm="restore").status_code == 303
     conflict = _result(client, prefix)
     assert conflict["valid"] and conflict["conflicts"] and not conflict.get("restored")
-    assert client.get(destination + export_path).json["datasets"] == changed
-    assert (
-        client.get(prefix + export_path).json["datasets"] == exported.json["datasets"]
+    _assert_same_datasets(
+        client.get(destination + export_path).json["datasets"], changed
+    )
+    _assert_same_datasets(
+        client.get(prefix + export_path).json["datasets"], exported.json["datasets"]
     )
     assert _command(client, prefix, "prepare", variant="damaged").status_code == 303
     assert not _result(client, prefix)["valid"]
     assert _command(client, prefix, "restore", confirm="restore").status_code == 303
     assert not _result(client, prefix)["valid"]
-    assert client.get(destination + export_path).json["datasets"] == changed
+    _assert_same_datasets(
+        client.get(destination + export_path).json["datasets"], changed
+    )
     other = village.test_client()
     other_prefix, _ = _start(other, "administrator")
     manager = village.extensions["villages"]
@@ -325,7 +359,7 @@ def test_uploaded_archive_rejects_nonstring_versions_without_mutation(village, v
         "errors": ["Unsupported schema version"],
         "conflicts": [],
     }
-    assert client.get(path).json["datasets"] == exported.json["datasets"]
+    _assert_same_datasets(client.get(path).json["datasets"], exported.json["datasets"])
 
 
 def test_archive_commands_recheck_role_csrf_and_do_not_grant_platform_authority(
@@ -482,7 +516,7 @@ def test_signed_formation_receipts_and_original_documents_survive_real_restore(v
     opened = _command(client, prefix, "open", community_id=cid)
     assert client.get(opened.location, follow_redirects=True).status_code == 200
     restored = client.get(destination + path).json
-    assert restored["datasets"] == original["datasets"]
+    _assert_same_datasets(restored["datasets"], original["datasets"])
     page = client.get(destination + "/sandbox/formation?cid=" + cid)
     assert (
         client.post(
@@ -499,4 +533,6 @@ def test_signed_formation_receipts_and_original_documents_survive_real_restore(v
             "SELECT state FROM vnb_submission_cases WHERE community_id=%s", (cid,)
         )
         assert cur.fetchone() == ("delivered",)
-    assert client.get(prefix + path).json["datasets"] == original["datasets"]
+    _assert_same_datasets(
+        client.get(prefix + path).json["datasets"], original["datasets"]
+    )

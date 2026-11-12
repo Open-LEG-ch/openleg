@@ -623,8 +623,12 @@ class PostgresArchiveStore:
         result = {}
         with self._connection() as conn, conn.cursor() as cur:
             cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+            primary_keys = self._primary_keys(cur)
             for table, predicate, _ in _DATASETS:
-                query = f"SELECT * FROM {table} WHERE {predicate}"
+                # Key order keeps archive bytes and hashes independent of the
+                # query plan and of where PostgreSQL stores each row.
+                order = ", ".join(primary_keys[table])
+                query = f"SELECT * FROM {table} WHERE {predicate} ORDER BY {order}"
                 cur.execute(
                     query.replace("%s", "%(community_id)s"),
                     {"community_id": community_id},
