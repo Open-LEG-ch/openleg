@@ -292,7 +292,9 @@ def update_invoice_query(
         )
 
 
-def _change(cur, query_id, community_id, actor_id, message, target_status):
+def _change(
+    cur, query_id, community_id, actor_id, message, target_status, *, dry_run=False
+):
     """Own the scoped lock, optional reply, audit identity and event atomically."""
     cur.execute(
         "SELECT status FROM invoice_queries WHERE id=%s AND community_id=%s FOR UPDATE",
@@ -304,7 +306,16 @@ def _change(cur, query_id, community_id, actor_id, message, target_status):
     if target_status is not None:
         invoice_queries.require_transition(row["status"], target_status)
     if message is not None:
-        _append(cur, query_id, actor_id, invoice_queries.validate_message(message))
+        message = invoice_queries.validate_message(message)
+    if dry_run:
+        return {
+            "id": query_id,
+            "previous_status": row["status"],
+            "status": target_status,
+            "dry_run": True,
+        }
+    if message is not None:
+        _append(cur, query_id, actor_id, message)
     event_id = None
     if target_status is not None:
         cur.execute(
@@ -328,12 +339,22 @@ def _change(cur, query_id, community_id, actor_id, message, target_status):
 
 
 def respond_operator_invoice_case(
-    case_id, community_id, actor_id, message, status, key
+    case_id, community_id, actor_id, message, status, key, *, dry_run=False
 ):
     """Apply a keyed operator response and retain its request-bound replay."""
     action = f"case.respond:{case_id}"
     fingerprint = request_hash({"message": message, "status": status})
     with _get_connection() as conn, conn.cursor() as cur:
+        if dry_run:
+            return _change(
+                cur,
+                case_id,
+                community_id,
+                actor_id,
+                message or "",
+                status or "",
+                dry_run=True,
+            )
         cur.execute(
             "SELECT pg_advisory_xact_lock(hashtext(%s))",
             (f"{community_id}:{action}:{key}",),

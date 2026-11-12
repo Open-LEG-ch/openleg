@@ -452,7 +452,19 @@ paths:
         schema:
           type: integer
           minimum: 0
-      - $ref: '#/components/parameters/IdempotencyKey'
+      - name: Idempotency-Key
+        in: header
+        description: Required for writes; optional for dry runs.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 128
+      - name: dry_run
+        in: query
+        description: Single literal true or false. Repeated values and body keys are rejected.
+        schema:
+          type: boolean
+          default: false
       responses:
         '200':
           description: Successful operation.
@@ -462,7 +474,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CaseResult'
+                oneOf:
+                - $ref: '#/components/schemas/CaseResult'
+                - $ref: '#/components/schemas/CasePreview'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -493,6 +507,8 @@ paths:
               required:
               - message
               - status
+              not:
+                required: [dry_run]
               additionalProperties: true
   /api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm:
     post:
@@ -1093,6 +1109,19 @@ components:
       - case_id
       - state
       - event_id
+      additionalProperties: false
+    CasePreview:
+      type: object
+      properties:
+        schema_version: *id004
+        id: *id005
+        previous_status:
+          enum: [open, acknowledged]
+        status:
+          enum: [acknowledged, resolved]
+        dry_run:
+          const: true
+      required: [schema_version, id, previous_status, status, dry_run]
       additionalProperties: false
     CaseResult:
       type: object

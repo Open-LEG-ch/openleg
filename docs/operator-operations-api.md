@@ -278,3 +278,25 @@ Agent credentials may preview both VNB-bound writes with `dry_run=true`.
 Real submissions (option absent or `false`) return 403 `capability_denied`.
 Malformed, repeated, or body-supplied `dry_run` options return 400
 `invalid_request` before the actor denial or any domain call.
+
+## Invoice case previews and MCP
+
+`POST /billing/cases/{id}/responses?dry_run=true` validates the message and
+current status transition without changing cases, messages, events, webhook
+deliveries or the idempotency ledger. The response contains `id`,
+`previous_status`, the proposed `status`, `dry_run: true` and `schema_version`.
+Usage accounting still applies. A preview does not reserve the transition;
+the real call validates the current state again.
+
+`dry_run` accepts one query value, exactly `true` or `false`. Repeated values,
+other spellings and a `dry_run` body key return `400 invalid_request`.
+Omitting the option or passing `false` performs the write and requires an
+`Idempotency-Key`. HTTP previews do not require a key.
+
+The MCP tool `respond_invoice_case` maps to `respondInvoiceCase` and requires
+`cases.mutate`. Its arguments are `community_id`, `case_id`, `message`,
+`status`, `idempotency_key` and optional boolean `dry_run`. The tool requires
+a key even for previews so the same arguments can be used for the real call.
+Only `acknowledged` and `resolved` are supported. The tool is marked as a
+state-changing, destructive, idempotent operation. It returns no message
+history. Records and events retain the initiating credential's actor snapshot.
