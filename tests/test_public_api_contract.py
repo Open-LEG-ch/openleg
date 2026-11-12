@@ -2,7 +2,11 @@
 """The committed public contract is served unchanged at the HTTP boundary."""
 
 import json
+from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 from tests.test_app_organic_routes import full_app_module as organic_app_module
 
@@ -200,3 +204,50 @@ def test_french_docs_translate_every_displayed_contract_string(full_app_module):
         assert any(translated in text for text in texts), (
             f"French reference did not render {source!r} as {translated!r}"
         )
+
+
+@pytest.mark.parametrize(
+    ("path", "collection", "field", "value", "wire_value"),
+    [
+        ("/site/rankings", "rankings", "pv_score_pct", "77.00", "77.00"),
+        ("/site/rankings", "rankings", "display_score", "77.00", "77.0"),
+        ("/site/rankings", "rankings", "pv_untapped_kw", "230.50", "230.50"),
+        ("/site/rankings/movers", "movers", "score_now", "77.0000", "77.0000"),
+        ("/site/rankings/movers", "movers", "score_prev", "78.2500", "78.2500"),
+        ("/site/rankings/movers", "movers", "delta", "-1.2500", "-1.2500"),
+        ("/site/home", "best", "score", "77.00", "77.0"),
+        ("/site/home", "needs_action", "score", "77.00", "77.0"),
+    ],
+)
+def test_decimal_store_metrics_match_public_contract(
+    client, validate_public_api_responses, path, collection, field, value, wire_value
+):
+    # Keep ranking/domain code and Flask serialization real; replace only storage.
+    store_field = "pv_score_pct" if field in {"display_score", "score"} else field
+    rows = [
+        {
+            "bfs_number": bfs,
+            "name": f"Gemeinde {bfs}",
+            "kanton": "ZH",
+            "population": 1000,
+            "pv_score_pct": 77,
+            "pv_untapped_kw": 230,
+            "year": 2025,
+            "score_now": 77,
+            "score_prev": 78.25,
+            "delta": -1.25,
+            store_field: Decimal(value),
+        }
+        for bfs in range(1, 7)
+    ]
+    with (
+        patch("store.ranking.get_pv_profiles", return_value=rows),
+        patch("store.ranking.get_pv_movers", return_value=rows),
+        patch("homepage_view_model.db.get_stats", return_value={"total_buildings": 7}),
+    ):
+        response = client.get("/api/v1" + path)
+    assert response.status_code == 200
+    payload = response.get_json()
+    if path == "/site/home":
+        payload = payload["ranking"]
+    assert payload[collection][0][field] == wire_value

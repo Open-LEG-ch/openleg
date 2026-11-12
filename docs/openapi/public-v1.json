@@ -1595,8 +1595,11 @@
                               "score": {
                                 "type": [
                                   "number",
+                                  "string",
                                   "null"
-                                ]
+                                ],
+                                "pattern": "^-?\\d+(\\.\\d+)?$",
+                                "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
                               }
                             },
                             "required": [
@@ -1641,8 +1644,11 @@
                               "score": {
                                 "type": [
                                   "number",
+                                  "string",
                                   "null"
-                                ]
+                                ],
+                                "pattern": "^-?\\d+(\\.\\d+)?$",
+                                "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
                               }
                             },
                             "required": [
@@ -2405,14 +2411,20 @@
           "pv_score_pct": {
             "type": [
               "number",
+              "string",
               "null"
-            ]
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
           },
           "display_score": {
             "type": [
               "number",
+              "string",
               "null"
-            ]
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
           },
           "score_over_100": {
             "type": [
@@ -2423,8 +2435,11 @@
           "pv_untapped_kw": {
             "type": [
               "number",
+              "string",
               "null"
-            ]
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
           }
         },
         "required": [
@@ -2470,20 +2485,29 @@
           "score_now": {
             "type": [
               "number",
+              "string",
               "null"
-            ]
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
           },
           "score_prev": {
             "type": [
               "number",
+              "string",
               "null"
-            ]
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
           },
           "delta": {
             "type": [
               "number",
+              "string",
               "null"
-            ]
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "description": "Werte können als Dezimalstrings oder Zahlen vorliegen."
           }
         },
         "required": [
