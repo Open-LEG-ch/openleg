@@ -1,0 +1,15 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _("Agentenzugriff erlauben") }}</title>{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-2xl p-6">
+<h1>{{ _('Agentenzugriff erlauben') }}</h1>
+<p>{{ client }} - {{ _('LEG') }} {{ community }}</p>
+<ul>{% for code, label in capabilities %}<li>{{ label }} ({{ code }})</li>{% endfor %}</ul>
+<form method="post">
+{% for key, value in fields.items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<button name="decision" value="approve">{{ _('Erlauben') }}</button>
+<button name="decision" value="deny">{{ _('Ablehnen') }}</button>
+</form>
+</section>
+{% endblock %}

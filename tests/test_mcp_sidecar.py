@@ -36,6 +36,7 @@ def test_contract_tool(monkeypatch):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", "http://localhost:5000")
     app = create_app()
 
@@ -132,6 +133,7 @@ def test_origin_rejects_non_origins(monkeypatch, origin):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
     with pytest.raises(ValueError):
         create_app()
@@ -168,6 +170,7 @@ def test_http_trust_boundary(monkeypatch, caplog):
         return result
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -307,6 +310,7 @@ def test_transport_header_validation(monkeypatch, host, origin, status, custom_p
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     # Use the actual local proxy configuration, including Inspector's origin.
     config = yaml.safe_load(Path("compose.mcp.yml").read_text())
     for name, value in config["services"]["mcp"]["environment"].items():
@@ -357,6 +361,7 @@ def test_empty_transport_allowlist_refuses_start(monkeypatch, name, value):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv(name, value)
     with pytest.raises(ValueError, match=name):
         create_app()

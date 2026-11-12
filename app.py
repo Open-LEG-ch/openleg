@@ -61,6 +61,7 @@ from leg_registry import registry_api_bp
 from locale_policy import resolve_locale
 from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
+from oauth_server import init_oauth
 from operator_api import operator_api_bp
 from rangliste import rangliste_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
@@ -1126,6 +1127,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         )
     release_mode.install_http_guard(application, read_only=read_only)
     i18n.init_app(application)
+    init_oauth(application)
     application.context_processor(private_http.template_context)
     application.context_processor(site_release.template_context)
     application.context_processor(release_identity.template_context)

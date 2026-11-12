@@ -48,6 +48,7 @@ def test_real_http_pagination_and_scope(operator_http, monkeypatch, caplog):
                 ),
             )
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(fixture.app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()

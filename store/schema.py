@@ -2332,4 +2332,19 @@ def create_tables():
                 )
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS oauth_codes (
+                    code_hash TEXT PRIMARY KEY,
+                    payload JSONB NOT NULL,
+                    expires_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '60 seconds'
+                );
+                CREATE TABLE IF NOT EXISTS oauth_grants (
+                    id TEXT PRIMARY KEY REFERENCES operator_api_clients(id) ON DELETE CASCADE,
+                    token_hash TEXT UNIQUE NOT NULL,
+                    payload JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '300 seconds',
+                    revoked_at TIMESTAMPTZ
+                )
+            """)
             logger.info("[DB] Tables and indexes created successfully")

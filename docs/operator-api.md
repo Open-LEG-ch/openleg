@@ -138,3 +138,15 @@ Sie ist nicht die auslösende Client-ID. OpenLEG sendet `actor` mit auslösender
 Client-ID, Akteursart und Agentenbezeichnung an alle Webhook-Empfänger der
 LEG, deren Capability das Ereignis abdeckt. Eine Agentenbezeichnung enthält
 deshalb keine vertraulichen Angaben.
+
+## OAuth für Agenten
+
+MCP-Hosts autorisieren sich über den in [mcp-sidecar.md](mcp-sidecar.md)
+beschriebenen OAuth-Ablauf. Nur eine bestätigte Administration darf Rechte für
+ihre LEG delegieren. Der Scope enthält genau eine LEG und explizite
+Capabilities. Die Zustimmung zeigt jede Capability in Deutsch oder Französisch.
+
+Der MCP-Zugriffstoken gilt fünf Minuten und wird nie an die Betreiber-API
+weitergegeben. Ein separates Credential pro Grant trägt `actor_kind=agent`.
+Bestehende `olk_`-Credentials für Dienste funktionieren unverändert.
+Refresh-Tokens und eine eigene Grant-Widerrufsoberfläche folgen in #852.

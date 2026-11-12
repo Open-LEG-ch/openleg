@@ -7,7 +7,12 @@ from mcp_sidecar.server import create_app
 
 uvicorn.run(
     create_app(),
-    host=os.environ.get("OPENLEG_MCP_BIND_HOST", "127.0.0.1"),
+    host=os.environ.get(
+        "OPENLEG_MCP_BIND_HOST",
+        "127.0.0.1"
+        if os.environ.get("OPENLEG_MCP_DEV_STATIC") == "true"
+        else "0.0.0.0",
+    ),
     port=8000,
     access_log=False,
     proxy_headers=False,

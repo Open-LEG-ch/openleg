@@ -168,3 +168,77 @@ Without the trusted-proxy setting, the local Caddy users share Caddy's peer
 budget. This setup supports one proxy hop; adding another proxy requires a
 separate trust design. Production network configuration remains in
 `openleg-ops`.
+
+## OAuth für MCP-Hosts (#847)
+
+OAuth ist der Standard. Die Flask-App stellt einmalige Autorisierungscodes
+(60 Sekunden) und opake Zugriffstokens (300 Sekunden) aus. PKCE akzeptiert
+ausschliesslich S256. Registrieren Sie öffentliche Clients vorab; dynamische
+Clientregistrierung gehört nicht zu diesem Ticket. Redirect-URIs müssen exakt
+übereinstimmen. HTTPS ist Pflicht ausser für lokale Loopback-Adressen.
+
+Konfiguration der Flask-App:
+
+- `OPENLEG_OAUTH_ISSUER=https://app.example` (Origin ohne abschliessenden Slash).
+- `OPENLEG_OAUTH_RESOURCE=https://mcp.example/mcp`.
+- `OPENLEG_OAUTH_CLIENTS={"host":{"name":"Mein MCP-Host","redirect_uris":["https://host.example/callback"]}}`.
+- `OPENLEG_OAUTH_DOWNSTREAM_KEY`: separater zufälliger Schlüssel mit mindestens
+  32 Zeichen, nur in der App.
+- `OPENLEG_OAUTH_INTROSPECTION_SECRET`: separater zufälliger Schlüssel mit
+  mindestens 32 Zeichen, identisch in App und Sidecar.
+
+Konfiguration des Sidecars:
+
+- `OPENLEG_MCP_ENABLED=true`.
+- `OPENLEG_OAUTH_ISSUER` wie oben.
+- `OPENLEG_MCP_RESOURCE` entspricht `OPENLEG_OAUTH_RESOURCE` der App.
+- `OPENLEG_OAUTH_INTROSPECTION_SECRET` wie oben.
+- `OPENLEG_OPERATOR_ORIGIN`: HTTPS-Origin der App; HTTP nur auf Loopback.
+- Host- und Origin-Allowlisten wie oben. Keine Datenbankzugangsdaten.
+
+Der Scope besteht aus genau `community:<community_id>` und mindestens einer
+Betreiber-Capability, beispielsweise `community:leg-123 billing.read`.
+Der Host schickt diesen Scope, `client_id`, `redirect_uri`, `response_type=code`,
+`state`, `code_challenge`, `code_challenge_method=S256` und `resource` an
+`/oauth/authorize`. Die bestätigte LEG-Administration meldet sich zuerst im
+Dashboard an, öffnet die Autorisierung erneut und bestätigt die angezeigten
+Rechte. Deutsch und Französisch verwenden die Übersetzungskataloge.
+
+Der Host tauscht den Code per Formular-POST an `/oauth/token`:
+`grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`,
+`code_verifier` und dieselbe `resource`. Er verwendet das erhaltene Token als
+Bearer für `/mcp`. Der Zugriff gilt ausschliesslich für diese Ressource und LEG.
+
+Der Sidecar introspektiert bei jeder Anfrage über `POST /oauth/introspect`.
+Das gemeinsame Secret authentifiziert den Sidecar. Die Antwort enthält neben
+Issuer, Audience, Ablauf, Scope und LEG ein separates Downstream-Credential.
+Introspektion vermeidet Signaturschlüssel im Sidecar und prüft Widerruf sofort;
+sie benötigt dafür pro Anfrage einen zusätzlichen HTTP-Aufruf. Das
+Downstream-Credential wird aus Grant-ID und App-Schlüssel per HMAC-SHA256
+abgeleitet. Die Datenbank enthält nur Token-Hashes. Der Betreiber-Client trägt
+`actor_kind=agent` und exakt die bewilligten Capabilities. Rotation oder Widerruf
+dieses Clients sperrt auch die Introspektion. Schlüsselrotation macht bestehende
+Grants unbrauchbar; Schlüssel deshalb persistent und getrennt verwalten.
+
+Metadaten: App `/.well-known/oauth-authorization-server`
+([RFC 8414](https://www.rfc-editor.org/rfc/rfc8414.html)); Sidecar
+`/.well-known/oauth-protected-resource` und
+`/.well-known/oauth-protected-resource/mcp`
+([RFC 9728](https://www.rfc-editor.org/rfc/rfc9728.html)).
+401-Antworten verweisen per `WWW-Authenticate` auf die Ressourcenmetadaten.
+Die Ressourcenbindung folgt
+[RFC 8707](https://www.rfc-editor.org/rfc/rfc8707.html).
+
+Nur lokal kann `OPENLEG_MCP_DEV_STATIC=true` den bisherigen `olk_`-Pfad
+aktivieren. Der Prozesseinstieg bindet dann ausschliesslich an 127.0.0.1;
+auch der Betreiber-Origin muss Loopback sein. Diesen Modus niemals über einen
+Produktionsproxy veröffentlichen. In Produktion bleibt die Variable ungesetzt.
+Proxy-Logs dürfen keine Authorization-Header, Formularinhalte oder OAuth-
+Callback-Querystrings aufzeichnen.
+
+Die Implementierung nutzt Zufallswerte, SHA-256, HMAC und URL-Verarbeitung aus
+der Python-Standardbibliothek; sie implementiert kein eigenes JWT-Format.
+Refresh-Tokens und die Grant-Widerrufsoberfläche folgen in #852.
+`oauth_grants` besitzt dafür eine stabile ID, Ausstellungszeit und
+`revoked_at`. OAuth bleibt bis zur vollständigen Bereitschaftsprüfung aus
+#838 für Produktion deaktiviert.

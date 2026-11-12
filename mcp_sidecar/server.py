@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import re
+import time
 from contextlib import asynccontextmanager
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -21,6 +22,8 @@ from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import McpError
 from starlette.applications import Starlette
+from starlette.datastructures import Headers
+from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from mcp_sidecar.limits import PublicLimits
@@ -41,7 +44,8 @@ def redact_transport_logs():
         # unrelated records untouched. Flatten only credential-bearing records,
         # including exception chains and stack info, before handlers format them.
         rendered = logging.Formatter().format(copy.copy(record))
-        redacted = re.sub(r"olk_[A-Za-z0-9_-]+", "[redacted]", rendered)
+        redacted = re.sub(r"(?:olk|ola|olc)_[A-Za-z0-9_-]+", "[redacted]", rendered)
+        redacted = re.sub(r"Bearer [A-Za-z0-9._~+/-]+", "Bearer [redacted]", redacted)
         if redacted != rendered:
             record.msg = redacted
             record.args = ()
@@ -277,6 +281,43 @@ def create_app():
             (Path(__file__).parents[1] / "docs/openapi/operator-v1.yaml").read_text()
         )
     )
+    dev_static = os.environ.get("OPENLEG_MCP_DEV_STATIC") == "true"
+    issuer = os.environ.get("OPENLEG_OAUTH_ISSUER", "")
+    resource = os.environ.get("OPENLEG_MCP_RESOURCE", "")
+    introspection_secret = os.environ.get("OPENLEG_OAUTH_INTROSPECTION_SECRET", "")
+    if dev_static:
+        if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            raise ValueError(
+                "Static development credentials require a loopback operator"
+            )
+    elif not issuer or not resource or len(introspection_secret) < 32:
+        raise ValueError("OAuth issuer, resource and introspection secret are required")
+    if not dev_static:
+        for value in (issuer, resource):
+            u = urlsplit(value)
+            if (
+                not u.hostname
+                or u.username
+                or u.password
+                or u.query
+                or u.fragment
+                or (
+                    u.scheme != "https"
+                    and not (
+                        u.scheme == "http"
+                        and u.hostname in {"localhost", "127.0.0.1", "::1"}
+                    )
+                )
+            ):
+                raise ValueError("OAuth URLs require HTTPS or loopback HTTP")
+        if parsed.scheme != "https" and parsed.hostname not in {
+            "localhost",
+            "127.0.0.1",
+            "::1",
+        }:
+            raise ValueError("Introspection requires HTTPS or loopback HTTP")
+    resource_url = urlsplit(resource)
+    metadata_url = f"{resource_url.scheme}://{resource_url.netloc}/.well-known/oauth-protected-resource"
     server = Server("openleg-mcp")
     previews = preview_operations()
     for preview_name, submit_name in (
@@ -451,8 +492,27 @@ def create_app():
         community = arguments["community_id"]
         if not re.fullmatch(r"[A-Za-z0-9_-]+", community):
             return error("invalid_arguments")
-        authorization = server.request_context.request.headers.get("authorization", "")
-        if not re.fullmatch(r"Bearer olk_[A-Za-z0-9_-]+", authorization):
+        req = server.request_context.request
+        authorization = req.headers.get("authorization", "")
+        if not dev_static:
+            identity = req.scope.get("oauth_identity")
+            if identity is None:
+                return error("authentication_required")
+            if community != identity["community_id"]:
+                return error("not_found")
+            capability = (
+                case_op["x-openleg-capability"]
+                if respond
+                else payment.meta["x-openleg-capability"]
+                if confirm
+                else preview[1]
+                if preview
+                else op["capability"]
+            )
+            if capability not in identity["scope"].split():
+                return error("capability_denied", text="forbidden")
+            authorization = "Bearer " + identity["downstream_token"]
+        elif not re.fullmatch(r"Bearer olk_[A-Za-z0-9_-]+", authorization):
             return error("authentication_required")
         # A fresh client also prevents upstream cookies from crossing callers.
         try:
@@ -577,7 +637,7 @@ def create_app():
                     for item in result[key]
                 ):
                     raise ValueError("Malformed operator page")
-            if re.search(r"olk_[A-Za-z0-9_-]+", json.dumps(result)):
+            if re.search(r"(?:olk|ola|olc)_[A-Za-z0-9_-]+", json.dumps(result)):
                 return error("operator_error")
             untrusted = []
             for key, value in result.items():
@@ -752,9 +812,73 @@ def create_app():
 
     class Endpoint:
         async def __call__(self, scope, receive, send):
+            if not dev_static:
+                authorization = Headers(scope=scope).get("authorization", "")
+                identity = None
+                if re.fullmatch(r"Bearer ola_[A-Za-z0-9_-]+", authorization):
+                    try:
+                        async with httpx.AsyncClient(
+                            follow_redirects=False, trust_env=False, timeout=10
+                        ) as client:
+                            result = await client.post(
+                                origin + "/oauth/introspect",
+                                data={"token": authorization[7:]},
+                                headers={
+                                    "Authorization": "Bearer " + introspection_secret
+                                },
+                            )
+                        if result.status_code == 200:
+                            candidate = result.json()
+                            words = candidate.get("scope", "").split()
+                            community = candidate.get("community_id")
+                            if (
+                                candidate.get("active") is True
+                                and candidate.get("iss") == issuer
+                                and candidate.get("aud") == resource
+                                and isinstance(candidate.get("exp"), (int, float))
+                                and candidate["exp"] > time.time()
+                                and isinstance(community, str)
+                                and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", community)
+                                and [w for w in words if w.startswith("community:")]
+                                == ["community:" + community]
+                                and len(words) > 1
+                                and re.fullmatch(
+                                    r"olk_[A-Za-z0-9_-]+",
+                                    candidate.get("downstream_token", ""),
+                                )
+                            ):
+                                identity = candidate
+                    except (httpx.HTTPError, ValueError, TypeError, AttributeError):
+                        pass
+                if identity is None:
+                    response = JSONResponse(
+                        {"error": "invalid_token"},
+                        status_code=401,
+                        headers={
+                            "WWW-Authenticate": 'Bearer resource_metadata="'
+                            + metadata_url
+                            + '"',
+                            "Cache-Control": "no-store",
+                        },
+                    )
+                    return await response(scope, receive, send)
+                scope["oauth_identity"] = identity
             await manager.handle_request(scope, receive, send)
 
+    async def metadata(request):
+        return JSONResponse(
+            {
+                "resource": resource,
+                "authorization_servers": [issuer],
+                "bearer_methods_supported": ["header"],
+            }
+        )
+
     return Starlette(
-        routes=[Route("/mcp", endpoint=Endpoint(), methods=["GET", "POST", "DELETE"])],
+        routes=[
+            Route("/mcp", endpoint=Endpoint(), methods=["GET", "POST", "DELETE"]),
+            Route("/.well-known/oauth-protected-resource", endpoint=metadata),
+            Route("/.well-known/oauth-protected-resource/mcp", endpoint=metadata),
+        ],
         lifespan=lifespan,
     )
