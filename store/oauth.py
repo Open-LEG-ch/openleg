@@ -42,6 +42,8 @@ def redeem(
         if not row:
             return None
         p = row["payload"]
+        if not approving_admin_valid(p):
+            return None
         cur.execute(
             """INSERT INTO operator_api_clients
             (id,community_id,created_by,name,capabilities,token_hash,actor_kind,agent_label)
@@ -75,4 +77,24 @@ def introspect(token_hash):
             (token_hash,),
         )
         row = cur.fetchone()
-        return dict(row) if row else None
+        return dict(row) if row and approving_admin_valid(row["payload"]) else None
+
+
+def approving_admin_valid(payload):
+    from operator_api import _admin_for
+
+    try:
+        return _admin_for(payload["community_id"], payload["building_id"])
+    except Exception:
+        return False
+
+
+def credential_grant_valid(client_id):
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT payload, revoked_at IS NULL AND
+            expires_at > CURRENT_TIMESTAMP AS valid FROM oauth_grants WHERE id=%s""",
+            (client_id,),
+        )
+        row = cur.fetchone()
+    return row is None or (row["valid"] and approving_admin_valid(row["payload"]))

@@ -22,6 +22,7 @@ from flask import (
 )
 
 import database as db
+import formation_wizard
 from i18n import gettext as _
 from operator_api import CAPABILITIES, _admin_for, _require_csrf, _token_hash
 from translation_markers import gettext_noop as _N
@@ -55,15 +56,11 @@ def private_headers(response):
     return response
 
 
-def downstream_token(grant_id):
-    key = current_app.config["OAUTH_DOWNSTREAM_KEY"]
-    if len(key) < 32:
-        raise RuntimeError("OAuth downstream key must have at least 32 characters")
+def downstream_token(access_token):
+    # Domain separation keeps the downstream bearer distinct from the random MCP token.
     return (
         "olk_"
-        + hmac.new(
-            key.encode(), ("oauth:" + grant_id).encode(), hashlib.sha256
-        ).hexdigest()
+        + hashlib.sha256(("oauth-downstream:" + access_token).encode()).hexdigest()
     )
 
 
@@ -76,20 +73,20 @@ def scopes(value):
     communities = [s[10:] for s in words if s.startswith("community:")]
     caps = [s for s in words if not s.startswith("community:")]
     if (
-        len(communities) != 1
-        or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", communities[0])
+        len(communities) > 1
+        or (communities and not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", communities[0]))
         or not caps
         or len(words) != len(set(words))
         or not set(caps) <= CAPABILITIES
     ):
         raise ValueError
-    return communities[0], caps
+    return communities[0] if communities else None, caps
 
 
 @oauth_bp.route("/oauth/authorize", methods=["GET", "POST"])
 def authorize():
     p = request.args if request.method == "GET" else request.form
-    if any(len(p.getlist(k)) != 1 for k in p):
+    if any(len(p.getlist(k)) != 1 for k in p if k != "capabilities"):
         return invalid()
     if p.get("resource") != current_app.config["OAUTH_RESOURCE"]:
         return invalid("invalid_target")
@@ -107,14 +104,33 @@ def authorize():
     except ValueError:
         return invalid("invalid_scope")
     building = session.get("dashboard_building_id")
-    if not building or not _admin_for(community, building):
+    if not building:
         return invalid("access_denied", 403)
+    communities = [
+        row
+        for row in formation_wizard.get_user_communities(building)
+        if _admin_for(row["community_id"], building)
+    ]
+    chosen = p.get("community_id", community)
+    if not communities or (
+        chosen and chosen not in {r["community_id"] for r in communities}
+    ):
+        return invalid("access_denied", 403)
+    if request.method == "POST":
+        community = chosen
+        if not community:
+            return invalid("invalid_scope")
+        selected = p.getlist("capabilities") if p.get("capabilities_present") else caps
+        if not selected or not set(selected) <= set(caps):
+            return invalid("invalid_scope")
+        caps = list(dict.fromkeys(selected))
     if request.method == "GET":
         session.setdefault("dashboard_csrf_token", secrets.token_urlsafe(32))
         return render_template(
             "oauth_consent.html",
             client=client["name"],
-            community=community,
+            community=chosen,
+            communities=communities,
             capabilities=[(c, _(LABELS[c])) for c in caps],
             fields=p,
             csrf=session["dashboard_csrf_token"],
@@ -138,6 +154,7 @@ def authorize():
                 "scope",
             )
         }
+        payload["scope"] = " ".join(["community:" + community, *caps])
         payload.update(
             community_id=community,
             capabilities=caps,
@@ -174,7 +191,7 @@ def token():
     )
     grant_id = str(uuid.uuid4())
     access = "ola_" + secrets.token_urlsafe(32)
-    downstream = downstream_token(grant_id)
+    downstream = downstream_token(access)
     grant = db.redeem_oauth_code(
         _token_hash(p.get("code", "")),
         p["client_id"],
@@ -202,7 +219,7 @@ def introspect():
     row = db.introspect_oauth_token(_token_hash(request.form.get("token", "")))
     if not row:
         return jsonify(active=False)
-    downstream = downstream_token(row["id"])
+    downstream = downstream_token(request.form.get("token", ""))
     if not hmac.compare_digest(_token_hash(downstream), row["downstream_hash"]):
         return jsonify(active=False)
     p = row["payload"]
@@ -238,7 +255,7 @@ def init_oauth(app):
     if not issuer:
         return
     app.config.setdefault("OAUTH_ISSUER", issuer)
-    for key in ("RESOURCE", "DOWNSTREAM_KEY", "INTROSPECTION_SECRET"):
+    for key in ("RESOURCE", "INTROSPECTION_SECRET"):
         app.config.setdefault(
             "OAUTH_" + key, os.environ.get("OPENLEG_OAUTH_" + key, "")
         )
@@ -264,7 +281,7 @@ def init_oauth(app):
             raise ValueError("OAuth URLs require HTTPS or loopback HTTP")
     if urlsplit(issuer).path:
         raise ValueError("OAuth issuer must be an origin without a trailing slash")
-    for key in ("OAUTH_DOWNSTREAM_KEY", "OAUTH_INTROSPECTION_SECRET"):
+    for key in ("OAUTH_INTROSPECTION_SECRET",):
         if len(app.config[key]) < 32:
             raise ValueError("OAuth secrets require at least 32 random characters")
     for client in app.config["OAUTH_CLIENTS"].values():

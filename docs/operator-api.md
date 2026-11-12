@@ -143,8 +143,9 @@ deshalb keine vertraulichen Angaben.
 
 MCP-Hosts autorisieren sich über den in [mcp-sidecar.md](mcp-sidecar.md)
 beschriebenen OAuth-Ablauf. Nur eine bestätigte Administration darf Rechte für
-ihre LEG delegieren. Der Scope enthält genau eine LEG und explizite
-Capabilities. Die Zustimmung zeigt jede Capability in Deutsch oder Französisch.
+ihre LEG delegieren. Der Host fordert Capabilities an. Die Administration wählt eine LEG und
+bestätigt die Rechte. Der ausgestellte Scope enthält genau diese LEG und
+die bestätigten Capabilities. Die Zustimmung zeigt jede Capability in Deutsch oder Französisch.
 
 Der MCP-Zugriffstoken gilt fünf Minuten und wird nie an die Betreiber-API
 weitergegeben. Ein separates Credential pro Grant trägt `actor_kind=agent`.

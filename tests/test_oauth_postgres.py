@@ -362,3 +362,345 @@ def test_code_bound_to_registered_client_and_redirect(oauth):
     assert exchange(oauth, code, redirect_uri=other_uri).status_code == 400
     assert exchange(oauth, code, client_id="second").status_code == 400
     assert exchange(oauth, code).status_code == 200
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("stage", ["exchange", "introspection", "operator"])
+@pytest.mark.parametrize("change", ["role", "status", "missing"])
+def test_grant_requires_current_confirmed_administrator(oauth, stage, change):
+    code = grant(oauth)
+    if stage != "exchange":
+        token = exchange(oauth, code).json["access_token"]
+        info = oauth.client.post(
+            "/oauth/introspect",
+            data={"token": token},
+            headers={"Authorization": "Bearer " + "s" * 64},
+        ).json
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        if change == "missing":
+            cur.execute(
+                "DELETE FROM community_members WHERE community_id='contract-leg'"
+            )
+        else:
+            cur.execute(
+                "UPDATE community_members SET "
+                + change
+                + "=%s WHERE community_id='contract-leg'",
+                ("member" if change == "role" else "pending",),
+            )
+    if stage == "exchange":
+        assert exchange(oauth, code).json == {"error": "invalid_grant"}
+    elif stage == "introspection":
+        assert oauth.client.post(
+            "/oauth/introspect",
+            data={"token": token},
+            headers={"Authorization": "Bearer " + "s" * 64},
+        ).json == {"active": False}
+    else:
+        assert (
+            oauth.client.get(
+                "/api/operator/v1/communities/contract-leg/billing/periods",
+                headers={"Authorization": "Bearer " + info["downstream_token"]},
+            ).status_code
+            == 401
+        )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "change", ["expires_at=NOW()-INTERVAL '1 second'", "revoked_at=NOW()"]
+)
+def test_downstream_requires_valid_grant(oauth, change):
+    token = exchange(oauth, grant(oauth)).json["access_token"]
+    info = oauth.client.post(
+        "/oauth/introspect",
+        data={"token": token},
+        headers={"Authorization": "Bearer " + "s" * 64},
+    ).json
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE oauth_grants SET " + change)
+    assert (
+        oauth.client.get(
+            "/api/operator/v1/communities/contract-leg/billing/periods",
+            headers={"Authorization": "Bearer " + info["downstream_token"]},
+        ).status_code
+        == 401
+    )
+
+
+@pytest.mark.integration
+def test_capability_consent_selects_community_and_subset(oauth):
+    data = authorize(oauth, scope="billing.read payments.read")
+    response = oauth.client.get("/oauth/authorize", query_string=data)
+    assert response.status_code == 200
+    assert 'name="community_id"' in response.text
+    assert 'name="capabilities"' in response.text
+    response = oauth.client.post(
+        "/oauth/authorize",
+        data={
+            **data,
+            "community_id": "contract-leg",
+            "capabilities": "billing.read",
+            "capabilities_present": "1",
+            "decision": "approve",
+            "csrf_token": "csrf",
+        },
+    )
+    assert response.status_code == 302
+    code = parse_qs(urlsplit(response.location).query)["code"][0]
+    assert exchange(oauth, code).json["scope"] == "community:contract-leg billing.read"
+
+
+@pytest.mark.integration
+def test_downstream_secret_requires_random_token_material(oauth):
+    import hmac
+
+    token = exchange(oauth, grant(oauth)).json["access_token"]
+    row = next(
+        r
+        for r in oauth.db.list_operator_api_clients("contract-leg")
+        if r["actor_kind"] == "agent"
+    )
+    reconstructed = (
+        "olk_"
+        + hmac.new(
+            ("k" * 64).encode(), ("oauth:" + row["id"]).encode(), hashlib.sha256
+        ).hexdigest()
+    )
+    assert (
+        oauth.client.get(
+            "/api/operator/v1/communities/contract-leg/billing/periods",
+            headers={"Authorization": "Bearer " + reconstructed},
+        ).status_code
+        == 401
+    )
+    assert oauth.client.post(
+        "/oauth/introspect",
+        data={"token": token},
+        headers={"Authorization": "Bearer " + "s" * 64},
+    ).json["active"]
+
+
+@pytest.mark.integration
+def test_sdk_discovery_authorization_and_tool(oauth, monkeypatch):
+    import asyncio
+
+    import httpx
+    from mcp import ClientSession
+    from mcp.client.auth import OAuthClientProvider
+    from mcp.client.streamable_http import streamable_http_client
+    from mcp.shared.auth import OAuthClientInformationFull, OAuthClientMetadata
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    class Storage:
+        tokens = None
+        client_info = OAuthClientInformationFull(
+            client_id="host",
+            redirect_uris=["https://host.example/callback"],
+            token_endpoint_auth_method="none",
+        )
+
+        async def get_tokens(self):
+            return self.tokens
+
+        async def set_tokens(self, tokens):
+            self.tokens = tokens
+
+        async def get_client_info(self):
+            return self.client_info
+
+        async def set_client_info(self, info):
+            self.client_info = info
+
+    callback = {}
+
+    async def consent(url):
+        query = {k: v[0] for k, v in parse_qs(urlsplit(url).query).items()}
+        assert "billing.read" in query["scope"].split()
+        assert not any(s.startswith("community:") for s in query["scope"].split())
+        assert query["code_challenge_method"] == "S256"
+        page = oauth.client.get("/oauth/authorize", query_string=query)
+        assert page.status_code == 200
+        response = oauth.client.post(
+            "/oauth/authorize",
+            data={
+                **query,
+                "community_id": "contract-leg",
+                "capabilities_present": "1",
+                "capabilities": "billing.read",
+                "csrf_token": "csrf",
+                "decision": "approve",
+            },
+        )
+        assert response.status_code == 302
+        callback.update(parse_qs(urlsplit(response.location).query))
+
+    async def receive_callback():
+        return callback["code"][0], callback["state"][0]
+
+    with operator_server(oauth.app) as origin:
+        oauth.app.config.update(
+            OAUTH_ISSUER=origin, OAUTH_RESOURCE="http://localhost/mcp"
+        )
+        for key, value in {
+            "OPENLEG_MCP_ENABLED": "true",
+            "OPENLEG_OPERATOR_ORIGIN": origin,
+            "OPENLEG_OAUTH_ISSUER": origin,
+            "OPENLEG_MCP_RESOURCE": "http://localhost/mcp",
+            "OPENLEG_OAUTH_INTROSPECTION_SECRET": "s" * 64,
+        }.items():
+            monkeypatch.setenv(key, value)
+        app = create_app()
+        seen = []
+
+        class Transport(httpx.AsyncBaseTransport):
+            async def handle_async_request(self, request):
+                seen.append(request.url.path)
+                transport = sidecar if request.url.host == "localhost" else network
+                return await transport.handle_async_request(request)
+
+        async def check():
+            nonlocal sidecar, network
+            sidecar = httpx.ASGITransport(app)
+            network = httpx.AsyncHTTPTransport()
+            storage = Storage()
+            auth = OAuthClientProvider(
+                "http://localhost/mcp",
+                OAuthClientMetadata(
+                    redirect_uris=["https://host.example/callback"],
+                    token_endpoint_auth_method="none",
+                ),
+                storage,
+                consent,
+                receive_callback,
+            )
+            async with (
+                app.router.lifespan_context(app),
+                network,
+                httpx.AsyncClient(transport=Transport(), auth=auth) as client,
+            ):
+                async with streamable_http_client(
+                    "http://localhost/mcp", http_client=client
+                ) as (read, write, _):
+                    async with ClientSession(read, write) as sdk:
+                        await sdk.initialize()
+                        result = await sdk.call_tool(
+                            "list_billing_periods", {"community_id": "contract-leg"}
+                        )
+                        assert not result.isError
+            assert storage.tokens.scope == "community:contract-leg billing.read"
+            for path in (
+                "/.well-known/oauth-protected-resource",
+                "/.well-known/oauth-authorization-server",
+                "/oauth/token",
+            ):
+                assert path in seen
+
+        sidecar = network = None
+        asyncio.run(check())
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("stage", ["exchange", "introspection", "operator"])
+def test_grant_fails_closed_when_community_unavailable(oauth, monkeypatch, stage):
+    import formation_wizard
+
+    code = grant(oauth)
+    if stage != "exchange":
+        token = exchange(oauth, code).json["access_token"]
+        info = oauth.client.post(
+            "/oauth/introspect",
+            data={"token": token},
+            headers={"Authorization": "Bearer " + "s" * 64},
+        ).json
+
+    def unavailable(*args):
+        raise RuntimeError("community unavailable")
+
+    monkeypatch.setattr(formation_wizard, "get_community_status", unavailable)
+    if stage == "exchange":
+        assert exchange(oauth, code).json == {"error": "invalid_grant"}
+    elif stage == "introspection":
+        assert oauth.client.post(
+            "/oauth/introspect",
+            data={"token": token},
+            headers={"Authorization": "Bearer " + "s" * 64},
+        ).json == {"active": False}
+    else:
+        assert (
+            oauth.client.get(
+                "/api/operator/v1/communities/contract-leg/billing/periods",
+                headers={"Authorization": "Bearer " + info["downstream_token"]},
+            ).status_code
+            == 401
+        )
+
+
+@pytest.mark.integration
+def test_consent_binds_selected_community(oauth):
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO communities(community_id,name) VALUES ('second-leg','Second fictional LEG')"
+        )
+        cur.execute("""INSERT INTO community_members(community_id,building_id,role,status)
+                    VALUES ('second-leg','contract-admin','admin','confirmed')""")
+    data = authorize(oauth, scope="billing.read")
+    page = oauth.client.get("/oauth/authorize", query_string=data)
+    assert 'value="contract-leg"' in page.text
+    assert 'value="second-leg"' in page.text
+    response = oauth.client.post(
+        "/oauth/authorize",
+        data={
+            **data,
+            "community_id": "second-leg",
+            "decision": "approve",
+            "csrf_token": "csrf",
+        },
+    )
+    code = parse_qs(urlsplit(response.location).query)["code"][0]
+    token = exchange(oauth, code).json["access_token"]
+    info = oauth.client.post(
+        "/oauth/introspect",
+        data={"token": token},
+        headers={"Authorization": "Bearer " + "s" * 64},
+    ).json
+    assert info["community_id"] == "second-leg"
+    assert info["scope"] == "community:second-leg billing.read"
+    assert (
+        oauth.client.get(
+            "/api/operator/v1/communities/contract-leg/billing/periods",
+            headers={"Authorization": "Bearer " + info["downstream_token"]},
+        ).status_code
+        == 404
+    )
+    assert (
+        oauth.client.get(
+            "/api/operator/v1/communities/second-leg/billing/periods",
+            headers={"Authorization": "Bearer " + info["downstream_token"]},
+        ).status_code
+        == 200
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"community_id": "other"},
+        {"capabilities": "payments.read", "capabilities_present": "1"},
+        {"capabilities_present": "1"},
+    ],
+)
+def test_consent_rejects_invalid_selection(oauth, changes):
+    data = {
+        **authorize(oauth, scope="billing.read"),
+        "community_id": "contract-leg",
+        "decision": "approve",
+        "csrf_token": "csrf",
+        **changes,
+    }
+    response = oauth.client.post("/oauth/authorize", data=data)
+    assert response.status_code in (400, 403)
+    assert "Location" not in response.headers

@@ -17,9 +17,11 @@ metadata, without case messages. See [the operator contract](operator-operations
 Install `requirements-mcp.txt` in a separate Python 3.11 environment. For tests,
 `requirements-dev.txt` includes it; Flask's runtime requirements do not.
 
+For a static-token local tracer, run Flask on port 5000, then:
+
 ```sh
 pip install -r requirements-mcp.txt
-OPENLEG_MCP_ENABLED=true OPENLEG_OPERATOR_ORIGIN=http://localhost:5000 python -m mcp_sidecar
+OPENLEG_MCP_ENABLED=true OPENLEG_MCP_DEV_STATIC=true OPENLEG_OPERATOR_ORIGIN=http://127.0.0.1:5000 python -m mcp_sidecar
 ```
 
 The standalone listener binds to `127.0.0.1:8000` by default.
@@ -32,27 +34,28 @@ The process refuses to start unless `OPENLEG_MCP_ENABLED=true`. The configured
 origin must contain only a scheme, host and optional port. Requests use the
 fixed API paths, ignore proxy environment variables and never follow redirects. Do not give this process
 database environment variables or the Flask `.env` file.
+Connect to `http://127.0.0.1:8000/mcp` with an `Authorization: Bearer olk_…`
+header on every request. Static mode requires loopback for both processes.
 
-For local Compose development, start the normal application first, then:
+Compose uses OAuth. Register the exact callback URL of your MCP host and
+create an introspection secret, then start Flask with the overlay as well:
 
 ```sh
-OPENLEG_MCP_ENABLED=true docker compose -f docker-compose.yml -f compose.mcp.yml --profile mcp up --build mcp mcp-proxy
+export OPENLEG_MCP_ENABLED=true
+export OPENLEG_OAUTH_INTROSPECTION_SECRET="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+export OPENLEG_OAUTH_CLIENTS='{"host":{"name":"Local MCP host","redirect_uris":["http://localhost:6274/oauth/callback"]}}'
+docker compose -f docker-compose.yml -f compose.mcp.yml --profile mcp up --build flask mcp mcp-proxy
 ```
 
-This adds a loopback-only Caddy endpoint at `http://localhost:8081/mcp`.
-Neither service nor its proxy route exists in the default Compose configuration.
-Stop the two optional services to remove the endpoint.
+Configure your host with client ID `host` and its registered redirect URI.
+Connect to `http://localhost:8081/mcp`. Sign into the dashboard at
+`http://localhost:8081` before approving consent. Caddy routes OAuth discovery,
+authorization and resource metadata through that origin. The sidecar shares
+Flask's network namespace so its internal HTTP connection stays on loopback;
+it receives no database credentials. Keep the introspection secret stable
+across restarts of these services. Stop the optional services to remove MCP.
 
-Connect MCP Inspector with Streamable HTTP to that URL (or
-`http://localhost:8000/mcp` for the Python command). Set its HTTP Authorization
-header to `Bearer ` followed by your existing `olk_` credential. Initialize,
-list tools, then call `list_billing_periods` with your `community_id` and
-optionally `limit`, `cursor` or `status`. Supply the header on every request;
-there is no stored session credential. Keep tokens out of tool arguments.
-
-This is a development tracer, not production agent access. It has no database
-access or OAuth. OAuth replacement is tracked in
-#847; production enablement belongs in `openleg-ops` after the readiness gate.
+Production enablement remains in `openleg-ops` after the #838 readiness gate.
 
 ## Host and Origin validation
 
@@ -182,8 +185,6 @@ Konfiguration der Flask-App:
 - `OPENLEG_OAUTH_ISSUER=https://app.example` (Origin ohne abschliessenden Slash).
 - `OPENLEG_OAUTH_RESOURCE=https://mcp.example/mcp`.
 - `OPENLEG_OAUTH_CLIENTS={"host":{"name":"Mein MCP-Host","redirect_uris":["https://host.example/callback"]}}`.
-- `OPENLEG_OAUTH_DOWNSTREAM_KEY`: separater zufälliger Schlüssel mit mindestens
-  32 Zeichen, nur in der App.
 - `OPENLEG_OAUTH_INTROSPECTION_SECRET`: separater zufälliger Schlüssel mit
   mindestens 32 Zeichen, identisch in App und Sidecar.
 
@@ -196,8 +197,10 @@ Konfiguration des Sidecars:
 - `OPENLEG_OPERATOR_ORIGIN`: HTTPS-Origin der App; HTTP nur auf Loopback.
 - Host- und Origin-Allowlisten wie oben. Keine Datenbankzugangsdaten.
 
-Der Scope besteht aus genau `community:<community_id>` und mindestens einer
-Betreiber-Capability, beispielsweise `community:leg-123 billing.read`.
+Der Host fordert Betreiber-Capabilities an, beispielsweise `billing.read`.
+Die Administration wählt auf der Zustimmungsseite eine ihrer bestätigten LEG
+und die bewilligten Rechte. Optional wählt `community:<community_id>` eine LEG
+vor. Der ausgestellte Scope enthält genau diese LEG und die bestätigten Rechte.
 Der Host schickt diesen Scope, `client_id`, `redirect_uri`, `response_type=code`,
 `state`, `code_challenge`, `code_challenge_method=S256` und `resource` an
 `/oauth/authorize`. Die bestätigte LEG-Administration meldet sich zuerst im
@@ -214,18 +217,23 @@ Das gemeinsame Secret authentifiziert den Sidecar. Die Antwort enthält neben
 Issuer, Audience, Ablauf, Scope und LEG ein separates Downstream-Credential.
 Introspektion vermeidet Signaturschlüssel im Sidecar und prüft Widerruf sofort;
 sie benötigt dafür pro Anfrage einen zusätzlichen HTTP-Aufruf. Das
-Downstream-Credential wird aus Grant-ID und App-Schlüssel per HMAC-SHA256
-abgeleitet. Die Datenbank enthält nur Token-Hashes. Der Betreiber-Client trägt
-`actor_kind=agent` und exakt die bewilligten Capabilities. Rotation oder Widerruf
-dieses Clients sperrt auch die Introspektion. Schlüsselrotation macht bestehende
-Grants unbrauchbar; Schlüssel deshalb persistent und getrennt verwalten.
+Downstream-Credential wird mit SHA-256 und einem eigenen Präfix aus dem
+zufälligen MCP-Zugriffstoken abgeleitet. Die Datenbank speichert nur Hashes.
+Es gibt keinen globalen Ableitungsschlüssel. Ein Grant-ID-Wert reicht nicht,
+um das Credential zu berechnen. Der Betreiber-Client trägt `actor_kind=agent`
+und exakt die bewilligten Capabilities. Das Credential gilt höchstens so lange
+wie der Grant. Codeaustausch, Introspektion und Betreiberzugriff prüfen, dass
+die zustimmende Person weiterhin bestätigte Administration dieser LEG ist.
+Abgelaufene oder widerrufene Grants sind auch mit einem bereits erhaltenen
+Downstream-Credential unbrauchbar. Fehlender Community-Status sperrt den Grant.
 
 Metadaten: App `/.well-known/oauth-authorization-server`
 ([RFC 8414](https://www.rfc-editor.org/rfc/rfc8414.html)); Sidecar
 `/.well-known/oauth-protected-resource` und
 `/.well-known/oauth-protected-resource/mcp`
 ([RFC 9728](https://www.rfc-editor.org/rfc/rfc9728.html)).
-401-Antworten verweisen per `WWW-Authenticate` auf die Ressourcenmetadaten.
+401-Antworten nennen die Capabilities im `scope` des `WWW-Authenticate`-Headers.
+Die Ressourcenmetadaten nennen sie in `scopes_supported`.
 Die Ressourcenbindung folgt
 [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707.html).
 

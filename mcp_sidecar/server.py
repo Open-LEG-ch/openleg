@@ -317,6 +317,17 @@ def create_app():
         }:
             raise ValueError("Introspection requires HTTPS or loopback HTTP")
     resource_url = urlsplit(resource)
+    spec = yaml.safe_load(
+        (Path(__file__).parents[1] / "docs/openapi/operator-v1.yaml").read_text()
+    )
+    supported_scopes = sorted(
+        {
+            op["x-openleg-capability"]
+            for item in spec["paths"].values()
+            for op in item.values()
+            if isinstance(op, dict) and "x-openleg-capability" in op
+        }
+    )
     metadata_url = f"{resource_url.scheme}://{resource_url.netloc}/.well-known/oauth-protected-resource"
     server = Server("openleg-mcp")
     previews = preview_operations()
@@ -857,6 +868,8 @@ def create_app():
                         headers={
                             "WWW-Authenticate": 'Bearer resource_metadata="'
                             + metadata_url
+                            + '", scope="'
+                            + " ".join(supported_scopes)
                             + '"',
                             "Cache-Control": "no-store",
                         },
@@ -871,6 +884,7 @@ def create_app():
                 "resource": resource,
                 "authorization_servers": [issuer],
                 "bearer_methods_supported": ["header"],
+                "scopes_supported": supported_scopes,
             }
         )
 

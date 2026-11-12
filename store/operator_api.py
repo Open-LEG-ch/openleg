@@ -135,7 +135,9 @@ def get_client_by_token_hash(token_hash):
             (token_hash,),
         )
         row = cur.fetchone()
-        return dict(row) if row else None
+    from store.oauth import credential_grant_valid
+
+    return dict(row) if row and credential_grant_valid(row["id"]) else None
 
 
 def list_clients(community_id):

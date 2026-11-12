@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from flask import Flask
 
+from operator_api import CAPABILITIES
+
 
 def test_metadata():
     from oauth_server import oauth_bp
@@ -65,10 +67,12 @@ def test_sidecar_requires_oauth_and_publishes_metadata(monkeypatch):
                 },
                 format_checker=FormatChecker(),
             ).validate(r.json())
+            assert r.json()["scopes_supported"] == sorted(CAPABILITIES)
             assert r.json()["resource"] == "https://mcp.example/mcp"
             assert r.json()["authorization_servers"] == ["https://auth.example"]
             r = await c.post("/mcp", headers={"Authorization": "Bearer olk_static"})
             assert r.status_code == 401
+            assert 'scope="' in r.headers["www-authenticate"]
             assert (
                 'resource_metadata="https://mcp.example/.well-known/oauth-protected-resource"'
                 in r.headers["www-authenticate"]
@@ -202,3 +206,25 @@ def test_oauth_secrets_redacted(caplog):
         )
     assert all(secret not in caplog.text for secret in secrets)
     assert "introspection_secret" not in caplog.text
+
+
+def test_compose_oauth_configuration():
+    from pathlib import Path
+
+    import yaml
+
+    config = yaml.safe_load(Path("compose.mcp.yml").read_text())["services"]
+    env = config["mcp"]["environment"]
+    assert env["OPENLEG_OAUTH_ISSUER"] == "http://localhost:8081"
+    assert env["OPENLEG_MCP_RESOURCE"] == "http://localhost:8081/mcp"
+    assert env["OPENLEG_OAUTH_INTROSPECTION_SECRET"]
+    assert env["OPENLEG_OPERATOR_ORIGIN"] == "http://127.0.0.1:5000"
+    assert config["mcp"]["network_mode"] == "service:flask"
+    assert config["flask"]["environment"]["OPENLEG_OAUTH_CLIENTS"]
+    routes = Path("Caddyfile.mcp").read_text()
+    for path in (
+        "/.well-known/oauth-protected-resource*",
+        "/.well-known/oauth-authorization-server",
+        "/oauth/*",
+    ):
+        assert path in routes

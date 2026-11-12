@@ -18351,3 +18351,10 @@ msgstr "Zahlungsabgleiche lesen"
 #: oauth_server.py
 msgid "Zahlungsabgleiche bestätigen"
 msgstr "Zahlungsabgleiche bestätigen"
+
+
+msgid "LEG auswählen"
+msgstr "LEG auswählen"
+
+msgid "Rechte auswählen"
+msgstr "Rechte auswählen"

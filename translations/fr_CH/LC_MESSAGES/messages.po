@@ -19281,3 +19281,10 @@ msgstr "Consulter les rapprochements des paiements"
 #: oauth_server.py
 msgid "Zahlungsabgleiche bestätigen"
 msgstr "Confirmer les rapprochements des paiements"
+
+
+msgid "LEG auswählen"
+msgstr "Choisir la CEL"
+
+msgid "Rechte auswählen"
+msgstr "Choisir les droits"

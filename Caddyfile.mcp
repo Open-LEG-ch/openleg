@@ -1,11 +1,16 @@
 # Loaded only by the optional local mcp-proxy service.
 :8081 {
-    handle /mcp {
-        reverse_proxy mcp:8000 {
+    @mcp path /mcp /.well-known/oauth-protected-resource*
+    handle @mcp {
+        reverse_proxy flask:8000 {
             header_up X-Real-IP {http.request.remote.host}
         }
     }
+    @oauth path /oauth/* /.well-known/oauth-authorization-server
+    handle @oauth {
+        reverse_proxy flask:5000
+    }
     handle {
-        respond 404
+        reverse_proxy flask:5000
     }
 }
