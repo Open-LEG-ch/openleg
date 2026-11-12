@@ -1,5 +1,9 @@
 # Operator operations API v1
 
+The authoritative machine-readable contract for MCP and CLI consumers is
+[operator-v1.yaml](openapi/operator-v1.yaml). Route coverage and PostgreSQL-backed
+HTTP response tests check it against the running operator blueprint.
+
 All endpoints use `Authorization: Bearer …`, are scoped by the community in the
 path, and return `schema_version: operator-api/1`. A credential needs the
 matching `*.read` or `*.mutate` capability. Cross-community access returns 404.
@@ -14,9 +18,16 @@ Collections are available below
 - `GET /payments/matches`
 
 Metering, billing, and payment collections accept `status`, `limit` (1–100),
-and an opaque `cursor`; responses contain `items` and `next_cursor`. Replaying a mutation with the same
-`Idempotency-Key` and the same payload returns the stored result with
-`replayed: true`; reusing a key with a different payload is a `409` conflict.
+and an opaque `cursor`; responses contain `items` and `next_cursor`.
+
+Replay works in two ways. The metering retry, invoice case response and
+payment confirmation read `Idempotency-Key`: replaying the same key with the
+same payload returns the stored result with `replayed: true`, and reusing a
+key with a different payload is a `409` conflict. Formation submissions and
+membership mutations ignore that header: a formation submission deduplicates
+by its canonical payload fingerprint, and a membership mutation by its
+`mutation_id`. Retry a membership mutation with the same `mutation_id`; a new
+`mutation_id` creates a new mutation.
 
 Read items expose only the fields listed below. Fields absent from a store row
 are omitted; null values remain null. New store columns are not exposed
@@ -101,7 +112,6 @@ Example membership request:
 ```http
 POST /api/operator/v1/communities/leg-1/membership-mutations
 Authorization: Bearer olk_…
-Idempotency-Key: mutation-2026-10-01-building-7
 Content-Type: application/json
 
 {"mutation_id":"member-2026-1","participant_id":"building-7","mutation_type":"join","effective_date":"2026-10-01","source_agreement_id":"agreement-v3"}
@@ -111,8 +121,11 @@ Content-Type: application/json
 
 Every credential carries an hourly request budget (`rate_limit_per_hour`).
 The HTTP boundary rejects a request once the budget is spent with
-`429` and `Retry-After: 3600`; the window resets one hour after the first
-counted request. Revoking or rotating a credential takes effect immediately on
+`429`, `Retry-After: 3600` and the operator error body (`error`,
+`schema_version`); the window resets one hour after the first counted request.
+The application-wide per-address limit can also answer `429`, with
+`Retry-After: 60` and a body of `error` and `retry_after_seconds`; the
+contract describes both bodies. Revoking or rotating a credential takes effect immediately on
 the next request: revoked credentials answer `401`, rotated ones invalidate the
 previous token.
 
