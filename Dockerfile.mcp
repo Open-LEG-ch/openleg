@@ -5,5 +5,6 @@ COPY requirements-mcp.txt .
 RUN pip install --no-cache-dir -r requirements-mcp.txt
 COPY mcp_sidecar/ mcp_sidecar/
 COPY docs/openapi/operator-v1.yaml docs/openapi/operator-v1.yaml
+COPY docs/openapi/public-v1.json docs/openapi/public-v1.json
 USER 65534:65534
 CMD ["python", "-m", "mcp_sidecar"]

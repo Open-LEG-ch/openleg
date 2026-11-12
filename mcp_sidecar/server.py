@@ -24,6 +24,7 @@ from starlette.applications import Starlette
 from starlette.routing import Route
 
 from mcp_sidecar.payment import payment_tool
+from mcp_sidecar.public import public_operations
 
 
 def redact_transport_logs():
@@ -296,6 +297,7 @@ def create_app():
                 "Agent credentials return awaiting_confirmation and a dashboard confirmation URL.",
             ),
         )
+    public = public_operations()
 
     @server.list_tools()
     async def list_tools():
@@ -349,6 +351,8 @@ def create_app():
                 ),
                 payment,
             ]
+            # Anonymous public API tools carry no capability metadata.
+            + [entry[2] for entry in public.values()]
         )
 
     error_schema = yaml.safe_load(
@@ -367,6 +371,42 @@ def create_app():
 
     @server.call_tool(validate_input=False)
     async def call_tool(name, arguments):
+        if name in public:
+            public_path, path_parameters, tool = public[name]
+            if not Draft202012Validator(tool.inputSchema).is_valid(arguments):
+                return error("invalid_arguments")
+            # Only integer BFS path parameters are selected by this contract.
+            # Query values are encoded by httpx, never interpolated into URLs.
+            try:
+                async with httpx.AsyncClient(
+                    follow_redirects=False, trust_env=False, timeout=10
+                ) as client:
+                    response = await client.get(
+                        origin + public_path.format(**arguments),
+                        params={
+                            k: v
+                            for k, v in arguments.items()
+                            if k not in path_parameters
+                        },
+                    )
+                if response.status_code == 429:
+                    result = error("rate_limited", retryable=True)
+                    retry = response.headers.get("Retry-After", "")
+                    if re.fullmatch(r"[0-9]{1,10}", retry):
+                        result.structuredContent["retry_after"] = int(retry)
+                    return result
+                if response.status_code != 200:
+                    return error(
+                        {
+                            400: "invalid_arguments",
+                            404: "not_found",
+                        }.get(response.status_code, "public_error")
+                    )
+                return response.json()
+            except httpx.HTTPError:
+                return error("public_unavailable", retryable=True)
+            except (ValueError, KeyError, TypeError):
+                return error("public_unavailable")
         # Do not echo SDK validation exceptions: they contain caller input.
         preview = previews.get(name)
         op = reads.get(name)
