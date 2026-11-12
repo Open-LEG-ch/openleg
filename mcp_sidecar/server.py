@@ -375,6 +375,15 @@ def create_app():
             public_path, path_parameters, tool = public[name]
             if not Draft202012Validator(tool.inputSchema).is_valid(arguments):
                 return error("invalid_arguments")
+            # JSON Schema accepts 261.0 as an integer; send it upstream as 261.
+            properties = tool.inputSchema.get("properties", {})
+            arguments = {
+                key: int(value)
+                if properties.get(key, {}).get("type") == "integer"
+                and isinstance(value, float)
+                else value
+                for key, value in arguments.items()
+            }
             # Only integer BFS path parameters are selected by this contract.
             # Query values are encoded by httpx, never interpolated into URLs.
             try:

@@ -256,3 +256,39 @@ def test_public_redirect_is_not_followed(public_app, monkeypatch):
                 assert seen == ["/api/v1/municipalities"]
 
         asyncio.run(check())
+
+
+def test_integral_floats_keep_their_integer_meaning(public_app, monkeypatch):
+    """JSON Schema accepts 261.0 as an integer; upstream must still see 261."""
+    app = public_app
+    from flask import request
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    seen = []
+
+    @app.before_request
+    def record():
+        seen.append(request.full_path.rstrip("?"))
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    with operator_server(app) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        sidecar = create_app()
+
+        async def check():
+            async with (
+                sidecar.router.lifespan_context(sidecar),
+                session(sidecar) as sdk,
+            ):
+                as_float = await sdk.call_tool("get_municipalities_bfs", {"bfs": 261.0})
+                as_int = await sdk.call_tool("get_municipalities_bfs", {"bfs": 261})
+                assert not as_float.isError
+                assert as_float.structuredContent == as_int.structuredContent
+                await sdk.call_tool("get_tariffs", {"year": 2025.0})
+
+        asyncio.run(check())
+
+    assert seen[0] == "/api/v1/municipalities/261"
+    assert seen[-1] == "/api/v1/tariffs?year=2025"
