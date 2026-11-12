@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Contract tests for public CI workflow shape."""
 
+import json
+import os
 import re
+import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -103,6 +107,7 @@ def test_workflow_set_changes_require_contract_review():
         "image.yml",
         "lint.yml",
         "announce-release.yml",
+        "release-announcement-watchdog.yml",
         "secret-scan.yml",
     }
 
@@ -205,3 +210,210 @@ def test_release_image_is_immutable_and_attested():
     assert "RUN test -f /app/app.py" in dockerfile
     assert "test -f /app/templates/dashboard.html" in dockerfile
     assert "test -f /app/static/css/openleg.css" in dockerfile
+
+
+def test_release_announcement_watchdog_contract():
+    text = (WORKFLOWS_DIR / "release-announcement-watchdog.yml").read_text(
+        encoding="utf-8"
+    )
+    data = yaml.safe_load(text)
+    on = _on_section(data)
+    assert set(on) == {"push", "release", "schedule", "workflow_dispatch"}
+    assert on["schedule"] == [{"cron": "17 * * * *"}]
+    assert data["permissions"] == {
+        "contents": "read",
+        "discussions": "read",
+        "issues": "write",
+    }
+    assert on["push"] == {"branches": ["main"]}
+    assert on["release"]["types"] == ["published", "edited", "unpublished", "deleted"]
+    assert data["concurrency"] == {
+        "group": "release-announcement-watchdog",
+        "cancel-in-progress": False,
+    }
+    for job in data["jobs"].values():
+        assert "permissions" not in job
+        for step in job["steps"]:
+            assert "${{" not in step.get("run", "")
+    script = data["jobs"]["watchdog"]["steps"][0]["run"]
+    assert script.startswith("set -euo pipefail")
+    assert "https://openleg.ch/health" in script
+    assert "--max-time" in script
+    assert "--retry 2" in script
+    assert ".release.tag" in script
+    assert "releases/tags/${tag}" in script
+    assert "<!-- openleg-release:${RELEASE_ID} -->" in script
+    assert 'select(.slug == "announcements" or .name == "Ankündigungen")' in script
+    assert 'owner="${owner}"' in script
+    assert 'name="${name}"' in script
+    assert "discussions(first: 100, after: $after, categoryId: $categoryId)" in script
+    assert "pageInfo { hasNextPage endCursor }" in script
+    assert 'pagination_args=(-f after="${after}")' in script
+    assert "pageInfo.hasNextPage" in script
+    assert "pageInfo.endCursor" in script
+    assert "GITHUB_STEP_SUMMARY" in script
+    assert "<!-- openleg-release-watchdog -->" in script
+    assert "state=open" in script
+    assert "gh issue close" in script
+    assert "--comment" in script
+    assert "::error::" in script
+    assert "::warning::" in script
+
+
+@pytest.mark.parametrize(
+    ("scenario", "age", "existing", "status", "action"),
+    [
+        ("unreachable", 10800, "different", 0, ""),
+        ("missing", 10800, "different", 0, ""),
+        ("null", 10800, "different", 0, ""),
+        ("malformed", 10800, "", 5, ""),
+        ("404", 10800, "", 0, "create"),
+        ("draft", 10800, "", 0, "create"),
+        ("api-error", 10800, "", 1, ""),
+        ("no-thread", 1800, "", 0, ""),
+        ("no-thread", 1801, "", 0, "create"),
+        ("bare", 7200, "", 0, ""),
+        ("bare", 7201, "", 0, "create"),
+        ("bare", 10800, "different", 0, "edit"),
+        ("bare", 10800, "same", 0, ""),
+        ("enriched", 10800, "", 0, ""),
+        ("enriched", 10800, "different", 0, "close"),
+    ],
+)
+def test_release_watchdog_script(tmp_path, scenario, age, existing, status, action):
+    """Execute shell with paginated API replies and capture every issue write."""
+    from datetime import datetime, timezone
+
+    workflow = yaml.safe_load(
+        (WORKFLOWS_DIR / "release-announcement-watchdog.yml").read_text()
+    )
+    script = workflow["jobs"]["watchdog"]["steps"][0]["run"]
+    release_url = "https://github.com/Open-LEG-ch/openleg/releases/tag/v0.1.24"
+    thread_url = "https://github.com/Open-LEG-ch/openleg/discussions/743"
+    body = (
+        f"OpenLEG v0.1.24 ist veröffentlicht: {release_url}\n\n"
+        "Fragen, Ideen und die aktuelle Arbeit der Community: "
+        "https://openleg.ch/community\n\n<!-- openleg-release:RE_node -->"
+    )
+    if scenario == "enriched":
+        body += "\nRelease highlights."
+    fixture = {
+        "release": {
+            "draft": scenario == "draft",
+            "html_url": release_url,
+            "node_id": "RE_node",
+            "name": "v0.1.24",
+            "published_at": datetime.fromtimestamp(
+                2000000000 - age, tz=timezone.utc
+            ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        },
+        "thread": {"body": body.replace("\n\n", " \n\t"), "url": thread_url},
+    }
+    (tmp_path / "fixture.json").write_text(json.dumps(fixture))
+    stub = r"""#!/usr/bin/env python3
+import json, os, pathlib, sys
+scenario = os.environ['SCENARIO']
+exe = pathlib.Path(sys.argv[0]).name
+if exe == 'date':
+    print(2000000000)
+    sys.exit(0)
+if exe == 'curl':
+    if scenario == 'unreachable':
+        sys.exit(28)
+    if scenario == 'malformed':
+        print('not json')
+    else:
+        print(json.dumps({} if scenario == 'missing' else {
+            'release': None if scenario == 'null' else {'tag': 'v0.1.24'}
+        }))
+    sys.exit(0)
+args = sys.argv[1:]
+log = pathlib.Path(os.environ['WRITES'])
+if args[0] == 'issue':
+    with log.open('a') as handle:
+        handle.write(json.dumps(args) + '\n')
+    if '--body-file' in args:
+        body = pathlib.Path(args[args.index('--body-file') + 1]).read_text()
+        pathlib.Path(os.environ['LAST_BODY']).write_text(body)
+    sys.exit(0)
+assert args[0] == 'api'
+args = args[1:]
+fixture = json.loads(pathlib.Path(os.environ['FIXTURE']).read_text())
+endpoint = next((arg for arg in args if arg.startswith('repos/')), '')
+if '/issues?' in endpoint:
+    assert 'state=open' in endpoint
+    existing = os.environ['EXISTING']
+    issues = [{'number': 1, 'title': 'unrelated', 'body': 'Other issue'}]
+    if existing:
+        issues.append({'number': 42, 'title': os.environ.get('SAME_TITLE', 'old'),
+                       'body': os.environ.get('SAME_BODY', '<!-- openleg-release-watchdog -->')})
+    print(json.dumps([issues]))
+elif endpoint:
+    if scenario in ('404', 'api-error'):
+        print('gh: Not Found (HTTP 404)' if scenario == '404'
+              else 'gh: Forbidden (HTTP 403)', file=sys.stderr)
+        sys.exit(1)
+    print(json.dumps(fixture['release']))
+elif any('discussionCategories(' in arg for arg in args):
+    print('category_live')
+else:
+    assert 'categoryId=category_live' in args
+    second = 'after=next_page' in args
+    print(json.dumps({'data': {'repository': {'discussions': {
+        'nodes': [fixture['thread']] if second and scenario != 'no-thread' else [],
+        'pageInfo': {'hasNextPage': not second, 'endCursor': 'next_page'}
+    }}}}))
+"""
+    for executable in ("curl", "gh", "date"):
+        path = tmp_path / executable
+        path.write_text(stub)
+        path.chmod(0o755)
+    summary = tmp_path / "summary"
+    writes = tmp_path / "writes"
+    last_body = tmp_path / "body"
+    env = {
+        **os.environ,
+        "PATH": f"{tmp_path}:{os.environ['PATH']}",
+        "SCENARIO": scenario,
+        "EXISTING": existing,
+        "FIXTURE": str(tmp_path / "fixture.json"),
+        "WRITES": str(writes),
+        "LAST_BODY": str(last_body),
+        "GITHUB_REPOSITORY": "Open-LEG-ch/openleg",
+        "GITHUB_STEP_SUMMARY": str(summary),
+    }
+    if existing == "same":
+        seed = subprocess.run(
+            ["bash", "-c", script],
+            env={**env, "EXISTING": ""},
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert seed.returncode == 0, seed.stderr
+        call = json.loads(writes.read_text().splitlines()[0])
+        env["SAME_TITLE"] = call[call.index("--title") + 1]
+        env["SAME_BODY"] = last_body.read_text()
+        writes.unlink()
+    result = subprocess.run(
+        ["bash", "-c", script], env=env, capture_output=True, text=True, timeout=10
+    )
+    assert result.returncode == status, result.stderr
+    calls = (
+        [json.loads(line) for line in writes.read_text().splitlines()]
+        if writes.exists()
+        else []
+    )
+    assert [call[1] for call in calls] == ([action] if action else [])
+    if action in ("create", "edit"):
+        assert "::warning::" in result.stdout
+        assert "<!-- openleg-release-watchdog -->" in last_body.read_text()
+        assert "v0.1.24" in last_body.read_text()
+    if action == "close":
+        assert "--comment" in calls[0]
+        assert "42" in calls[0]
+    report = summary.read_text()
+    assert all(field in report for field in ("Tag:", "Release:", "Thread:", "Verdict:"))
+    if scenario in ("bare", "enriched"):
+        assert release_url in report
+        assert thread_url in report

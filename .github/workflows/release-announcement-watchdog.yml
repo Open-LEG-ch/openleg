@@ -1,0 +1,199 @@
+name: Release announcement watchdog
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published, edited, unpublished, deleted]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  discussions: read
+  issues: write
+
+concurrency:
+  group: release-announcement-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check production release announcement
+        shell: bash
+        run: |
+          set -euo pipefail
+          owner="${GITHUB_REPOSITORY%/*}"
+          name="${GITHUB_REPOSITORY#*/}"
+          tag="unknown"
+          release_url="unavailable"
+          thread_url="unavailable"
+          verdict="failed: API or response error"
+          summary() {
+            local status=$?
+            if (( status != 0 )); then
+              verdict="failed: API or response error (${status})"
+            fi
+            printf '## Release announcement watchdog\n\nTag: %s\n\nRelease: %s\n\nThread: %s\n\nVerdict: %s\n' \
+              "${tag}" "${release_url}" "${thread_url}" "${verdict}" >> "${GITHUB_STEP_SUMMARY}"
+          }
+          trap summary EXIT
+
+          report() {
+            local gap="$1"
+            local issue_marker="<!-- openleg-release-watchdog -->"
+            local issues issue_number title body current_title current_body body_file
+            # Read open issues directly to avoid search-index delay between runs.
+            issues="$(gh api --paginate --slurp "repos/${owner}/${name}/issues?state=open&per_page=100")"
+            issues="$(jq -c --arg marker "${issue_marker}" '[.[][] | select(has("pull_request") | not) | select((.body // "") | contains($marker))]' <<< "${issues}")"
+            issue_number="$(jq -r '.[0].number // empty' <<< "${issues}")"
+            if [[ -z "${gap}" ]]; then
+              while IFS= read -r number; do
+                gh issue close "${number}" --repo "${GITHUB_REPOSITORY}" --comment "Die Prüfung für ${tag} meldet keine offenen Release- oder Ankündigungslücken."
+              done < <(jq -r '.[].number' <<< "${issues}")
+              return
+            fi
+            echo "::warning::Release announcement gap for ${tag}: ${gap}"
+            title="Release-Ankündigung fehlt: ${tag}"
+            body="${issue_marker}
+
+          Laufende Version: [${tag}](https://github.com/${owner}/${name}/releases/tag/${tag})
+
+          ${gap}"
+            if [[ -n "${issue_number}" ]]; then
+              current_title="$(jq -r '.[0].title' <<< "${issues}")"
+              current_body="$(jq -r '.[0].body' <<< "${issues}")"
+              if [[ "${current_title}" != "${title}" || "${current_body}" != "${body}" ]]; then
+                body_file="$(mktemp)"
+                printf '%s' "${body}" > "${body_file}"
+                gh issue edit "${issue_number}" --repo "${GITHUB_REPOSITORY}" --title "${title}" --body-file "${body_file}"
+                rm -f "${body_file}"
+              fi
+              while IFS= read -r number; do
+                gh issue close "${number}" --repo "${GITHUB_REPOSITORY}" --comment "Diese Meldung wird in #${issue_number} weitergeführt."
+              done < <(jq -r '.[1:][].number' <<< "${issues}")
+            else
+              body_file="$(mktemp)"
+              printf '%s' "${body}" > "${body_file}"
+              gh issue create --repo "${GITHUB_REPOSITORY}" --title "${title}" --body-file "${body_file}"
+              rm -f "${body_file}"
+            fi
+          }
+
+          if ! health="$(curl --fail --silent --show-error --connect-timeout 10 --max-time 20 \
+            --retry 2 --retry-delay 2 --retry-all-errors https://openleg.ch/health)"; then
+            verdict="warning: production health unreachable"
+            echo "::warning::Production health unreachable; release announcement check skipped"
+            exit 0
+          fi
+          # Invalid JSON/schema is a broken check, not an identity rollout.
+          jq -e 'type == "object"' <<< "${health}" > /dev/null
+          if [[ "$(jq -r '.release == null' <<< "${health}")" == "true" ]]; then
+            verdict="warning: production release identity missing or null"
+            echo "::warning::Production release identity missing or null; release announcement check skipped"
+            exit 0
+          fi
+          tag="$(jq -er '.release.tag | select(type == "string" and length > 0)' <<< "${health}")"
+          # ReleaseIdentity accepts only this version tag format.
+          if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            verdict="failed: invalid production release identity"
+            echo "::error::Production release identity has an invalid tag"
+            exit 1
+          fi
+
+          error_file="$(mktemp)"
+          if ! release="$(gh api "repos/${owner}/${name}/releases/tags/${tag}" 2> "${error_file}")"; then
+            if grep -q 'HTTP 404' "${error_file}"; then
+              rm -f "${error_file}"
+              verdict="warning: no published Release"
+              report "- Keine veröffentlichte GitHub Release für ${tag}. Nächster Schritt: [Release-Entwürfe](https://github.com/${owner}/${name}/releases) prüfen und den passenden Entwurf veröffentlichen."
+              exit 0
+            fi
+            cat "${error_file}" >&2
+            rm -f "${error_file}"
+            echo "::error::Could not query GitHub Release for deployed tag ${tag}"
+            exit 1
+          fi
+          rm -f "${error_file}"
+          jq -e 'type == "object" and (.draft | type == "boolean")' <<< "${release}" > /dev/null
+          if [[ "$(jq -r '.draft' <<< "${release}")" != "false" ]]; then
+            verdict="warning: no published Release"
+            report "- Keine veröffentlichte GitHub Release für ${tag}. Nächster Schritt: [Release-Entwürfe](https://github.com/${owner}/${name}/releases) prüfen und den passenden Entwurf veröffentlichen."
+            exit 0
+          fi
+          published_at="$(jq -er '.published_at | fromdateiso8601' <<< "${release}")"
+          age=$(( $(date -u +%s) - published_at ))
+          release_url="$(jq -er '.html_url' <<< "${release}")"
+          RELEASE_ID="$(jq -er '.node_id' <<< "${release}")"
+          RELEASE_NAME="$(jq -r '.name | select(. != "") // empty' <<< "${release}")"
+          RELEASE_NAME="${RELEASE_NAME:-${tag}}"
+          marker="<!-- openleg-release:${RELEASE_ID} -->"
+
+          category_id="$(gh api graphql \
+            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { discussionCategories(first: 100) { nodes { id name slug } } } }' \
+            -f owner="${owner}" \
+            -f name="${name}" \
+            --jq '.data.repository.discussionCategories.nodes[] | select(.slug == "announcements" or .name == "Ankündigungen") | .id' \
+            | head -n 1)"
+          test -n "${category_id}"
+          after=""
+          thread=""
+          while :; do
+            pagination_args=()
+            if [[ -n "${after}" ]]; then
+              pagination_args=(-f after="${after}")
+            fi
+            response="$(gh api graphql \
+              -f query='query($owner: String!, $name: String!, $categoryId: ID!, $after: String) { repository(owner: $owner, name: $name) { discussions(first: 100, after: $after, categoryId: $categoryId) { nodes { body url } pageInfo { hasNextPage endCursor } } } }' \
+              -f owner="${owner}" \
+              -f name="${name}" \
+              -f categoryId="${category_id}" \
+              "${pagination_args[@]}")"
+            jq -e '.data.repository.discussions | (.nodes | type == "array") and (.pageInfo.hasNextPage | type == "boolean")' <<< "${response}" > /dev/null
+            thread="$(jq -c --arg marker "${marker}" 'first(.data.repository.discussions.nodes[] | select(.body | contains($marker))) // empty' <<< "${response}")"
+            if [[ -n "${thread}" ]]; then
+              break
+            fi
+            if [[ "$(jq -r '.data.repository.discussions.pageInfo.hasNextPage' <<< "${response}")" != "true" ]]; then
+              break
+            fi
+            after="$(jq -er '.data.repository.discussions.pageInfo.endCursor' <<< "${response}")"
+            test -n "${after}"
+          done
+          if [[ -z "${thread}" ]]; then
+            if (( age > 1800 )); then
+              verdict="warning: no announcement thread"
+              report "- Ankündigung für [${tag}](${release_url}) fehlt. Nächster Schritt: [announce-release-Lauf](https://github.com/${owner}/${name}/actions/workflows/announce-release.yml) prüfen."
+            else
+              verdict="passed: announcement publication grace period"
+              report ""
+            fi
+            exit 0
+          fi
+
+          thread_url="$(jq -er '.url' <<< "${thread}")"
+          body="OpenLEG ${RELEASE_NAME} ist veröffentlicht: ${release_url}
+
+          Fragen, Ideen und die aktuelle Arbeit der Community: https://openleg.ch/community
+
+          ${marker}"
+          expected="$(printf '%s' "${body}" | tr -d '[:space:]')"
+          actual="$(jq -r '.body' <<< "${thread}" | tr -d '[:space:]')"
+          if [[ "${actual}" == "${expected}" ]]; then
+            if (( age > 7200 )); then
+              verdict="warning: announcement not enriched"
+              report "- [Ankündigung](${thread_url}) für [${tag}](${release_url}) enthält nur den Standardtext. Nächster Schritt: Den Thread mit den Änderungen dieser Version ergänzen."
+            else
+              verdict="passed: announcement enrichment grace period"
+              report ""
+            fi
+            exit 0
+          fi
+          verdict="passed: announcement enriched"
+          report ""
+          printf 'Announcement found for %s: %s\n' "${tag}" "${thread_url}"
