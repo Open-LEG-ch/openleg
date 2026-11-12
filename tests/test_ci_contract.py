@@ -282,7 +282,7 @@ def test_release_announcement_watchdog_contract():
 )
 def test_release_watchdog_script(tmp_path, scenario, age, existing, status, action):
     """Execute shell with paginated API replies and capture every issue write."""
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
 
     workflow = yaml.safe_load(
         (WORKFLOWS_DIR / "release-announcement-watchdog.yml").read_text()
@@ -303,9 +303,9 @@ def test_release_watchdog_script(tmp_path, scenario, age, existing, status, acti
             "html_url": release_url,
             "node_id": "RE_node",
             "name": "v0.1.24",
-            "published_at": datetime.fromtimestamp(
-                2000000000 - age, tz=timezone.utc
-            ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "published_at": datetime.fromtimestamp(2000000000 - age, tz=UTC).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            ),
         },
         "thread": {"body": body.replace("\n\n", " \n\t"), "url": thread_url},
     }
@@ -385,6 +385,7 @@ else:
     if existing == "same":
         seed = subprocess.run(
             ["bash", "-c", script],
+            check=False,
             env={**env, "EXISTING": ""},
             capture_output=True,
             text=True,
@@ -396,7 +397,12 @@ else:
         env["SAME_BODY"] = last_body.read_text()
         writes.unlink()
     result = subprocess.run(
-        ["bash", "-c", script], env=env, capture_output=True, text=True, timeout=10
+        ["bash", "-c", script],
+        check=False,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
     )
     assert result.returncode == status, result.stderr
     calls = (
