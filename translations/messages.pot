@@ -347,6 +347,11 @@ msgstr ""
 msgid "- [Open Source](%(url)s): Architektur, Repos und Datenpipeline"
 msgstr ""
 
+#: templates/llms.txt:36
+#, python-format
+msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
+msgstr ""
+
 #: templates/llms.txt:31
 #, python-format
 msgid "- [Selbst betreiben](%(url)s): Installation auf eigener Hardware"
@@ -464,7 +469,7 @@ msgstr ""
 msgid "10-Jahres-Einsparung"
 msgstr ""
 
-#: templates/api_docs.html:184
+#: templates/api_docs.html:96
 msgid "10-year financial projection"
 msgstr ""
 
@@ -887,23 +892,23 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
-#: templates/api_docs.html:57 templates/api_docs.html:211 templates/api_docs.html:221
+#: templates/api_docs.html:64
 msgid "Address"
 msgstr ""
 
-#: templates/api_docs.html:211
+#: templates/api_docs.html:100
 msgid "Address autocomplete"
 msgstr ""
 
-#: templates/api_docs.html:221
+#: templates/api_docs.html:103
 msgid "Address energy profile"
 msgstr ""
 
-#: templates/api_docs.html:57
+#: templates/api_docs.html:65
 msgid "Address lookup and energy profiles"
 msgstr ""
 
-#: templates/api_docs.html:216
+#: templates/api_docs.html:102
 msgid "Address suggestions"
 msgstr ""
 
@@ -1079,7 +1084,7 @@ msgstr ""
 msgid "Aktueller Snapshot:"
 msgstr ""
 
-#: templates/api_docs.html:120
+#: templates/api_docs.html:84
 msgid "All tariffs"
 msgstr ""
 
@@ -1257,11 +1262,11 @@ msgstr ""
 msgid "Anfangseinlage"
 msgstr ""
 
-#: templates/api_docs.html:233 templates/sandbox/operator.html:30
+#: templates/api_docs.html:109 templates/sandbox/operator.html:30
 msgid "Anfrage ausführen"
 msgstr ""
 
-#: templates/api_docs.html:239
+#: templates/api_docs.html:115
 msgid "Anfrage fehlgeschlagen. Prüfen Sie die Angaben und versuchen Sie es erneut."
 msgstr ""
 
@@ -1273,7 +1278,7 @@ msgstr ""
 msgid "Anfrage nicht möglich"
 msgstr ""
 
-#: templates/api_docs.html:237
+#: templates/api_docs.html:113
 msgid "Anfrage wird ausgeführt…"
 msgstr ""
 
@@ -1285,8 +1290,12 @@ msgstr ""
 msgid "Anfrage zurückziehen"
 msgstr ""
 
-#: templates/api_docs.html:232
+#: templates/api_docs.html:108
 msgid "Anfrageinhalt (JSON)"
+msgstr ""
+
+#: templates/api_docs.html:47
+msgid "Anfragelimit erreicht."
 msgstr ""
 
 #: templates/leg_verzeichnis/detail.html:57
@@ -1433,7 +1442,7 @@ msgstr ""
 msgid "Anträge und Mitglieder filtern"
 msgstr ""
 
-#: templates/api_docs.html:234 templates/leg_billing.html:182 templates/leg_dashboard.html:249
+#: templates/api_docs.html:110 templates/leg_billing.html:182 templates/leg_dashboard.html:249
 #: templates/member_invoice_detail.html:213 templates/sandbox/questions.html:27
 msgid "Antwort"
 msgstr ""
@@ -1454,7 +1463,7 @@ msgstr ""
 msgid "Antwort:"
 msgstr ""
 
-#: templates/api_docs.html:235 templates/member_invoice_detail.html:215
+#: templates/api_docs.html:111 templates/member_invoice_detail.html:215
 msgid "Antworten"
 msgstr ""
 
@@ -1756,7 +1765,7 @@ msgstr ""
 msgid "Automatisch verbucht"
 msgstr ""
 
-#: templates/api_docs.html:206
+#: templates/api_docs.html:99
 msgid "Available templates"
 msgstr ""
 
@@ -1812,7 +1821,7 @@ msgstr ""
 msgid "BFS Regionalporträts für Bevölkerung, Fläche und Dichte"
 msgstr ""
 
-#: templates/api_docs.html:73
+#: templates/api_docs.html:70
 msgid "BFS municipality number"
 msgstr ""
 
@@ -2537,7 +2546,7 @@ msgstr ""
 msgid "Bitte geben Sie Ihre Gemeinde an."
 msgstr ""
 
-#: templates/api_docs.html:246
+#: templates/api_docs.html:122
 msgid "Bitte geben Sie die BFS-Gemeindenummer an."
 msgstr ""
 
@@ -2545,7 +2554,7 @@ msgstr ""
 msgid "Bitte geben Sie ein gültiges Datum ein."
 msgstr ""
 
-#: templates/api_docs.html:251
+#: templates/api_docs.html:127
 msgid "Bitte geben Sie eine Adresse an."
 msgstr ""
 
@@ -2581,7 +2590,7 @@ msgstr ""
 msgid "Bitte geben Sie einen gültigen Jahresverbrauch ein."
 msgstr ""
 
-#: templates/api_docs.html:236
+#: templates/api_docs.html:112
 msgid "Bitte geben Sie gültiges JSON ein."
 msgstr ""
 
@@ -2694,7 +2703,7 @@ msgstr ""
 msgid "Buchungen mit privaten Quellen und bereinigten öffentlichen Angaben"
 msgstr ""
 
-#: templates/api_docs.html:223
+#: templates/api_docs.html:104
 msgid "Building energy profile"
 msgstr ""
 
@@ -2753,7 +2762,7 @@ msgstr ""
 msgid "Cache und kurzfristige technische Zustände."
 msgstr ""
 
-#: templates/api_docs.html:146
+#: templates/api_docs.html:92
 msgid "Calculate LEG value gap"
 msgstr ""
 
@@ -2761,7 +2770,7 @@ msgstr ""
 msgid "Cancelled"
 msgstr ""
 
-#: templates/api_docs.html:64
+#: templates/api_docs.html:67
 msgid "Canton code (e.g. ZH) or all"
 msgstr ""
 
@@ -2785,11 +2794,11 @@ msgstr ""
 msgid "Cloud optional"
 msgstr ""
 
-#: templates/api_docs.html:179
+#: templates/api_docs.html:95
 msgid "Cluster assignments"
 msgstr ""
 
-#: templates/api_docs.html:166
+#: templates/api_docs.html:94
 msgid "Cluster buildings for LEG"
 msgstr ""
 
@@ -3657,7 +3666,7 @@ msgstr ""
 msgid "Die Abrechnungsperiode ist ungültig."
 msgstr ""
 
-#: templates/api_docs.html:252
+#: templates/api_docs.html:128
 msgid "Die Adresse konnte nicht analysiert werden."
 msgstr ""
 
@@ -3878,7 +3887,7 @@ msgid ""
 "der gemäss separater Vollmacht bestimmt wird."
 msgstr ""
 
-#: templates/api_docs.html:250
+#: templates/api_docs.html:126
 msgid "Die Gruppenbildung ist fehlgeschlagen."
 msgstr ""
 
@@ -4220,7 +4229,7 @@ msgstr ""
 msgid "Die Sprache bleibt bis zur nächsten Auswahl erhalten."
 msgstr ""
 
-#: templates/api_docs.html:245
+#: templates/api_docs.html:121
 msgid "Die Suchanfrage muss mindestens 2 Zeichen enthalten."
 msgstr ""
 
@@ -5516,7 +5525,7 @@ msgid ""
 "nötig."
 msgstr ""
 
-#: templates/api_docs.html:79
+#: templates/api_docs.html:73
 msgid "ElCom tariffs"
 msgstr ""
 
@@ -5616,7 +5625,7 @@ msgstr ""
 msgid "Energiewende-Score"
 msgstr ""
 
-#: templates/api_docs.html:96
+#: templates/api_docs.html:78
 msgid "Energy transition score breakdown"
 msgstr ""
 
@@ -5734,6 +5743,10 @@ msgstr ""
 
 #: templates/sandbox/metering.html:67
 msgid "Erfolgreich"
+msgstr ""
+
+#: templates/api_docs.html:48
+msgid "Erfolgreiche Antwort"
 msgstr ""
 
 #: templates/release/sandbox_preview.html:15
@@ -6083,7 +6096,7 @@ msgid ""
 "Solardächer zeigen die Idee der gemeinsamen Stromnutzung."
 msgstr ""
 
-#: templates/api_docs.html:200
+#: templates/api_docs.html:97
 msgid "Financial projections"
 msgstr ""
 
@@ -6546,7 +6559,7 @@ msgstr ""
 msgid "Für einen festen Checkout, den Sie vor Installation und Updates selbst prüfen."
 msgstr ""
 
-#: templates/api_docs.html:249
+#: templates/api_docs.html:125
 msgid "Für jedes Gebäude sind Breiten- und Längengrad erforderlich."
 msgstr ""
 
@@ -6739,7 +6752,7 @@ msgstr ""
 msgid "Gemeinde auswählen"
 msgstr ""
 
-#: municipality.py:185 templates/api_docs.html:242
+#: municipality.py:185 templates/api_docs.html:118
 msgid "Gemeinde nicht gefunden."
 msgstr ""
 
@@ -7151,7 +7164,7 @@ msgstr ""
 msgid "Gesprächssprache"
 msgstr ""
 
-#: templates/api_docs.html:72
+#: templates/api_docs.html:69
 msgid "Get municipality profile"
 msgstr ""
 
@@ -8492,11 +8505,11 @@ msgstr ""
 msgid "Kein Geschäftsmodell"
 msgstr ""
 
-#: templates/api_docs.html:247
+#: templates/api_docs.html:123
 msgid "Kein H4-Tarif gefunden."
 msgstr ""
 
-#: templates/api_docs.html:244
+#: templates/api_docs.html:120
 msgid "Kein H4-Tarif gefunden. Aktualisieren Sie zuerst die Daten."
 msgstr ""
 
@@ -8691,7 +8704,7 @@ msgstr ""
 msgid "Keine Snapshots"
 msgstr ""
 
-#: templates/api_docs.html:243
+#: templates/api_docs.html:119
 msgid "Keine Solardaten gefunden."
 msgstr ""
 
@@ -8789,6 +8802,10 @@ msgstr ""
 
 #: templates/dashboard.html:81
 msgid "Kennzahlen"
+msgstr ""
+
+#: templates/api_docs.html:49
+msgid "Kennzahlen der Startseite"
 msgstr ""
 
 #: templates/release/community.html:9
@@ -9053,8 +9070,7 @@ msgid ""
 "Schweiz"
 msgstr ""
 
-#: templates/api_docs.html:56 templates/api_docs.html:146 templates/api_docs.html:166
-#: templates/api_docs.html:184 templates/api_docs.html:205
+#: templates/api_docs.html:62
 msgid "LEG Toolkit"
 msgstr ""
 
@@ -9078,7 +9094,7 @@ msgstr ""
 msgid "LEG beim Netzbetreiber anmelden"
 msgstr ""
 
-#: templates/api_docs.html:205
+#: templates/api_docs.html:98
 msgid "LEG contract templates"
 msgstr ""
 
@@ -9094,7 +9110,7 @@ msgstr ""
 msgid "LEG ermöglichen."
 msgstr ""
 
-#: templates/api_docs.html:56
+#: templates/api_docs.html:63
 msgid "LEG formation tools: value-gap, clustering, financial model"
 msgstr ""
 
@@ -9156,7 +9172,7 @@ msgstr ""
 msgid "LEG und beauftragter Betriebsdienst"
 msgstr ""
 
-#: templates/api_docs.html:103
+#: templates/api_docs.html:80
 msgid "LEG value-gap analysis"
 msgstr ""
 
@@ -9276,7 +9292,7 @@ msgstr ""
 msgid "LEG-Vertretung und gewählter Betriebsdienst"
 msgstr ""
 
-#: templates/admin/ops.html:36 templates/fuer_gemeinden.html:107
+#: templates/admin/ops.html:36 templates/api_docs.html:50 templates/fuer_gemeinden.html:107
 #: templates/leg_verzeichnis/detail.html:57 templates/leg_verzeichnis/leg_check.html:66
 #: templates/release/navigation.html:8
 msgid "LEG-Verzeichnis"
@@ -9284,6 +9300,10 @@ msgstr ""
 
 #: templates/leg_verzeichnis/liste.html:3
 msgid "LEG-Verzeichnis: Lokale Elektrizitätsgemeinschaften in der Schweiz | OpenLEG"
+msgstr ""
+
+#: templates/api_docs.html:51
+msgid "LEG-Verzeichniseintrag"
 msgstr ""
 
 #: templates/leg_dashboard.html:249
@@ -9500,11 +9520,11 @@ msgstr ""
 msgid "Link teilen, Interessierte sammeln"
 msgstr ""
 
-#: templates/api_docs.html:62
+#: templates/api_docs.html:66
 msgid "List all municipalities"
 msgstr ""
 
-#: templates/api_docs.html:67
+#: templates/api_docs.html:68
 msgid "List of municipality profiles"
 msgstr ""
 
@@ -9681,7 +9701,7 @@ msgstr ""
 msgid "Manuelle Übergabe bereit"
 msgstr ""
 
-#: templates/api_docs.html:139
+#: templates/api_docs.html:89
 msgid "Max number of results"
 msgstr ""
 
@@ -9960,7 +9980,7 @@ msgstr ""
 msgid "Mieter/in"
 msgstr ""
 
-#: templates/api_docs.html:248
+#: templates/api_docs.html:124
 msgid "Mindestens 2 Gebäude sind erforderlich."
 msgstr ""
 
@@ -10164,18 +10184,15 @@ msgstr ""
 msgid "Monate"
 msgstr ""
 
-#: templates/api_docs.html:55 templates/api_docs.html:62 templates/api_docs.html:72
-#: templates/api_docs.html:79 templates/api_docs.html:89 templates/api_docs.html:96
-#: templates/api_docs.html:103 templates/api_docs.html:115 templates/api_docs.html:125
-#: templates/api_docs.html:136
+#: templates/api_docs.html:60
 msgid "Municipalities"
 msgstr ""
 
-#: templates/api_docs.html:55
+#: templates/api_docs.html:61
 msgid "Municipality energy profiles and data"
 msgstr ""
 
-#: templates/api_docs.html:74
+#: templates/api_docs.html:71
 msgid "Municipality profile"
 msgstr ""
 
@@ -10499,7 +10516,7 @@ msgstr ""
 msgid "Netzwerkfehler."
 msgstr ""
 
-#: templates/api_docs.html:238 templates/partials/address_intake.html:123
+#: templates/api_docs.html:114 templates/partials/address_intake.html:123
 #: templates/utility/register.html:154
 msgid "Netzwerkfehler. Bitte erneut versuchen."
 msgstr ""
@@ -10627,11 +10644,11 @@ msgstr ""
 msgid "Nidwalden"
 msgstr ""
 
-#: templates/api_docs.html:110
+#: templates/api_docs.html:82
 msgid "No H4 tariff"
 msgstr ""
 
-#: templates/admin/ops.html:180 templates/api_docs.html:91
+#: templates/admin/ops.html:180 templates/api_docs.html:77
 msgid "No data"
 msgstr ""
 
@@ -10789,7 +10806,7 @@ msgstr ""
 msgid "Noch unbezahlte Verpflichtungen"
 msgstr ""
 
-#: templates/api_docs.html:74
+#: templates/api_docs.html:72
 msgid "Not found"
 msgstr ""
 
@@ -11068,20 +11085,11 @@ msgstr ""
 msgid "Open-source Infrastruktur für Schweizer LEG"
 msgstr ""
 
-#: templates/api_docs.html:50
-msgid ""
-"Open-source Swiss energy data API. Aggregates public government data (ElCom tariffs, Sonnendach "
-"solar potential, Energie Reporter) into clean, queryable endpoints. Plus LEG formation toolkit.\n"
-"\n"
-"All endpoints return JSON. No authentication required. Rate limited to 60 requests/minute per IP."
-"\n"
-"\n"
-"**Data Sources:** ElCom (LINDAS SPARQL), BFE Sonnendach, Energie Reporter, Swisstopo\n"
-"\n"
-"**License:** Open data, DSG-compliant. No PII."
+#: templates/api_docs.html:52
+msgid "OpenAPI-Vertrag"
 msgstr ""
 
-#: templates/api_docs.html:51 templates/fuer_bewohner.html:23 templates/how-it-works.html:23
+#: templates/api_docs.html:58 templates/fuer_bewohner.html:23 templates/how-it-works.html:23
 #: templates/index.html:25 templates/index.html:36 templates/leg_kalkulator.html:24
 #: templates/pricing.html:23
 msgid "OpenLEG"
@@ -11121,7 +11129,7 @@ msgstr ""
 msgid "OpenLEG Modellrechnung"
 msgstr ""
 
-#: templates/api_docs.html:48
+#: templates/api_docs.html:57
 msgid "OpenLEG Public API"
 msgstr ""
 
@@ -11463,7 +11471,7 @@ msgstr ""
 msgid "PLZ"
 msgstr ""
 
-#: templates/api_docs.html:214
+#: templates/api_docs.html:101
 msgid "PLZ range e.g. 8000-8999"
 msgstr ""
 
@@ -11502,7 +11510,7 @@ msgstr ""
 msgid "Panel-Jahr"
 msgstr ""
 
-#: templates/api_docs.html:230
+#: templates/api_docs.html:106
 msgid "Parameter"
 msgstr ""
 
@@ -11741,7 +11749,7 @@ msgid ""
 "Dorf. Sie brauchen keine persönlichen Angaben."
 msgstr ""
 
-#: templates/api_docs.html:53
+#: templates/api_docs.html:59
 msgid "Production"
 msgstr ""
 
@@ -12206,7 +12214,7 @@ msgstr ""
 msgid "Quellvertrag"
 msgstr ""
 
-#: templates/api_docs.html:141
+#: templates/api_docs.html:91
 msgid "Query too short"
 msgstr ""
 
@@ -12246,11 +12254,11 @@ msgstr ""
 msgid "Rangliste ansehen"
 msgstr ""
 
-#: templates/api_docs.html:131
+#: templates/api_docs.html:86
 msgid "Ranked list"
 msgstr ""
 
-#: templates/api_docs.html:125
+#: templates/api_docs.html:85
 msgid "Ranked municipalities"
 msgstr ""
 
@@ -12634,7 +12642,7 @@ msgid ""
 "digitales Display (keine Drehscheibe)."
 msgstr ""
 
-#: templates/api_docs.html:231
+#: templates/api_docs.html:107
 msgid "Schema"
 msgstr ""
 
@@ -12716,19 +12724,19 @@ msgstr ""
 msgid "Score"
 msgstr ""
 
-#: templates/api_docs.html:98
+#: templates/api_docs.html:79
 msgid "Score with component breakdown"
 msgstr ""
 
-#: templates/api_docs.html:136
+#: templates/api_docs.html:87
 msgid "Search municipalities"
 msgstr ""
 
-#: templates/api_docs.html:138
+#: templates/api_docs.html:88
 msgid "Search query (min 2 chars)"
 msgstr ""
 
-#: templates/api_docs.html:141
+#: templates/api_docs.html:90
 msgid "Search results"
 msgstr ""
 
@@ -13203,7 +13211,7 @@ msgstr ""
 msgid "Softwarelizenz"
 msgstr ""
 
-#: templates/api_docs.html:91
+#: templates/api_docs.html:76
 msgid "Solar potential data"
 msgstr ""
 
@@ -13266,7 +13274,7 @@ msgstr ""
 msgid "Solarnutzung:"
 msgstr ""
 
-#: templates/gemeinde/rangliste.html:18 templates/index.html:329
+#: templates/api_docs.html:53 templates/gemeinde/rangliste.html:18 templates/index.html:329
 msgid "Solarnutzungs-Rangliste"
 msgstr ""
 
@@ -13302,7 +13310,7 @@ msgstr ""
 msgid "Solothurn"
 msgstr ""
 
-#: templates/api_docs.html:89
+#: templates/api_docs.html:75
 msgid "Sonnendach solar data"
 msgstr ""
 
@@ -13681,11 +13689,11 @@ msgstr ""
 msgid "Tarife, Verbrauch und lokale Produktion prüfen."
 msgstr ""
 
-#: templates/api_docs.html:84
+#: templates/api_docs.html:74
 msgid "Tariff records"
 msgstr ""
 
-#: templates/api_docs.html:115
+#: templates/api_docs.html:83
 msgid "Tariffs across municipalities"
 msgstr ""
 
@@ -13994,6 +14002,10 @@ msgstr ""
 msgid "Ungültige Anfrage"
 msgstr ""
 
+#: templates/api_docs.html:54
+msgid "Ungültige Anfrage oder keine Daten verfügbar."
+msgstr ""
+
 #: security_utils.py:87
 msgid "Ungültige E-Mail-Adresse."
 msgstr ""
@@ -14130,11 +14142,11 @@ msgstr ""
 msgid "VNB-Status"
 msgstr ""
 
-#: templates/api_docs.html:161
+#: templates/api_docs.html:93
 msgid "Value-gap analysis"
 msgstr ""
 
-#: templates/api_docs.html:110
+#: templates/api_docs.html:81
 msgid "Value-gap calculation"
 msgstr ""
 
@@ -14463,8 +14475,12 @@ msgstr ""
 msgid "Verwenden Sie nichtnegative CHF-Beträge mit Punkt und höchstens zwei Nachkommastellen."
 msgstr ""
 
-#: templates/api_docs.html:241
+#: templates/api_docs.html:117
 msgid "Verzeichniseintrag nicht gefunden."
+msgstr ""
+
+#: templates/api_docs.html:55
+msgid "Veränderung der Solarnutzung"
 msgstr ""
 
 #: templates/sandbox/home.html:43
@@ -16411,6 +16427,10 @@ msgstr ""
 
 #: templates/release/homepage.html:127
 msgid "Öffentliche Energie- und Solardaten zeigen, wo Ihre Gemeinde steht."
+msgstr ""
+
+#: templates/api_docs.html:56
+msgid "Öffentliche Schweizer Energiedaten und LEG-Werkzeuge. Ohne Anmeldung; Anfragen sind limitiert."
 msgstr ""
 
 #: templates/verein/events.html:11
