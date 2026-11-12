@@ -274,6 +274,7 @@ def test_release_announcement_watchdog_contract():
         ("no-thread", 1801, "", 0, "create"),
         ("bare", 7200, "", 0, ""),
         ("bare", 7201, "", 0, "create"),
+        ("renamed", 10800, "", 0, "create"),
         ("bare", 10800, "different", 0, "edit"),
         ("bare", 10800, "same", 0, ""),
         ("enriched", 10800, "", 0, ""),
@@ -302,12 +303,16 @@ def test_release_watchdog_script(tmp_path, scenario, age, existing, status, acti
             "draft": scenario == "draft",
             "html_url": release_url,
             "node_id": "RE_node",
-            "name": "v0.1.24",
+            "name": "Renamed release" if scenario == "renamed" else "v0.1.24",
             "published_at": datetime.fromtimestamp(2000000000 - age, tz=UTC).strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             ),
         },
-        "thread": {"body": body.replace("\n\n", " \n\t"), "url": thread_url},
+        "thread": {
+            "title": "Neue Version: v0.1.24",
+            "body": body.replace("\n\n", " \n\t"),
+            "url": thread_url,
+        },
     }
     (tmp_path / "fixture.json").write_text(json.dumps(fixture))
     stub = r"""#!/usr/bin/env python3

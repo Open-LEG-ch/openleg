@@ -149,7 +149,7 @@ jobs:
               pagination_args=(-f after="${after}")
             fi
             response="$(gh api graphql \
-              -f query='query($owner: String!, $name: String!, $categoryId: ID!, $after: String) { repository(owner: $owner, name: $name) { discussions(first: 100, after: $after, categoryId: $categoryId) { nodes { body url } pageInfo { hasNextPage endCursor } } } }' \
+              -f query='query($owner: String!, $name: String!, $categoryId: ID!, $after: String) { repository(owner: $owner, name: $name) { discussions(first: 100, after: $after, categoryId: $categoryId) { nodes { title body url } pageInfo { hasNextPage endCursor } } } }' \
               -f owner="${owner}" \
               -f name="${name}" \
               -f categoryId="${category_id}" \
@@ -177,6 +177,9 @@ jobs:
           fi
 
           thread_url="$(jq -er '.url' <<< "${thread}")"
+          # Existing announcements keep their original title after a Release rename.
+          announced_name="$(jq -r '.title // "" | select(startswith("Neue Version: ")) | ltrimstr("Neue Version: ")' <<< "${thread}")"
+          RELEASE_NAME="${announced_name:-${RELEASE_NAME}}"
           body="OpenLEG ${RELEASE_NAME} ist veröffentlicht: ${release_url}
 
           Fragen, Ideen und die aktuelle Arbeit der Community: https://openleg.ch/community
