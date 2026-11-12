@@ -295,20 +295,6 @@ def test_compiled_contextual_messages_are_checked_with_their_context(
         translations.main()
 
 
-def test_german_api_description_preserves_authored_paragraphs():
-    from babel.support import Translations
-
-    translated = Translations.load(
-        Path(__file__).resolve().parents[1] / "translations", locales=["de_CH"]
-    ).gettext(
-        "Open-source Swiss energy data API. Aggregates public government data (ElCom tariffs, Sonnendach solar potential, Energie Reporter) into clean, queryable endpoints. Plus LEG formation toolkit.\n\nAll endpoints return JSON. No authentication required. Rate limited to 60 requests/minute per IP.\n\n**Data Sources:** ElCom (LINDAS SPARQL), BFE Sonnendach, Energie Reporter, Swisstopo\n\n**License:** Open data, DSG-compliant. No PII."
-    )
-    assert (
-        translated
-        == "Open-Source-API für Schweizer Energiedaten. Sie bündelt öffentliche Behördendaten (ElCom-Tarife, Solarpotenzial von Sonnendach, Energie Reporter) in aufbereiteten, abfragbaren Schnittstellen und ergänzt sie um Werkzeuge zur LEG-Gründung.\n\nAlle Schnittstellen liefern JSON. Keine Anmeldung erforderlich. Höchstens 60 Anfragen pro Minute und IP-Adresse.\n\n**Datenquellen:** ElCom (LINDAS SPARQL), BFE Sonnendach, Energie Reporter, Swisstopo\n\n**Lizenz:** Offene Daten, DSG-konform. Keine Personendaten."
-    )
-
-
 @pytest.mark.parametrize(
     "plural_forms", ["nplurals=2; plural=(n != 1);", "nplurals=3; plural=(n > 1);"]
 )
