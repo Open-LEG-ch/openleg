@@ -23,6 +23,8 @@ from mcp.shared.exceptions import McpError
 from starlette.applications import Starlette
 from starlette.routing import Route
 
+from mcp_sidecar.payment import payment_tool
+
 
 def redact_transport_logs():
     # Process-wide because HTTP transport loggers are created lazily. No token
@@ -268,6 +270,11 @@ def create_app():
         or "#" in origin
     ):
         raise ValueError("Operator origin must contain only scheme, host and port")
+    payment_path, payment = payment_tool(
+        yaml.safe_load(
+            (Path(__file__).parents[1] / "docs/openapi/operator-v1.yaml").read_text()
+        )
+    )
     server = Server("openleg-mcp")
     previews = preview_operations()
 
@@ -319,6 +326,7 @@ def create_app():
                         "x-openleg-operation-id": case_op["operationId"],
                     },
                 ),
+                payment,
             ]
         )
 
@@ -342,8 +350,15 @@ def create_app():
         preview = previews.get(name)
         op = reads.get(name)
         respond = name == "respond_invoice_case"
+        confirm = name == "confirm_payment_match"
         input_schema = (
-            case_schema if respond else preview[2] if preview else op and op["schema"]
+            case_schema
+            if respond
+            else payment.inputSchema
+            if confirm
+            else preview[2]
+            if preview
+            else op and op["schema"]
         )
         if not input_schema or not Draft202012Validator(input_schema).is_valid(
             arguments
@@ -379,6 +394,21 @@ def create_app():
                             else "false"
                         },
                         json={k: arguments[k] for k in ("message", "status")},
+                        headers={
+                            "Authorization": authorization,
+                            "Idempotency-Key": arguments["idempotency_key"],
+                        },
+                    )
+                elif confirm:
+                    response = await client.post(
+                        origin
+                        + payment_path.format(
+                            community_id=community, entry_id=arguments["entry_id"]
+                        ),
+                        params={
+                            "dry_run": str(arguments.get("dry_run", False)).lower()
+                        },
+                        json={"invoice_id": arguments["invoice_id"]},
                         headers={
                             "Authorization": authorization,
                             "Idempotency-Key": arguments["idempotency_key"],
@@ -432,7 +462,16 @@ def create_app():
                     text={403: "forbidden"}.get(response.status_code),
                 )
             body = response.json()
-            if respond:
+            if confirm:
+                result = {
+                    key: body[key]
+                    for key in (
+                        ("dry_run", "eligible", "invoice_id", "lifecycle_state")
+                        if body.get("dry_run") is True
+                        else ("id", "match_decision", "event_id", "replayed")
+                    )
+                }
+            elif respond:
                 fields = (
                     ("id", "previous_status", "status", "dry_run")
                     if arguments.get("dry_run")

@@ -1126,7 +1126,9 @@ def _finalize_bank_payment(cur, invoice, entry, community_id, actor_id, key):
     invoice["lifecycle_state"] = new_state
 
 
-def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
+def confirm_payment(
+    entry_id, invoice_id, community_id, actor_id, key, *, dry_run=False
+):
     """Review an entry using the same acceptance and audit funnel as import."""
     action = f"payment.confirm:{entry_id}"
     fingerprint = operator_operations.request_hash({"invoice_id": invoice_id})
@@ -1135,8 +1137,12 @@ def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
             "SELECT pg_advisory_xact_lock(hashtext(%s))",
             (f"{community_id}:{action}:{key}",),
         )
-        replay = operator_operations._replay(
-            cur, community_id, action, key, fingerprint
+        replay = (
+            None
+            if dry_run
+            else operator_operations._replay(
+                cur, community_id, action, key, fingerprint
+            )
         )
         if replay:
             return replay
@@ -1158,6 +1164,18 @@ def confirm_payment(entry_id, invoice_id, community_id, actor_id, key):
             raise billing_lifecycle.InvoiceLifecycleError(
                 "Die Zahlung passt nicht exakt zur Rechnung."
             )
+        if dry_run:
+            return {
+                "dry_run": True,
+                "eligible": True,
+                "invoice_id": invoice_id,
+                "lifecycle_state": billing_lifecycle.next_state(
+                    invoice["lifecycle_state"],
+                    "pay",
+                    reference=entry["payment_reference"],
+                    effective_date=entry["booking_date"],
+                ),
+            }
         cur.execute(
             "UPDATE bank_statement_entries SET invoice_id=%s,match_decision='matched' WHERE id=%s",
             (invoice_id, entry_id),

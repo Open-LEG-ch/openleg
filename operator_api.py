@@ -560,6 +560,12 @@ def confirm_payment_match(community_id, entry_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return _error("JSON object required", 400)
+    from operator_request import parse_dry_run
+
+    try:
+        dry_run = parse_dry_run(request.args, payload)
+    except ValueError:
+        return _error("Invalid dry_run option", 400, ErrorCode.INVALID_REQUEST)
     if not isinstance(payload.get("invoice_id"), int):
         return _error(
             "Invalid payment confirmation",
@@ -574,6 +580,7 @@ def confirm_payment_match(community_id, entry_id):
             community_id,
             g.operator_client["created_by"],
             key,
+            **({"dry_run": True} if dry_run else {}),
         )
     except (TypeError, ValueError) as exc:
         # Store validation messages stay internal; the API answer is fixed.

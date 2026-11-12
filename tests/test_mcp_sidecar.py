@@ -44,14 +44,15 @@ def test_contract_tool(monkeypatch):
             result = await sdk.list_tools()
             names = [t.name for t in result.tools]
             assert "list_billing_periods" in names
-            # The preview tools follow the read tools; the case response
-            # write tool comes last.
-            assert names[-3:] == [
+            # The preview tools follow the read tools; the case response and
+            # payment confirmation write tools come last.
+            assert names[-4:] == [
                 "preview_formation_submission",
                 "preview_membership_mutation",
                 "respond_invoice_case",
+                "confirm_payment_match",
             ]
-            previews = result.tools[-3:-1]
+            previews = result.tools[-4:-2]
             spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
             for preview, suffix, capability in zip(
                 previews,
