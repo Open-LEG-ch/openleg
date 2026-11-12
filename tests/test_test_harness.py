@@ -6,6 +6,7 @@ debug. It has layered modes and its `gate` mode mirrors the required CI checks,
 so a green gate locally means a green PR.
 """
 
+import json
 import os
 import stat
 import subprocess
@@ -93,3 +94,39 @@ def test_invalid_shard_is_a_usage_error(value):
     assert result.returncode == pytest.ExitCode.USAGE_ERROR
     assert "--shard" in result.stderr
     assert selected == []
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [
+        ("fast", ["tests/", "-q", "-m", "not integration and not smoke"]),
+        ("full", ["tests/", "-q"]),
+    ],
+)
+def test_harness_forwards_extra_pytest_arguments(tmp_path, mode, expected):
+    """Extra arguments reach pytest on its command line, not through the environment.
+
+    Child pytest processes inherit PYTEST_ADDOPTS, so a shard passed there would
+    also filter tests that start pytest themselves.
+    """
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    record = tmp_path / "arguments.json"
+    fake_pytest = fake_bin / "pytest"
+    fake_pytest.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, sys\n"
+        f"open({str(record)!r}, 'w').write(json.dumps(sys.argv[1:]))\n"
+    )
+    fake_pytest.chmod(0o755)
+    result = subprocess.run(
+        [TEST_SH, mode, "--shard=3/6"],
+        cwd=ROOT,
+        env={**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(record.read_text()) == [*expected, "--shard=3/6"]

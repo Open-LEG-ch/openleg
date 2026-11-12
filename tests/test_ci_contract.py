@@ -80,8 +80,9 @@ def test_ci_test_runs_six_shards_and_reports_their_joint_result():
     assert shard["name"] == SHARD_PREFIX + "${{ matrix.shard }}"
     assert shard["strategy"] == {"fail-fast": False, "matrix": {"shard": SHARDS}}
     run = next(step for step in shard["steps"] if step.get("name") == "Run tests")
-    assert run["env"]["PYTEST_ADDOPTS"].endswith(" --shard=${{ matrix.shard }}/6")
-    assert run["run"] == "bash scripts/test.sh full"
+    assert run["env"]["SHARD"] == "${{ matrix.shard }}"
+    assert "--shard" not in run["env"]["PYTEST_ADDOPTS"]
+    assert run["run"] == 'bash scripts/test.sh full --shard="${SHARD}/6"'
 
     assert required["needs"] == "shard"
     assert required["if"] == "always()"

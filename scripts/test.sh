@@ -3,7 +3,7 @@
 #
 # One command we run on every build, deploy, and debug:
 #
-#   scripts/test.sh [fast|full|gate]
+#   scripts/test.sh [fast|full|gate] [pytest arguments...]
 #
 #   fast  quick inner loop for TDD: unit + contract layers, no services needed
 #   full  the whole suite (integration/smoke layers run when services exist)
@@ -15,21 +15,22 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MODE="${1:-gate}"
+shift || true
 
 case "$MODE" in
   fast)
-    pytest tests/ -q -m "not integration and not smoke"
+    pytest tests/ -q -m "not integration and not smoke" "$@"
     ;;
   full)
-    pytest tests/ -q
+    pytest tests/ -q "$@"
     ;;
   gate)
-    pytest tests/ -q
+    pytest tests/ -q "$@"
     ruff check .
     ruff format --check .
     ;;
   *)
-    echo "usage: scripts/test.sh [fast|full|gate]" >&2
+    echo "usage: scripts/test.sh [fast|full|gate] [pytest arguments...]" >&2
     exit 2
     ;;
 esac

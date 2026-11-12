@@ -190,10 +190,10 @@ skips PostgreSQL tests; a green local gate does not prove those queries work.
 The `ci/test` workflow in `.github/workflows/deploy.yml` supplies PostgreSQL 16
 and `DATABASE_URL`, so those tests execute in CI. It splits the suite into six
 shards, each on its own runner, and the required `ci/test` check passes only
-when every shard passes. To rerun one shard locally, pass the same option:
+when every shard passes. To rerun one shard locally, use the same command:
 
 ```bash
-pytest tests/ --shard=3/6
+scripts/test.sh full --shard=3/6
 ```
 
 The `ci/lint` job also runs:

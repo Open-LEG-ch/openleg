@@ -70,11 +70,13 @@ jobs:
 
       - name: Run tests
         env:
-          PYTEST_ADDOPTS: "--durations=30 -o faulthandler_timeout=120 --shard=${{ matrix.shard }}/6"
+          PYTEST_ADDOPTS: "--durations=30 -o faulthandler_timeout=120"
           DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
           OPENLEG_TEST_VEREIN_DATABASE_URL: postgresql://openleg:testpass@localhost:5432/openleg
           OPENLEG_TEST_FORECAST_REDIS_URL: redis://127.0.0.1:6379/15
-        run: bash scripts/test.sh full
+          SHARD: ${{ matrix.shard }}
+        # Pass the shard as an argument: child pytest runs inherit PYTEST_ADDOPTS.
+        run: bash scripts/test.sh full --shard="${SHARD}/6"
 
   # The required check. It always runs, so a failed or cancelled shard can
   # never leave ci/test skipped (GitHub treats a skipped check as passing).
