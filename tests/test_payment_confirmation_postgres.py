@@ -162,6 +162,63 @@ def test_guards(operator_http, change, code, status, query):
     assert rows(operator_http) == before
 
 
+@pytest.mark.parametrize("amount_basis", [None, "unsupported_batch"])
+def test_untrusted_amount_evidence_rejected_by_preview_and_confirmation(
+    operator_http, amount_basis
+):
+    http = operator_http
+    ids = seed_operator_resources(http)
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE bank_statement_entries SET amount_basis=%s WHERE id=%s",
+            (amount_basis, ids["entry_id"]),
+        )
+    before = rows(http)
+    for query in ("?dry_run=true", ""):
+        response = confirm(http, ids, query)
+        assert response.status_code == 409
+        assert response.json["code"] == "invalid_payment"
+        assert rows(http) == before
+
+
+def test_booked_currency_rejected_by_preview_and_confirmation(operator_http):
+    from decimal import Decimal
+
+    import payment_reconciliation
+    from tests.test_payment_reconciliation import CAMT_053
+
+    http = operator_http
+    ids = seed_operator_resources(http)
+    # The instructed CHF amount matches the invoice, but the account credit is EUR.
+    content = (
+        CAMT_053.replace(b"120.50", b"42.50")
+        .replace(b'<Amt Ccy="CHF">42.50</Amt>', b'<Amt Ccy="EUR">39.00</Amt>')
+        .replace(
+            b"</Refs>",
+            b'</Refs><AmtDtls><InstdAmt><Amt Ccy="CHF">42.50</Amt></InstdAmt></AmtDtls>',
+        )
+    )
+    payment_reconciliation.import_statement(
+        http.community_id, "contract-admin", "converted.xml", content, http.db
+    )
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT id,amount,currency,amount_basis FROM bank_statement_entries "
+            "WHERE entry_reference='bank-entry-1'"
+        )
+        entry = cur.fetchone()
+    assert entry["amount"] == Decimal("39.00")
+    assert entry["currency"] == "EUR"
+    assert entry["amount_basis"] == "entry"
+    ids["entry_id"] = entry["id"]
+    before = rows(http)
+    for query in ("?dry_run=true", ""):
+        response = confirm(http, ids, query)
+        assert response.status_code == 409
+        assert response.json["code"] == "invalid_payment"
+        assert rows(http) == before
+
+
 def test_confirmation_replay_snapshot_and_actor(operator_http):
     http = operator_http
     ids = seed_operator_resources(http)
@@ -343,10 +400,10 @@ def test_real_confirmation_keeps_payment_locks(
                 """INSERT INTO bank_statement_entries(
                        statement_import_id,community_id,entry_reference,booking_date,
                        amount,currency,payment_reference,credit_debit_indicator,
-                       match_decision,booking_status)
+                       match_decision,booking_status,amount_basis)
                    SELECT statement_import_id,community_id,'ENTRY-2',booking_date,
                           amount,currency,payment_reference,credit_debit_indicator,
-                          match_decision,booking_status
+                          match_decision,booking_status,amount_basis
                    FROM bank_statement_entries WHERE id=%s RETURNING id""",
                 (ids["entry_id"],),
             )
