@@ -182,22 +182,15 @@ jobs:
           fi
 
           thread_url="$(jq -er '.url' <<< "${thread}")"
-          # Match the publisher's body structure; both titles and Release names are editable.
-          first_line="$(jq -r '.body | split("\n")[0]' <<< "${thread}" | tr -d '[:space:]')"
-          suffix="istveröffentlicht:${release_url}"
-          RELEASE_NAME=""
-          if [[ "${first_line}" == OpenLEG*"${suffix}" ]]; then
-            RELEASE_NAME="${first_line#OpenLEG}"
-            RELEASE_NAME="${RELEASE_NAME%"${suffix}"}"
-          fi
-          body="OpenLEG ${RELEASE_NAME} ist veröffentlicht: ${release_url}
-
-          Fragen, Ideen und die aktuelle Arbeit der Community: https://openleg.ch/community
-
-          ${marker}"
-          expected="$(printf '%s' "${body}" | tr -d '[:space:]')"
-          actual="$(jq -r '.body' <<< "${thread}" | tr -d '[:space:]')"
-          if [[ "${actual}" == "${expected}" ]]; then
+          # Only content beyond the marker and publisher's standard lines is enrichment.
+          content="$(jq -r --arg marker "${marker}" --arg url "${release_url}" '
+            .body | split($marker) | join("") | split("\n") |
+            map(gsub("[[:space:]]"; "") |
+              select(. != "Fragen,IdeenunddieaktuelleArbeitderCommunity:https://openleg.ch/community") |
+              select((startswith("OpenLEG") and endswith("istveröffentlicht:" + $url)) | not)) |
+            join("")
+          ' <<< "${thread}")"
+          if [[ -z "${content}" ]]; then
             if (( age > 7200 )); then
               verdict="warning: announcement not enriched"
               report "- [Ankündigung](${thread_url}) für [${tag}](${release_url}) enthält nur den Standardtext. Nächster Schritt: Den Thread mit den Änderungen dieser Version ergänzen."

@@ -277,6 +277,10 @@ def test_release_announcement_watchdog_contract():
         ("renamed", 10800, "", 0, "create"),
         ("bare", 10800, "different", 0, "edit"),
         ("retitled", 10800, "different", 0, "edit"),
+        ("marker-only", 10800, "different", 0, "edit"),
+        ("community-only", 10800, "different", 0, "edit"),
+        ("release-line-only", 10800, "different", 0, "edit"),
+        ("marker-only", 7200, "", 0, ""),
         *[
             (f"bad-release:{field}:{value}", 10800, "different", 1, "")
             for field in ("html_url", "node_id", "published_at")
@@ -313,6 +317,12 @@ def test_release_watchdog_script(tmp_path, scenario, age, existing, status, acti
     )
     if scenario == "enriched":
         body += "\nRelease highlights."
+    if scenario == "marker-only":
+        body = " \n\t<!-- openleg-release:RE_node --> \n"
+    if scenario == "community-only":
+        body = "Fragen, Ideen und die aktuelle Arbeit der Community: https://openleg.ch/community\n<!-- openleg-release:RE_node -->"
+    if scenario == "release-line-only":
+        body = f"OpenLEG v0.1.24 ist veröffentlicht: {release_url}\n<!-- openleg-release:RE_node -->"
     fixture = {
         "release": {
             "draft": scenario == "draft",
@@ -481,6 +491,14 @@ else:
         ),
         "renamed": "warning: announcement not enriched",
         "retitled": "warning: announcement not enriched",
+        **{
+            name: (
+                "passed: announcement enrichment grace period"
+                if age <= 7200
+                else "warning: announcement not enriched"
+            )
+            for name in ("marker-only", "community-only", "release-line-only")
+        },
         "enriched": "passed: announcement enriched",
     }.get(scenario, "failed: API or response error (1)")
     assert [line for line in report.splitlines() if line.startswith("Verdict:")] == [
