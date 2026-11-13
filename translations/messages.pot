@@ -3457,7 +3457,7 @@ msgstr ""
 msgid "Der Text ist zu lang oder enthält ungültige Zeichen."
 msgstr ""
 
-#: store/formation_signatures.py:165
+#: store/formation_signatures.py:173
 msgid "Der Unterschriftsbeleg ist ungültig."
 msgstr ""
 
@@ -3798,7 +3798,7 @@ msgid ""
 "Verwenden Sie ausschliesslich Beispieldaten."
 msgstr ""
 
-#: store/formation_signatures.py:171 store/vnb_exchange.py:342
+#: store/formation_signatures.py:179 store/vnb_exchange.py:384
 msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 msgstr ""
 
@@ -4243,7 +4243,7 @@ msgstr ""
 msgid "Die Tarif-ID der Richtlinie ist ungültig."
 msgstr ""
 
-#: store/formation_signatures.py:139
+#: store/formation_signatures.py:147
 msgid "Die Unterzeichnung passt nicht mehr zu den aktuellen Dokumenten und Teilnehmenden."
 msgstr ""
 
@@ -4253,7 +4253,7 @@ msgid ""
 "Entwürfe und Sitzungsprotokolle sind keine veröffentlichten Vertragsvorlagen."
 msgstr ""
 
-#: store/formation_signatures.py:126
+#: store/formation_signatures.py:134
 msgid ""
 "Die Vertragsentwürfe enthalten nicht alle aktuellen Teilnehmenden. Erstellen Sie die Entwürfe "
 "erneut."
@@ -5887,7 +5887,7 @@ msgstr ""
 msgid "Erstellen Sie die rechtlichen Dokumente."
 msgstr ""
 
-#: store/formation_signatures.py:108
+#: store/formation_signatures.py:116
 msgid "Erstellen Sie zuerst die vollständigen Vertragsentwürfe für mindestens drei bestätigte Haushalte."
 msgstr ""
 
@@ -8590,7 +8590,7 @@ msgstr ""
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1113 store/vnb_exchange.py:375
+#: dashboard.py:1113 store/vnb_exchange.py:417
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
