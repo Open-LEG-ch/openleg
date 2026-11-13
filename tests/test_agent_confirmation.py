@@ -361,12 +361,11 @@ def test_confirmation_page_limits_summary_and_uses_csrf(operator_http, locale, t
     assert 'name="csrf_token" value="csrf"' in html
     assert "contract@example.invalid" not in html
     assert "contract-admin" in html
-    assert (
-        http.client.post(
-            pending["confirmation_url"], data={"csrf_token": "csrf"}
-        ).status_code
-        == 303
+    confirmed = http.client.post(
+        pending["confirmation_url"], data={"csrf_token": "csrf"}
     )
+    assert confirmed.status_code == 303
+    assert confirmed.headers["Location"] == pending["confirmation_url"]
 
 
 def test_schema_upgrade_is_repeatable_and_constrains_states(operator_http):

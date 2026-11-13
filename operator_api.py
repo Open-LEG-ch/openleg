@@ -979,7 +979,7 @@ def dispatch_pending_webhooks(
 )
 @_retryable_submission_errors
 def agent_confirmation_page(community_id, request_id):
-    from flask import redirect, render_template
+    from flask import redirect, render_template, url_for
 
     import agent_confirmation
 
@@ -1021,7 +1021,15 @@ def agent_confirmation_page(community_id, request_id):
     except db.VnbExchangeStoreError:
         return _error("Confirmation unavailable", 503)
     if request.form and result["state"] == "confirmed":
-        return redirect(request.path, code=303)
+        # Build the location from the stored request, not the request URL.
+        return redirect(
+            url_for(
+                "operator_api.agent_confirmation_page",
+                community_id=row["community_id"],
+                request_id=row["request_id"],
+            ),
+            code=303,
+        )
     return jsonify(schema_version=API_SCHEMA_VERSION, **result), (
         409 if result["state"] == "expired" else 200
     )
