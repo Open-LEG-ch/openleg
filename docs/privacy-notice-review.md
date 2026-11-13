@@ -103,3 +103,28 @@ Complete this record after the owner review:
 
 Keep customer records, meter IDs, private contracts and raw log samples out of
 this repository and public issue comments.
+
+## Association notice draft, 13 November 2026
+
+The fallback draft version `verein-2026-11-13-draft-1` is rendered by
+`templates/verein/privacy_notice.html` at `/datenschutz#verein-datenschutz` when
+the complete site is enabled. The application form links to this section. When `VEREIN_PRIVACY_VERSION` is
+configured, the notice shows that same value recorded on applications; this
+does not remove the draft/legal-review warning.
+The named controller is Verein openLEG Schweiz, Postfach, 5400 Baden,
+hallo@openleg.ch. This identifies association data only, not hosted-product
+operation or a LEG's controller.
+
+Evidence: `verein_routes.py` validates the adult/independence/terms declarations;
+`store/verein.py` stores application identity, affiliation, language, policy and
+privacy versions, decisions, membership, dues and receipts. The declarations
+are validated at submission, not stored as separate checkbox columns.
+`store/verein_meetups.py` preserves private revisions and publication decisions.
+See the association section of `docs/retention-matrix.md` for deletion limits.
+
+Legal/DPO approval is pending. Before actual intake, record the legal basis,
+retention periods and purge responsibilities, access/correction/deletion process,
+actual processors and locations, contracts, backup/export/email retention and
+publication permissions. Review all four language versions. A draft version
+identifier is not an approval; it must not be treated as one during deployment.
+No retention period, automatic purge or production readiness is established here.

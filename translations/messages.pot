@@ -1467,6 +1467,22 @@ msgstr ""
 msgid "Anträge und Mitglieder filtern"
 msgstr ""
 
+#: templates/verein/privacy_notice.html:15
+msgid ""
+"Anträge und Mitgliederdaten gehören in die private Vereinsverwaltung mit einzeln berechtigten "
+"Vorstandskonten. Mitglieder sehen ihre eigenen Angaben nach Anmeldung. Öffentlich werden nur "
+"ausdrücklich freigegebene Veranstaltungsinhalte und bereinigte Finanzberichte. Die tatsächlich "
+"eingesetzten Hosting-, E-Mail- und Zahlungsdienstleister, deren Standorte und Verträge sind vor "
+"der Aufnahme von Anträgen zu dokumentieren und rechtlich zu prüfen."
+msgstr ""
+
+#: templates/verein/privacy_notice.html:9
+msgid ""
+"Anträge: Name, E-Mail, Sprachwahl, Bestätigung der Volljährigkeit, Angaben zu Verbindungen zum "
+"Energiesektor, Bestätigungen zu Statuten und Datenschutz sowie Bestätigungs- und "
+"Entscheidungsverlauf. Diese Angaben dienen der Prüfung und Bearbeitung des Antrags."
+msgstr ""
+
 #: templates/api_docs.html:110 templates/leg_billing.html:182 templates/leg_dashboard.html:250
 #: templates/member_invoice_detail.html:213 templates/sandbox/questions.html:27
 msgid "Antwort"
@@ -1623,6 +1639,10 @@ msgstr ""
 msgid "Auf eigener Infrastruktur"
 msgstr ""
 
+#: templates/verein/privacy_notice.html:16
+msgid "Aufbewahrung und Löschung"
+msgstr ""
+
 #: templates/leg_billing.html:62
 msgid "Auffällige Messfenster:"
 msgstr ""
@@ -1737,6 +1757,10 @@ msgstr ""
 
 #: templates/admin/abrechnungen.html:138
 msgid "Ausgleich der Preisrundung"
+msgstr ""
+
+#: templates/verein/privacy_notice.html:19
+msgid "Auskunft, Berichtigung und Löschanfragen"
 msgstr ""
 
 #: templates/datenschutz.html:71
@@ -2066,6 +2090,13 @@ msgid ""
 "Beiträge zum Code, zu Texten und Übersetzungen sind unabhängig von einer Mitgliedschaft "
 "willkommen. Für das erste Jahr werden zwei geeignete Personen für Finanzen und Administration "
 "sowie Community und Treffen gesucht. Eine Zusage oder Wahl ist damit noch nicht erfolgt."
+msgstr ""
+
+#: templates/verein/privacy_notice.html:11
+msgid ""
+"Beiträge: Beitragsjahre, Forderungen, Fälligkeiten, Erinnerungen, Zahlungseingänge und "
+"Belegreferenzen dienen der Beitragsverwaltung und Buchhaltung. Vereinsbeiträge sind von "
+"Stromrechnungen getrennt."
 msgstr ""
 
 #: templates/sandbox/operator.html:10
@@ -3149,6 +3180,10 @@ msgstr ""
 #: templates/emails/day_7_consumption.html:60 templates/partials/site_footer.html:13
 #: templates/release/donations.html:7 templates/release/footer.html:11 templates/verein/join.html:15
 msgid "Datenschutz"
+msgstr ""
+
+#: templates/verein/privacy_notice.html:2
+msgid "Datenschutz für den Verein"
 msgstr ""
 
 #: templates/release/donations.html:7
@@ -4717,6 +4752,14 @@ msgid ""
 "versuchen Sie es erneut."
 msgstr ""
 
+#: templates/verein/privacy_notice.html:4
+msgid ""
+"Dieser Abschnitt betrifft nur Anträge, Mitgliedschaft, Beiträge und Veranstaltungen des Vereins. "
+"Er ersetzt keine Datenschutzerklärung für den Betrieb einer LEG oder des gehosteten Produkts. Die"
+" Angaben zu Rechtsgrundlagen, Empfängern und Aufbewahrung müssen vor der tatsächlichen Aufnahme "
+"von Anträgen rechtlich geprüft werden."
+msgstr ""
+
 #: sandbox_payments.py:159
 msgid "Dieser Eintrag fehlt oder kann nicht bestätigt werden. Prüfen Sie Rechnung, Status und Auszug."
 msgstr ""
@@ -5118,6 +5161,15 @@ msgstr ""
 
 #: templates/gemeinde/pilotgemeinde.html:40
 msgid "Ein Austritt ist möglich. Danach kehrt der Haushalt in die Grundversorgung zurück."
+msgstr ""
+
+#: templates/verein/privacy_notice.html:17
+msgid ""
+"Ein Austritt oder Ausschluss beendet die Mitgliedschaft, löscht aber nicht automatisch Anträge, "
+"Entscheide, Beiträge und Belege. Es gibt noch keine genehmigte Aufbewahrungsfrist für "
+"Vereinsdaten und keine automatische Bereinigung. Die Abmeldung eines LEG-Adressprofils löscht "
+"keine Vereinsdaten. Gesetzliche Aufbewahrung und konkrete Löschregeln müssen gesondert geprüft "
+"werden."
 msgstr ""
 
 #: templates/open_source.html:158
@@ -5804,6 +5856,10 @@ msgstr ""
 
 #: templates/verein/qr_bill.html:3
 msgid "Entwurf zur Prüfung. Nicht zur Zahlung verwenden."
+msgstr ""
+
+#: templates/verein/privacy_notice.html:3
+msgid "Entwurf zur rechtlichen Prüfung"
 msgstr ""
 
 #: templates/release/how_it_works.html:24
@@ -10355,6 +10411,12 @@ msgstr ""
 msgid "Mitgliedschaft beantragen"
 msgstr ""
 
+#: templates/verein/privacy_notice.html:10
+msgid ""
+"Mitgliedschaft: Aufnahme, Status, Austritt, begründete Entscheide und Beschwerden werden für die "
+"Mitgliederverwaltung und nachvollziehbare Entscheidungen festgehalten."
+msgstr ""
+
 #: templates/leg_dashboard.html:244
 msgid "Mitgliedschaft: LEG und VNB"
 msgstr ""
@@ -12985,6 +13047,14 @@ msgstr ""
 msgid "Schnellstart, manuelle Installation und privates Netzwerk"
 msgstr ""
 
+#: templates/verein/privacy_notice.html:20
+msgid ""
+"Schreiben Sie für Auskunft, Berichtigung, Löschung oder den Widerruf einer Einwilligung an "
+"hallo@openleg.ch. Der Verein muss Ihre Berechtigung und mögliche Aufbewahrungspflichten prüfen. "
+"Der Widerruf betrifft künftige Verarbeitungen; er bedeutet nicht, dass bereits entstandene "
+"Unterlagen oder Kopien gelöscht sind."
+msgstr ""
+
 #: templates/gemeinde/dashboard.html:122
 msgid "Schritt für Schritt zur Stromgemeinschaft"
 msgstr ""
@@ -14490,6 +14560,13 @@ msgstr ""
 msgid "Veranstalter"
 msgstr ""
 
+#: templates/verein/privacy_notice.html:12
+msgid ""
+"Veranstaltungen: Titel, Zeit, Ort, Organisation und freigegebene Notizen dienen der Durchführung "
+"und öffentlichen Information. Personenbezogene Inhalte benötigen eine Veröffentlichungserlaubnis."
+" Private Entwürfe, Versionen und Freigabereferenzen bleiben in der internen Verwaltung."
+msgstr ""
+
 #: templates/leg_dashboard.html:225
 msgid "Verantwortlich"
 msgstr ""
@@ -14510,6 +14587,10 @@ msgstr ""
 
 #: templates/release/donations.html:7
 msgid "Verantwortliche Stelle"
+msgstr ""
+
+#: templates/verein/privacy_notice.html:5
+msgid "Verantwortliche Stelle für Vereinsdaten"
 msgstr ""
 
 #: templates/index.html:192
@@ -14703,6 +14784,11 @@ msgstr ""
 
 #: templates/leg_billing_policy.html:94
 msgid "Version speichern"
+msgstr ""
+
+#: templates/verein/privacy_notice.html:3
+#, python-format
+msgid "Version: %(version)s"
 msgstr ""
 
 #: templates/utility/register.html:73
@@ -15336,6 +15422,10 @@ msgstr ""
 #: templates/datenschutz.html:12
 #, python-format
 msgid "Welche Daten %(platform)s nutzt und wie Sie die Kontrolle behalten."
+msgstr ""
+
+#: templates/verein/privacy_notice.html:7
+msgid "Welche Daten wofür verwendet werden"
 msgstr ""
 
 #: templates/gemeinde/rangliste_fortschritte.html:21
@@ -16053,6 +16143,10 @@ msgstr ""
 msgid "Zugestellt"
 msgstr ""
 
+#: templates/verein/privacy_notice.html:14
+msgid "Zugriff und Weitergabe"
+msgstr ""
+
 #: i18n.py:86
 msgid "Zugriff verweigert"
 msgstr ""
@@ -16196,12 +16290,20 @@ msgstr ""
 msgid "Zurück zur Rangliste"
 msgstr ""
 
-#: templates/datenschutz.html:81 templates/impressum.html:54 templates/unsubscribe.html:69
+#: templates/datenschutz.html:83 templates/impressum.html:54 templates/unsubscribe.html:69
 msgid "Zurück zur Startseite"
 msgstr ""
 
 #: templates/sandbox/metering.html:48 templates/verein/recipient_edit.html:9
 msgid "Zurückgezogen"
+msgstr ""
+
+#: templates/verein/privacy_notice.html:18
+msgid ""
+"Zurückgezogene Veranstaltungsnotizen verschwinden aus der aktuellen öffentlichen Ansicht; die "
+"private Versionsgeschichte bleibt erhalten. Eine Änderung der Veröffentlichung ist keine "
+"Löschung. Kopien, Exporte, Sicherungen und E-Mails müssen in den Aufbewahrungsregeln der "
+"tatsächlichen Betreiber berücksichtigt werden."
 msgstr ""
 
 #: templates/gemeinde/rangliste.html:70 templates/gemeinde/rangliste_fortschritte.html:74

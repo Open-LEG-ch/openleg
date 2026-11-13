@@ -22611,3 +22611,71 @@ msgstr "There is no support SLA or promised response time. OpenLEG provides no l
 #. Draft translation; native language and domain review pending.
 msgid "Gegründet am %(date)s. Sitz: %(seat)s."
 msgstr "Founded on %(date)s. Seat: %(seat)s."
+
+#. Draft translation; native language and domain review pending.
+msgid "Datenschutz für den Verein"
+msgstr "Association privacy notice"
+
+#. Draft translation; native language and domain review pending.
+msgid "Entwurf zur rechtlichen Prüfung"
+msgstr "Draft for legal review"
+
+#. Draft translation; native language and domain review pending.
+msgid "Dieser Abschnitt betrifft nur Anträge, Mitgliedschaft, Beiträge und Veranstaltungen des Vereins. Er ersetzt keine Datenschutzerklärung für den Betrieb einer LEG oder des gehosteten Produkts. Die Angaben zu Rechtsgrundlagen, Empfängern und Aufbewahrung müssen vor der tatsächlichen Aufnahme von Anträgen rechtlich geprüft werden."
+msgstr "This section covers only association applications, membership, dues and events. It does not replace a privacy notice for operating a LEG or the hosted product. Legal bases, recipients and retention must undergo legal review before actual applications are accepted."
+
+#. Draft translation; native language and domain review pending.
+msgid "Verantwortliche Stelle für Vereinsdaten"
+msgstr "Controller for association data"
+
+#. Draft translation; native language and domain review pending.
+msgid "Welche Daten wofür verwendet werden"
+msgstr "What data is used and why"
+
+#. Draft translation; native language and domain review pending.
+msgid "Anträge: Name, E-Mail, Sprachwahl, Bestätigung der Volljährigkeit, Angaben zu Verbindungen zum Energiesektor, Bestätigungen zu Statuten und Datenschutz sowie Bestätigungs- und Entscheidungsverlauf. Diese Angaben dienen der Prüfung und Bearbeitung des Antrags."
+msgstr "Applications: name, email, language, confirmation of adulthood, energy-sector affiliations, acknowledgements of statutes and privacy, and confirmation and decision history. These support assessment and processing of the application."
+
+#. Draft translation; native language and domain review pending.
+msgid "Mitgliedschaft: Aufnahme, Status, Austritt, begründete Entscheide und Beschwerden werden für die Mitgliederverwaltung und nachvollziehbare Entscheidungen festgehalten."
+msgstr "Membership: admission, status, resignation, reasoned decisions and appeals are recorded to administer membership and make decisions traceable."
+
+#. Draft translation; native language and domain review pending.
+msgid "Beiträge: Beitragsjahre, Forderungen, Fälligkeiten, Erinnerungen, Zahlungseingänge und Belegreferenzen dienen der Beitragsverwaltung und Buchhaltung. Vereinsbeiträge sind von Stromrechnungen getrennt."
+msgstr "Dues: contribution years, amounts due, deadlines, reminders, receipts and evidence references support dues administration and accounting. Association dues are separate from electricity invoices."
+
+#. Draft translation; native language and domain review pending.
+msgid "Veranstaltungen: Titel, Zeit, Ort, Organisation und freigegebene Notizen dienen der Durchführung und öffentlichen Information. Personenbezogene Inhalte benötigen eine Veröffentlichungserlaubnis. Private Entwürfe, Versionen und Freigabereferenzen bleiben in der internen Verwaltung."
+msgstr "Events: titles, times, places, organisers and approved notes support event delivery and public information. Personal content requires permission to publish. Private drafts, versions and approval references remain in internal administration."
+
+#. Draft translation; native language and domain review pending.
+msgid "Zugriff und Weitergabe"
+msgstr "Access and disclosure"
+
+#. Draft translation; native language and domain review pending.
+msgid "Anträge und Mitgliederdaten gehören in die private Vereinsverwaltung mit einzeln berechtigten Vorstandskonten. Mitglieder sehen ihre eigenen Angaben nach Anmeldung. Öffentlich werden nur ausdrücklich freigegebene Veranstaltungsinhalte und bereinigte Finanzberichte. Die tatsächlich eingesetzten Hosting-, E-Mail- und Zahlungsdienstleister, deren Standorte und Verträge sind vor der Aufnahme von Anträgen zu dokumentieren und rechtlich zu prüfen."
+msgstr "Applications and member data belong in private association administration with individually authorised board accounts. Members can view their own information after signing in. Only explicitly approved event content and redacted financial reports are public. Actual hosting, email and payment providers, their locations and contracts must be documented and legally reviewed before accepting applications."
+
+#. Draft translation; native language and domain review pending.
+msgid "Aufbewahrung und Löschung"
+msgstr "Retention and deletion"
+
+#. Draft translation; native language and domain review pending.
+msgid "Ein Austritt oder Ausschluss beendet die Mitgliedschaft, löscht aber nicht automatisch Anträge, Entscheide, Beiträge und Belege. Es gibt noch keine genehmigte Aufbewahrungsfrist für Vereinsdaten und keine automatische Bereinigung. Die Abmeldung eines LEG-Adressprofils löscht keine Vereinsdaten. Gesetzliche Aufbewahrung und konkrete Löschregeln müssen gesondert geprüft werden."
+msgstr "Resignation or termination ends membership but does not automatically erase applications, decisions, dues or receipts. There is no approved association retention period or automatic purge. Deleting a LEG address profile does not delete association data. Statutory retention and specific deletion rules require separate review."
+
+#. Draft translation; native language and domain review pending.
+msgid "Zurückgezogene Veranstaltungsnotizen verschwinden aus der aktuellen öffentlichen Ansicht; die private Versionsgeschichte bleibt erhalten. Eine Änderung der Veröffentlichung ist keine Löschung. Kopien, Exporte, Sicherungen und E-Mails müssen in den Aufbewahrungsregeln der tatsächlichen Betreiber berücksichtigt werden."
+msgstr "Withdrawn event notes disappear from the current public view; private revision history remains. Changing publication is not deletion. Copies, exports, backups and emails must be covered by the actual operators’ retention rules."
+
+#. Draft translation; native language and domain review pending.
+msgid "Auskunft, Berichtigung und Löschanfragen"
+msgstr "Access, correction and deletion requests"
+
+#. Draft translation; native language and domain review pending.
+msgid "Schreiben Sie für Auskunft, Berichtigung, Löschung oder den Widerruf einer Einwilligung an hallo@openleg.ch. Der Verein muss Ihre Berechtigung und mögliche Aufbewahrungspflichten prüfen. Der Widerruf betrifft künftige Verarbeitungen; er bedeutet nicht, dass bereits entstandene Unterlagen oder Kopien gelöscht sind."
+msgstr "For access, correction, deletion or withdrawal of consent, email hallo@openleg.ch. The association must verify your authority and any retention obligations. Withdrawal concerns future processing; it does not mean existing records or copies have been erased."
+
+#. Draft translation; native language and domain review pending.
+msgid "Version: %(version)s"
+msgstr "Version: %(version)s"

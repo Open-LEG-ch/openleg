@@ -1,0 +1,21 @@
+<section id="verein-datenschutz" aria-labelledby="verein-privacy-title" class="mt-6">
+<h2 id="verein-privacy-title" class="text-xl font-semibold mt-6 mb-2">{{ _('Datenschutz für den Verein') }}</h2>
+<p class="mb-4"><strong>{{ _('Entwurf zur rechtlichen Prüfung') }}</strong><br>{{ _('Version: %(version)s', version=verein_facts.privacy_version or 'verein-2026-11-13-draft-1') }}</p>
+<p class="mb-4">{{ _('Dieser Abschnitt betrifft nur Anträge, Mitgliedschaft, Beiträge und Veranstaltungen des Vereins. Er ersetzt keine Datenschutzerklärung für den Betrieb einer LEG oder des gehosteten Produkts. Die Angaben zu Rechtsgrundlagen, Empfängern und Aufbewahrung müssen vor der tatsächlichen Aufnahme von Anträgen rechtlich geprüft werden.') }}</p>
+<h3 class="text-lg font-semibold mt-6 mb-2">{{ _('Verantwortliche Stelle für Vereinsdaten') }}</h3>
+<p class="mb-4">{{ verein_facts.legal_name }}<br>Postfach, 5400 Baden<br><a class="underline" href="mailto:{{ verein_facts.contact_email }}">{{ verein_facts.contact_email }}</a></p>
+<h3 class="text-lg font-semibold mt-6 mb-2">{{ _('Welche Daten wofür verwendet werden') }}</h3>
+<ul class="list-disc ml-6 mb-4">
+<li>{{ _('Anträge: Name, E-Mail, Sprachwahl, Bestätigung der Volljährigkeit, Angaben zu Verbindungen zum Energiesektor, Bestätigungen zu Statuten und Datenschutz sowie Bestätigungs- und Entscheidungsverlauf. Diese Angaben dienen der Prüfung und Bearbeitung des Antrags.') }}</li>
+<li>{{ _('Mitgliedschaft: Aufnahme, Status, Austritt, begründete Entscheide und Beschwerden werden für die Mitgliederverwaltung und nachvollziehbare Entscheidungen festgehalten.') }}</li>
+<li>{{ _('Beiträge: Beitragsjahre, Forderungen, Fälligkeiten, Erinnerungen, Zahlungseingänge und Belegreferenzen dienen der Beitragsverwaltung und Buchhaltung. Vereinsbeiträge sind von Stromrechnungen getrennt.') }}</li>
+<li>{{ _('Veranstaltungen: Titel, Zeit, Ort, Organisation und freigegebene Notizen dienen der Durchführung und öffentlichen Information. Personenbezogene Inhalte benötigen eine Veröffentlichungserlaubnis. Private Entwürfe, Versionen und Freigabereferenzen bleiben in der internen Verwaltung.') }}</li>
+</ul>
+<h3 class="text-lg font-semibold mt-6 mb-2">{{ _('Zugriff und Weitergabe') }}</h3>
+<p class="mb-4">{{ _('Anträge und Mitgliederdaten gehören in die private Vereinsverwaltung mit einzeln berechtigten Vorstandskonten. Mitglieder sehen ihre eigenen Angaben nach Anmeldung. Öffentlich werden nur ausdrücklich freigegebene Veranstaltungsinhalte und bereinigte Finanzberichte. Die tatsächlich eingesetzten Hosting-, E-Mail- und Zahlungsdienstleister, deren Standorte und Verträge sind vor der Aufnahme von Anträgen zu dokumentieren und rechtlich zu prüfen.') }}</p>
+<h3 class="text-lg font-semibold mt-6 mb-2">{{ _('Aufbewahrung und Löschung') }}</h3>
+<p class="mb-4">{{ _('Ein Austritt oder Ausschluss beendet die Mitgliedschaft, löscht aber nicht automatisch Anträge, Entscheide, Beiträge und Belege. Es gibt noch keine genehmigte Aufbewahrungsfrist für Vereinsdaten und keine automatische Bereinigung. Die Abmeldung eines LEG-Adressprofils löscht keine Vereinsdaten. Gesetzliche Aufbewahrung und konkrete Löschregeln müssen gesondert geprüft werden.') }}</p>
+<p class="mb-4">{{ _('Zurückgezogene Veranstaltungsnotizen verschwinden aus der aktuellen öffentlichen Ansicht; die private Versionsgeschichte bleibt erhalten. Eine Änderung der Veröffentlichung ist keine Löschung. Kopien, Exporte, Sicherungen und E-Mails müssen in den Aufbewahrungsregeln der tatsächlichen Betreiber berücksichtigt werden.') }}</p>
+<h3 class="text-lg font-semibold mt-6 mb-2">{{ _('Auskunft, Berichtigung und Löschanfragen') }}</h3>
+<p class="mb-4">{{ _('Schreiben Sie für Auskunft, Berichtigung, Löschung oder den Widerruf einer Einwilligung an hallo@openleg.ch. Der Verein muss Ihre Berechtigung und mögliche Aufbewahrungspflichten prüfen. Der Widerruf betrifft künftige Verarbeitungen; er bedeutet nicht, dass bereits entstandene Unterlagen oder Kopien gelöscht sind.') }}</p>
+</section>
