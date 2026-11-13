@@ -56,7 +56,9 @@ def test_anonymous_catalog_matches_contract(monkeypatch):
     async def check():
         async with app.router.lifespan_context(app), session(app) as sdk:
             tools = {t.name: t for t in (await sdk.list_tools()).tools}
-            assert set(tools) == PUBLIC_NAMES | {"list_billing_periods"}
+            # Public tools carry no capability metadata; operator tools do.
+            assert {name for name, t in tools.items() if not t.meta} == PUBLIC_NAMES
+            assert "list_billing_periods" in tools
             for operations in spec["paths"].values():
                 op = operations.get("get", {})
                 if op.get("operationId") not in PUBLIC_NAMES:
@@ -70,11 +72,14 @@ def test_anonymous_catalog_matches_contract(monkeypatch):
                     "additionalProperties": False,
                 }
                 assert tool.annotations.readOnlyHint is True
-            denied = await sdk.call_tool(
-                "list_billing_periods", {"community_id": "one"}
-            )
-            assert denied.isError
-            assert denied.content[0].text == "unauthorized"
+            from mcp.shared.exceptions import McpError
+
+            # Operator tools still need a bearer: an anonymous call is an MCP
+            # authorization error, not a tool result.
+            with pytest.raises(McpError) as denied:
+                await sdk.call_tool("list_billing_periods", {"community_id": "one"})
+            assert denied.value.error.code == -32011
+            assert denied.value.error.data["code"] == "authentication_required"
 
     asyncio.run(check())
 
@@ -219,6 +224,8 @@ def test_public_rate_limit_is_enforced_by_flask(public_app, monkeypatch):
                 assert result.content[0].text == "rate_limited"
                 assert result.structuredContent == {
                     "code": "rate_limited",
+                    "field": None,
+                    "retryable": True,
                     "retry_after": 60,
                 }
                 assert "private upstream diagnostic" not in str(result)

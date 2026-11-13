@@ -137,7 +137,8 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
                 app.router.lifespan_context(app),
                 session(app, fixture.headers) as sdk,
             ):
-                tools = (await sdk.list_tools()).tools
+                # Anonymous public tools carry no metadata; see test_mcp_public.
+                tools = [t for t in (await sdk.list_tools()).tools if t.meta]
                 # Write previews and write tools are the only non-read tools;
                 # confirm_payment_match names its POST operation.
                 assert [
