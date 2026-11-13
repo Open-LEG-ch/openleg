@@ -136,3 +136,45 @@ def test_operation_metadata_and_schema_references():
                 check_refs(child)
 
     check_refs(spec)
+
+
+def test_dry_run_bodies_reject_the_option():
+    """Every write with a dry_run query option rejects dry_run in its body."""
+    from jsonschema import Draft202012Validator
+
+    from tests.test_operator_previews import MEMBERSHIP
+
+    # A valid body per operation, so only the added key can fail validation.
+    samples = {
+        "submitMembershipMutation": MEMBERSHIP,
+        "respondInvoiceCase": {"message": "Checked.", "status": "acknowledged"},
+        "confirmPaymentMatch": {"invoice_id": 1},
+    }
+    spec = load_contract()
+    checked = []
+    for methods in spec["paths"].values():
+        for method, op in methods.items():
+            names = [
+                spec["components"]["parameters"][p["$ref"].split("/")[-1]]["name"]
+                if "$ref" in p
+                else p["name"]
+                for p in op.get("parameters", [])
+            ]
+            body = (
+                op.get("requestBody", {})
+                .get("content", {})
+                .get("application/json", {})
+                .get("schema")
+            )
+            if method == "get" or "dry_run" not in names or body is None:
+                continue
+            validator = Draft202012Validator({**body, "components": spec["components"]})
+            sample = samples[op["operationId"]]
+            checked.append(op["operationId"])
+            assert validator.is_valid(sample), op["operationId"]
+            # The routes reject this key with 400 invalid_request.
+            for value in (True, False):
+                assert not validator.is_valid({**sample, "dry_run": value}), op[
+                    "operationId"
+                ]
+    assert sorted(checked) == sorted(samples)

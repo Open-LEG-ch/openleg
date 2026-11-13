@@ -152,6 +152,8 @@ paths:
               - mutation_type
               - effective_date
               - source_agreement_id
+              not:
+                required: [dry_run]
               additionalProperties: true
               allOf:
               - if:
@@ -565,6 +567,8 @@ paths:
                   type: integer
               required:
               - invoice_id
+              not:
+                required: [dry_run]
               additionalProperties: true
 components:
   securitySchemes:
