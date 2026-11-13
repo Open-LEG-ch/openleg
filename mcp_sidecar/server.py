@@ -344,7 +344,10 @@ def create_app():
                         )
                     else:
                         # A case can change status between the two reads.
-                        # Keep its later copy, in the API's ID order.
+                        # Keep its later copy, in the API's ID order. Both
+                        # need integer IDs; bool is an int subclass.
+                        if any(type(x["id"]) is not int for x in items):
+                            raise ValueError("Case without an integer ID")
                         latest = {x["id"]: x for x in items}
                         value["items"] = sorted(latest.values(), key=lambda x: x["id"])
                 except (KeyError, TypeError, ValueError):

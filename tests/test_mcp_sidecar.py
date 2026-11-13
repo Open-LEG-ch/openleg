@@ -458,3 +458,60 @@ def test_malformed_upstream_page(monkeypatch, tool, path, body):
                 assert result.structuredContent is None
 
         asyncio.run(check())
+
+
+@pytest.mark.parametrize(
+    "ids",
+    [(None, None), (1, True), ("10", "9"), (1, 2.5)],
+)
+def test_summary_refuses_cases_without_integer_ids(monkeypatch, ids):
+    """Case IDs order and deduplicate the summary, so they must be integers."""
+    import json
+
+    from flask import Flask, jsonify, request
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+    base = "/api/operator/v1/communities/one"
+
+    @upstream.get(f"{base}/formation")
+    def formation():
+        return jsonify({"submissions": []})
+
+    @upstream.get(f"{base}/billing/cases")
+    def cases():
+        status = request.args["status"]
+        items = [
+            {"id": case_id, "invoice_id": n, "status": status}
+            for n, case_id in enumerate(ids)
+        ]
+        return jsonify(
+            {"items": items if status == "open" else [], "next_cursor": None}
+        )
+
+    @upstream.get(f"{base}/billing/periods")
+    def periods():
+        return jsonify({"items": [], "next_cursor": None})
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(app, {"Authorization": "Bearer olk_test"}) as sdk,
+            ):
+                result = await sdk.read_resource("openleg://communities/one/summary")
+                summary = json.loads(result.contents[0].text)
+                assert summary["open_invoice_cases"] == {
+                    "available": False,
+                    "reason": "operator_error",
+                }
+                assert summary["formation"]["available"]
+                assert summary["latest_billing_period"]["available"]
+
+        asyncio.run(check())
