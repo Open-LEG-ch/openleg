@@ -274,7 +274,7 @@ Der Codeaustausch liefert auch ein opakes Refresh-Token (`olr_`).
 Der Host erneuert per Formular-POST an `/oauth/token` mit
 `grant_type=refresh_token`, `refresh_token`, `client_id` und derselben
 `resource`. Jede erfolgreiche Erneuerung ersetzt Zugriffs- und Refresh-Token
-atomar. Aus jedem neuen Zugriffstoken entsteht ein neues Downstream-Credential.
+atomar. Dabei ersetzt OpenLEG das Geheimnis desselben Downstream-Credentials.
 Das vorherige Zugriffstoken und sein Downstream-Credential werden sofort ungültig.
 Refresh funktioniert auch nach Ablauf des Zugriffstokens (300 Sekunden).
 Es prüft die absolute Laufzeit der Refresh-Familie, Widerruf und
@@ -286,6 +286,9 @@ Der Scope bleibt unverändert. Ein optionaler `scope` muss dieselbe Menge von
 Berechtigungen enthalten; auch engere Scopes werden abgewiesen.
 Refresh-Tokens gelten ab Codeaustausch absolut 30 Tage. Rotation verlängert
 diese Frist nicht. Danach ist eine neue Zustimmung nötig.
+Eine lebende Refresh-Familie belegt genau einen der zehn Credential-Plätze ihrer
+LEG, auch nach Ablauf des Zugriffstokens. Widerruf oder Ablauf der Familie gibt
+den Platz frei; eine Erneuerung legt keine zusätzliche Credential-Zeile an.
 
 Die Rotation für öffentliche Clients folgt
 [RFC 9700, Abschnitt 4.14](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.14).

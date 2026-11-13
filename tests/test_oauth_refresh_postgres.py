@@ -541,3 +541,65 @@ def test_family_expiry_ends_access(oauth, seam):
         assert refresh(oauth, tokens["refresh_token"]).json == {
             "error": "invalid_grant"
         }
+
+
+@pytest.mark.integration
+def test_live_refresh_family_holds_one_slot_after_access_expiry(oauth):
+    first = exchange(oauth, grant(oauth)).json
+    for _ in range(8):
+        assert exchange(oauth, grant(oauth)).status_code == 200
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS n FROM operator_api_clients")
+        assert cur.fetchone()["n"] == 10
+        cur.execute("UPDATE oauth_grants SET expires_at=NOW()-INTERVAL '1 second'")
+    code = grant(oauth)
+    refused = exchange(oauth, code)
+    assert refused.status_code == 400
+    assert refused.json == {
+        "error": "invalid_grant",
+        "error_description": "Credential limit reached",
+    }
+    renewed = refresh(oauth, first["refresh_token"])
+    assert renewed.status_code == 200
+    assert introspect(oauth, renewed.json["access_token"])["active"]
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS n FROM operator_api_clients")
+        assert cur.fetchone()["n"] == 10
+    assert exchange(oauth, code).status_code == 400
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("end", ["family_expired", "revoked", "legacy"])
+def test_unusable_family_frees_slot_for_exchange(oauth, end):
+    tokens = exchange(oauth, grant(oauth)).json
+    downstream = introspect(oauth, tokens["access_token"])["downstream_token"]
+    for _ in range(8):
+        assert exchange(oauth, grant(oauth)).status_code == 200
+    code = grant(oauth)
+    assert exchange(oauth, code).status_code == 400
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT grant_id FROM oauth_refresh_tokens WHERE token_hash=%s",
+            (hashlib.sha256(tokens["refresh_token"].encode()).hexdigest(),),
+        )
+        gid = cur.fetchone()["grant_id"]
+        if end == "family_expired":
+            cur.execute(
+                "UPDATE oauth_refresh_tokens SET expires_at=NOW()-INTERVAL '1 second' WHERE grant_id=%s",
+                (gid,),
+            )
+        elif end == "revoked":
+            # The grant guard must also work if the credential remains active.
+            cur.execute("UPDATE oauth_grants SET revoked_at=NOW() WHERE id=%s", (gid,))
+        else:
+            cur.execute("DELETE FROM oauth_refresh_tokens WHERE grant_id=%s", (gid,))
+    assert (
+        oauth.client.get(
+            "/api/operator/v1/communities/contract-leg/billing/periods",
+            headers={"Authorization": "Bearer " + downstream},
+        ).status_code
+        == 401
+    )
+    assert refresh(oauth, tokens["refresh_token"]).status_code == 400
+    assert exchange(oauth, code).status_code == 200
+    assert exchange(oauth, grant(oauth)).status_code == 400

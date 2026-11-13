@@ -920,8 +920,8 @@ def test_exchange_respects_the_credential_limit(oauth):
     # Nothing was committed: once a grant expires, the same code still works.
     with oauth.db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "UPDATE oauth_grants SET expires_at=CURRENT_TIMESTAMP - INTERVAL '1 second' "
-            "WHERE id=(SELECT id FROM oauth_grants ORDER BY created_at LIMIT 1)"
+            "UPDATE oauth_refresh_tokens SET expires_at=CURRENT_TIMESTAMP - INTERVAL '1 second' "
+            "WHERE grant_id=(SELECT id FROM oauth_grants ORDER BY created_at LIMIT 1)"
         )
     assert exchange(oauth, code).status_code == 200
 

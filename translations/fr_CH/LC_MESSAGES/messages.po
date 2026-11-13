@@ -19985,7 +19985,6 @@ msgstr "Choisir la CEL"
 msgid "Rechte auswählen"
 msgstr "Choisir les droits"
 
-
 #: templates/operator_credentials.html:1
 msgid "Integrationskonten"
 msgstr "Comptes d’intégration"

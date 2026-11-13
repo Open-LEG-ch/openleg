@@ -1022,4 +1022,65 @@ def revoke_oauth_grant(community_id, grant_id):
     if not db.revoke_oauth_grant(community_id, grant_id):
         return _error("Grant not found", 404)
     return redirect(url_for("operator_api.list_credentials", community_id=community_id))
-from psycopg2.errors import DeadlockDetected, SerializationFailure
+
+
+@operator_api_bp.route(
+    "/leg/community/<community_id>/operator-api/confirmations/<request_id>",
+    methods=["GET", "POST"],
+)
+@_retryable_submission_errors
+def agent_confirmation_page(community_id, request_id):
+    from flask import redirect, render_template, url_for
+
+    import agent_confirmation
+
+    building_id = session.get("dashboard_building_id")
+    row = db.get_agent_confirmation_request(community_id, request_id)
+    if not row:
+        return _error("Not found", 404)
+    if not building_id:
+        return _error("Confirmation denied", 403)
+    if not _admin_for(community_id, building_id):
+        community = db.fetch_community_with_members(community_id)
+        if not any(
+            member.get("building_id") == building_id
+            for member in (community or {}).get("members", [])
+        ):
+            return _error("Not found", 404)
+        return _error("Confirmation denied", 403)
+    if request.method == "GET":
+        return render_template(
+            "agent_confirmation.html",
+            pending=row,
+            csrf_token=session.get("dashboard_csrf_token", ""),
+        )
+    if not _require_csrf():
+        return _error("Confirmation denied", 403)
+    try:
+        result = agent_confirmation.confirm(community_id, request_id, building_id)
+    except LookupError:
+        return _error("Not found", 404)
+    except PermissionError:
+        return _error("Confirmation denied", 403)
+    except (
+        db.VnbSubmissionConflict,
+        vnb_exchange.FormationSubmissionInvalid,
+        vnb_exchange.ParticipantMutationInvalid,
+        ValueError,
+    ):
+        return _error("Confirmation changed; preview again", 409)
+    except db.VnbExchangeStoreError:
+        return _error("Confirmation unavailable", 503)
+    if request.form and result["state"] == "confirmed":
+        # Build the location from the stored request, not the request URL.
+        return redirect(
+            url_for(
+                "operator_api.agent_confirmation_page",
+                community_id=row["community_id"],
+                request_id=row["request_id"],
+            ),
+            code=303,
+        )
+    return jsonify(schema_version=API_SCHEMA_VERSION, **result), (
+        409 if result["state"] == "expired" else 200
+    )
