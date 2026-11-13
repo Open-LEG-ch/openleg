@@ -26,7 +26,9 @@ OPENLEG_MCP_ENABLED=true OPENLEG_MCP_DEV_STATIC=true OPENLEG_OPERATOR_ORIGIN=htt
 
 The standalone listener binds to `127.0.0.1:8000` in dev-static mode and
 `0.0.0.0:8000` in OAuth mode.
-`OPENLEG_MCP_BIND_HOST` overrides the bind address. The Compose overlay sets
+`OPENLEG_MCP_BIND_HOST` overrides the bind address; in dev-static mode the
+process refuses any address other than `127.0.0.1`, `::1` or `localhost`.
+The Compose overlay runs in OAuth mode and sets
 it to `0.0.0.0` inside the container so Caddy can connect; only Caddy publishes
 a host port, bound to loopback. Host and Origin checks do not restrict which
 network clients can reach the listener.
@@ -259,7 +261,8 @@ Die Ressourcenbindung folgt
 [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707.html).
 
 Nur lokal kann `OPENLEG_MCP_DEV_STATIC=true` den bisherigen `olk_`-Pfad
-aktivieren. Der Prozesseinstieg bindet dann standardmässig an 127.0.0.1;
+aktivieren. Der Prozesseinstieg bindet dann nur an Loopback (`127.0.0.1`,
+`::1` oder `localhost`) und startet mit einer anderen Adresse nicht;
 auch der Betreiber-Origin muss Loopback sein. Diesen Modus niemals über einen
 Produktionsproxy veröffentlichen. In Produktion bleibt die Variable ungesetzt.
 Proxy-Logs dürfen keine Authorization-Header, Formularinhalte oder OAuth-

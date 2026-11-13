@@ -84,8 +84,15 @@ def _lock_credential_community(cur, community_id):
 
 
 def _check_credential_capacity(cur, community_id):
+    # An OAuth grant's downstream credential counts only while the grant is
+    # usable; expired or revoked grants must not hold a slot.
     cur.execute(
-        "SELECT COUNT(*) AS count FROM operator_api_clients WHERE community_id=%s AND active=TRUE",
+        """SELECT COUNT(*) AS count FROM operator_api_clients c
+            WHERE c.community_id=%s AND c.active=TRUE
+              AND NOT EXISTS (
+                  SELECT 1 FROM oauth_grants g WHERE g.id=c.id
+                     AND (g.expires_at<=CURRENT_TIMESTAMP OR g.revoked_at IS NOT NULL)
+              )""",
         (community_id,),
     )
     if cur.fetchone()["count"] >= 10:

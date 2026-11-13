@@ -445,9 +445,7 @@ def test_redaction_preserves_unrelated_record_semantics(monkeypatch):
     assert record.stack_info == "ordinary stack"
 
 
-@pytest.mark.parametrize(
-    "bind_host,expected", [(None, "127.0.0.1"), ("0.0.0.0", "0.0.0.0")]
-)
+@pytest.mark.parametrize("bind_host,expected", [(None, "127.0.0.1"), ("::1", "::1")])
 def test_standalone_bind_host(monkeypatch, bind_host, expected):
     import runpy
     from unittest.mock import Mock
@@ -463,6 +461,24 @@ def test_standalone_bind_host(monkeypatch, bind_host, expected):
     monkeypatch.setattr(uvicorn, "run", run)
     runpy.run_module("mcp_sidecar", run_name="__main__")
     assert run.call_args.kwargs["host"] == expected
+
+
+@pytest.mark.parametrize("bind_host", ["0.0.0.0", "192.0.2.1", "::"])
+def test_dev_static_refuses_non_loopback_bind(monkeypatch, bind_host):
+    """The static-token transport must never listen beyond loopback."""
+    import runpy
+    from unittest.mock import Mock
+
+    import uvicorn
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
+    monkeypatch.setenv("OPENLEG_MCP_BIND_HOST", bind_host)
+    run = Mock()
+    monkeypatch.setattr(uvicorn, "run", run)
+    with pytest.raises(SystemExit):
+        runpy.run_module("mcp_sidecar", run_name="__main__")
+    run.assert_not_called()
 
 
 def test_operator_origin_accepts_scheme_host_port(monkeypatch):
