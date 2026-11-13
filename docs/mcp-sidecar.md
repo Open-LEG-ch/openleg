@@ -30,7 +30,7 @@ network clients can reach the listener.
 
 The process refuses to start unless `OPENLEG_MCP_ENABLED=true`. The configured
 origin must contain only a scheme, host and optional port. Requests use the
-fixed operator API path and never follow redirects. Do not give this process
+fixed API paths, ignore proxy environment variables and never follow redirects. Do not give this process
 database environment variables or the Flask `.env` file.
 
 For local Compose development, start the normal application first, then:
@@ -70,8 +70,45 @@ The Compose overlay restricts hosts to port `8081` and origins to ports
 For a different proxy address or Inspector port, list its exact host and origin,
 including the port. Origins include the scheme and have no trailing slash.
 These settings describe incoming MCP requests; `OPENLEG_OPERATOR_ORIGIN`
-continues to select the upstream operator API.
+selects the upstream app for both public and operator routes.
 
 The SDK rejects an unlisted Host with 421 and an unlisted Origin with 403.
 A missing Origin is accepted for non-browser clients, as supported by the SDK;
 Host validation still applies. The literal Origin `null` is rejected.
+
+## Anonymous public tools
+
+Initialize and list tools without a credential. The following read-only tools
+use operation IDs and input schemas from `docs/openapi/public-v1.json`:
+
+| Tool | Public route |
+| --- | --- |
+| `get_municipalities` | `GET /api/v1/municipalities` |
+| `get_municipalities_bfs` | `GET /api/v1/municipalities/{bfs}` |
+| `get_municipalities_bfs_tariffs` | `GET /api/v1/municipalities/{bfs}/tariffs` |
+| `get_municipalities_bfs_solar` | `GET /api/v1/municipalities/{bfs}/solar` |
+| `get_tariffs` | `GET /api/v1/tariffs` |
+| `get_search` | `GET /api/v1/search` |
+| `get_rankings` | `GET /api/v1/rankings` |
+| `get_site_rankings` | `GET /api/v1/site/rankings` |
+| `get_site_rankings_movers` | `GET /api/v1/site/rankings/movers` |
+
+For example, call `get_search` with `{"q": "Dietikon"}` or
+`get_municipalities_bfs_tariffs` with `{"bfs": 243, "year": 2026}`.
+Address endpoints, calculators, score breakdowns, LEG potential, registry,
+homepage and template endpoints are not exposed.
+
+Public calls never forward the caller's Authorization header. They return the
+public API response unchanged, including decimal strings. Operator tools remain
+listed but require their bearer on each call; anonymous calls fail with the
+JSON-RPC authorization error described in
+[the operator contract](operator-operations-api.md#mcp-error-boundary).
+
+Calls use the same public HTTP routes and their existing rate limits. The app
+counts requests from the sidecar's upstream IP, so callers share that budget.
+A 429 returns the tool error `rate_limited` with structured content
+`{"code": "rate_limited", "field": null, "retryable": true, "retry_after": 60}`.
+`retry_after` appears only when the upstream supplies a numeric Retry-After
+delay in seconds. A 400 returns `invalid_arguments`, a 404 `not_found`, other
+statuses `public_error`, and an unreachable upstream `public_unavailable`.
+Upstream error text is never returned.

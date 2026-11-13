@@ -42,7 +42,10 @@ def test_contract_tool(monkeypatch):
     async def check():
         async with app.router.lifespan_context(app), session(app) as sdk:
             result = await sdk.list_tools()
-            names = [t.name for t in result.tools]
+            # Anonymous public API tools carry no metadata; they are pinned
+            # in tests/test_mcp_public.py.
+            tools = [t for t in result.tools if t.meta]
+            names = [t.name for t in tools]
             assert "list_billing_periods" in names
             # The preview tools follow the read tools, then the VNB submit
             # tools, then the case response and payment confirmation tools.
@@ -54,8 +57,8 @@ def test_contract_tool(monkeypatch):
                 "respond_invoice_case",
                 "confirm_payment_match",
             ]
-            previews = result.tools[-6:-4]
-            submits = result.tools[-4:-2]
+            previews = tools[-6:-4]
+            submits = tools[-4:-2]
             spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
             for preview, suffix, capability in zip(
                 previews,
@@ -87,7 +90,7 @@ def test_contract_tool(monkeypatch):
                 assert preview.inputSchema["additionalProperties"] is False
             assert "access_roles" in previews[1].description
             assert "access_roles" in submits[1].description
-            assert all(t.annotations.readOnlyHint is False for t in result.tools[-4:])
+            assert all(t.annotations.readOnlyHint is False for t in tools[-4:])
             tool = next(t for t in result.tools if t.name == "list_billing_periods")
             spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
             op = spec["paths"][
