@@ -299,3 +299,215 @@ def test_integral_floats_keep_their_integer_meaning(public_app, monkeypatch):
 
     assert seen[0] == "/api/v1/municipalities/261"
     assert seen[-1] == "/api/v1/tariffs?year=2025"
+
+
+def peer_app(app, address):
+    async def incoming(scope, receive, send):
+        await app({**scope, "client": (address, 12345)}, receive, send)
+
+    return incoming
+
+
+def test_public_budget_is_per_peer_before_upstream(public_app, monkeypatch):
+    from flask import request
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    seen = []
+
+    @public_app.before_request
+    def capture():
+        seen.append(request.path)
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_PUBLIC_CALLS", "1")
+    with operator_server(public_app) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with app.router.lifespan_context(app):
+                async with session(peer_app(app, "192.0.2.1")) as sdk:
+                    assert not (await sdk.call_tool("get_municipalities", {})).isError
+                    limited = await sdk.call_tool("get_tariffs", {})
+                    assert limited.isError
+                    assert limited.content[0].text == "rate_limited"
+                    assert limited.structuredContent["code"] == "rate_limited"
+                    assert 1 <= limited.structuredContent["retry_after"] <= 60
+                    from mcp.shared.exceptions import McpError
+
+                    # The public budget does not apply to operator tools,
+                    # which still need a bearer.
+                    with pytest.raises(McpError) as operator:
+                        await sdk.call_tool(
+                            "list_billing_periods", {"community_id": "one"}
+                        )
+                    assert (
+                        operator.value.error.data["code"] == "authentication_required"
+                    )
+                # A new stateless SDK session cannot reset the same peer's budget.
+                async with session(peer_app(app, "192.0.2.1")) as sdk:
+                    assert (await sdk.call_tool("get_municipalities", {})).isError
+                async with session(peer_app(app, "192.0.2.2")) as sdk:
+                    assert not (await sdk.call_tool("get_municipalities", {})).isError
+            assert seen == ["/api/v1/municipalities"] * 2
+
+        asyncio.run(check())
+
+
+@pytest.mark.parametrize("trusted", ["", "192.0.2.99", "192.0.2.1"])
+def test_only_named_proxy_can_supply_client_ip(public_app, monkeypatch, trusted):
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_PUBLIC_CALLS", "1")
+    monkeypatch.setenv("OPENLEG_MCP_TRUSTED_PROXY", trusted)
+    with operator_server(public_app) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with app.router.lifespan_context(app):
+                for index in (1, 2):
+                    async with session(
+                        peer_app(app, "192.0.2.1"),
+                        {
+                            "X-Real-IP": f"198.51.100.{index}",
+                            "X-Forwarded-For": f"203.0.113.{index}",
+                        },
+                    ) as sdk:
+                        result = await sdk.call_tool("get_municipalities", {})
+                        assert result.isError == (index == 2 and trusted != "192.0.2.1")
+
+        asyncio.run(check())
+
+
+def test_expiry_capacity_and_operator_independence(public_app, monkeypatch):
+    from flask import jsonify, request
+
+    from mcp_sidecar import limits
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    @public_app.get("/api/operator/v1/communities/one/billing/periods")
+    def operator():
+        assert request.headers["Authorization"] == "Bearer olk_test"
+        return jsonify(items=[], next_cursor=None)
+
+    # A local clock seam leaves the SDK's event loop clock alone.
+    from types import SimpleNamespace
+
+    clock = SimpleNamespace(monotonic=lambda: now[0])
+    now = [100.0]
+    monkeypatch.setattr(limits, "time", clock)
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_PUBLIC_CALLS", "1")
+    monkeypatch.setenv("OPENLEG_MCP_PUBLIC_WINDOW_SECONDS", "10")
+    monkeypatch.setenv("OPENLEG_MCP_PUBLIC_MAX_CLIENTS", "2")
+    with operator_server(public_app) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def call(peer, tool="get_municipalities", args=None):
+            async with session(
+                peer_app(app, peer), {"Authorization": "Bearer olk_test"}
+            ) as sdk:
+                return await sdk.call_tool(tool, args or {})
+
+        async def check():
+            async with app.router.lifespan_context(app):
+                assert not (await call("192.0.2.1")).isError
+                now[0] = 105.0
+                assert not (await call("192.0.2.2")).isError
+                for index in range(3, 15):
+                    result = await call(f"192.0.2.{index}")
+                    assert result.structuredContent == {
+                        "code": "rate_limited",
+                        "field": None,
+                        "retryable": True,
+                        "retry_after": 5,
+                    }
+                assert (await call("192.0.2.1")).isError
+                for _ in range(3):
+                    result = await call(
+                        "192.0.2.1", "list_billing_periods", {"community_id": "one"}
+                    )
+                    assert not result.isError
+                    assert result.structuredContent == {
+                        "items": [],
+                        "next_cursor": None,
+                    }
+                now[0] = 109.2
+                assert (await call("192.0.2.1")).structuredContent["retry_after"] == 1
+                now[0] = 110.0
+                assert not (await call("192.0.2.3")).isError
+                # The second client's unexpired budget survives eviction.
+                assert (await call("192.0.2.2")).structuredContent["retry_after"] == 5
+                now[0] = 120.0
+                assert not (await call("192.0.2.1")).isError
+
+        asyncio.run(check())
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        [("X-Real-IP", "bad")],
+        [("X-Real-IP", "198.51.100.1, 198.51.100.2")],
+        [("X-Real-IP", "198.51.100.1"), ("X-Real-IP", "198.51.100.2")],
+        [("X-Forwarded-For", "198.51.100.1")],
+    ],
+)
+def test_invalid_proxy_headers_keep_peer_budget(public_app, monkeypatch, header):
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_PUBLIC_CALLS", "1")
+    monkeypatch.setenv("OPENLEG_MCP_TRUSTED_PROXY", "192.0.2.1")
+    with operator_server(public_app) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with app.router.lifespan_context(app):
+                async with session(peer_app(app, "192.0.2.1")) as sdk:
+                    assert not (await sdk.call_tool("get_municipalities", {})).isError
+                async with session(peer_app(app, "192.0.2.1"), header) as sdk:
+                    assert (await sdk.call_tool("get_municipalities", {})).isError
+
+        asyncio.run(check())
+
+
+@pytest.mark.parametrize(
+    ("setting", "value"),
+    [
+        ("OPENLEG_MCP_PUBLIC_CALLS", "0"),
+        ("OPENLEG_MCP_PUBLIC_WINDOW_SECONDS", "-1"),
+        ("OPENLEG_MCP_PUBLIC_MAX_CLIENTS", "0"),
+        ("OPENLEG_MCP_PUBLIC_CALLS", "oops"),
+        ("OPENLEG_MCP_TRUSTED_PROXY", "*"),
+    ],
+)
+def test_invalid_limit_settings_fail_startup(monkeypatch, setting, value):
+    from mcp_sidecar.server import create_app
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv(setting, value)
+    with pytest.raises(ValueError):
+        create_app()
+
+
+def test_entry_point_preserves_connecting_peer(monkeypatch):
+    import runpy
+    from unittest.mock import Mock
+
+    import uvicorn
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    run = Mock()
+    monkeypatch.setattr(uvicorn, "run", run)
+    runpy.run_module("mcp_sidecar", run_name="__main__")
+    assert run.call_args.kwargs["proxy_headers"] is False

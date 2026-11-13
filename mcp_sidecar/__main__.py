@@ -10,4 +10,5 @@ uvicorn.run(
     host=os.environ.get("OPENLEG_MCP_BIND_HOST", "127.0.0.1"),
     port=8000,
     access_log=False,
+    proxy_headers=False,
 )
