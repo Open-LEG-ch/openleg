@@ -789,7 +789,10 @@ def rotate_credential(community_id, client_id):
         return _error("Invalid CSRF token", 400)
     token = _new_secret("olk_")
     token_hash = _token_hash(token)
-    row = db.rotate_operator_api_client(community_id, client_id, token_hash)
+    try:
+        row = db.rotate_operator_api_client(community_id, client_id, token_hash)
+    except db.OperatorCredentialLimitReached:
+        return _error("Credential limit reached", 409)
     return (
         jsonify(
             credential=_safe_credential(row),

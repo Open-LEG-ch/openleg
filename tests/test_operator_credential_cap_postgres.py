@@ -103,3 +103,26 @@ def test_concurrent_creations_share_the_last_slot(credential_http, interest_data
     assert sorted(response.status_code for response in responses) == [201, 409]
     assert next(r for r in responses if r.status_code == 409).get_json() == ERROR
     assert len(interest_database.list_operator_api_clients("cap-leg")) == 10
+
+
+def test_rotation_cannot_reactivate_past_the_limit(credential_http, interest_database):
+    """Rotating a revoked credential reactivates it, which needs a free slot."""
+    client = admin_client(credential_http)
+    ids = [create(client).get_json()["credential"]["id"] for _ in range(10)]
+    revoked = ids[0]
+    assert client.post(f"{URL}/{revoked}/revoke", headers=HEADERS).status_code == 200
+    assert create(client).status_code == 201
+    before = interest_database.list_operator_api_clients("cap-leg")
+
+    rejected = client.post(f"{URL}/{revoked}/rotate", headers=HEADERS)
+    assert rejected.status_code == 409
+    assert rejected.get_json() == ERROR
+    assert interest_database.list_operator_api_clients("cap-leg") == before
+
+    # An active credential still rotates at the limit.
+    assert client.post(f"{URL}/{ids[1]}/rotate", headers=HEADERS).status_code == 200
+    # With a free slot, rotation reactivates the revoked credential.
+    assert client.post(f"{URL}/{ids[2]}/revoke", headers=HEADERS).status_code == 200
+    assert client.post(f"{URL}/{revoked}/rotate", headers=HEADERS).status_code == 200
+    rows = interest_database.list_operator_api_clients("cap-leg")
+    assert sum(row["active"] for row in rows) == 10

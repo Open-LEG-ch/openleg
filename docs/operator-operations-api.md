@@ -135,8 +135,9 @@ previous token.
 ## Credential handling
 
 Each community can have at most 10 active credentials. Revoked credentials do
-not count. Creating a credential beyond this limit returns
-HTTP 409 with `{"error":"Credential limit reached","schema_version":"operator-api/1"}`
+not count. Creating a credential beyond this limit, or rotating a revoked
+credential back to active while the limit is reached, returns HTTP 409 with
+`{"error":"Credential limit reached","schema_version":"operator-api/1","code":"conflict","retryable":false}`
 and writes nothing.
 
 The token and the webhook secret are returned once at creation (and rotation)
