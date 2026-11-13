@@ -155,11 +155,13 @@
   </svg>
   <div class="release-container home-verein-inner">
     <h2 id="home-verein-title">{{ _('Offene Software braucht Menschen.') }}</h2>
+<p>{{ _('Mehr funktionierende LEGs in der Schweiz brauchen Menschen, die Code prüfen, Erfahrungen teilen und Treffen organisieren. Machen Sie mit.') }}</p>
+
     <p>{% if verein_formation_date %}{{ _('%(name)s pflegt Software, Dokumentation und Austausch. Der Verein mit Sitz in %(seat)s übernimmt nicht den Betrieb des gehosteten Produkts.', seat=verein_facts.seat, name=verein_facts.legal_name) }}{% else %}{{ _('%(name)s soll die Software, Dokumentation und den Austausch pflegen. Der Verein mit geplantem Sitz in %(seat)s ist noch nicht gegründet. Der Betrieb des gehosteten Produkts gehört nicht zu seinem vorgesehenen Auftrag.', seat=verein_facts.seat, name=verein_facts.legal_name) }}{% endif %}</p>
-    {% if verein_formation_date %}<p>{{ _('Gegründet am %(date)s in %(seat)s.', date=verein_facts.formation_date|datelabel, seat=verein_facts.seat) }}</p>{% endif %}
+    {% if verein_formation_date %}<p>{{ _('Gegründet am %(date)s. Sitz: %(seat)s.', date=verein_facts.formation_date|datelabel, seat=verein_facts.seat) }}</p>{% endif %}
     <div class="home-actions home-actions-center">
       <a class="release-button release-button-primary" href="{{ '/verein'|localized_url }}">{% if verein_formation_date %}{{ _('Verein und Mitgliedschaft') }}{% else %}{{ _('Über den geplanten Verein') }}{% endif %}</a>
-      <a class="home-link" href="https://github.com/Open-LEG-ch/openleg"><span class="home-link-text">{{ _('Auf GitHub mitarbeiten') }}</span> <span class="home-arrow" aria-hidden="true">&rarr;</span></a>
+      <a class="home-link" href="{{ '/mitmachen'|localized_url }}"><span class="home-link-text">{{ _('Mitmachen') }}</span> <span class="home-arrow" aria-hidden="true">&rarr;</span></a>
     </div>
   </div>
 </section>

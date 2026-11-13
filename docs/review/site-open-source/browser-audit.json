@@ -1,0 +1,386 @@
+[
+  {
+    "lang": "de",
+    "width": 320,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 320,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 320,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 390,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 390,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 390,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 768,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 768,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 768,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 1280,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 1280,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "de",
+    "width": 1280,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 320,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 320,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 320,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 390,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 390,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 390,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 768,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 768,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 768,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 1280,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 1280,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "fr",
+    "width": 1280,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 320,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 320,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 320,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 390,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 390,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 390,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 768,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 768,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 768,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 1280,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 1280,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "it",
+    "width": 1280,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 320,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 320,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 320,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 390,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 390,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 390,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 768,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 768,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 768,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 1280,
+    "page": "community",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 1280,
+    "page": "software",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  },
+  {
+    "lang": "en",
+    "width": 1280,
+    "page": "home",
+    "overflow": false,
+    "clipped": 0,
+    "axe": []
+  }
+]

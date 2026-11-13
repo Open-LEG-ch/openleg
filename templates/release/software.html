@@ -20,6 +20,68 @@
   </tbody></table></div>
   <p class="release-source">{{ _('Grundlage: öffentlicher Quellcode und technische Dokumentation. Prüfen Sie die verwendete Release-Version vor dem Einsatz.') }} <a href="https://github.com/Open-LEG-ch/openleg#readme">README</a></p>
 </section>
+<section class="release-document-section" id="code-map">
+<h2>{{ _('Was im Code steckt') }}</h2>
+<p>{{ _('Ein Weg, zwei Ansichten. Links sehen Sie die Aufgaben der Beteiligten, rechts die zugehörigen Module. Jede Freigabe bleibt eine Entscheidung der verantwortlichen Person.') }}</p>
+<p>{{ _('Die Gemeinde kann den Einstieg unterstützen. Haushalte und LEG-Verwaltung vereinbaren die Teilnahme. Der VNB betreibt das Netz und liefert Messdaten; der Grundversorger liefert bei Bedarf den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht.') }}</p>
+<div class="code-map-pair"><div class="code-map-view"><h3>{{ _('Menschen und Aufgaben') }}</h3><svg viewBox="0 0 280 1160" width="280" height="1160" aria-hidden="true" focusable="false">
+<path d="M 20 32 V 152" class="code-map-line"/>
+<circle cx="20" cy="20" r="17"/><text x="20" y="26" text-anchor="middle">1</text>
+<foreignObject x="48" y="1" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('LEG vorbereiten') }}</strong><span>{{ _('Gemeinde und LEG-Verwaltung') }}</span></div></foreignObject>
+<path d="M 20 176 V 296" class="code-map-line"/>
+<circle cx="20" cy="164" r="17"/><text x="20" y="170" text-anchor="middle">2</text>
+<foreignObject x="48" y="145" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Beteiligte aufnehmen') }}</strong><span>{{ _('Haushalte und LEG-Verwaltung') }}</span></div></foreignObject>
+<path d="M 20 320 V 440" class="code-map-line"/>
+<circle cx="20" cy="308" r="17"/><text x="20" y="314" text-anchor="middle">3</text>
+<foreignObject x="48" y="289" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Messdaten importieren') }}</strong><span>{{ _('Verteilnetzbetreiber (VNB)') }}</span></div></foreignObject>
+<path d="M 20 464 V 584" class="code-map-line"/>
+<circle cx="20" cy="452" r="17"/><text x="20" y="458" text-anchor="middle">4</text>
+<foreignObject x="48" y="433" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Viertelstunden verteilen') }}</strong><span>{{ _('Lokale Energie und Reststrom') }}</span></div></foreignObject>
+<path d="M 20 608 V 728" class="code-map-line"/>
+<circle cx="20" cy="596" r="17"/><text x="20" y="602" text-anchor="middle">5</text>
+<foreignObject x="48" y="577" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Entwurf kontrollieren') }}</strong><span>{{ _('LEG-Verwaltung prüft die Grundlagen') }}</span></div></foreignObject>
+<path d="M 20 752 V 872" class="code-map-line"/>
+<circle cx="20" cy="740" r="17"/><text x="20" y="746" text-anchor="middle">6</text>
+<foreignObject x="48" y="721" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Rechnungen freigeben') }}</strong><span>{{ _('Berechtigte Person entscheidet') }}</span></div></foreignObject>
+<path d="M 20 896 V 1016" class="code-map-line"/>
+<circle cx="20" cy="884" r="17"/><text x="20" y="890" text-anchor="middle">7</text>
+<foreignObject x="48" y="865" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Zahlungen abgleichen') }}</strong><span>{{ _('Zahlungseingänge prüfen') }}</span></div></foreignObject>
+<circle cx="20" cy="1028" r="17"/><text x="20" y="1034" text-anchor="middle">8</text>
+<foreignObject x="48" y="1009" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Archivieren') }}</strong><span>{{ _('Unterlagen geschützt aufbewahren') }}</span></div></foreignObject>
+</svg></div><div class="code-map-view code-map-technical"><h3>{{ _('Module und Prüfpunkte') }}</h3><svg viewBox="0 0 280 1160" width="280" height="1160" aria-hidden="true" focusable="false">
+<path d="M 20 32 V 152" class="code-map-line"/>
+<circle cx="20" cy="20" r="17"/><text x="20" y="26" text-anchor="middle">1</text>
+<foreignObject x="48" y="1" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('LEG vorbereiten') }}</strong><span class="code-map-module">formation_wizard.py</span></div></foreignObject>
+<path d="M 20 176 V 296" class="code-map-line"/>
+<circle cx="20" cy="164" r="17"/><text x="20" y="170" text-anchor="middle">2</text>
+<foreignObject x="48" y="145" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Beteiligte aufnehmen') }}</strong><span class="code-map-module">Flask · templates/ · store/formation.py</span></div></foreignObject>
+<path d="M 20 320 V 440" class="code-map-line"/>
+<circle cx="20" cy="308" r="17"/><text x="20" y="314" text-anchor="middle">3</text>
+<foreignObject x="48" y="289" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Messdaten importieren') }}</strong><span class="code-map-module">sdat_ingestion.py · meter_data.py</span></div></foreignObject>
+<path d="M 20 464 V 584" class="code-map-line"/>
+<circle cx="20" cy="452" r="17"/><text x="20" y="458" text-anchor="middle">4</text>
+<foreignObject x="48" y="433" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Viertelstunden verteilen') }}</strong><span class="code-map-module">billing_engine.py</span></div></foreignObject>
+<path d="M 20 608 V 728" class="code-map-line"/>
+<circle cx="20" cy="596" r="17"/><text x="20" y="602" text-anchor="middle">5</text>
+<foreignObject x="48" y="577" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Entwurf kontrollieren') }}</strong><span class="code-map-module">billing_runner.py</span></div></foreignObject>
+<path d="M 20 752 V 872" class="code-map-line"/>
+<circle cx="20" cy="740" r="17"/><text x="20" y="746" text-anchor="middle">6</text>
+<foreignObject x="48" y="721" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Rechnungen freigeben') }}</strong><span class="code-map-module">billing_approval.py · billing_lifecycle.py · member_invoices.py</span></div></foreignObject>
+<path d="M 20 896 V 1016" class="code-map-line"/>
+<circle cx="20" cy="884" r="17"/><text x="20" y="890" text-anchor="middle">7</text>
+<foreignObject x="48" y="865" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Zahlungen abgleichen') }}</strong><span class="code-map-module">payment_reconciliation.py</span></div></foreignObject>
+<circle cx="20" cy="1028" r="17"/><text x="20" y="1034" text-anchor="middle">8</text>
+<foreignObject x="48" y="1009" width="220" height="137"><div xmlns="http://www.w3.org/1999/xhtml" class="code-map-label"><strong>{{ _('Archivieren') }}</strong><span class="code-map-module">community_archive.py</span></div></foreignObject>
+</svg></div></div><div class="code-map-foundation"><h3>{{ _('Was alle Schritte verbindet') }}</h3><p>{{ _('Flask und templates/ bilden die Oberfläche. PostgreSQL und store/ halten die Daten. vnb_exchange.py verwaltet VNB-Fälle. Öffentliche API und operator_api.py haben getrennte Zugänge; i18n.py übersetzt die Oberfläche.') }}</p><p>{{ _('Der MCP-Sidecar ist standardmässig ausgeschaltet. Das Demodorf verwendet getrennte, vergängliche Sandbox-Arbeitsbereiche mit erfundenen Daten.') }}</p></div><details class="code-map-equivalent"><summary>{{ _('Die Karte als Text lesen') }}</summary><ol><li><strong>{{ _('LEG vorbereiten') }}</strong>: {{ _('Gemeinde und LEG-Verwaltung') }} <code>formation_wizard.py</code></li>
+<li><strong>{{ _('Beteiligte aufnehmen') }}</strong>: {{ _('Haushalte und LEG-Verwaltung') }} <code>Flask · templates/ · store/formation.py</code></li>
+<li><strong>{{ _('Messdaten importieren') }}</strong>: {{ _('Verteilnetzbetreiber (VNB)') }} <code>sdat_ingestion.py · meter_data.py</code></li>
+<li><strong>{{ _('Viertelstunden verteilen') }}</strong>: {{ _('Lokale Energie und Reststrom') }} <code>billing_engine.py</code></li>
+<li><strong>{{ _('Entwurf kontrollieren') }}</strong>: {{ _('LEG-Verwaltung prüft die Grundlagen') }} <code>billing_runner.py</code></li>
+<li><strong>{{ _('Rechnungen freigeben') }}</strong>: {{ _('Berechtigte Person entscheidet') }} <code>billing_approval.py · billing_lifecycle.py · member_invoices.py</code></li>
+<li><strong>{{ _('Zahlungen abgleichen') }}</strong>: {{ _('Zahlungseingänge prüfen') }} <code>payment_reconciliation.py</code></li>
+<li><strong>{{ _('Archivieren') }}</strong>: {{ _('Unterlagen geschützt aufbewahren') }} <code>community_archive.py</code></li>
+</ol></details><p class="release-source"><a href="https://github.com/Open-LEG-ch/openleg/blob/main/CONTEXT.md">CONTEXT.md</a> · <a href="https://github.com/Open-LEG-ch/openleg/blob/main/docs/architecture.md">{{ _('Architektur im Detail') }}</a></p></section>
+<section class="release-document-section stewardship-limits"><h2>{{ _('Was ein Open-Source-Projekt leisten kann, und was nicht') }}</h2><div class="release-two-column"><div><h3>{{ _('Prüfen, anpassen, selbst betreiben') }}</h3><p>{{ _('Der Code steht unter AGPL-3.0-or-later öffentlich zur Verfügung. Sie können ihn prüfen, anpassen und selbst betreiben. Beiträge verbessern die gemeinsame Grundlage; die verfügbare Zeit der Freiwilligen ist begrenzt.') }}</p></div><div><h3>{{ _('Verantwortung bleibt vor Ort') }}</h3><p>{{ _('Es gibt keine Support-SLA und keine zugesagte Antwortzeit. OpenLEG bietet keine Rechts- oder Steuerberatung und liefert keinen Strom. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet werden.') }}</p><p>{{ _('Die Veröffentlichung der Software ist keine Zusage für kostenloses Hosting oder Support. Ein Vereinsbeitrag ist kein Betriebsvertrag für Ihre LEG.') }}</p></div></div></section>
 {% if sandbox_url %}<div class="release-practice-document">{% include 'release/sandbox_preview.html' %}</div>{% endif %}
 <section class="release-document-section release-two-column"><div><h2>{{ _('Ihre LEG bleibt verantwortlich') }}</h2><p>{{ _('Ihre Gemeinschaft bestimmt die Vertretung, die internen Regeln und den Betreiber. OpenLEG übernimmt keine automatische Anmeldung beim Netzbetreiber und verspricht keine Anbindung an jeden Anbieter.') }}</p></div><div><h2>{{ _('Den nächsten Schritt wählen') }}</h2><div class="release-actions"><a class="release-button{{ '' if sandbox_url else ' release-button-primary' }}" href="{{ '/leg/dashboard/demo'|localized_url }}">{{ _('Mit Beispieldaten ausprobieren') }}</a><a class="release-button" href="{{ '/self-host'|localized_url }}">{{ _('Selbst betreiben') }}</a></div><p class="release-prose"><a href="{{ '/pricing'|localized_url }}">{{ _('Kosten und Betriebsaufgaben ansehen') }}</a> · <a href="{{ '/open-source'|localized_url }}">{{ _('Quellcode und Lizenz') }}</a></p></div></section>
 {% endblock %}
