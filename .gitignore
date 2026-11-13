@@ -102,6 +102,9 @@ infomaniak_*
 /*.md
 !/README.md
 !/CONTRIBUTING.md
+!/GOVERNANCE.md
+!/MAINTAINERS.md
+!/CODE_OF_CONDUCT.md
 !/SECURITY.md
 !/design.md
 !/CONTEXT.md

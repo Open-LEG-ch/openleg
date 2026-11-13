@@ -11,6 +11,8 @@ Closes #
 - [ ] Refactor: the smallest useful diff remains
 - [ ] `scripts/tdd_cycle.sh gate` passes
 
+- [ ] Every commit has a DCO sign-off (`git commit -s`); encouraged while [O3 awaits owner approval](https://github.com/Open-LEG-ch/openleg/blob/main/GOVERNANCE.md#pending-owner-approval)
+
 ## Review and QA
 
 - [ ] I reviewed every changed hunk
