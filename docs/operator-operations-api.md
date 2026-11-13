@@ -207,9 +207,13 @@ if its signed `sent_at` is more than five minutes before or after the receiver's
 current clock, or if the timestamp is missing or invalid. Keep receiver clocks
 synchronised. After verification and the freshness check, deduplicate on the
 signed `event_id` and/or signed `delivery_id`, using durable storage and an
-atomic check when processing concurrent deliveries. Do not trust the unsigned
-`OpenLEG-Delivery` header for deduplication. A freshness check alone does not
-prevent replay within the five-minute window.
+atomic check when processing concurrent deliveries. Record the ID in the same
+transaction as the business change it causes, so a failed processing attempt
+does not mark the event as seen. If processing has external side effects that
+cannot join that transaction, keep a recoverable processing state and answer
+non-2xx until it completes; OpenLEG then retries the delivery. Do not trust the
+unsigned `OpenLEG-Delivery` header for deduplication. A freshness check alone
+does not prevent replay within the five-minute window.
 
 Consumers must ignore unknown optional fields within version 1 and respond to
 non-2xx delivery outcomes by waiting for the bounded retry schedule rather

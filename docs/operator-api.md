@@ -78,7 +78,12 @@ dem Signing-Secret, bevor er JSON parst. Danach lehnt er Zustellungen ab, deren
 signiertes `sent_at` mehr als fünf Minuten vor oder nach seiner aktuellen
 Uhrzeit liegt. Fehlende oder ungültige Zeitstempel lehnt er ebenfalls ab.
 Er dedupliziert anhand der signierten `event_id` und/oder `delivery_id` und
-speichert die verarbeiteten IDs dauerhaft. Der unsignierte Header
+speichert die verarbeiteten IDs dauerhaft, in derselben Transaktion wie die
+ausgelöste fachliche Änderung. So gilt ein Ereignis nach einem fehlgeschlagenen
+Verarbeitungsversuch nicht als erledigt. Lassen sich externe Nebenwirkungen
+nicht in diese Transaktion einbinden, hält der Empfänger einen
+wiederaufnehmbaren Verarbeitungszustand und antwortet bis zum Abschluss nicht
+mit 2xx; OpenLEG stellt die Zustellung dann erneut zu. Der unsignierte Header
 `OpenLEG-Delivery` eignet sich nicht als vertrauenswürdiger Deduplizierungsschlüssel.
 Ein Python-Beispiel steht in
 [operator-operations-api.md](operator-operations-api.md#webhook-payloads-and-signature-verification).
