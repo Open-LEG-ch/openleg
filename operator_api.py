@@ -670,7 +670,7 @@ def _require_csrf():
         isinstance(submitted, str)
         and isinstance(expected, str)
         and expected
-        and hmac.compare_digest(submitted, expected)
+        and hmac.compare_digest(submitted.encode(), expected.encode())
     )
 
 
