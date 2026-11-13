@@ -40,6 +40,7 @@ PINNED_IDS = (
     "tests/test_oauth_postgres.py::test_authorization_rejects_invalid_request[change5]",
     "tests/test_oauth_postgres.py::test_authorization_rejects_invalid_request[change6]",
     "tests/test_oauth_postgres.py::test_authorization_rejects_invalid_request[change7]",
+    "tests/test_oauth_postgres.py::test_code_bound_to_registered_client_and_redirect",
     "tests/test_oauth_postgres.py::test_mcp_host_flow",
     "tests/test_oauth_postgres.py::test_scope_cannot_expand_at_exchange",
     "tests/test_oauth_postgres.py::test_sidecar_enforces_capability",
