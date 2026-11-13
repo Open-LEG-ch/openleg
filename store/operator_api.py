@@ -226,7 +226,10 @@ def get_pending_deliveries(max_attempts=5, limit=100, *, community_id=None):
                      JOIN operator_api_clients c ON c.id=d.client_id
                     WHERE (d.status IN ('pending','retry') OR
                            (d.status='processing' AND d.claimed_at < CURRENT_TIMESTAMP - INTERVAL '15 minutes'))
-                      AND d.attempt_count<%s AND c.active=TRUE
+                      -- Only an administrator's re-arm leaves a retry (or its
+                      -- abandoned processing claim) with an exhausted budget.
+                      AND (d.attempt_count<%s OR d.status IN ('retry','processing'))
+                      AND c.active=TRUE
                       AND d.next_attempt_at<=CURRENT_TIMESTAMP
                       AND e.schema_version='operator-event/1'
                       {scope}
