@@ -29,8 +29,17 @@ ADMIN_STATUS = {
 }
 URL = "/leg/community/cap-leg/operator-api/credentials"
 HEADERS = {"X-CSRF-Token": "csrf"}
-PAYLOAD = {"name": "Integration", "capabilities": ["formation.read"]}
-ERROR = {"error": "Credential limit reached", "schema_version": "operator-api/1"}
+PAYLOAD = {
+    "name": "Integration",
+    "capabilities": ["formation.read"],
+    "actor_kind": "service",
+}
+ERROR = {
+    "error": "Credential limit reached",
+    "schema_version": "operator-api/1",
+    "code": "conflict",
+    "retryable": False,
+}
 
 
 def test_creation_limit_returns_fixed_conflict_without_secrets():
