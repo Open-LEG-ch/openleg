@@ -81,7 +81,7 @@ billing lifecycle, and schema or API contracts in an issue before implementation
 2. Follow the [onboarding guide](docs/contributor-onboarding.md). Run `scripts/contribute doctor`; if dependencies are missing, run `scripts/contribute setup`, activate `.venv`, and rerun the doctor.
 3. Make a focused change. For behavior changes, start with a failing test and keep it as regression coverage.
 4. Run `scripts/tdd_cycle.sh gate`; include PostgreSQL validation when the change touches database behavior. Stage only your changed paths and run `scripts/contribute check --staged`.
-5. Read the DCO section below, commit with `git commit -s -m "docs(scope): describe the change"`, push your branch, and open a PR against `main`. Describe the change and validation, link any related issue, and address review findings.
+5. Read the DCO section below and commit with a descriptive message. If you choose to sign off while O3 is pending, use `git commit -s -m "docs(scope): describe the change"`. Push your branch and open a PR against `main`. Describe the change and validation, link any related issue, and address review findings.
 
 #### DCO sign-off
 
@@ -93,8 +93,8 @@ now; this change adds no CI enforcement.
 Read the certificate before signing. `git commit -s` adds a `Signed-off-by`
 trailer using your configured Git name and email. It certifies your right to
 submit the contribution under its license; it is not a cryptographic signature.
-Your sign-off is part of the public, lasting contribution record. Sign every
-commit, not just the PR description.
+Your sign-off is part of the public, lasting contribution record. If you choose
+to sign off while O3 is pending, sign each commit, not just the PR description.
 
 AI-assisted or not, you own every hunk. Before opening the PR:
 

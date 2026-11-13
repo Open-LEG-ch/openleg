@@ -14,8 +14,9 @@ für den Austausch zur LEG-Praxis und zur Entwicklung. Termine, Gastgeber und
 Orte werden erst veröffentlicht, wenn sie feststehen. O1 (Name, Domain und
 GitHub-Organisation beim Verein), O2 (höchstens ein Drittel der Maintainer beim
 selben Arbeitgeber ab drei Maintainern) und O3 (DCO-Pflicht für neue PRs)
-warten auf die Freigabe des Projekteigentümers. O1 ist ein Ziel, keine bereits
-erfolgte Übertragung.
+warten auf die Freigabe des Projekteigentümers. Auch O4, die befristete
+Bestellung von Maintainern durch den Vorstand, wenn niemand mehr aktiv ist,
+wartet auf diese Freigabe. O1 ist ein Ziel, keine bereits erfolgte Übertragung.
 
 ## Association and technical leadership
 
@@ -66,6 +67,25 @@ participation, a maintainer moves to emeritus. Record this in the maintainer lis
 and remove active voting and maintainer access. Emeritus recognises past work;
 returning to active status uses the same public nomination process.
 
+### Recovery when no active maintainer remains
+
+O4 is pending owner approval and is not yet in force. Until approved, the
+regular process provides no appointment path when no active maintainer remains.
+The proposed exception applies only in that situation:
+
+1. The Vorstand of Verein openLEG Schweiz publishes an open call for at least
+   14 days.
+2. After the call, the board publicly appoints one or more interim maintainers
+   by board decision and records the appointment in a public issue.
+3. Interim maintainers serve until the regular contributor-to-maintainer path
+   has produced at least one maintainer, for at most 12 months. The members'
+   assembly may revoke the appointment.
+
+This recovery role belongs to the association, not to the founder or any other
+individual. It grants no founder veto or permanent seat.
+
+### Role descriptions
+
 | Code and project role | What it does and how to start |
 | --- | --- |
 | Contributor | Anyone can contribute code, tests, documentation or requests; start with an issue or a focused PR using [CONTRIBUTING.md](CONTRIBUTING.md). |
@@ -113,7 +133,7 @@ time. Work depends on volunteer capacity.
 
 ## Pending owner approval
 
-These three proposals are not in force until the project owner explicitly
+These four proposals are not in force until the project owner explicitly
 approves them and that decision is recorded here with a public issue or PR link.
 
 | Decision | Proposal and current status |
@@ -121,6 +141,7 @@ approves them and that decision is recorded here with a public issue or PR link.
 | O1: project assets | Goal: Verein openLEG Schweiz holds the OpenLEG name, openleg.ch domain and Open-LEG-ch GitHub organisation. Pending owner approval; transfer is not claimed as complete. Approval and completed transfer must be recorded separately. |
 | O2: employer limit | Once there are three or more active maintainers, at most one third may come from the same employer. Pending owner approval; not an existing eligibility rule. |
 | O3: DCO | Require a Developer Certificate of Origin sign-off on every commit in new PRs. Pending owner approval; sign-off is encouraged meanwhile. This documentation change adds no CI enforcement. |
+| O4: maintainer recovery | Only when no active maintainer remains, the association board may appoint interim maintainers under the [recovery rule](#recovery-when-no-active-maintainer-remains). Pending owner approval; not an existing appointment power. |
 
 ## Sources and terminology
 
