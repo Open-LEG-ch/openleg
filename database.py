@@ -457,8 +457,8 @@ list_operator_invoices = _operator_operations.list_invoices
 list_operator_invoice_cases = _operator_operations.list_cases
 list_operator_payment_matches = _operator_operations.list_payments
 
-from store import verein_meetups as _verein_meetups
 from store import agent_confirmation as _agent_confirmation
+from store import verein_meetups as _verein_meetups
 from store.advisories import (  # noqa: F401
     append_advisory_revision,
     create_advisory,

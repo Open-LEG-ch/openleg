@@ -3810,7 +3810,7 @@ msgid ""
 "Verwenden Sie ausschliesslich Beispieldaten."
 msgstr ""
 
-#: store/formation_signatures.py:179 store/vnb_exchange.py:402
+#: store/formation_signatures.py:179 store/vnb_exchange.py:437
 msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 msgstr ""
 
@@ -8622,7 +8622,7 @@ msgstr ""
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1113 store/vnb_exchange.py:435
+#: dashboard.py:1113 store/vnb_exchange.py:470
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
