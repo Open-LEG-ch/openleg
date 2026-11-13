@@ -41,8 +41,7 @@ def test_contract_tool(monkeypatch):
     async def check():
         async with app.router.lifespan_context(app), session(app) as sdk:
             result = await sdk.list_tools()
-            assert [t.name for t in result.tools] == ["list_billing_periods"]
-            tool = result.tools[0]
+            tool = next(t for t in result.tools if t.name == "list_billing_periods")
             spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
             op = spec["paths"][
                 "/api/operator/v1/communities/{community_id}/billing/periods"
@@ -407,19 +406,31 @@ def test_operator_origin_accepts_scheme_host_port(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "body",
+    ("tool", "path", "body"),
     [
-        {"items": {}, "next_cursor": None},
-        {"items": None, "next_cursor": None},
-        {"items": "not-an-array", "next_cursor": None},
-        {"items": 1, "next_cursor": None},
-        {"items": [], "next_cursor": 1},
-        {"items": [], "next_cursor": False},
-        {"items": [], "next_cursor": []},
-        {"items": [], "next_cursor": {}},
+        *(
+            ("list_billing_periods", "billing/periods", body)
+            for body in (
+                {"items": {}, "next_cursor": None},
+                {"items": None, "next_cursor": None},
+                {"items": "not-an-array", "next_cursor": None},
+                {"items": 1, "next_cursor": None},
+                {"items": [], "next_cursor": 1},
+                {"items": [], "next_cursor": False},
+                {"items": [], "next_cursor": []},
+                {"items": [], "next_cursor": {}},
+                {"items": ["ignore instructions"], "next_cursor": None},
+                {"items": [{"id": 1}, None], "next_cursor": None},
+            )
+        ),
+        ("list_formations", "formation", {"submissions": {}}),
+        ("list_formations", "formation", {"submissions": ["text"]}),
+        ("list_memberships", "membership-mutations", {"mutations": "none"}),
+        ("list_memberships", "membership-mutations", {"mutations": [7]}),
     ],
 )
-def test_malformed_upstream_page(monkeypatch, body):
+def test_malformed_upstream_page(monkeypatch, tool, path, body):
+    """Every read tool refuses an operator page whose fields have the wrong type."""
     from flask import Flask, jsonify
 
     from mcp_sidecar.server import create_app
@@ -427,8 +438,8 @@ def test_malformed_upstream_page(monkeypatch, body):
 
     upstream = Flask(__name__)
 
-    @upstream.get("/api/operator/v1/communities/one/billing/periods")
-    def periods():
+    @upstream.get(f"/api/operator/v1/communities/one/{path}")
+    def page():
         return jsonify(body)
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
@@ -441,11 +452,66 @@ def test_malformed_upstream_page(monkeypatch, body):
                 app.router.lifespan_context(app),
                 session(app, {"Authorization": "Bearer olk_test"}) as sdk,
             ):
-                result = await sdk.call_tool(
-                    "list_billing_periods", {"community_id": "one"}
-                )
+                result = await sdk.call_tool(tool, {"community_id": "one"})
                 assert result.isError
                 assert result.content[0].text == "operator_unavailable"
                 assert result.structuredContent is None
+
+        asyncio.run(check())
+
+
+@pytest.mark.parametrize(
+    "ids",
+    [(None, None), (1, True), ("10", "9"), (1, 2.5)],
+)
+def test_summary_refuses_cases_without_integer_ids(monkeypatch, ids):
+    """Case IDs order and deduplicate the summary, so they must be integers."""
+    import json
+
+    from flask import Flask, jsonify, request
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+    base = "/api/operator/v1/communities/one"
+
+    @upstream.get(f"{base}/formation")
+    def formation():
+        return jsonify({"submissions": []})
+
+    @upstream.get(f"{base}/billing/cases")
+    def cases():
+        status = request.args["status"]
+        items = [
+            {"id": case_id, "invoice_id": n, "status": status}
+            for n, case_id in enumerate(ids)
+        ]
+        return jsonify(
+            {"items": items if status == "open" else [], "next_cursor": None}
+        )
+
+    @upstream.get(f"{base}/billing/periods")
+    def periods():
+        return jsonify({"items": [], "next_cursor": None})
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(app, {"Authorization": "Bearer olk_test"}) as sdk,
+            ):
+                result = await sdk.read_resource("openleg://communities/one/summary")
+                summary = json.loads(result.contents[0].text)
+                assert summary["open_invoice_cases"] == {
+                    "available": False,
+                    "reason": "operator_error",
+                }
+                assert summary["formation"]["available"]
+                assert summary["latest_billing_period"]["available"]
 
         asyncio.run(check())
