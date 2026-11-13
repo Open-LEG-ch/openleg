@@ -564,10 +564,13 @@ def respond_invoice_case(community_id, case_id):
             ErrorCode.INVALID_IDEMPOTENCY_KEY,
             field="Idempotency-Key",
         )
-    if not all(
-        isinstance(payload.get(field, ""), str) for field in ("message", "status")
-    ):
-        return _error("Invoice case update invalid", 409, ErrorCode.INVALID_CASE)
+    # A wrong JSON type is a malformed request (400), like invoice_id for
+    # payments; empty text or a disallowed transition stays a domain 409.
+    for field in ("message", "status"):
+        if not isinstance(payload.get(field, ""), str):
+            return _error(
+                "Invoice case update invalid", 400, ErrorCode.INVALID_CASE, field=field
+            )
     try:
         result = db.respond_operator_invoice_case(
             case_id,

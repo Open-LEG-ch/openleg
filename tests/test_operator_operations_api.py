@@ -351,7 +351,7 @@ def test_malformed_write_bodies_get_the_json_error_contract_without_a_store_call
 ):
     client = _client(app)
     # Codes follow the stable error contract: a non-object body is an
-    # invalid request, wrong field types are invalid case or payment input.
+    # invalid request; a wrong field type is a 400 invalid case or payment.
     malformed = [
         (
             CASE_PATH,
@@ -359,17 +359,17 @@ def test_malformed_write_bodies_get_the_json_error_contract_without_a_store_call
             400,
             "invalid_request",
         ),
-        (CASE_PATH, {"message": 42, "status": "acknowledged"}, 409, "invalid_case"),
+        (CASE_PATH, {"message": 42, "status": "acknowledged"}, 400, "invalid_case"),
         (
             CASE_PATH,
             {"message": ["Bitte prüfen"], "status": "acknowledged"},
-            409,
+            400,
             "invalid_case",
         ),
         (
             CASE_PATH,
             {"message": "Bitte prüfen", "status": {"x": 1}},
-            409,
+            400,
             "invalid_case",
         ),
         (PAYMENT_PATH, [{"invoice_id": 3}], 400, "invalid_request"),

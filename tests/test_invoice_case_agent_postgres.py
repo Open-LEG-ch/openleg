@@ -85,11 +85,33 @@ def test_invalid_preview_option_fails_closed(operator_http, query, extra):
 
 
 @pytest.mark.parametrize(
+    "message,status,field",
+    [(123, "resolved", "message"), ("ok", [], "status")],
+)
+def test_wrong_field_types_are_malformed_requests(
+    operator_http, message, status, field
+):
+    """A wrong JSON type is a 400 before any store call, not a domain 409."""
+    http = operator_http
+    ids = helpers.seed_operator_resources(http)
+    before = snapshot(http)
+    for query, headers in (("?dry_run=true", {}), ("", {"Idempotency-Key": "types"})):
+        response = http.request(
+            "POST",
+            f"/billing/cases/{ids['case_id']}/responses{query}",
+            json={"message": message, "status": status},
+            headers=headers,
+        )
+        assert response.status_code == 400
+        assert response.json["code"] == "invalid_case"
+        assert response.json["field"] == field
+    assert snapshot(http) == before
+
+
+@pytest.mark.parametrize(
     "message,status",
     [
         ("", "resolved"),
-        (123, "resolved"),
-        ("ok", []),
         ("  ", "resolved"),
         ("x" * 4001, "resolved"),
         ("ok", "open"),
