@@ -33,6 +33,7 @@ def redeem(
     grant_id,
     token_hash,
     downstream_hash,
+    refresh_hash,
 ):
     # Release the read connection before checking membership. The community
     # lookup must not need a second connection while the OAuth one is held.
@@ -85,9 +86,13 @@ def redeem(
             ),
         )
         cur.execute(
-            """INSERT INTO oauth_grants(id,token_hash,payload)
-            VALUES (%s,%s,%s)""",
-            (grant_id, token_hash, Json(p)),
+            """INSERT INTO oauth_grants(id,token_hash,payload,downstream_hash)
+            VALUES (%s,%s,%s,%s)""",
+            (grant_id, token_hash, Json(p), downstream_hash),
+        )
+        cur.execute(
+            "INSERT INTO oauth_refresh_tokens(token_hash,grant_id) VALUES (%s,%s)",
+            (refresh_hash, grant_id),
         )
         return p
 
@@ -99,11 +104,138 @@ def introspect(token_hash):
                       c.token_hash AS downstream_hash
             FROM oauth_grants g JOIN operator_api_clients c ON c.id=g.id
             WHERE g.token_hash=%s AND g.revoked_at IS NULL
-            AND g.expires_at>CURRENT_TIMESTAMP AND c.active=TRUE""",
+            AND g.expires_at>CURRENT_TIMESTAMP AND c.active=TRUE
+            AND EXISTS (SELECT 1 FROM oauth_refresh_tokens r
+                        WHERE r.grant_id=g.id AND r.used_at IS NULL
+                        AND r.expires_at>CURRENT_TIMESTAMP)""",
             (token_hash,),
         )
         row = cur.fetchone()
-    return dict(row) if row and approving_admin_valid(row["payload"]) else None
+    if not row or not approving_admin_valid(row["payload"]):
+        return None
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE oauth_grants SET last_used_at=CURRENT_TIMESTAMP WHERE id=%s",
+            (row["id"],),
+        )
+    return dict(row)
+
+
+def _revoke(cur, grant_id):
+    cur.execute(
+        "UPDATE oauth_grants SET revoked_at=COALESCE(revoked_at,CURRENT_TIMESTAMP) WHERE id=%s",
+        (grant_id,),
+    )
+    cur.execute(
+        "UPDATE operator_api_clients SET active=FALSE,updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+        (grant_id,),
+    )
+
+
+def refresh(
+    token_hash, client_id, resource, scope, access_hash, refresh_hash, downstream_hash
+):
+    # Check membership on its own connection before the rotation transaction.
+    # Lookup failures must leave the refresh family untouched and retryable.
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT g.payload FROM oauth_grants g
+            JOIN oauth_refresh_tokens r ON r.grant_id=g.id
+            WHERE r.token_hash=%s AND g.payload->>'client_id'=%s
+            AND g.payload->>'resource'=%s""",
+            (token_hash, client_id, resource),
+        )
+        row = cur.fetchone()
+    if not row:
+        return None
+    # A lookup failure raises here, before anything changes. A non-admin
+    # result applies only after reuse detection, so a replay still revokes.
+    admin_valid = approving_admin_valid(row["payload"])
+    with _get_connection() as conn, conn.cursor() as cur:
+        # Every refresh and dashboard revocation locks the grant first. Retain
+        # consumed hashes so a replay can revoke the entire token family.
+        cur.execute(
+            """SELECT g.* FROM oauth_grants g
+            JOIN oauth_refresh_tokens r ON r.grant_id=g.id
+            WHERE r.token_hash=%s FOR UPDATE OF g""",
+            (token_hash,),
+        )
+        grant = cur.fetchone()
+        if not grant:
+            return None
+        p = grant["payload"]
+        if p["client_id"] != client_id or p["resource"] != resource:
+            return None
+        cur.execute(
+            "SELECT * FROM oauth_refresh_tokens WHERE token_hash=%s", (token_hash,)
+        )
+        token = cur.fetchone()
+        if token["used_at"] is not None:
+            _revoke(cur, grant["id"])
+            return None
+        if grant["revoked_at"] is not None or not admin_valid:
+            return None
+        cur.execute(
+            """SELECT id FROM operator_api_clients
+            WHERE id=%s AND active=TRUE AND token_hash=%s FOR UPDATE""",
+            (grant["id"], grant["downstream_hash"]),
+        )
+        if not cur.fetchone():
+            return None
+        if scope is not None and set(scope.split()) != set(p["scope"].split()):
+            return None
+        cur.execute(
+            """UPDATE oauth_refresh_tokens SET used_at=CURRENT_TIMESTAMP
+            WHERE token_hash=%s AND expires_at>CURRENT_TIMESTAMP RETURNING expires_at""",
+            (token_hash,),
+        )
+        valid = cur.fetchone()
+        if not valid:
+            return None
+        # Absolute family lifetime: rotation never extends the original expiry.
+        cur.execute(
+            """INSERT INTO oauth_refresh_tokens(token_hash,grant_id,expires_at)
+            VALUES (%s,%s,%s)""",
+            (refresh_hash, grant["id"], valid["expires_at"]),
+        )
+        cur.execute(
+            """UPDATE oauth_grants SET token_hash=%s,downstream_hash=%s,
+            expires_at=CURRENT_TIMESTAMP + INTERVAL '300 seconds',
+            last_used_at=CURRENT_TIMESTAMP WHERE id=%s""",
+            (access_hash, downstream_hash, grant["id"]),
+        )
+        cur.execute(
+            "UPDATE operator_api_clients SET token_hash=%s,updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+            (downstream_hash, grant["id"]),
+        )
+        return p
+
+
+def list_grants(community_id):
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT g.id,c.community_id,g.payload->>'scope' AS scope,
+            g.payload->>'client_id' AS client_id,g.payload->>'name' AS name,
+            g.created_at,g.last_used_at,g.revoked_at,c.active
+            FROM oauth_grants g JOIN operator_api_clients c ON c.id=g.id
+            WHERE c.community_id=%s ORDER BY g.created_at DESC""",
+            (community_id,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def revoke(community_id, grant_id):
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT g.id FROM oauth_grants g
+            JOIN operator_api_clients c ON c.id=g.id
+            WHERE g.id=%s AND c.community_id=%s FOR UPDATE OF g""",
+            (grant_id, community_id),
+        )
+        if not cur.fetchone():
+            return False
+        _revoke(cur, grant_id)
+        return True
 
 
 def approving_admin_valid(payload):
@@ -130,7 +262,11 @@ def credential_grant_valid(client_id):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """SELECT payload, revoked_at IS NULL AND
-            expires_at > CURRENT_TIMESTAMP AS valid FROM oauth_grants WHERE id=%s""",
+            g.expires_at > CURRENT_TIMESTAMP AND
+            EXISTS (SELECT 1 FROM oauth_refresh_tokens r
+                    WHERE r.grant_id=g.id AND r.used_at IS NULL
+                    AND r.expires_at>CURRENT_TIMESTAMP) AS valid
+            FROM oauth_grants g WHERE g.id=%s""",
             (client_id,),
         )
         row = cur.fetchone()

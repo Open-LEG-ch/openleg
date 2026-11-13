@@ -22383,3 +22383,38 @@ msgstr "Confirm payment matches"
 #: oauth_server.py:230
 msgid "Zahlungsabgleiche lesen"
 msgstr "Read payment matches"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_dashboard.html:40 templates/operator_credentials.html:2 templates/operator_credentials.html:5
+msgid "Integrationskonten"
+msgstr "Integration accounts"
+
+#. Draft translation; native language and domain review pending.
+#: templates/operator_credentials.html:8
+msgid "OAuth-Freigaben"
+msgstr "OAuth grants"
+
+#. Draft translation; native language and domain review pending.
+#: templates/operator_credentials.html:14
+msgid "Berechtigungen"
+msgstr "Permissions"
+
+#. Draft translation; native language and domain review pending.
+#: templates/operator_credentials.html:15
+msgid "Erstellt am"
+msgstr "Created on"
+
+#. Draft translation; native language and domain review pending.
+#: templates/operator_credentials.html:16
+msgid "Zuletzt verwendet"
+msgstr "Last used"
+
+#. Draft translation; native language and domain review pending.
+#: templates/operator_credentials.html:22
+msgid "Agentenzugriff widerrufen"
+msgstr "Revoke agent access"
+
+#. Draft translation; native language and domain review pending.
+#: templates/operator_credentials.html:26
+msgid "Keine OAuth-Freigaben vorhanden."
+msgstr "No OAuth grants available."

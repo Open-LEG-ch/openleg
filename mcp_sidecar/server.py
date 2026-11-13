@@ -44,7 +44,7 @@ def redact_transport_logs():
         # unrelated records untouched. Flatten only credential-bearing records,
         # including exception chains and stack info, before handlers format them.
         rendered = logging.Formatter().format(copy.copy(record))
-        redacted = re.sub(r"(?:olk|ola|olc)_[A-Za-z0-9_-]+", "[redacted]", rendered)
+        redacted = re.sub(r"(?:olk|ola|olc|olr)_[A-Za-z0-9_-]+", "[redacted]", rendered)
         redacted = re.sub(r"Bearer [A-Za-z0-9._~+/-]+", "Bearer [redacted]", redacted)
         if redacted != rendered:
             record.msg = redacted
@@ -648,7 +648,7 @@ def create_app():
                     for item in result[key]
                 ):
                     raise ValueError("Malformed operator page")
-            if re.search(r"(?:olk|ola|olc)_[A-Za-z0-9_-]+", json.dumps(result)):
+            if re.search(r"(?:olk|ola|olc|olr)_[A-Za-z0-9_-]+", json.dumps(result)):
                 return error("operator_error")
             untrusted = []
             for key, value in result.items():

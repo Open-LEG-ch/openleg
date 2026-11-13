@@ -60,7 +60,7 @@ def metadata():
         authorization_endpoint=issuer + "/oauth/authorize",
         token_endpoint=issuer + "/oauth/token",
         response_types_supported=["code"],
-        grant_types_supported=["authorization_code"],
+        grant_types_supported=["authorization_code", "refresh_token"],
         code_challenge_methods_supported=["S256"],
         token_endpoint_auth_methods_supported=["none"],
     )
@@ -207,6 +207,34 @@ def token():
     p = request.form
     if any(len(p.getlist(k)) != 1 for k in p):
         return invalid()
+    if p.get("grant_type") == "refresh_token":
+        if p.get("resource") != current_app.config["OAUTH_RESOURCE"]:
+            return invalid("invalid_target")
+        if p.get("client_id") not in current_app.config.get("OAUTH_CLIENTS", {}):
+            return invalid("invalid_grant")
+        access = "ola_" + secrets.token_urlsafe(32)
+        refresh = "olr_" + secrets.token_urlsafe(32)
+        try:
+            grant = db.refresh_oauth_token(
+                _token_hash(p.get("refresh_token", "")),
+                p["client_id"],
+                p["resource"],
+                p.get("scope"),
+                _token_hash(access),
+                _token_hash(refresh),
+                _token_hash(downstream_token(access)),
+            )
+        except db.OAuthAdminLookupUnavailable:
+            return invalid("temporarily_unavailable", 503)
+        if not grant:
+            return invalid("invalid_grant")
+        return jsonify(
+            access_token=access,
+            refresh_token=refresh,
+            token_type="Bearer",
+            expires_in=300,
+            scope=grant["scope"],
+        )
     if p.get("grant_type") != "authorization_code":
         return invalid("unsupported_grant_type")
     if p.get("resource") != current_app.config["OAUTH_RESOURCE"]:
@@ -225,6 +253,7 @@ def token():
     )
     grant_id = str(uuid.uuid4())
     access = "ola_" + secrets.token_urlsafe(32)
+    refresh = "olr_" + secrets.token_urlsafe(32)
     downstream = downstream_token(access)
     try:
         grant = db.redeem_oauth_code(
@@ -236,6 +265,7 @@ def token():
             grant_id,
             _token_hash(access),
             _token_hash(downstream),
+            _token_hash(refresh),
         )
     except db.OAuthAdminLookupUnavailable:
         return invalid("temporarily_unavailable", 503)
@@ -246,7 +276,11 @@ def token():
     if not grant:
         return invalid("invalid_grant")
     return jsonify(
-        access_token=access, token_type="Bearer", expires_in=300, scope=grant["scope"]
+        access_token=access,
+        refresh_token=refresh,
+        token_type="Bearer",
+        expires_in=300,
+        scope=grant["scope"],
     )
 
 

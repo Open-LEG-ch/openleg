@@ -2347,4 +2347,17 @@ def create_tables():
                     revoked_at TIMESTAMPTZ
                 )
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS oauth_refresh_tokens (
+                    token_hash TEXT PRIMARY KEY,
+                    grant_id TEXT NOT NULL REFERENCES oauth_grants(id) ON DELETE CASCADE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '30 days',
+                    used_at TIMESTAMPTZ
+                );
+                CREATE INDEX IF NOT EXISTS oauth_refresh_grant_idx
+                    ON oauth_refresh_tokens(grant_id);
+                ALTER TABLE oauth_grants ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ;
+                ALTER TABLE oauth_grants ADD COLUMN IF NOT EXISTS downstream_hash TEXT
+            """)
             logger.info("[DB] Tables and indexes created successfully")

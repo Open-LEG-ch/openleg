@@ -801,7 +801,7 @@ Reset, discard and expiry remove the entire capture directory and database.
 
 ## store/oauth
 
-- Tables: `oauth_codes`, `oauth_grants`.
+- Tables: `oauth_codes`, `oauth_grants`, `oauth_refresh_tokens`.
 - Holds: hashed codes and access tokens, client and administrator building
   identities, exact redirect URI, PKCE challenge, resource, community and
   delegated capabilities. Grant IDs reference their agent operator credential.
@@ -815,5 +815,13 @@ Reset, discard and expiry remove the entire capture directory and database.
 - Retention: redeemed codes are deleted atomically. Unredeemed codes become
   unusable after 60 seconds but remain stored until maintenance removes them.
   Access tokens become unusable after 300 seconds. Grant records remain for
-  future refresh/revocation work (#852); deleting their operator credential
-  cascades to its grant. `revoked_at` and credential status deny introspection.
+  administrator review; deleting their operator credential cascades to its grant
+  and refresh hashes. Refresh rows contain only a token hash, grant foreign key,
+  creation/expiry timestamps and consumed timestamp. Their client, community,
+  resource and scope bindings come from the grant. An absolute 30-day family
+  expiry survives rotation. Consumed hashes remain for replay detection; no
+  scheduled cleanup exists. Do not remove consumed hashes while a family is
+  usable. Revoked/expired rows remain until credential deletion or maintenance.
+  Grant last-use records successful introspection or refresh, not tool success.
+  Only confirmed community administrators see the safe grant projection.
+  Revocation disables the grant and downstream credential in one transaction.

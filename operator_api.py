@@ -17,7 +17,17 @@ from functools import wraps
 from ipaddress import ip_address
 from urllib.parse import urlparse
 
-from flask import Blueprint, current_app, g, jsonify, request, session
+from flask import (
+    Blueprint,
+    current_app,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from psycopg2.errors import DeadlockDetected, SerializationFailure
 
 import community_access
@@ -770,6 +780,21 @@ def create_credential(community_id):
 def list_credentials(community_id):
     if not _admin_for(community_id, session.get("dashboard_building_id")):
         return _error("Forbidden", 403)
+    if request.accept_mimetypes.best == "text/html":
+        from i18n import gettext as _
+
+        session.setdefault("dashboard_csrf_token", secrets.token_urlsafe(32))
+        return render_template(
+            "operator_credentials.html",
+            community=community_id,
+            credentials=[
+                _safe_credential(r) for r in db.list_operator_api_clients(community_id)
+            ],
+            grants=db.list_oauth_grants(community_id),
+            csrf=session["dashboard_csrf_token"],
+            _=_,
+            private_page=True,
+        )
     if not _require_csrf():
         return _error("Invalid CSRF token", 400)
     return jsonify(
@@ -984,6 +1009,19 @@ def dispatch_pending_webhooks(
         )
         totals["delivered" if delivered else "failed"] += 1
     return totals
+
+
+@operator_api_bp.post(
+    "/leg/community/<community_id>/operator-api/credentials/grants/<grant_id>/revoke"
+)
+def revoke_oauth_grant(community_id, grant_id):
+    if not _admin_for(community_id, session.get("dashboard_building_id")):
+        return _error("Forbidden", 403)
+    if not _require_csrf():
+        return _error("Invalid CSRF token", 400)
+    if not db.revoke_oauth_grant(community_id, grant_id):
+        return _error("Grant not found", 404)
+    return redirect(url_for("operator_api.list_credentials", community_id=community_id))
 
 
 @operator_api_bp.route(

@@ -542,3 +542,7 @@ OAuthAdminLookupUnavailable = _oauth.AdminLookupUnavailable
 save_oauth_code = _oauth.save_code
 redeem_oauth_code = _oauth.redeem
 introspect_oauth_token = _oauth.introspect
+
+refresh_oauth_token = _oauth.refresh
+list_oauth_grants = _oauth.list_grants
+revoke_oauth_grant = _oauth.revoke

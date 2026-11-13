@@ -404,3 +404,10 @@ and transactional events. Invoice totals and snapshots remain unchanged.
 
 [openleg-ctl](openleg-ctl.md) provides contract-generated read commands and VNB
 previews, with JSON output and stable error codes. It cannot submit writes.
+
+
+The credentials URL also serves an HTML view when requested with
+`Accept: text/html`. Confirmed administrators see OAuth grants and can POST
+`/leg/community/{community_id}/operator-api/credentials/grants/{grant_id}/revoke`
+with their session CSRF token. Foreign grant IDs return 404. HTML reads do not
+require CSRF; the existing JSON credential listing still does.

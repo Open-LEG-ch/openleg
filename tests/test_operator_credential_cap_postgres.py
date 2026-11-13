@@ -152,5 +152,10 @@ def test_expired_oauth_grants_free_their_slots(
                 "VALUES (%s,%s,'{}', CURRENT_TIMESTAMP + %s * INTERVAL '1 hour')",
                 (row["id"], f"access-hash-{index}", -1 if expired else 1),
             )
+            cur.execute(
+                "INSERT INTO oauth_refresh_tokens(token_hash,grant_id,expires_at) "
+                "VALUES (%s,%s,CURRENT_TIMESTAMP + %s * INTERVAL '1 hour')",
+                (f"refresh-hash-{index}", row["id"], -1 if expired else 1),
+            )
     response = create(client)
     assert response.status_code == (201 if expired else 409)
