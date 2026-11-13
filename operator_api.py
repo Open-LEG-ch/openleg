@@ -34,6 +34,7 @@ import community_access
 import database as db
 import formation_wizard
 import operator_actor
+import operator_request
 import sdat_ingestion
 import vnb_exchange
 from operator_errors import ErrorCode
@@ -194,19 +195,6 @@ def formation_status(community_id):
     )
 
 
-def _dry_run_option():
-    """Accept only one exact query boolean; never silently submit a body option."""
-    values = request.args.getlist("dry_run")
-    payload = request.get_json(silent=True)
-    if (
-        len(values) > 1
-        or (values and values[0] not in {"true", "false"})
-        or (isinstance(payload, dict) and "dry_run" in payload)
-    ):
-        return None
-    return values[0] if values else "false"
-
-
 def _submit_vnb(kind, command, *, dry_run=False):
     submit = (
         vnb_exchange.submit_formation
@@ -233,8 +221,11 @@ def _submit_vnb(kind, command, *, dry_run=False):
 @_retryable_submission_errors
 @require_operator("formation.mutate")
 def submit_formation(community_id):
-    dry_run = _dry_run_option()
-    if dry_run is None:
+    try:
+        dry_run = operator_request.parse_dry_run(
+            request.args, request.get_json(silent=True)
+        )
+    except ValueError:
         return _error("Invalid dry_run option", 400)
     try:
         outcome = _submit_vnb(
@@ -242,7 +233,7 @@ def submit_formation(community_id):
             vnb_exchange.FormationSubmission(
                 community_id, g.operator_client["created_by"]
             ),
-            **({"dry_run": True} if dry_run == "true" else {}),
+            **({"dry_run": True} if dry_run else {}),
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return _error("Formation submission denied", 403)
@@ -253,7 +244,7 @@ def submit_formation(community_id):
         return _error("Formation submission unavailable", 503)
     if isinstance(outcome, dict):
         return jsonify(schema_version=API_SCHEMA_VERSION, **outcome), 202
-    if dry_run == "true":
+    if dry_run:
         return jsonify(
             schema_version=API_SCHEMA_VERSION,
             **{
@@ -286,8 +277,11 @@ def membership_mutations(community_id):
 @_retryable_submission_errors
 @require_operator("membership.mutate")
 def submit_membership_mutation(community_id):
-    dry_run = _dry_run_option()
-    if dry_run is None:
+    try:
+        dry_run = operator_request.parse_dry_run(
+            request.args, request.get_json(silent=True)
+        )
+    except ValueError:
         return _error("Invalid dry_run option", 400)
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
@@ -305,7 +299,7 @@ def submit_membership_mutation(community_id):
                 str(payload.get("source_agreement_id", "")),
                 payload.get("after") if isinstance(payload.get("after"), dict) else {},
             ),
-            **({"dry_run": True} if dry_run == "true" else {}),
+            **({"dry_run": True} if dry_run else {}),
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return _error("Membership mutation denied", 403)
@@ -324,7 +318,7 @@ def submit_membership_mutation(community_id):
         return _error("Membership mutation unavailable", 503)
     if isinstance(outcome, dict):
         return jsonify(schema_version=API_SCHEMA_VERSION, **outcome), 202
-    if dry_run == "true":
+    if dry_run:
         return jsonify(
             schema_version=API_SCHEMA_VERSION,
             **{
@@ -537,16 +531,6 @@ def payment_matches(community_id):
     return _page(db.list_operator_payment_matches, community_id, _safe_payment)
 
 
-def parse_dry_run(query, payload):
-    """Accept only one literal query boolean; body options fail closed."""
-    values = query.getlist("dry_run")
-    if "dry_run" in payload or (
-        values and (len(values) != 1 or values[0] not in {"true", "false"})
-    ):
-        raise ValueError("Invalid dry_run")
-    return values == ["true"]
-
-
 def _idempotency_key():
     value = request.headers.get("Idempotency-Key", "")
     return value if 1 <= len(value) <= 128 else None
@@ -561,7 +545,7 @@ def respond_invoice_case(community_id, case_id):
     if not isinstance(payload, dict):
         return _error("JSON object required", 400)
     try:
-        dry_run = parse_dry_run(request.args, payload)
+        dry_run = operator_request.parse_dry_run(request.args, payload)
     except ValueError:
         return _error(
             "Invalid dry_run", 400, ErrorCode.INVALID_REQUEST, field="dry_run"
@@ -621,10 +605,8 @@ def confirm_payment_match(community_id, entry_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return _error("JSON object required", 400)
-    from operator_request import parse_dry_run
-
     try:
-        dry_run = parse_dry_run(request.args, payload)
+        dry_run = operator_request.parse_dry_run(request.args, payload)
     except ValueError:
         return _error("Invalid dry_run option", 400, ErrorCode.INVALID_REQUEST)
     invoice_id = payload.get("invoice_id")
