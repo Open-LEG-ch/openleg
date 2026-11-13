@@ -220,16 +220,21 @@ def token():
     grant_id = str(uuid.uuid4())
     access = "ola_" + secrets.token_urlsafe(32)
     downstream = downstream_token(access)
-    grant = db.redeem_oauth_code(
-        _token_hash(p.get("code", "")),
-        p["client_id"],
-        p["redirect_uri"],
-        challenge,
-        p["resource"],
-        grant_id,
-        _token_hash(access),
-        _token_hash(downstream),
-    )
+    try:
+        grant = db.redeem_oauth_code(
+            _token_hash(p.get("code", "")),
+            p["client_id"],
+            p["redirect_uri"],
+            challenge,
+            p["resource"],
+            grant_id,
+            _token_hash(access),
+            _token_hash(downstream),
+        )
+    except db.OperatorCredentialLimitReached:
+        return jsonify(
+            error="invalid_grant", error_description="Credential limit reached"
+        ), 400
     if not grant:
         return invalid("invalid_grant")
     return jsonify(

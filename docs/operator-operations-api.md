@@ -138,7 +138,10 @@ Each community can have at most 10 active credentials. Revoked credentials do
 not count. Creating a credential beyond this limit, or rotating a revoked
 credential back to active while the limit is reached, returns HTTP 409 with
 `{"error":"Credential limit reached","schema_version":"operator-api/1","code":"conflict","retryable":false}`
-and writes nothing.
+and writes nothing. Each live OAuth grant holds one credential; expired or
+revoked grants do not count. An OAuth token exchange at the limit returns HTTP
+400 with `{"error":"invalid_grant","error_description":"Credential limit reached"}`
+and leaves the authorization code unused.
 
 The token and the webhook secret are returned once at creation (and rotation)
 and are never stored in plain text or repeated in list responses — only a

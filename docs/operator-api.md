@@ -13,7 +13,11 @@ zählen nicht mit. Eine Rotation aktiviert ein widerrufenes Credential wieder un
 braucht dafür einen freien Platz. Eine Erstellung oder Rotation über diesem
 Limit liefert HTTP 409 mit
 `{"error":"Credential limit reached","schema_version":"operator-api/1","code":"conflict","retryable":false}`
-und ändert keine Daten.
+und ändert keine Daten. Jeder gültige OAuth-Grant belegt ein Credential;
+abgelaufene oder widerrufene Grants zählen nicht. Ein OAuth-Tokentausch am Limit
+liefert HTTP 400 mit
+`{"error":"invalid_grant","error_description":"Credential limit reached"}` und
+lässt den Autorisierungscode unverbraucht.
 
 Eine bestätigte LEG-Administration erstellt, liest, rotiert und widerruft
 Credentials unter `/leg/community/{community_id}/operator-api/credentials`.

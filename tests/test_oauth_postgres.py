@@ -825,3 +825,34 @@ def test_consent_requires_explicit_capability_selection(oauth):
         data={**authorize(oauth), "csrf_token": "csrf", "decision": "approve"},
     )
     assert response.status_code == 400
+
+
+@pytest.mark.integration
+def test_exchange_respects_the_credential_limit(oauth):
+    """Each grant creates a live credential, so exchange obeys the cap of ten."""
+
+    def active():
+        with oauth.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) AS n FROM operator_api_clients "
+                "WHERE community_id='contract-leg' AND active=TRUE"
+            )
+            return cur.fetchone()["n"]
+
+    while active() < 10:
+        assert exchange(oauth, grant(oauth)).status_code == 200
+    code = grant(oauth)
+    refused = exchange(oauth, code)
+    assert refused.status_code == 400
+    assert refused.json == {
+        "error": "invalid_grant",
+        "error_description": "Credential limit reached",
+    }
+    assert active() == 10
+    # Nothing was committed: once a grant expires, the same code still works.
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE oauth_grants SET expires_at=CURRENT_TIMESTAMP - INTERVAL '1 second' "
+            "WHERE id=(SELECT id FROM oauth_grants ORDER BY created_at LIMIT 1)"
+        )
+    assert exchange(oauth, code).status_code == 200

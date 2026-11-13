@@ -44,6 +44,15 @@ def redeem(
         p = row["payload"]
         if not approving_admin_valid(p):
             return None
+        # Each grant adds a live credential, so it obeys the per-community cap.
+        # At the limit this raises and rolls back, leaving the code unused.
+        from store.operator_api import (
+            _check_credential_capacity,
+            _lock_credential_community,
+        )
+
+        _lock_credential_community(cur, p["community_id"])
+        _check_credential_capacity(cur, p["community_id"])
         cur.execute(
             """INSERT INTO operator_api_clients
             (id,community_id,created_by,name,capabilities,token_hash,actor_kind,agent_label)
