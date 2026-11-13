@@ -214,15 +214,18 @@ def token():
             return invalid("invalid_grant")
         access = "ola_" + secrets.token_urlsafe(32)
         refresh = "olr_" + secrets.token_urlsafe(32)
-        grant = db.refresh_oauth_token(
-            _token_hash(p.get("refresh_token", "")),
-            p["client_id"],
-            p["resource"],
-            p.get("scope"),
-            _token_hash(access),
-            _token_hash(refresh),
-            _token_hash(downstream_token(access)),
-        )
+        try:
+            grant = db.refresh_oauth_token(
+                _token_hash(p.get("refresh_token", "")),
+                p["client_id"],
+                p["resource"],
+                p.get("scope"),
+                _token_hash(access),
+                _token_hash(refresh),
+                _token_hash(downstream_token(access)),
+            )
+        except db.OAuthAdminLookupUnavailable:
+            return invalid("temporarily_unavailable", 503)
         if not grant:
             return invalid("invalid_grant")
         return jsonify(

@@ -423,7 +423,7 @@ def test_refresh_replaces_downstream_secret(oauth):
     "invalidity", ["role", "status", "removed", "unavailable", "family_expired"]
 )
 def test_refresh_requires_valid_grant(oauth, monkeypatch, invalidity):
-    import formation_wizard
+    from contextlib import contextmanager
 
     tokens = exchange(oauth, grant(oauth)).json
     with oauth.db.get_connection() as conn, conn.cursor() as cur:
@@ -440,12 +440,33 @@ def test_refresh_requires_valid_grant(oauth, monkeypatch, invalidity):
                 "UPDATE oauth_refresh_tokens SET expires_at=NOW()-INTERVAL '1 second'"
             )
     if invalidity == "unavailable":
+        original = oauth.db.get_connection
+        calls = 0
 
-        def unavailable(*args):
-            raise RuntimeError("community unavailable")
+        @contextmanager
+        def unavailable():
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise RuntimeError("community lookup unavailable")
+            with original() as conn:
+                yield conn
 
-        monkeypatch.setattr(formation_wizard, "get_community_status", unavailable)
-    assert refresh(oauth, tokens["refresh_token"]).json == {"error": "invalid_grant"}
+        with monkeypatch.context() as patch:
+            patch.setattr(oauth.db, "get_connection", unavailable)
+            response = refresh(oauth, tokens["refresh_token"])
+        assert response.status_code == 503
+        assert response.json == {"error": "temporarily_unavailable"}
+        assert response.headers["Cache-Control"] == "no-store"
+    else:
+        response = refresh(oauth, tokens["refresh_token"])
+        assert response.status_code == 400
+        assert response.json == {"error": "invalid_grant"}
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT used_at FROM oauth_refresh_tokens")
+        assert [r["used_at"] for r in cur.fetchall()] == [None]
+    if invalidity == "unavailable":
+        assert refresh(oauth, tokens["refresh_token"]).status_code == 200
 
 
 @pytest.mark.integration
@@ -603,3 +624,17 @@ def test_unusable_family_frees_slot_for_exchange(oauth, end):
     assert refresh(oauth, tokens["refresh_token"]).status_code == 400
     assert exchange(oauth, code).status_code == 200
     assert exchange(oauth, grant(oauth)).status_code == 400
+
+
+@pytest.mark.integration
+def test_refresh_works_with_one_available_pool_connection(oauth):
+    tokens = exchange(oauth, grant(oauth)).json
+    pool = oauth.db._connection_pool
+    held = [pool.getconn() for _ in range(5)]
+    try:
+        response = refresh(oauth, tokens["refresh_token"])
+        assert response.status_code == 200
+        assert introspect(oauth, response.json["access_token"])["active"] is True
+    finally:
+        for conn in held:
+            pool.putconn(conn)

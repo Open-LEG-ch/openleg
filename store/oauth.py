@@ -135,6 +135,19 @@ def _revoke(cur, grant_id):
 def refresh(
     token_hash, client_id, resource, scope, access_hash, refresh_hash, downstream_hash
 ):
+    # Check membership on its own connection before the rotation transaction.
+    # Lookup failures must leave the refresh family untouched and retryable.
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT g.payload FROM oauth_grants g
+            JOIN oauth_refresh_tokens r ON r.grant_id=g.id
+            WHERE r.token_hash=%s AND g.payload->>'client_id'=%s
+            AND g.payload->>'resource'=%s""",
+            (token_hash, client_id, resource),
+        )
+        row = cur.fetchone()
+    if not row or not approving_admin_valid(row["payload"]):
+        return None
     with _get_connection() as conn, conn.cursor() as cur:
         # Every refresh and dashboard revocation locks the grant first. Retain
         # consumed hashes so a replay can revoke the entire token family.
@@ -157,7 +170,7 @@ def refresh(
         if token["used_at"] is not None:
             _revoke(cur, grant["id"])
             return None
-        if grant["revoked_at"] is not None or not approving_admin_valid(p):
+        if grant["revoked_at"] is not None:
             return None
         cur.execute(
             """SELECT id FROM operator_api_clients
