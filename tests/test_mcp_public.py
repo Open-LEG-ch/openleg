@@ -335,10 +335,17 @@ def test_public_budget_is_per_peer_before_upstream(public_app, monkeypatch):
                     assert limited.content[0].text == "rate_limited"
                     assert limited.structuredContent["code"] == "rate_limited"
                     assert 1 <= limited.structuredContent["retry_after"] <= 60
-                    operator = await sdk.call_tool(
-                        "list_billing_periods", {"community_id": "one"}
+                    from mcp.shared.exceptions import McpError
+
+                    # The public budget does not apply to operator tools,
+                    # which still need a bearer.
+                    with pytest.raises(McpError) as operator:
+                        await sdk.call_tool(
+                            "list_billing_periods", {"community_id": "one"}
+                        )
+                    assert (
+                        operator.value.error.data["code"] == "authentication_required"
                     )
-                    assert operator.content[0].text == "unauthorized"
                 # A new stateless SDK session cannot reset the same peer's budget.
                 async with session(peer_app(app, "192.0.2.1")) as sdk:
                     assert (await sdk.call_tool("get_municipalities", {})).isError
@@ -418,6 +425,8 @@ def test_expiry_capacity_and_operator_independence(public_app, monkeypatch):
                     result = await call(f"192.0.2.{index}")
                     assert result.structuredContent == {
                         "code": "rate_limited",
+                        "field": None,
+                        "retryable": True,
                         "retry_after": 5,
                     }
                 assert (await call("192.0.2.1")).isError

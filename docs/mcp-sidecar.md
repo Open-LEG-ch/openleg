@@ -136,8 +136,9 @@ budgets are never evicted to admit new addresses.
 
 A rejected call never reaches Flask. It returns `isError: true`, text
 `rate_limited`, and structured content
-`{"code": "rate_limited", "retry_after": 60}`. The delay is the remaining
-window rounded up to whole seconds, with the same shape as an upstream 429.
+`{"code": "rate_limited", "field": null, "retryable": true, "retry_after": 60}`.
+The delay is the remaining window rounded up to whole seconds, with the same
+shape as an upstream 429.
 The app's shared upstream limits still apply: enough distinct clients can
 exhaust them. This local limit does not reserve upstream capacity per client.
 
