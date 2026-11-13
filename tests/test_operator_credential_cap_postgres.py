@@ -126,3 +126,31 @@ def test_rotation_cannot_reactivate_past_the_limit(credential_http, interest_dat
     assert client.post(f"{URL}/{revoked}/rotate", headers=HEADERS).status_code == 200
     rows = interest_database.list_operator_api_clients("cap-leg")
     assert sum(row["active"] for row in rows) == 10
+
+
+@pytest.mark.parametrize("expired", [True, False])
+def test_expired_oauth_grants_free_their_slots(
+    credential_http, interest_database, expired
+):
+    """An OAuth grant's downstream credential counts only while the grant lives."""
+    client = admin_client(credential_http)
+    assert create(client).status_code == 201
+    for index in range(9):
+        row = interest_database.create_operator_api_client(
+            "cap-leg",
+            "building-1",
+            f"Agent {index}",
+            ["formation.read"],
+            f"grant-hash-{index}",
+            None,
+            actor_kind="agent",
+            agent_label=f"Agent {index}",
+        )
+        with interest_database.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO oauth_grants(id,token_hash,payload,expires_at) "
+                "VALUES (%s,%s,'{}', CURRENT_TIMESTAMP + %s * INTERVAL '1 hour')",
+                (row["id"], f"access-hash-{index}", -1 if expired else 1),
+            )
+    response = create(client)
+    assert response.status_code == (201 if expired else 409)

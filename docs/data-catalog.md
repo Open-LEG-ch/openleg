@@ -798,3 +798,22 @@ Reset, discard and expiry remove the entire capture directory and database.
   confirmation; originating credential activity and capability are rechecked.
 - **Retention:** expiry retains the immutable request and attribution for replay
   and audit. This migration does not add automatic deletion.
+
+## store/oauth
+
+- Tables: `oauth_codes`, `oauth_grants`.
+- Holds: hashed codes and access tokens, client and administrator building
+  identities, exact redirect URI, PKCE challenge, resource, community and
+  delegated capabilities. Grant IDs reference their agent operator credential.
+- Purpose: one-use code exchange and per-request MCP authorization. Only a
+  confirmed administrator can delegate for their community; the authenticated
+  sidecar receives introspection results and a separate downstream credential.
+- Sensitivity: private authentication records. No plaintext bearer tokens are
+  stored. The app derives downstream credentials using a separate secret key.
+- Visibility: no resident or neighbour output, no analytics. Consent uses the
+  administrator session and CSRF protection, not neighbour sharing consent.
+- Retention: redeemed codes are deleted atomically. Unredeemed codes become
+  unusable after 60 seconds but remain stored until maintenance removes them.
+  Access tokens become unusable after 300 seconds. Grant records remain for
+  future refresh/revocation work (#852); deleting their operator credential
+  cascades to its grant. `revoked_at` and credential status deny introspection.

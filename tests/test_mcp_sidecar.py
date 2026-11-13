@@ -36,6 +36,7 @@ def test_contract_tool(monkeypatch):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", "http://localhost:5000")
     app = create_app()
 
@@ -132,6 +133,7 @@ def test_origin_rejects_non_origins(monkeypatch, origin):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
     with pytest.raises(ValueError):
         create_app()
@@ -168,6 +170,7 @@ def test_http_trust_boundary(monkeypatch, caplog):
         return result
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -264,7 +267,8 @@ def test_package_has_no_database_access():
 
 def test_local_packaging_is_opt_in():
     config = yaml.safe_load(Path("compose.mcp.yml").read_text())
-    for service in config["services"].values():
+    for name in ("mcp", "mcp-proxy"):
+        service = config["services"][name]
         assert service["profiles"] == ["mcp"]
         assert "env_file" not in service
     env = config["services"]["mcp"]["environment"]
@@ -274,8 +278,11 @@ def test_local_packaging_is_opt_in():
         "OPENLEG_MCP_PUBLIC_WINDOW_SECONDS": "${OPENLEG_MCP_PUBLIC_WINDOW_SECONDS:-60}",
         "OPENLEG_MCP_PUBLIC_MAX_CLIENTS": "${OPENLEG_MCP_PUBLIC_MAX_CLIENTS:-10000}",
         "OPENLEG_MCP_TRUSTED_PROXY": "${OPENLEG_MCP_TRUSTED_PROXY:-}",
-        "OPENLEG_OPERATOR_ORIGIN": "http://flask:5000",
         "OPENLEG_MCP_BIND_HOST": "0.0.0.0",
+        "OPENLEG_OPERATOR_ORIGIN": "http://127.0.0.1:5000",
+        "OPENLEG_OAUTH_ISSUER": "http://localhost:8081",
+        "OPENLEG_MCP_RESOURCE": "http://localhost:8081/mcp",
+        "OPENLEG_OAUTH_INTROSPECTION_SECRET": "${OPENLEG_OAUTH_INTROSPECTION_SECRET:?Set a random introspection secret}",
         "OPENLEG_MCP_ALLOWED_HOSTS": "localhost:8081,127.0.0.1:8081",
         "OPENLEG_MCP_ALLOWED_ORIGINS": (
             "http://localhost:8081,http://127.0.0.1:8081,"
@@ -286,7 +293,10 @@ def test_local_packaging_is_opt_in():
         "mcp" not in yaml.safe_load(Path("docker-compose.yml").read_text())["services"]
     )
     assert "mcp" not in Path("Caddyfile").read_text()
-    assert "handle /mcp" in Path("Caddyfile.mcp").read_text()
+    assert (
+        "@mcp path /mcp /.well-known/oauth-protected-resource*"
+        in Path("Caddyfile.mcp").read_text()
+    )
     assert "-r requirements-mcp.txt" in Path("requirements-dev.txt").read_text()
     assert "mcp" not in Path("requirements.txt").read_text()
 
@@ -307,6 +317,7 @@ def test_transport_header_validation(monkeypatch, host, origin, status, custom_p
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     # Use the actual local proxy configuration, including Inspector's origin.
     config = yaml.safe_load(Path("compose.mcp.yml").read_text())
     for name, value in config["services"]["mcp"]["environment"].items():
@@ -357,6 +368,7 @@ def test_empty_transport_allowlist_refuses_start(monkeypatch, name, value):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv(name, value)
     with pytest.raises(ValueError, match=name):
         create_app()
@@ -433,9 +445,7 @@ def test_redaction_preserves_unrelated_record_semantics(monkeypatch):
     assert record.stack_info == "ordinary stack"
 
 
-@pytest.mark.parametrize(
-    "bind_host,expected", [(None, "127.0.0.1"), ("0.0.0.0", "0.0.0.0")]
-)
+@pytest.mark.parametrize("bind_host,expected", [(None, "127.0.0.1"), ("::1", "::1")])
 def test_standalone_bind_host(monkeypatch, bind_host, expected):
     import runpy
     from unittest.mock import Mock
@@ -443,6 +453,7 @@ def test_standalone_bind_host(monkeypatch, bind_host, expected):
     import uvicorn
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.delenv("OPENLEG_MCP_BIND_HOST", raising=False)
     if bind_host is not None:
         monkeypatch.setenv("OPENLEG_MCP_BIND_HOST", bind_host)
@@ -452,11 +463,32 @@ def test_standalone_bind_host(monkeypatch, bind_host, expected):
     assert run.call_args.kwargs["host"] == expected
 
 
+@pytest.mark.parametrize("bind_host", ["0.0.0.0", "192.0.2.1", "::"])
+def test_dev_static_refuses_non_loopback_bind(monkeypatch, bind_host):
+    """The static-token transport must never listen beyond loopback."""
+    import runpy
+    from unittest.mock import Mock
+
+    import uvicorn
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
+    monkeypatch.setenv("OPENLEG_MCP_BIND_HOST", bind_host)
+    run = Mock()
+    monkeypatch.setattr(uvicorn, "run", run)
+    with pytest.raises(SystemExit):
+        runpy.run_module("mcp_sidecar", run_name="__main__")
+    run.assert_not_called()
+
+
 def test_operator_origin_accepts_scheme_host_port(monkeypatch):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
-    monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", "http://host:5000")
+    monkeypatch.setenv("OPENLEG_OAUTH_ISSUER", "https://auth.example")
+    monkeypatch.setenv("OPENLEG_MCP_RESOURCE", "https://mcp.example/mcp")
+    monkeypatch.setenv("OPENLEG_OAUTH_INTROSPECTION_SECRET", "s" * 64)
+    monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", "https://host:5000")
     assert create_app() is not None
 
 
@@ -498,6 +530,7 @@ def test_malformed_upstream_page(monkeypatch, tool, path, body):
         return jsonify(body)
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -557,6 +590,7 @@ def test_summary_refuses_cases_without_integer_ids(monkeypatch, ids):
         return jsonify({"items": [], "next_cursor": None})
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -606,6 +640,7 @@ def test_upstream_error_metadata_and_authorization(monkeypatch):
         ), status
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -680,6 +715,7 @@ def test_change_preview_requires_after_locally(monkeypatch, extra, forwarded):
         )
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()

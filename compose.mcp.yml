@@ -1,5 +1,12 @@
 # Optional local overlay. Never use this as production enablement.
 services:
+  flask:
+    environment:
+      OPENLEG_OAUTH_ISSUER: http://localhost:8081
+      OPENLEG_OAUTH_RESOURCE: http://localhost:8081/mcp
+      OPENLEG_OAUTH_DOWNSTREAM_KEY: ${OPENLEG_OAUTH_DOWNSTREAM_KEY:?Set an independent random 32-byte hex key}
+      OPENLEG_OAUTH_CLIENTS: ${OPENLEG_OAUTH_CLIENTS:?Register a local OAuth client}
+      OPENLEG_OAUTH_INTROSPECTION_SECRET: ${OPENLEG_OAUTH_INTROSPECTION_SECRET:?Set a random introspection secret}
   mcp:
     profiles: [mcp]
     build:
@@ -12,10 +19,13 @@ services:
       OPENLEG_MCP_PUBLIC_WINDOW_SECONDS: ${OPENLEG_MCP_PUBLIC_WINDOW_SECONDS:-60}
       OPENLEG_MCP_PUBLIC_MAX_CLIENTS: ${OPENLEG_MCP_PUBLIC_MAX_CLIENTS:-10000}
       OPENLEG_MCP_TRUSTED_PROXY: ${OPENLEG_MCP_TRUSTED_PROXY:-}
-      OPENLEG_OPERATOR_ORIGIN: http://flask:5000
+      OPENLEG_OPERATOR_ORIGIN: http://127.0.0.1:5000
+      OPENLEG_OAUTH_ISSUER: http://localhost:8081
+      OPENLEG_MCP_RESOURCE: http://localhost:8081/mcp
+      OPENLEG_OAUTH_INTROSPECTION_SECRET: ${OPENLEG_OAUTH_INTROSPECTION_SECRET:?Set a random introspection secret}
       OPENLEG_MCP_ALLOWED_HOSTS: localhost:8081,127.0.0.1:8081
       OPENLEG_MCP_ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081,http://localhost:6274,http://127.0.0.1:6274
-    networks: [web]
+    network_mode: service:flask
     depends_on: [flask]
   mcp-proxy:
     profiles: [mcp]

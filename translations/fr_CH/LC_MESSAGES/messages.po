@@ -19926,3 +19926,61 @@ msgstr "Identifiant du membre"
 #: templates/agent_confirmation.html
 msgid "Mutations-ID"
 msgstr "Identifiant de mutation"
+
+#: oauth_server.py
+msgid "Agentenzugriff erlauben"
+msgstr "Autoriser l’accès de l’agent"
+
+#: oauth_server.py
+msgid "Erlauben"
+msgstr "Autoriser"
+
+#: oauth_server.py
+msgid "Gründungsanmeldungen lesen"
+msgstr "Consulter les demandes de création"
+
+#: oauth_server.py
+msgid "Gründungsanmeldungen einreichen"
+msgstr "Soumettre les demandes de création"
+
+#: oauth_server.py
+msgid "Mitgliedermutationen lesen"
+msgstr "Consulter les modifications des membres"
+
+#: oauth_server.py
+msgid "Mitgliedermutationen einreichen"
+msgstr "Soumettre les modifications des membres"
+
+#: oauth_server.py
+msgid "Messdatenläufe lesen"
+msgstr "Consulter les traitements des données de mesure"
+
+#: oauth_server.py
+msgid "Messdatenläufe wiederholen"
+msgstr "Relancer les traitements des données de mesure"
+
+#: oauth_server.py
+msgid "Abrechnungen lesen"
+msgstr "Consulter les décomptes"
+
+#: oauth_server.py
+msgid "Rechnungsanfragen lesen"
+msgstr "Consulter les demandes relatives aux factures"
+
+#: oauth_server.py
+msgid "Rechnungsanfragen beantworten"
+msgstr "Répondre aux demandes relatives aux factures"
+
+#: oauth_server.py
+msgid "Zahlungsabgleiche lesen"
+msgstr "Consulter les rapprochements des paiements"
+
+#: oauth_server.py
+msgid "Zahlungsabgleiche bestätigen"
+msgstr "Confirmer les rapprochements des paiements"
+
+msgid "LEG auswählen"
+msgstr "Choisir la CEL"
+
+msgid "Rechte auswählen"
+msgstr "Choisir les droits"

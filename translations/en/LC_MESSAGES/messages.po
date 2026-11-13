@@ -22308,3 +22308,78 @@ msgstr "This request has been confirmed."
 #: templates/agent_confirmation.html:28
 msgid "Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau."
 msgstr "This request has expired. Create a new preview."
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:227
+msgid "Abrechnungen lesen"
+msgstr "Read billing records"
+
+#. Draft translation; native language and domain review pending.
+#: templates/oauth_consent.html:2 templates/oauth_consent.html:5
+msgid "Agentenzugriff erlauben"
+msgstr "Allow agent access"
+
+#. Draft translation; native language and domain review pending.
+#: templates/oauth_consent.html:11
+msgid "Erlauben"
+msgstr "Allow"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:222
+msgid "Gründungsanmeldungen einreichen"
+msgstr "Submit formation applications"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:221
+msgid "Gründungsanmeldungen lesen"
+msgstr "Read formation submissions"
+
+#. Draft translation; native language and domain review pending.
+#: templates/oauth_consent.html:9
+msgid "LEG auswählen"
+msgstr "Select LEG"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:225
+msgid "Messdatenläufe lesen"
+msgstr "Read metering runs"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:226
+msgid "Messdatenläufe wiederholen"
+msgstr "Retry metering runs"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:224
+msgid "Mitgliedermutationen einreichen"
+msgstr "Submit membership changes"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:223
+msgid "Mitgliedermutationen lesen"
+msgstr "Read membership changes"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:229
+msgid "Rechnungsanfragen beantworten"
+msgstr "Respond to invoice cases"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:228
+msgid "Rechnungsanfragen lesen"
+msgstr "Read invoice cases"
+
+#. Draft translation; native language and domain review pending.
+#: templates/oauth_consent.html:14
+msgid "Rechte auswählen"
+msgstr "Select permissions"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:231
+msgid "Zahlungsabgleiche bestätigen"
+msgstr "Confirm payment matches"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:230
+msgid "Zahlungsabgleiche lesen"
+msgstr "Read payment matches"

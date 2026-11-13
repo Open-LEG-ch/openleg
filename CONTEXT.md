@@ -90,6 +90,7 @@ Storage lives in `store/`, one module per self-contained domain:
 | `store/consent` | The consent record a resident gives and can revoke |
 | `store/document` | Generated LEG documents and their signing status |
 | `store/ops` | LEA job reports and operational snapshots |
+| `store/oauth` | OAuth authorization codes, grant persistence and token introspection |
 | `store/access_token` | Hashed, single-use magic-link tokens, dashboard and municipality |
 | `store/advisories` | Immutable reviewed source revisions, source-review policy/history and private equipment acknowledgements |
 
@@ -181,3 +182,8 @@ During confirmation, `store.vnb_exchange.confirmation_transaction` joins case,
 package and event writes to that transaction through a context-local connection.
 Other VNB submissions retain their existing transaction behaviour. This prevents
 confirmation completion from committing separately from its business records.
+
+An **OAuth grant** records one administrator's delegation to a pre-registered
+MCP host for exactly one community and explicit operator capabilities.
+Its downstream operator credential has actor kind `agent`. An **MCP access
+token** identifies that grant for one MCP resource; it is not an operator token.

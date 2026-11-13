@@ -18971,3 +18971,61 @@ msgstr "Teilnehmenden-ID"
 #: templates/agent_confirmation.html
 msgid "Mutations-ID"
 msgstr "Mutations-ID"
+
+#: oauth_server.py
+msgid "Agentenzugriff erlauben"
+msgstr "Agentenzugriff erlauben"
+
+#: oauth_server.py
+msgid "Erlauben"
+msgstr "Erlauben"
+
+#: oauth_server.py
+msgid "Gründungsanmeldungen lesen"
+msgstr "Gründungsanmeldungen lesen"
+
+#: oauth_server.py
+msgid "Gründungsanmeldungen einreichen"
+msgstr "Gründungsanmeldungen einreichen"
+
+#: oauth_server.py
+msgid "Mitgliedermutationen lesen"
+msgstr "Mitgliedermutationen lesen"
+
+#: oauth_server.py
+msgid "Mitgliedermutationen einreichen"
+msgstr "Mitgliedermutationen einreichen"
+
+#: oauth_server.py
+msgid "Messdatenläufe lesen"
+msgstr "Messdatenläufe lesen"
+
+#: oauth_server.py
+msgid "Messdatenläufe wiederholen"
+msgstr "Messdatenläufe wiederholen"
+
+#: oauth_server.py
+msgid "Abrechnungen lesen"
+msgstr "Abrechnungen lesen"
+
+#: oauth_server.py
+msgid "Rechnungsanfragen lesen"
+msgstr "Rechnungsanfragen lesen"
+
+#: oauth_server.py
+msgid "Rechnungsanfragen beantworten"
+msgstr "Rechnungsanfragen beantworten"
+
+#: oauth_server.py
+msgid "Zahlungsabgleiche lesen"
+msgstr "Zahlungsabgleiche lesen"
+
+#: oauth_server.py
+msgid "Zahlungsabgleiche bestätigen"
+msgstr "Zahlungsabgleiche bestätigen"
+
+msgid "LEG auswählen"
+msgstr "LEG auswählen"
+
+msgid "Rechte auswählen"
+msgstr "Rechte auswählen"

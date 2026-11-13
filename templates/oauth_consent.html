@@ -1,0 +1,23 @@
+{% extends "product_base.html" %}
+{% block meta %}<title>{{ _("Agentenzugriff erlauben") }}</title>{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-2xl p-6">
+<h1>{{ _('Agentenzugriff erlauben') }}</h1>
+<p>{{ client }}</p>
+
+<form method="post">
+<label>{{ _('LEG auswählen') }}
+<select name="community_id" required>{% for row in communities %}
+<option value="{{ row.community_id }}" {% if row.community_id == community %}selected{% endif %}>{{ row.name }} ({{ row.community_id }})</option>
+{% endfor %}</select></label>
+<input type="hidden" name="capabilities_present" value="1">
+<fieldset><legend>{{ _('Rechte auswählen') }}</legend>
+{% for code, label in capabilities %}<label><input type="checkbox" name="capabilities" value="{{ code }}" checked>{{ label }} ({{ code }})</label>{% endfor %}
+</fieldset>
+{% for key, value in fields.items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<button name="decision" value="approve">{{ _('Erlauben') }}</button>
+<button name="decision" value="deny">{{ _('Ablehnen') }}</button>
+</form>
+</section>
+{% endblock %}

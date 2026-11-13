@@ -17,13 +17,18 @@ metadata, without case messages. See [the operator contract](operator-operations
 Install `requirements-mcp.txt` in a separate Python 3.11 environment. For tests,
 `requirements-dev.txt` includes it; Flask's runtime requirements do not.
 
+For a static-token local tracer, run Flask on port 5000, then:
+
 ```sh
 pip install -r requirements-mcp.txt
-OPENLEG_MCP_ENABLED=true OPENLEG_OPERATOR_ORIGIN=http://localhost:5000 python -m mcp_sidecar
+OPENLEG_MCP_ENABLED=true OPENLEG_MCP_DEV_STATIC=true OPENLEG_OPERATOR_ORIGIN=http://127.0.0.1:5000 python -m mcp_sidecar
 ```
 
-The standalone listener binds to `127.0.0.1:8000` by default.
-`OPENLEG_MCP_BIND_HOST` overrides the bind address. The Compose overlay sets
+The standalone listener binds to `127.0.0.1:8000` in dev-static mode and
+`0.0.0.0:8000` in OAuth mode.
+`OPENLEG_MCP_BIND_HOST` overrides the bind address; in dev-static mode the
+process refuses any address other than `127.0.0.1`, `::1` or `localhost`.
+The Compose overlay runs in OAuth mode and sets
 it to `0.0.0.0` inside the container so Caddy can connect; only Caddy publishes
 a host port, bound to loopback. Host and Origin checks do not restrict which
 network clients can reach the listener.
@@ -32,27 +37,29 @@ The process refuses to start unless `OPENLEG_MCP_ENABLED=true`. The configured
 origin must contain only a scheme, host and optional port. Requests use the
 fixed API paths, ignore proxy environment variables and never follow redirects. Do not give this process
 database environment variables or the Flask `.env` file.
+Connect to `http://127.0.0.1:8000/mcp` with an `Authorization: Bearer olk_…`
+header on every request. Static mode requires loopback for both processes.
 
-For local Compose development, start the normal application first, then:
+Compose uses OAuth. Register the exact callback URL of your MCP host and
+create an introspection secret, then start Flask with the overlay as well:
 
 ```sh
-OPENLEG_MCP_ENABLED=true docker compose -f docker-compose.yml -f compose.mcp.yml --profile mcp up --build mcp mcp-proxy
+export OPENLEG_MCP_ENABLED=true
+export OPENLEG_OAUTH_INTROSPECTION_SECRET="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+export OPENLEG_OAUTH_DOWNSTREAM_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+export OPENLEG_OAUTH_CLIENTS='{"host":{"name":"Local MCP host","redirect_uris":["http://localhost:6274/oauth/callback"]}}'
+docker compose -f docker-compose.yml -f compose.mcp.yml --profile mcp up --build flask mcp mcp-proxy
 ```
 
-This adds a loopback-only Caddy endpoint at `http://localhost:8081/mcp`.
-Neither service nor its proxy route exists in the default Compose configuration.
-Stop the two optional services to remove the endpoint.
+Configure your host with client ID `host` and its registered redirect URI.
+Connect to `http://localhost:8081/mcp`. Sign into the dashboard at
+`http://localhost:8081` before approving consent. Caddy routes OAuth discovery,
+authorization and resource metadata through that origin. The sidecar shares
+Flask's network namespace so its internal HTTP connection stays on loopback;
+it receives no database credentials. Keep the introspection secret stable
+across restarts of these services. Stop the optional services to remove MCP.
 
-Connect MCP Inspector with Streamable HTTP to that URL (or
-`http://localhost:8000/mcp` for the Python command). Set its HTTP Authorization
-header to `Bearer ` followed by your existing `olk_` credential. Initialize,
-list tools, then call `list_billing_periods` with your `community_id` and
-optionally `limit`, `cursor` or `status`. Supply the header on every request;
-there is no stored session credential. Keep tokens out of tool arguments.
-
-This is a development tracer, not production agent access. It has no database
-access or OAuth. OAuth replacement is tracked in
-#847; production enablement belongs in `openleg-ops` after the readiness gate.
+Production enablement remains in `openleg-ops` after the #838 readiness gate.
 
 ## Host and Origin validation
 
@@ -100,8 +107,17 @@ homepage and template endpoints are not exposed.
 
 Public calls never forward the caller's Authorization header. They return the
 public API response unchanged, including decimal strings. Operator tools remain
-listed but require their bearer on each call; anonymous calls fail with the
-JSON-RPC authorization error described in
+listed. In OAuth mode, anonymous `tools/call` requests for operator tools and
+`resources/read` requests return HTTP 401 with `WWW-Authenticate` discovery
+metadata and scopes. Initialization, tool listing, resource-template listing and
+public tool calls work without Authorization. An invalid Authorization header
+returns the same 401 even for public calls. The endpoint inspects single and
+batch JSON-RPC requests and replays their exact bytes to the SDK; bodies over
+1 MiB return 413. Malformed JSON is handled by the SDK. Each operator tool
+checks the token's community and its own required capability before calling
+upstream with the separate downstream credential.
+
+Dev-static mode retains the JSON-RPC authorization error described in
 [the operator contract](operator-operations-api.md#mcp-error-boundary).
 
 Calls use the same public HTTP routes and their existing rate limits. The app
@@ -168,3 +184,99 @@ Without the trusted-proxy setting, the local Caddy users share Caddy's peer
 budget. This setup supports one proxy hop; adding another proxy requires a
 separate trust design. Production network configuration remains in
 `openleg-ops`.
+
+## OAuth für MCP-Hosts (#847)
+
+OAuth ist der Standard. Die Flask-App stellt einmalige Autorisierungscodes
+(60 Sekunden) und opake Zugriffstokens (300 Sekunden) aus. PKCE akzeptiert
+ausschliesslich S256. Registrieren Sie öffentliche Clients vorab; dynamische
+Clientregistrierung gehört nicht zu diesem Ticket. Redirect-URIs müssen exakt
+übereinstimmen. HTTPS ist Pflicht ausser für lokale Loopback-Adressen.
+
+Konfiguration der Flask-App:
+
+- `OPENLEG_OAUTH_ISSUER=https://app.example` (Origin ohne abschliessenden Slash).
+- `OPENLEG_OAUTH_RESOURCE=https://mcp.example/mcp`.
+- `OPENLEG_OAUTH_CLIENTS={"host":{"name":"Mein MCP-Host","redirect_uris":["https://host.example/callback"]}}`.
+- `OPENLEG_OAUTH_INTROSPECTION_SECRET`: separater zufälliger Schlüssel mit
+  mindestens 32 Zeichen, identisch in App und Sidecar.
+
+Konfiguration des Sidecars:
+
+- `OPENLEG_MCP_ENABLED=true`.
+- `OPENLEG_OAUTH_ISSUER` wie oben.
+- `OPENLEG_MCP_RESOURCE` entspricht `OPENLEG_OAUTH_RESOURCE` der App.
+- `OPENLEG_OAUTH_INTROSPECTION_SECRET` wie oben.
+- `OPENLEG_OPERATOR_ORIGIN`: HTTPS-Origin der App; HTTP nur auf Loopback.
+- Host- und Origin-Allowlisten wie oben. Keine Datenbankzugangsdaten.
+
+Der Host fordert Betreiber-Capabilities an, beispielsweise `billing.read`.
+Die Administration wählt auf der Zustimmungsseite eine ihrer bestätigten LEG
+und die bewilligten Rechte. Optional wählt `community:<community_id>` eine LEG
+vor. Der ausgestellte Scope enthält genau diese LEG und die bestätigten Rechte.
+Der Host schickt diesen Scope, `client_id`, `redirect_uri`, `response_type=code`,
+`state`, `code_challenge`, `code_challenge_method=S256` und `resource` an
+`/oauth/authorize`. Die bestätigte LEG-Administration meldet sich zuerst im
+Dashboard an, öffnet die Autorisierung erneut und bestätigt die angezeigten
+Rechte. Deutsch, Französisch, Englisch und Italienisch verwenden die
+Übersetzungskataloge.
+
+Der Host tauscht den Code per Formular-POST an `/oauth/token`:
+`grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`,
+`code_verifier` und dieselbe `resource`. Er verwendet das erhaltene Token als
+Bearer für `/mcp`. Der Zugriff gilt ausschliesslich für diese Ressource und LEG.
+
+Der Sidecar introspektiert bei jeder Anfrage mit MCP-Token über
+`POST /oauth/introspect`.
+Das gemeinsame Secret authentifiziert den Sidecar. Die Antwort enthält neben
+Issuer, Audience, Ablauf, Scope und LEG ein separates Downstream-Credential.
+Introspektion vermeidet Signaturschlüssel im Sidecar und prüft Widerruf sofort;
+sie benötigt dafür pro Anfrage einen zusätzlichen HTTP-Aufruf. Das
+Downstream-Credential wird mit HMAC-SHA-256 aus dem zufälligen MCP-Zugriffstoken
+und einem separaten Serverschlüssel abgeleitet. So kann die App das Credential
+bei authentifizierter Introspektion erneut ausgeben und nur Hashes speichern.
+Das MCP-Token allein reicht nicht zur Berechnung des Betreiber-Credentials.
+Nur die Flask-App erhält `OPENLEG_OAUTH_DOWNSTREAM_KEY`: 32 zufällige Bytes als
+64 kleingeschriebene Hexzeichen, ohne Standardwert. Der Sidecar erhält diesen
+Schlüssel nie. Die App verweigert den Start bei fehlendem, falsch formatiertem,
+offensichtlich schwachem Schlüssel (weniger als zwölf verschiedene Hexzeichen)
+oder Wiederverwendung des Introspektionsschlüssels. Die Prüfung ersetzt keine
+zufällige Erzeugung. Ein Schlüsselwechsel sperrt die Introspektion bestehender
+Grants; bereits ausgegebene Betreiber-Credentials gelten bis Ablauf oder Widerruf.
+Der Betreiber-Client trägt `actor_kind=agent`
+und exakt die bewilligten Capabilities. Das Credential gilt höchstens so lange
+wie der Grant. Codeaustausch, Introspektion und Betreiberzugriff prüfen, dass
+die zustimmende Person weiterhin bestätigte Administration dieser LEG ist.
+Abgelaufene oder widerrufene Grants sind auch mit einem bereits erhaltenen
+Downstream-Credential unbrauchbar. Fehlender Community-Status sperrt den Grant.
+
+Metadaten: App `/.well-known/oauth-authorization-server`
+([RFC 8414](https://www.rfc-editor.org/rfc/rfc8414.html)); Sidecar
+`/.well-known/oauth-protected-resource` und
+`/.well-known/oauth-protected-resource/mcp`
+([RFC 9728](https://www.rfc-editor.org/rfc/rfc9728.html)).
+401-Antworten nennen die Capabilities im `scope` des `WWW-Authenticate`-Headers.
+Die Ressourcenmetadaten nennen sie in `scopes_supported`.
+Die Ressourcenbindung folgt
+[RFC 8707](https://www.rfc-editor.org/rfc/rfc8707.html).
+
+Nur lokal kann `OPENLEG_MCP_DEV_STATIC=true` den bisherigen `olk_`-Pfad
+aktivieren. Der Prozesseinstieg bindet dann nur an Loopback (`127.0.0.1`,
+`::1` oder `localhost`) und startet mit einer anderen Adresse nicht;
+auch der Betreiber-Origin muss Loopback sein. Diesen Modus niemals über einen
+Produktionsproxy veröffentlichen. In Produktion bleibt die Variable ungesetzt.
+Proxy-Logs dürfen keine Authorization-Header, Formularinhalte oder OAuth-
+Callback-Querystrings aufzeichnen.
+
+Die Implementierung nutzt Zufallswerte, SHA-256, HMAC und URL-Verarbeitung aus
+der Python-Standardbibliothek; sie implementiert kein eigenes JWT-Format.
+Refresh-Tokens und die Grant-Widerrufsoberfläche folgen in #852.
+`oauth_grants` besitzt dafür eine stabile ID, Ausstellungszeit und
+`revoked_at`. OAuth bleibt bis zur vollständigen Bereitschaftsprüfung aus
+#838 für Produktion deaktiviert.
+
+Das Zustimmungsformular übernimmt nur die expliziten OAuth-Protokollfelder
+aus der Autorisierungsanfrage. Query-Parameter steuern keine Checkboxen oder
+LEG-Auswahl. Der POST akzeptiert nur Protokollfelder und Formular-Steuerelemente.
+Die bewilligten Capabilities müssen im angefragten Scope liegen; nur eine
+aktuell bestätigte Administration kann sie für ihre LEG delegieren.
