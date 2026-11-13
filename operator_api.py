@@ -479,6 +479,16 @@ def payment_matches(community_id):
     return _page(db.list_operator_payment_matches, community_id, _safe_payment)
 
 
+def parse_dry_run(query, payload):
+    """Accept only one literal query boolean; body options fail closed."""
+    values = query.getlist("dry_run")
+    if "dry_run" in payload or (
+        values and (len(values) != 1 or values[0] not in {"true", "false"})
+    ):
+        raise ValueError("Invalid dry_run")
+    return values == ["true"]
+
+
 def _idempotency_key():
     value = request.headers.get("Idempotency-Key", "")
     return value if 1 <= len(value) <= 128 else None
@@ -489,17 +499,27 @@ def _idempotency_key():
 )
 @require_operator("cases.mutate")
 def respond_invoice_case(community_id, case_id):
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _error("JSON object required", 400)
+    try:
+        dry_run = parse_dry_run(request.args, payload)
+    except ValueError:
+        return _error(
+            "Invalid dry_run", 400, ErrorCode.INVALID_REQUEST, field="dry_run"
+        )
     key = _idempotency_key()
-    if not key:
+    if not dry_run and not key:
         return _error(
             "Valid Idempotency-Key required",
             400,
             ErrorCode.INVALID_IDEMPOTENCY_KEY,
             field="Idempotency-Key",
         )
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict):
-        return _error("JSON object required", 400)
+    if not all(
+        isinstance(payload.get(field, ""), str) for field in ("message", "status")
+    ):
+        return _error("Invoice case update invalid", 409, ErrorCode.INVALID_CASE)
     try:
         result = db.respond_operator_invoice_case(
             case_id,
@@ -508,6 +528,7 @@ def respond_invoice_case(community_id, case_id):
             payload.get("message", ""),
             payload.get("status", ""),
             key,
+            **({"dry_run": True} if dry_run else {}),
         )
     except ValueError as exc:
         # Store validation messages stay internal; the API answer is fixed.

@@ -1,10 +1,18 @@
 # Local MCP sidecar
 
-The separate `mcp_sidecar` process exposes exactly one tool,
-`list_billing_periods`, over Streamable HTTP at `/mcp`. Its input schema comes
+The separate `mcp_sidecar` process exposes tools over Streamable HTTP at `/mcp`.
+The input schema for `list_billing_periods` comes
 from `listPeriods` in `docs/openapi/operator-v1.yaml`. It declares `billing.read`
 and `readOnlyHint`, and returns the operator API's `items` and `next_cursor`.
 Cross-community calls return the tool error `not_found`.
+
+`respond_invoice_case` maps to `respondInvoiceCase` with `cases.mutate`.
+Supply `community_id`, `case_id`, `message`, `status` (`acknowledged` or
+`resolved`) and `idempotency_key`. Set `dry_run: true` to validate without
+business writes. Reuse that key with the same payload for the real call;
+replays return `replayed: true`. This tool has `readOnlyHint: false`,
+`destructiveHint: true` and `idempotentHint: true`. It returns transition
+metadata, without case messages. See [the operator contract](operator-operations-api.md#invoice-case-previews-and-mcp).
 
 Install `requirements-mcp.txt` in a separate Python 3.11 environment. For tests,
 `requirements-dev.txt` includes it; Flask's runtime requirements do not.
@@ -43,7 +51,7 @@ optionally `limit`, `cursor` or `status`. Supply the header on every request;
 there is no stored session credential. Keep tokens out of tool arguments.
 
 This is a development tracer, not production agent access. It has no database
-access, writes, OAuth, or additional tools. OAuth replacement is tracked in
+access or OAuth. OAuth replacement is tracked in
 #847; production enablement belongs in `openleg-ops` after the readiness gate.
 
 ## Host and Origin validation
