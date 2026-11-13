@@ -22643,8 +22643,8 @@ msgid "Ändern Sie den Code, ergänzen Sie passende Tests und übersetzen Sie ne
 msgstr "Modificate il codice, aggiungete test adeguati e traducete i nuovi testi."
 
 #. Draft translation; native language and domain review pending.
-msgid "Prüfen Sie mit scripts/tdd_cycle.sh gate und bestätigen Sie die Herkunft Ihrer Beiträge mit git commit -s."
-msgstr "Verificate con scripts/tdd_cycle.sh gate e attestate l’origine dei contributi con git commit -s."
+msgid "Prüfen Sie mit scripts/tdd_cycle.sh gate. Wir empfehlen, die Herkunft Ihrer Beiträge mit git commit -s zu bestätigen."
+msgstr "Verificate con scripts/tdd_cycle.sh gate. Consigliamo di attestare l’origine dei contributi con git commit -s."
 
 #. Draft translation; native language and domain review pending.
 msgid "Öffnen Sie den Pull Request, verlinken Sie das Issue und bearbeiten Sie die Rückmeldungen."
@@ -22751,12 +22751,12 @@ msgid "Vorstand und Mitgliederversammlung verantworten Geld, Treffen, Mitgliedsc
 msgstr "Comitato e assemblea rispondono di finanze, incontri, adesioni e questioni giuridiche. I maintainer attivi decidono sulla tecnica. Il comitato non annulla singole decisioni tecniche."
 
 #. Draft translation; native language and domain review pending.
-msgid "Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen. Ab drei Maintainern darf höchstens ein Drittel beim gleichen Arbeitgeber tätig sein."
-msgstr "Le decisioni sono documentate pubblicamente in issue, pull request e verbali approvati. Senza obiezioni motivate una proposta è accettata; in caso di disaccordo decide la maggioranza dei maintainer. Dichiarano le proprie affiliazioni. Da tre maintainer, al massimo un terzo può lavorare per lo stesso datore."
+msgid "Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen."
+msgstr "Le decisioni sono documentate pubblicamente in issue, pull request e verbali approvati. Senza obiezioni motivate una proposta è accettata; in caso di disaccordo decide la maggioranza dei maintainer. Dichiarano le proprie affiliazioni."
 
 #. Draft translation; native language and domain review pending.
-msgid "Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Die Übertragung ist damit nicht als abgeschlossen erklärt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an hallo@openleg.ch."
-msgstr "L’obiettivo è che l’associazione detenga il nome, openleg.ch e l’organizzazione GitHub. Il trasferimento non è dichiarato concluso. Nei rapporti vale il Contributor Covenant 2.1; le segnalazioni vanno a hallo@openleg.ch."
+msgid "Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Das ist noch nicht umgesetzt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an hallo@openleg.ch."
+msgstr "L’obiettivo è che l’associazione detenga il nome, openleg.ch e l’organizzazione GitHub. Questo non è ancora stato attuato. Nei rapporti vale il Contributor Covenant 2.1; le segnalazioni vanno a hallo@openleg.ch."
 
 #. Draft translation; native language and domain review pending.
 msgid "Governance lesen"

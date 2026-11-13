@@ -5766,8 +5766,7 @@ msgstr ""
 msgid ""
 "Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen "
 "nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit "
-"entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen. Ab drei "
-"Maintainern darf höchstens ein Drittel beim gleichen Arbeitgeber tätig sein."
+"entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen."
 msgstr ""
 
 #: templates/sandbox/telemetry.html:22
@@ -12279,8 +12278,8 @@ msgstr ""
 
 #: templates/release/community.html:20
 msgid ""
-"Prüfen Sie mit scripts/tdd_cycle.sh gate und bestätigen Sie die Herkunft Ihrer Beiträge mit git "
-"commit -s."
+"Prüfen Sie mit scripts/tdd_cycle.sh gate. Wir empfehlen, die Herkunft Ihrer Beiträge mit git "
+"commit -s zu bestätigen."
 msgstr ""
 
 #: templates/fuer_gemeinden.html:107
@@ -15976,9 +15975,9 @@ msgstr ""
 
 #: templates/release/community.html:37
 msgid ""
-"Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Die Übertragung"
-" ist damit nicht als abgeschlossen erklärt. Für den Umgang miteinander gilt der Contributor "
-"Covenant 2.1; Meldungen gehen an hallo@openleg.ch."
+"Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Das ist noch "
+"nicht umgesetzt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an"
+" hallo@openleg.ch."
 msgstr ""
 
 #: templates/sandbox/archive.html:36
