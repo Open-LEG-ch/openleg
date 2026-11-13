@@ -50,8 +50,10 @@ def test_every_operation_with_real_store_and_bearer(operator_http, monkeypatch):
         ),
     ]
     covered = set()
+    # One credential per capability, revoked after use: a community may hold
+    # at most ten active credentials.
     for suffix, body, status in writes:
-        http.headers, _ = http.credential_headers(
+        http.headers, credential = http.credential_headers(
             [spec["paths"][prefix + suffix]["post"]["x-openleg-capability"]]
         )
         response = http.request(
@@ -71,10 +73,11 @@ def test_every_operation_with_real_store_and_bearer(operator_http, monkeypatch):
         )
         assert replay.status_code == status
         validate_response(spec, prefix + suffix, "post", replay)
+        http.db.revoke_operator_api_client(http.community_id, credential["id"])
     for path, operations in spec["paths"].items():
         if "get" not in operations:
             continue
-        http.headers, _ = http.credential_headers(
+        http.headers, credential = http.credential_headers(
             [operations["get"]["x-openleg-capability"]]
         )
         response = http.request("GET", path.removeprefix(prefix))
@@ -84,6 +87,7 @@ def test_every_operation_with_real_store_and_bearer(operator_http, monkeypatch):
         items = body.get("items", body.get("submissions", body.get("mutations")))
         assert items, path
         covered.add(("get", path))
+        http.db.revoke_operator_api_client(http.community_id, credential["id"])
     assert covered == {
         (method, path)
         for path, operations in spec["paths"].items()
