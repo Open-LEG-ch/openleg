@@ -1,7 +1,7 @@
 # openleg-ctl
 
-`openleg-ctl` reads the operator API and previews VNB submissions. It cannot
-submit business writes. `scripts/openleg` remains the self-host lifecycle tool.
+`openleg-ctl` reads the operator API and previews every write that supports a
+dry run. It cannot submit business writes. `scripts/openleg` remains the self-host lifecycle tool.
 
 Install with Python 3.11 or later:
 
@@ -28,13 +28,17 @@ openleg-ctl submitMembershipMutation-preview --community-id leg-1 \
   --mutation-id change-1 --participant-id building-7 --mutation-type change \
   --effective-date 2026-12-01 --source-agreement-id agreement-1 \
   --after '{"role":"member"}' --json
+openleg-ctl respondInvoiceCase-preview --community-id leg-1 --case-id 42 \
+  --message "Checked." --status acknowledged
 ```
 
 Read command names are the contract's exact `operationId`, including its
 spelling and capitalisation. Operations supporting `dry_run` get only an
 `operationId-preview` command. These commands always send `dry_run=true`;
 there is no override. Use each command's `--help` for its capability and inputs.
-Input flags replace underscores with hyphens. Object and array inputs use JSON.
+Input flags are lowercase and replace underscores with hyphens. Header inputs
+such as `Idempotency-Key` become flags like `--idempotency-key` and are sent
+as request headers. Object and array inputs use JSON.
 
 Every command accepts `--url` to override `OPENLEG_URL` and `--json` for compact
 machine-readable output. Without `--json`, output is indented JSON for reading

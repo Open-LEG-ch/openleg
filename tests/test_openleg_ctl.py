@@ -21,7 +21,7 @@ def test_commands_cover_contract_and_exclude_submissions(capsys):
             if method != "get":
                 assert main([op["operationId"], "--help"]) != 0
                 capsys.readouterr()
-    assert len(expected) == 10
+    assert len(expected) == 11
 
 
 @pytest.mark.parametrize(
@@ -77,7 +77,12 @@ def test_upstream_cannot_echo_token(monkeypatch, capsys):
 
 
 @pytest.mark.parametrize(
-    "command", ["submitFormation-preview", "submitMembershipMutation-preview"]
+    "command",
+    [
+        "submitFormation-preview",
+        "submitMembershipMutation-preview",
+        "respondInvoiceCase-preview",
+    ],
 )
 def test_preview_has_no_dry_run_override(command, capsys):
     from openleg_ctl import main
@@ -205,3 +210,43 @@ def test_unexpected_failure_subprocess_never_echoes_secrets():
     assert result.returncode == 1
     assert result.stdout == ""
     assert json.loads(result.stderr) == {"code": "internal_error"}
+
+
+@pytest.mark.parametrize("key", [None, "case-key-1"])
+def test_preview_sends_header_parameters(monkeypatch, capsys, key):
+    """Header inputs such as Idempotency-Key reach the API as headers."""
+    from flask import Flask, jsonify, request
+
+    from openleg_ctl import main
+    from tests.test_openleg_ctl_postgres import server
+
+    app = Flask(__name__)
+    seen = []
+
+    @app.post("/api/operator/v1/communities/leg/billing/cases/7/responses")
+    def response():
+        seen.append(
+            (request.headers.get("Idempotency-Key"), request.args.get("dry_run"))
+        )
+        return jsonify(
+            id=7, previous_status="open", status="acknowledged", dry_run=True
+        )
+
+    monkeypatch.setenv("OPENLEG_TOKEN", "olk_secret")
+    arguments = [
+        "respondInvoiceCase-preview",
+        "--community-id",
+        "leg",
+        "--case-id",
+        "7",
+        "--message",
+        "Checked.",
+        "--status",
+        "acknowledged",
+        "--json",
+    ]
+    if key:
+        arguments += ["--idempotency-key", key]
+    with server(app) as url:
+        assert main([*arguments, "--url", url]) == 0, capsys.readouterr()
+    assert seen == [(key, "true")]

@@ -219,3 +219,29 @@ def test_installed_console_script(operator_http, cli, tmp_path, install_mode):
             wheel.read("openleg_ctl/operator-v1.yaml")
             == (project / "docs/openapi/operator-v1.yaml").read_bytes()
         )
+
+
+def test_case_response_preview_preserves_business_rows(operator_http, cli):
+    from tests.test_invoice_case_agent_postgres import snapshot as case_rows
+
+    ids = helpers.seed_operator_resources(operator_http)
+    before = case_rows(operator_http)
+    arguments = ["--case-id", str(ids["case_id"]), "--message", "Checked."]
+    preview = cli("respondInvoiceCase-preview", *arguments, "--status", "acknowledged")
+    assert preview == {
+        "schema_version": "operator-api/1",
+        "id": ids["case_id"],
+        "previous_status": "open",
+        "status": "acknowledged",
+        "dry_run": True,
+    }
+    keyed = cli(
+        "respondInvoiceCase-preview",
+        *arguments,
+        "--status",
+        "acknowledged",
+        "--idempotency-key",
+        "case-key-1",
+    )
+    assert keyed == preview
+    assert case_rows(operator_http) == before

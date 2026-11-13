@@ -81,8 +81,11 @@ def parser(spec):
                     if kind in ("object", "array", "boolean")
                     else str
                 )
+                # Flags are lowercase with hyphens (Idempotency-Key becomes
+                # --idempotency-key); dest keeps the contract name for lookup.
                 command.add_argument(
-                    "--" + field["name"].replace("_", "-"),
+                    "--" + field["name"].lower().replace("_", "-"),
+                    dest=field["name"],
                     type=convert,
                     required=field.get("required", False),
                 )
@@ -147,7 +150,7 @@ def execute(args):
             or origin.path not in ("", "/")
         ):
             return fail("invalid_url")
-        path, query, body = args.path, {}, {}
+        path, query, body, headers = args.path, {}, {}, {}
         spec = contract()
         for field in args.fields:
             value = getattr(args, field["name"])
@@ -167,6 +170,8 @@ def execute(args):
                 query[field["name"]] = value
             elif field["in"] == "body":
                 body[field["name"]] = value
+            elif field["in"] == "header":
+                headers[field["name"]] = str(value)
         if args.preview:
             query["dry_run"] = "true"
         url = (
@@ -179,6 +184,7 @@ def execute(args):
             method=args.method.upper(),
             data=json.dumps(body).encode() if args.preview else None,
             headers={
+                **headers,
                 "Authorization": "Bearer " + token,
                 "Content-Type": "application/json",
             },
