@@ -146,8 +146,11 @@ def refresh(
             (token_hash, client_id, resource),
         )
         row = cur.fetchone()
-    if not row or not approving_admin_valid(row["payload"]):
+    if not row:
         return None
+    # A lookup failure raises here, before anything changes. A non-admin
+    # result applies only after reuse detection, so a replay still revokes.
+    admin_valid = approving_admin_valid(row["payload"])
     with _get_connection() as conn, conn.cursor() as cur:
         # Every refresh and dashboard revocation locks the grant first. Retain
         # consumed hashes so a replay can revoke the entire token family.
@@ -170,7 +173,7 @@ def refresh(
         if token["used_at"] is not None:
             _revoke(cur, grant["id"])
             return None
-        if grant["revoked_at"] is not None:
+        if grant["revoked_at"] is not None or not admin_valid:
             return None
         cur.execute(
             """SELECT id FROM operator_api_clients

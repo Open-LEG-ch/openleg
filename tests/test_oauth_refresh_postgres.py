@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import hashlib
+import json
 
 import pytest
 
@@ -638,3 +639,33 @@ def test_refresh_works_with_one_available_pool_connection(oauth):
     finally:
         for conn in held:
             pool.putconn(conn)
+
+
+@pytest.mark.integration
+def test_replay_revokes_family_even_after_approver_demotion(oauth):
+    """Reuse detection runs before the approver check, so a demoted
+    approver cannot leave a replayed family alive for later restoration."""
+    first = exchange(oauth, grant(oauth)).json
+    second = refresh(oauth, first["refresh_token"]).json
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT role, access_roles FROM community_members "
+            "WHERE community_id='contract-leg' AND building_id='contract-admin'"
+        )
+        original = cur.fetchone()
+        cur.execute(
+            "UPDATE community_members SET role='member',access_roles='[]'::jsonb "
+            "WHERE community_id='contract-leg' AND building_id='contract-admin'"
+        )
+    assert refresh(oauth, first["refresh_token"]).json == {"error": "invalid_grant"}
+    with oauth.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT revoked_at FROM oauth_grants")
+        assert all(row["revoked_at"] is not None for row in cur.fetchall())
+        cur.execute(
+            "UPDATE community_members SET role=%s,access_roles=%s::jsonb "
+            "WHERE community_id='contract-leg' AND building_id='contract-admin'",
+            (original["role"], json.dumps(original["access_roles"])),
+        )
+    # Restoring the approver does not revive the replayed family.
+    assert refresh(oauth, second["refresh_token"]).status_code == 400
+    assert introspect(oauth, second["access_token"]) == {"active": False}
