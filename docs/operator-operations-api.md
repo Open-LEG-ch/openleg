@@ -300,3 +300,26 @@ a key even for previews so the same arguments can be used for the real call.
 Only `acknowledged` and `resolved` are supported. The tool is marked as a
 state-changing, destructive, idempotent operation. It returns no message
 history. Records and events retain the initiating credential's actor snapshot.
+
+## Payment confirmation preview
+
+`POST /payments/matches/{id}/confirm?dry_run=true` uses the same capability,
+idempotency-key requirement and eligibility checks as confirmation. Supply exactly
+one query value, `true` or `false`; repeated values, other spellings and a
+`dry_run` JSON body field return `400 invalid_request`. Omission or `false`
+executes confirmation.
+
+An eligible preview returns `dry_run: true`, `eligible: true`, `invoice_id`
+and `lifecycle_state: paid`. Ineligible requests return the existing error
+codes (`invalid_payment` or `not_found`); they do not reserve the match.
+Preview writes no business rows, events, deliveries or idempotency ledger entry.
+Credential usage accounting still applies. Confirmation rechecks eligibility:
+only booked (`BOOK`), non-reversed CHF credits for the exact invoice amount
+against a delivered invoice in the same LEG can succeed.
+
+The MCP tool `confirm_payment_match` maps only to `confirmPaymentMatch` and
+`payments.mutate`. Arguments are `community_id`, `entry_id`, `invoice_id`,
+required `idempotency_key`, and optional boolean `dry_run`. Its annotations are
+`readOnlyHint: false`, `destructiveHint: true`, `idempotentHint: true`.
+Agent credentials retain their actor snapshot in the payment lifecycle record
+and transactional events. Invoice totals and snapshots remain unchanged.
