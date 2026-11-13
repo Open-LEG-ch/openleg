@@ -564,10 +564,13 @@ def respond_invoice_case(community_id, case_id):
             ErrorCode.INVALID_IDEMPOTENCY_KEY,
             field="Idempotency-Key",
         )
-    if not all(
-        isinstance(payload.get(field, ""), str) for field in ("message", "status")
-    ):
-        return _error("Invoice case update invalid", 409, ErrorCode.INVALID_CASE)
+    # A wrong JSON type is a malformed request (400), like invoice_id for
+    # payments; empty text or a disallowed transition stays a domain 409.
+    for field in ("message", "status"):
+        if not isinstance(payload.get(field, ""), str):
+            return _error(
+                "Invoice case update invalid", 400, ErrorCode.INVALID_CASE, field=field
+            )
     try:
         result = db.respond_operator_invoice_case(
             case_id,
@@ -614,7 +617,9 @@ def confirm_payment_match(community_id, entry_id):
         dry_run = parse_dry_run(request.args, payload)
     except ValueError:
         return _error("Invalid dry_run option", 400, ErrorCode.INVALID_REQUEST)
-    if not isinstance(payload.get("invoice_id"), int):
+    invoice_id = payload.get("invoice_id")
+    # bool is an int subclass; true must not confirm invoice 1.
+    if not isinstance(invoice_id, int) or isinstance(invoice_id, bool):
         return _error(
             "Invalid payment confirmation",
             400,

@@ -336,3 +336,52 @@ def test_invalid_pagination_is_rejected_before_any_store_read(
         )
         assert response.status_code == 400
     rows.assert_not_called()
+
+
+CASE_PATH = "/api/operator/v1/communities/community-a/billing/cases/4/responses"
+PAYMENT_PATH = "/api/operator/v1/communities/community-a/payments/matches/9/confirm"
+
+
+@patch("operator_api.db.respond_operator_invoice_case")
+@patch("operator_api.db.confirm_operator_payment_match")
+@patch("operator_api.db.claim_operator_api_usage", return_value=True)
+@patch("operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT)
+def test_malformed_write_bodies_get_the_json_error_contract_without_a_store_call(
+    _lookup, _usage, confirm, respond, app
+):
+    client = _client(app)
+    # Codes follow the stable error contract: a non-object body is an
+    # invalid request; a wrong field type is a 400 invalid case or payment.
+    malformed = [
+        (
+            CASE_PATH,
+            [{"message": "Bitte prüfen", "status": "acknowledged"}],
+            400,
+            "invalid_request",
+        ),
+        (CASE_PATH, {"message": 42, "status": "acknowledged"}, 400, "invalid_case"),
+        (
+            CASE_PATH,
+            {"message": ["Bitte prüfen"], "status": "acknowledged"},
+            400,
+            "invalid_case",
+        ),
+        (
+            CASE_PATH,
+            {"message": "Bitte prüfen", "status": {"x": 1}},
+            400,
+            "invalid_case",
+        ),
+        (PAYMENT_PATH, [{"invoice_id": 3}], 400, "invalid_request"),
+        (PAYMENT_PATH, {"invoice_id": True}, 400, "invalid_payment"),
+        (PAYMENT_PATH, {"invoice_id": "3"}, 400, "invalid_payment"),
+    ]
+
+    for path, body, status, code in malformed:
+        response = client.post(path, headers=_headers("key-1"), json=body)
+        assert response.status_code == status, (path, body)
+        assert response.is_json, (path, body)
+        assert response.get_json()["code"] == code, (path, body)
+
+    assert not respond.called
+    assert not confirm.called
