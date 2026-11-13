@@ -96,7 +96,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                oneOf:
+                - $ref: '#/components/schemas/Submission'
+                - $ref: '#/components/schemas/PendingConfirmation'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -388,7 +390,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                oneOf:
+                - $ref: '#/components/schemas/Submission'
+                - $ref: '#/components/schemas/PendingConfirmation'
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -1100,6 +1104,23 @@ components:
         recipient:
           type: string
           description: Adapter recipient description, or manual / not configured.
+    PendingConfirmation:
+      type: object
+      additionalProperties: false
+      required: [schema_version, state, request_id, confirmation_url, payload_fingerprint]
+      properties:
+        schema_version:
+          const: operator-api/1
+        state:
+          enum: [awaiting_confirmation, confirmed, expired]
+        request_id:
+          type: string
+        confirmation_url:
+          type: string
+          description: Community administrator dashboard URL, relative to the operator origin.
+        payload_fingerprint:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
     Submission:
       type: object
       properties:

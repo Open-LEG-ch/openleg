@@ -81,9 +81,11 @@ fehlgeschlagenen Versuch können sie über
 Bei der Ausstellung wählen Sie `actor_kind`: `human` (Mensch), `service`
 (Dienst) oder `agent` (Agent). `agent_label` ist ein optionaler Name mit
 höchstens 200 Zeichen. Bestehende Credentials erhalten `service`.
-Agenten dürfen derzeit weder Gründungsanmeldungen noch Mitgliedermutationen
-einreichen, auch wenn das Credential die entsprechende Capability besitzt.
-Diese Anfragen erhalten HTTP 403 mit dem Code `capability_denied`.
+Agentenanfragen für Gründungsanmeldungen und Mitgliedermutationen erhalten
+HTTP 202 mit `state: awaiting_confirmation`, `request_id`,
+`payload_fingerprint` und `confirmation_url`. Erst eine Administration der LEG
+bestätigt die Anfrage im Dashboard. Bis dahin entstehen keine VNB-Vorgänge,
+Pakete oder Zustellungen. Unbestätigte Anfragen laufen nach 72 Stunden ab.
 Vorschauen mit `dry_run=true` sind auch für Agenten erlaubt und schreiben keine
 Geschäftsdaten. Ungültige oder wiederholte `dry_run`-Werte sowie `dry_run` im
 JSON-Body erhalten zuerst HTTP 400 mit `invalid_request`.

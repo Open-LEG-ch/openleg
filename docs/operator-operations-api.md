@@ -275,9 +275,38 @@ The development MCP sidecar exposes `preview_formation_submission` and
 come from the operator contract; callers cannot disable the dry run.
 
 Agent credentials may preview both VNB-bound writes with `dry_run=true`.
-Real submissions (option absent or `false`) return 403 `capability_denied`.
-Malformed, repeated, or body-supplied `dry_run` options return 400
-`invalid_request` before the actor denial or any domain call.
+Real submissions return HTTP 202 with `state: awaiting_confirmation`,
+`request_id`, `payload_fingerprint` and a relative `confirmation_url`.
+Service and human credentials retain direct submission behaviour.
+Malformed, repeated, or body-supplied `dry_run` options still return 400.
+
+Confirmation requests have separate durable states: `awaiting_confirmation`,
+`confirmed`, and `expired`. They bind the community, originating credential,
+canonical payload, adapter and fingerprint. Formation identity is the fingerprint;
+membership identity is `mutation_id`. Neither route uses `Idempotency-Key`.
+A different membership payload or originating credential for the same identity
+returns 409. Replays do not extend the 72-hour lifetime.
+
+`GET /leg/community/{community_id}/operator-api/confirmations/{request_id}`
+shows the action, recipient, fingerprint and limited payload summary to a
+session-authenticated community administrator. `POST` to the same URL requires
+that session and dashboard CSRF token. The server checks current administrator
+authority, credential activity/capability, adapter and recomputed canonical facts.
+Changed intent returns 409; a revoked credential returns 403. A request under
+another community is 404. Concurrent confirmations serialize on the request;
+a completed confirmation returns its stored result without a domain call.
+The case and events retain the initiating agent and add `confirming_building_id`.
+
+`POST /api/cron/expire-agent-confirmations` requires `X-Cron-Secret` and expires
+unconfirmed requests after 72 hours. It emits one `formation.confirmation.expired`
+or `membership.confirmation.expired` event with the request ID and state.
+Confirmation also checks the deadline under the same lock.
+
+MCP tools `submit_formation` and `submit_membership_mutation` map to the same
+operator POST endpoints and capabilities. For agent credentials they return the
+pending state and dashboard URL. For service/human credentials they return the
+direct submission result. Membership `change` accepts only `status`, `role`, and
+`access_roles` in `after`; `join` and `exit` derive facts from the LEG record.
 
 ## Invoice case previews and MCP
 

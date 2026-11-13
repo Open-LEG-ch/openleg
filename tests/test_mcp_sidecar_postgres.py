@@ -138,13 +138,15 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
                 session(app, fixture.headers) as sdk,
             ):
                 tools = (await sdk.list_tools()).tools
-                # Write previews and the two write tools are the only non-read
-                # tools; confirm_payment_match names its POST operation.
+                # Write previews and write tools are the only non-read tools;
+                # confirm_payment_match names its POST operation.
                 assert [
                     t.name for t in tools if t.meta.get("operationId") not in reads
                 ] == [
                     "preview_formation_submission",
                     "preview_membership_mutation",
+                    "submit_formation",
+                    "submit_membership_mutation",
                     "respond_invoice_case",
                     "confirm_payment_match",
                 ]
@@ -447,3 +449,58 @@ def test_vnb_text_and_latest_formation(operator_http, monkeypatch):
                 }
 
         asyncio.run(check())
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "name,payload",
+    [
+        ("submit_formation", {}),
+        (
+            "submit_membership_mutation",
+            {
+                "mutation_id": "mcp-pending",
+                "participant_id": "contract-admin",
+                "mutation_type": "change",
+                "effective_date": "2026-12-01",
+                "source_agreement_id": "agreement",
+                "after": {"role": "member"},
+            },
+        ),
+    ],
+)
+def test_agent_submit_returns_confirmation_without_packages(
+    operator_http, monkeypatch, name, payload
+):
+    from mcp_sidecar.server import create_app
+
+    http = operator_http
+    operator_contract_helpers.seed_operator_resources(http)
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE operator_api_clients SET actor_kind='agent'")
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    with operator_server(http.app) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(app, http.headers) as sdk,
+            ):
+                result = await sdk.call_tool(
+                    name, {"community_id": http.community_id, **payload}
+                )
+                assert not result.isError
+                assert result.structuredContent["state"] == "awaiting_confirmation"
+                assert "/confirmations/" in result.structuredContent["confirmation_url"]
+
+        asyncio.run(check())
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        for table in (
+            "vnb_submission_cases",
+            "vnb_mutation_cases",
+            "operator_webhook_deliveries",
+        ):
+            cur.execute(f"SELECT count(*) AS n FROM {table}")
+            assert cur.fetchone()["n"] == 0

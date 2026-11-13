@@ -19862,3 +19862,67 @@ msgstr "Données énergétiques publiques suisses et outils pour les CEL. Sans c
 #, python-format
 msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
 msgstr "- [Contrat OpenAPI](%(url)s) : Contrat de l’API publique lisible par machine (JSON)"
+
+#: templates/agent_confirmation.html
+msgid "Agentenanfrage bestätigen"
+msgstr "Confirmer la demande de l’agent"
+
+#: templates/agent_confirmation.html
+msgid "Prüfen Sie diese Anfrage. Erst Ihre Bestätigung erstellt das VNB-Paket oder sendet es an den Netzbetreiber."
+msgstr "Vérifiez cette demande. Votre confirmation crée le dossier GRD ou l’envoie au gestionnaire de réseau."
+
+#: templates/agent_confirmation.html
+msgid "Ausführung"
+msgstr "Exécution"
+
+#: templates/agent_confirmation.html
+msgid "Manuelles Paket vorbereiten"
+msgstr "Préparer un dossier manuel"
+
+#: templates/agent_confirmation.html
+msgid "Über den VNB-Adapter senden"
+msgstr "Envoyer par l’adaptateur GRD"
+
+#: templates/agent_confirmation.html
+msgid "Fingerabdruck"
+msgstr "Empreinte"
+
+#: templates/agent_confirmation.html
+msgid "Mutationstyp"
+msgstr "Type de mutation"
+
+#: templates/agent_confirmation.html
+msgid "Änderungen"
+msgstr "Modifications"
+
+#: templates/agent_confirmation.html
+msgid "Anfrage bestätigen"
+msgstr "Confirmer la demande"
+
+#: templates/agent_confirmation.html
+msgid "Diese Anfrage wurde bestätigt."
+msgstr "Cette demande a été confirmée."
+
+#: templates/agent_confirmation.html
+msgid "Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau."
+msgstr "Cette demande a expiré. Créez un nouvel aperçu."
+
+#: templates/agent_confirmation.html
+msgid "Gründungsanmeldung"
+msgstr "Demande de constitution"
+
+#: templates/agent_confirmation.html
+msgid "Mitgliedermutation"
+msgstr "Mutation de membre"
+
+#: templates/agent_confirmation.html
+msgid "Empfänger"
+msgstr "Destinataire"
+
+#: templates/agent_confirmation.html
+msgid "Teilnehmenden-ID"
+msgstr "Identifiant du membre"
+
+#: templates/agent_confirmation.html
+msgid "Mutations-ID"
+msgstr "Identifiant de mutation"

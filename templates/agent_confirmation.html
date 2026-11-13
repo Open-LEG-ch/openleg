@@ -1,0 +1,30 @@
+{% extends 'product_base.html' %}
+{% block content %}
+<section class="mx-auto max-w-3xl px-4 py-8">
+  <h1 class="text-2xl font-bold">{{ _('Agentenanfrage bestätigen') }}</h1>
+  <p class="mt-4">{{ _('Prüfen Sie diese Anfrage. Erst Ihre Bestätigung erstellt das VNB-Paket oder sendet es an den Netzbetreiber.') }}</p>
+  <dl class="mt-6 space-y-3">
+    <dt>{{ _('Aktion') }}</dt><dd>{{ _('Gründungsanmeldung') if pending.kind == 'formation' else _('Mitgliedermutation') }}</dd>
+    <dt>{{ _('Ausführung') }}</dt><dd>{{ _('Manuelles Paket vorbereiten') if pending.preview.intended_action == 'prepare_manual_package' else _('Über den VNB-Adapter senden') }}</dd>
+    <dt>{{ _('Empfänger') }}</dt><dd>{{ pending.preview.recipient }}</dd>
+    <dt>{{ _('Fingerabdruck') }}</dt><dd class="break-all font-mono">{{ pending.payload_fingerprint }}</dd>
+    <dt>{{ _('Gültig bis') }}</dt><dd>{{ pending.expires_at }}</dd>
+    {% if pending.kind == 'formation' %}
+    <dt>{{ _('Dokumente') }}</dt><dd>{{ pending.canonical_payload.documents | length }}</dd>
+    {% else %}
+    <dt>{{ _('Teilnehmenden-ID') }}</dt><dd>{{ pending.command.participant_id }}</dd>
+    <dt>{{ _('Mutations-ID') }}</dt><dd>{{ pending.command.mutation_id }}</dd>
+    <dt>{{ _('Mutationstyp') }}</dt><dd>{{ pending.command.mutation_type }}</dd>
+    <dt>{{ _('Wirksamkeitsdatum') }}</dt><dd>{{ pending.command.effective_date }}</dd>
+    <dt>{{ _('Änderungen') }}</dt><dd>{{ pending.command.after | tojson }}</dd>
+    {% endif %}
+  </dl>
+  {% if pending.state == 'awaiting_confirmation' %}
+  <form method="post" class="mt-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="rounded bg-ink px-4 py-2 text-white">{{ _('Anfrage bestätigen') }}</button>
+  </form>
+  {% elif pending.state == 'confirmed' %}<p class="mt-6">{{ _('Diese Anfrage wurde bestätigt.') }}</p>
+  {% else %}<p class="mt-6">{{ _('Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau.') }}</p>{% endif %}
+</section>
+{% endblock %}

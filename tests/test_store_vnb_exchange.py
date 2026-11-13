@@ -20,6 +20,11 @@ class Cursor:
     def execute(self, query, params=None):
         self.executed.append((query, params))
 
+    def fetchall(self):
+        assert "FROM communities" in self.executed[-1][0]
+        assert "FOR UPDATE" in self.executed[-1][0]
+        return []
+
     def fetchone(self):
         return next(self.rows)
 
@@ -78,7 +83,8 @@ def test_claim_uses_the_stable_submission_identity(monkeypatch):
 
     assert store.claim(claim) == row
 
-    query, params = cursor.executed[0]
+    assert cursor.executed[0][1] == ("community-1",)
+    query, params = cursor.executed[1]
     assert "ON CONFLICT (community_id, contract_version, payload_fingerprint)" in query
     assert params[1] == "community-1"
     assert params[2] == "actor-1"
@@ -143,9 +149,10 @@ def test_claim_mutation_checks_stable_identity_and_pending_participant(monkeypat
         payload_fingerprint="f" * 64,
     )
     assert store.claim_mutation(claim) == row
-    assert "mutation_id = %s" in cursor.executed[0][0]
-    assert "state IN ('claimed', 'prepared', 'delivered')" in cursor.executed[1][0]
-    assert "INSERT INTO vnb_mutation_cases" in cursor.executed[2][0]
+    assert cursor.executed[0][1] == ("community-1",)
+    assert "mutation_id = %s" in cursor.executed[1][0]
+    assert "state IN ('claimed', 'prepared', 'delivered')" in cursor.executed[2][0]
+    assert "INSERT INTO vnb_mutation_cases" in cursor.executed[3][0]
 
 
 def test_mutation_outcome_appends_evidence_before_projection(monkeypatch):
@@ -338,7 +345,7 @@ def test_claim_mutation_rejects_second_open_mutation_for_a_participant(monkeypat
         store.claim_mutation(_mutation_claim())
 
     assert "bereits eine Mutation offen" in str(raised.value)
-    assert "participant_id = %s" in cursor.executed[1][0]
+    assert "participant_id = %s" in cursor.executed[2][0]
 
 
 def test_finalized_case_gets_no_late_evidence_row(monkeypatch):

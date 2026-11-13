@@ -130,9 +130,11 @@ class SubmissionPreview:
     intended_action: str
     payload_fingerprint: str
     recipient: str
+    canonical_payload: dict | None = None
+    adapter_key: str | None = None
 
 
-def _preview(contract, capability, fingerprint):
+def _preview(contract, capability, fingerprint, manifest=None):
     return SubmissionPreview(
         intended_action=(
             "send_through_adapter"
@@ -140,6 +142,8 @@ def _preview(contract, capability, fingerprint):
             else "prepare_manual_package"
         ),
         payload_fingerprint=fingerprint,
+        canonical_payload=manifest,
+        adapter_key=contract.adapter_key,
         recipient=contract.recipient_description or "manual / not configured",
     )
 
@@ -367,7 +371,10 @@ def submit_participant_mutation(
     if dry_run:
         cases.check_mutation(submission)
         return _preview(
-            contract, MUTATION_CAPABILITIES[mutation.mutation_type], fingerprint
+            contract,
+            MUTATION_CAPABILITIES[mutation.mutation_type],
+            fingerprint,
+            manifest,
         )
     row = cases.claim_mutation(submission)
     if row["state"] != "claimed":
@@ -611,7 +618,7 @@ def submit_package(
     )
     if dry_run:
         cases.check_submission(submission)
-        return _preview(contract, FORMATION_SUBMISSION, fingerprint)
+        return _preview(contract, FORMATION_SUBMISSION, fingerprint, manifest)
     row = cases.claim(submission)
     if row["state"] != "claimed":
         return _outcome_from_row(row)

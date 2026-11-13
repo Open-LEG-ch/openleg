@@ -170,3 +170,14 @@ dues receipts and spending approvals. `verein_finance.py` reconciles CHF account
 and fund balances without SQL. `store/verein_finance.py` owns private immutable
 inputs, stable source identities and independently approved public versions.
 Public reads select only redacted snapshots. No report executes a bank payment.
+
+An **agent confirmation request** is a durable human gate before a VNB case
+exists. It binds one community, originating credential, canonical payload,
+fingerprint and adapter. Confirmation records `confirming_building_id` separately
+from the immutable initiating actor. Expiry is a request event, not a VNB case.
+
+`store.agent_confirmation` holds the pending-request lock and owns its transaction.
+During confirmation, `store.vnb_exchange.confirmation_transaction` joins case,
+package and event writes to that transaction through a context-local connection.
+Other VNB submissions retain their existing transaction behaviour. This prevents
+confirmation completion from committing separately from its business records.

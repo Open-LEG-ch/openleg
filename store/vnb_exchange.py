@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import contextmanager, nullcontext
+from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 from psycopg2.errors import UniqueViolation
@@ -103,6 +105,7 @@ def claim_mutation(submission: MutationClaim) -> dict:
     """Claim a stable mutation, rejecting re-use and participant conflicts."""
     case_id = str(uuid.uuid4())
     with _get_connection() as conn, conn.cursor() as cur:
+        _lock_community(cur, submission.community_id)
         cur.execute(
             """SELECT * FROM vnb_mutation_cases
                WHERE community_id = %s AND mutation_id = %s FOR UPDATE""",
@@ -359,10 +362,60 @@ def record_mutation_response(
         return row
 
 
+_confirmation_connection = ContextVar("vnb_confirmation_connection", default=None)
+
+
+@contextmanager
+def confirmation_transaction(connection):
+    """Keep case, event, package and confirmation completion in one transaction."""
+    token = _confirmation_connection.set(connection)
+    try:
+        yield
+    finally:
+        _confirmation_connection.reset(token)
+
+
 def _get_connection():
     import database
 
-    return database.get_connection()
+    connection = _confirmation_connection.get()
+    return (
+        nullcontext(connection) if connection is not None else database.get_connection()
+    )
+
+
+def _lock_community(cursor, community_id):
+    # All submission paths lock the community before facts and case identities.
+    # Reserving a unique identity first can deadlock with human confirmation.
+    cursor.execute(
+        "SELECT community_id FROM communities WHERE community_id=%s FOR UPDATE",
+        (community_id,),
+    )
+    cursor.fetchall()
+
+
+def lock_confirmation_facts(community_id, kind):
+    """Hold the current facts until the confirmation transaction completes."""
+    if _confirmation_connection.get() is None:
+        raise RuntimeError("Confirmation requires its owning transaction")
+    with _get_connection() as conn, conn.cursor() as cur:
+        _lock_community(cur, community_id)
+        from store.formation_signatures import participant_manifest
+
+        participant_manifest(cur, community_id)
+        if kind == "formation":
+            cur.execute(
+                """SELECT id FROM leg_documents WHERE community_id=%s
+                   ORDER BY id FOR UPDATE""",
+                (community_id,),
+            )
+            cur.fetchall()
+            cur.execute(
+                """SELECT building_id FROM leg_signature_receipts
+                   WHERE community_id=%s ORDER BY building_id FOR SHARE""",
+                (community_id,),
+            )
+            cur.fetchall()
 
 
 def _guard_current_formation_bundle(cursor, submission):
@@ -452,6 +505,7 @@ def claim(submission: SubmissionClaim) -> dict:
     case_id = str(uuid.uuid4())
     try:
         with _get_connection() as conn, conn.cursor() as cur:
+            _lock_community(cur, submission.community_id)
             existing = _guard_current_formation_bundle(cur, submission)
             if existing is not None:
                 return existing

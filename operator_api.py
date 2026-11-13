@@ -18,6 +18,7 @@ from ipaddress import ip_address
 from urllib.parse import urlparse
 
 from flask import Blueprint, current_app, g, jsonify, request, session
+from psycopg2.errors import DeadlockDetected, SerializationFailure
 
 import community_access
 import database as db
@@ -120,6 +121,17 @@ def _error(message, status, code=None, *, field=None):
     return response
 
 
+def _retryable_submission_errors(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        try:
+            return view(*args, **kwargs)
+        except (DeadlockDetected, SerializationFailure):
+            return _error("Submission temporarily unavailable; retry", 503)
+
+    return wrapped
+
+
 def require_operator(capability):
     def decorator(view):
         @wraps(view)
@@ -185,18 +197,38 @@ def _dry_run_option():
     return values[0] if values else "false"
 
 
+def _submit_vnb(kind, command, *, dry_run=False):
+    submit = (
+        vnb_exchange.submit_formation
+        if kind == "formation"
+        else vnb_exchange.submit_membership_mutation
+    )
+    if dry_run or g.operator_client.get("actor_kind") != "agent":
+        return submit(command, **({"dry_run": True} if dry_run else {}))
+    preview = submit(command, dry_run=True)
+    row = db.create_agent_confirmation_request(
+        kind, command, g.operator_client, preview
+    )
+    return {
+        "state": row["state"],
+        "request_id": row["request_id"],
+        "payload_fingerprint": row["payload_fingerprint"],
+        "confirmation_url": f"/leg/community/{command.community_id}/operator-api/confirmations/{row['request_id']}",
+    }
+
+
 @operator_api_bp.post(
     "/api/operator/v1/communities/<community_id>/formation/submissions"
 )
+@_retryable_submission_errors
 @require_operator("formation.mutate")
 def submit_formation(community_id):
     dry_run = _dry_run_option()
     if dry_run is None:
         return _error("Invalid dry_run option", 400)
-    if dry_run != "true" and g.operator_client.get("actor_kind") == "agent":
-        return _error("Formation submission denied", 403)
     try:
-        outcome = vnb_exchange.submit_formation(
+        outcome = _submit_vnb(
+            "formation",
             vnb_exchange.FormationSubmission(
                 community_id, g.operator_client["created_by"]
             ),
@@ -209,8 +241,16 @@ def submit_formation(community_id):
         return _error("Formation submission invalid or conflicting", 409, exc.reason)
     except db.VnbExchangeStoreError:
         return _error("Formation submission unavailable", 503)
+    if isinstance(outcome, dict):
+        return jsonify(schema_version=API_SCHEMA_VERSION, **outcome), 202
     if dry_run == "true":
-        return jsonify(schema_version=API_SCHEMA_VERSION, **outcome.__dict__)
+        return jsonify(
+            schema_version=API_SCHEMA_VERSION,
+            **{
+                key: getattr(outcome, key)
+                for key in ("intended_action", "payload_fingerprint", "recipient")
+            },
+        )
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
         state=outcome.state,
@@ -233,18 +273,18 @@ def membership_mutations(community_id):
 @operator_api_bp.post(
     "/api/operator/v1/communities/<community_id>/membership-mutations"
 )
+@_retryable_submission_errors
 @require_operator("membership.mutate")
 def submit_membership_mutation(community_id):
     dry_run = _dry_run_option()
     if dry_run is None:
         return _error("Invalid dry_run option", 400)
-    if dry_run != "true" and g.operator_client.get("actor_kind") == "agent":
-        return _error("Membership mutation denied", 403)
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return _error("JSON object required", 400)
     try:
-        outcome = vnb_exchange.submit_membership_mutation(
+        outcome = _submit_vnb(
+            "membership",
             vnb_exchange.ParticipantMutationSubmission(
                 str(payload.get("mutation_id", "")),
                 community_id,
@@ -272,8 +312,16 @@ def submit_membership_mutation(community_id):
         )
     except db.VnbExchangeStoreError:
         return _error("Membership mutation unavailable", 503)
+    if isinstance(outcome, dict):
+        return jsonify(schema_version=API_SCHEMA_VERSION, **outcome), 202
     if dry_run == "true":
-        return jsonify(schema_version=API_SCHEMA_VERSION, **outcome.__dict__)
+        return jsonify(
+            schema_version=API_SCHEMA_VERSION,
+            **{
+                key: getattr(outcome, key)
+                for key in ("intended_action", "payload_fingerprint", "recipient")
+            },
+        )
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
         state=outcome.state,
@@ -923,3 +971,65 @@ def dispatch_pending_webhooks(
         )
         totals["delivered" if delivered else "failed"] += 1
     return totals
+
+
+@operator_api_bp.route(
+    "/leg/community/<community_id>/operator-api/confirmations/<request_id>",
+    methods=["GET", "POST"],
+)
+@_retryable_submission_errors
+def agent_confirmation_page(community_id, request_id):
+    from flask import redirect, render_template, url_for
+
+    import agent_confirmation
+
+    building_id = session.get("dashboard_building_id")
+    row = db.get_agent_confirmation_request(community_id, request_id)
+    if not row:
+        return _error("Not found", 404)
+    if not building_id:
+        return _error("Confirmation denied", 403)
+    if not _admin_for(community_id, building_id):
+        community = db.fetch_community_with_members(community_id)
+        if not any(
+            member.get("building_id") == building_id
+            for member in (community or {}).get("members", [])
+        ):
+            return _error("Not found", 404)
+        return _error("Confirmation denied", 403)
+    if request.method == "GET":
+        return render_template(
+            "agent_confirmation.html",
+            pending=row,
+            csrf_token=session.get("dashboard_csrf_token", ""),
+        )
+    if not _require_csrf():
+        return _error("Confirmation denied", 403)
+    try:
+        result = agent_confirmation.confirm(community_id, request_id, building_id)
+    except LookupError:
+        return _error("Not found", 404)
+    except PermissionError:
+        return _error("Confirmation denied", 403)
+    except (
+        db.VnbSubmissionConflict,
+        vnb_exchange.FormationSubmissionInvalid,
+        vnb_exchange.ParticipantMutationInvalid,
+        ValueError,
+    ):
+        return _error("Confirmation changed; preview again", 409)
+    except db.VnbExchangeStoreError:
+        return _error("Confirmation unavailable", 503)
+    if request.form and result["state"] == "confirmed":
+        # Build the location from the stored request, not the request URL.
+        return redirect(
+            url_for(
+                "operator_api.agent_confirmation_page",
+                community_id=row["community_id"],
+                request_id=row["request_id"],
+            ),
+            code=303,
+        )
+    return jsonify(schema_version=API_SCHEMA_VERSION, **result), (
+        409 if result["state"] == "expired" else 200
+    )

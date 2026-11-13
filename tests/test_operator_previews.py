@@ -236,7 +236,7 @@ def test_mcp_preview_cannot_submit(operator_http, monkeypatch, suffix, payload):
                     == "prepare_manual_package"
                 )
                 assert (await sdk.call_tool(name, {**args, "dry_run": False})).isError
-                assert (await sdk.call_tool("submit_formation", args)).isError
+                assert (await sdk.call_tool("unknown_submit", args)).isError
 
         asyncio.run(check())
     after = snapshot(http.db)
@@ -511,16 +511,28 @@ def test_agent_real_submission_changes_no_business_rows(
         cur.execute("UPDATE operator_api_clients SET actor_kind='agent'")
     before = snapshot(http.db)
 
-    def forbidden(*args, **kwargs):
-        pytest.fail("Agent real submission reached the domain")
+    formation = vnb_exchange.submit_formation
+    membership = vnb_exchange.submit_membership_mutation
 
-    monkeypatch.setattr(vnb_exchange, "submit_formation", forbidden)
-    monkeypatch.setattr(vnb_exchange, "submit_membership_mutation", forbidden)
+    def preview_only(submit):
+        def guarded(*args, **kwargs):
+            assert kwargs.get("dry_run") is True
+            return submit(*args, **kwargs)
+
+        return guarded
+
+    monkeypatch.setattr(vnb_exchange, "submit_formation", preview_only(formation))
+    monkeypatch.setattr(
+        vnb_exchange, "submit_membership_mutation", preview_only(membership)
+    )
     response = http.request("POST", suffix, json=payload, query_string=query)
-    assert response.status_code == 403
-    assert response.json["code"] == "capability_denied"
-    assert response.json["retryable"] is False
+    assert response.status_code == 202
+    assert response.json["state"] == "awaiting_confirmation"
     after = snapshot(http.db)
     for table in before:
-        if table not in {"operator_api_clients", "operator_api_usage"}:
+        if table not in {
+            "operator_api_clients",
+            "operator_api_usage",
+            "agent_confirmation_requests",
+        }:
             assert before[table] == after[table], table

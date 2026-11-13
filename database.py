@@ -457,6 +457,7 @@ list_operator_invoices = _operator_operations.list_invoices
 list_operator_invoice_cases = _operator_operations.list_cases
 list_operator_payment_matches = _operator_operations.list_payments
 
+from store import agent_confirmation as _agent_confirmation
 from store import verein_meetups as _verein_meetups
 from store.advisories import (  # noqa: F401
     append_advisory_revision,
@@ -471,6 +472,12 @@ from store.advisories import (  # noqa: F401
     record_equipment_advisory_action,
     set_advisory_source_policy,
 )
+
+create_agent_confirmation_request = _agent_confirmation.create_request
+get_agent_confirmation_request = _agent_confirmation.get_request
+agent_confirmation = _agent_confirmation.confirmation
+expire_agent_confirmation_requests = _agent_confirmation.expire_requests
+
 from store.equipment import (  # noqa: F401
     create_equipment,
     delete_equipment,

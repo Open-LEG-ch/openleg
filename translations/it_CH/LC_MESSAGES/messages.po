@@ -22495,3 +22495,87 @@ msgstr "Dati energetici pubblici svizzeri e strumenti LEG. Senza accesso; le ric
 #, python-format
 msgid "- [OpenAPI-Vertrag](%(url)s): Maschinenlesbarer Vertrag der öffentlichen API (JSON)"
 msgstr "- [Contratto OpenAPI](%(url)s): contratto dell’API pubblica leggibile da macchina (JSON)"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:4
+msgid "Agentenanfrage bestätigen"
+msgstr "Conferma la richiesta dell’agente"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:5
+msgid ""
+"Prüfen Sie diese Anfrage. Erst Ihre Bestätigung erstellt das VNB-Paket oder sendet es an den "
+"Netzbetreiber."
+msgstr ""
+"Verifichi questa richiesta. Solo la sua conferma crea il pacchetto VNB o lo invia al gestore "
+"della rete."
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:7
+msgid "Gründungsanmeldung"
+msgstr "Notifica di costituzione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:7
+msgid "Mitgliedermutation"
+msgstr "Mutazione dei membri"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:8
+msgid "Ausführung"
+msgstr "Esecuzione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:8
+msgid "Manuelles Paket vorbereiten"
+msgstr "Prepara un pacchetto manuale"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:8
+msgid "Über den VNB-Adapter senden"
+msgstr "Invia tramite l’adattatore VNB"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:9
+msgid "Empfänger"
+msgstr "Destinatario"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:10
+msgid "Fingerabdruck"
+msgstr "Impronta"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:15
+msgid "Teilnehmenden-ID"
+msgstr "ID partecipante"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:16
+msgid "Mutations-ID"
+msgstr "ID mutazione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:17
+msgid "Mutationstyp"
+msgstr "Tipo di mutazione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:19
+msgid "Änderungen"
+msgstr "Modifiche"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:25
+msgid "Anfrage bestätigen"
+msgstr "Conferma la richiesta"
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:27
+msgid "Diese Anfrage wurde bestätigt."
+msgstr "Questa richiesta è stata confermata."
+
+#. Draft translation; native language and domain review pending.
+#: templates/agent_confirmation.html:28
+msgid "Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau."
+msgstr "Questa richiesta è scaduta. Crei una nuova anteprima."
