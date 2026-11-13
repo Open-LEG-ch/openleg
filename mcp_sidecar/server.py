@@ -901,7 +901,27 @@ def create_app():
                             )
                         if result.status_code == 200:
                             candidate = result.json()
-                            if not isinstance(candidate, dict):
+                            # RFC 7662: "active" is a boolean; an active token
+                            # carries these fields with these types. Any other
+                            # shape is an upstream fault, not a token verdict.
+                            if not isinstance(candidate, dict) or not isinstance(
+                                candidate.get("active"), bool
+                            ):
+                                raise ValueError("Malformed introspection body")
+                            if candidate["active"] and not (
+                                all(
+                                    isinstance(candidate.get(key), str)
+                                    for key in (
+                                        "scope",
+                                        "community_id",
+                                        "iss",
+                                        "aud",
+                                        "downstream_token",
+                                    )
+                                )
+                                and isinstance(candidate.get("exp"), (int, float))
+                                and not isinstance(candidate.get("exp"), bool)
+                            ):
                                 raise ValueError("Malformed introspection body")
                             words = candidate.get("scope", "").split()
                             community = candidate.get("community_id")
@@ -924,10 +944,8 @@ def create_app():
                                 identity = candidate
                         else:
                             unavailable = True
-                    except (httpx.HTTPError, ValueError):
+                    except (httpx.HTTPError, ValueError, TypeError, AttributeError):
                         unavailable = True
-                    except (TypeError, AttributeError):
-                        pass
                 if unavailable:
                     return await JSONResponse(
                         {"error": "temporarily_unavailable"},

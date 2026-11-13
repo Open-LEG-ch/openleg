@@ -526,6 +526,23 @@ def test_sidecar_reports_introspection_unavailable(monkeypatch):
                 httpx.Response(503, json={"error": "temporarily_unavailable"}),
                 httpx.Response(200, text="not JSON"),
                 httpx.Response(200, json=[]),
+                # A 200 with malformed fields is an upstream fault, not a
+                # verdict on the token.
+                httpx.Response(200, json={"active": True, "scope": None}),
+                httpx.Response(200, json={"active": "yes"}),
+                httpx.Response(200, json={}),
+                httpx.Response(
+                    200,
+                    json={
+                        "active": True,
+                        "scope": "community:leg billing.read",
+                        "community_id": "leg",
+                        "iss": "https://auth.example",
+                        "aud": "https://mcp.example/mcp",
+                        "exp": True,
+                        "downstream_token": "olk_x",
+                    },
+                ),
             ):
                 response = await client.post(
                     "/mcp", headers={"Authorization": "Bearer ola_access"}
