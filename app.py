@@ -855,7 +855,15 @@ def unsubscribe_token(token):
             if prepare_deletion is not None
             else db.confirm_profile_deletion(token_uuid)
         )
-    except db.ProfileDeletionPreparationError:
+    except db.ProfileDeletionPreparationError as error:
+        category = "unexpected"
+        if isinstance(error.__cause__, OSError):
+            category = "storage_unavailable"
+        elif isinstance(error.__cause__, RuntimeError):
+            category = "preparation_unavailable"
+        current_app.logger.error(
+            "profile_deletion_preparation_failed category=%s", category
+        )
         abort(503)
     if not deleted:
         return (
