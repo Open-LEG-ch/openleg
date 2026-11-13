@@ -78,6 +78,8 @@
       {{ _("Für Anfragen wenden Sie sich bitte an:") }} <a href="mailto:{{ contact_email }}" class="underline">{{ contact_email }}</a>
     </p>
 
+    {% if site_release_enabled %}{% include 'verein/privacy_notice.html' %}{% endif %}
+
     <a href="/" class="inline-block mt-6 text-sm underline">{{ _("Zurück zur Startseite") }}</a>
   </div>
 {% endblock %}

@@ -12,7 +12,7 @@
     <label><input type="checkbox" name="adult" value="yes" required> {{ _("Ich bin mindestens 18 Jahre alt und stelle den Antrag persönlich.") }}</label>
     <label><input type="checkbox" name="independent" value="yes" required> {{ _("Ich arbeite nicht für einen Energieversorger, kontrolliere oder vertrete keinen Energieversorger und unterstütze den Vereinszweck.") }}</label>
     <label><input type="checkbox" name="terms" value="yes" required> {{ _("Ich habe die Aufnahmebedingungen und die Datenschutzhinweise gelesen.") }}</label>
-    <a class="underline" href="/datenschutz">{{ _("Datenschutz") }}</a>
+    <a class="underline" href="{{ '/datenschutz#verein-datenschutz'|localized_url }}">{{ _("Datenschutz") }}</a>
     <a class="underline" href="{{ verein_facts.statutes_url }}">{{ _("Beschlossene Statuten und Aufnahmebedingungen") }}</a>
     <p>{{ _("Verantwortlich für die Antragsdaten") }}: {{ verein_facts.data_controller }}. {{ verein_facts.contact_address }}</p>
     <button class="bg-brand text-white px-6 py-3 rounded-full" type="submit">{{ _("Antrag senden") }}</button>

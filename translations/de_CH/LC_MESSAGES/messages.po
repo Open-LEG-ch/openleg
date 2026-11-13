@@ -19186,3 +19186,54 @@ msgstr "Es gibt keine Support-SLA und keine zugesagte Antwortzeit. OpenLEG biete
 
 msgid "Gegründet am %(date)s. Sitz: %(seat)s."
 msgstr "Gegründet am %(date)s. Sitz: %(seat)s."
+
+msgid "Datenschutz für den Verein"
+msgstr "Datenschutz für den Verein"
+
+msgid "Entwurf zur rechtlichen Prüfung"
+msgstr "Entwurf zur rechtlichen Prüfung"
+
+msgid "Dieser Abschnitt betrifft nur Anträge, Mitgliedschaft, Beiträge und Veranstaltungen des Vereins. Er ersetzt keine Datenschutzerklärung für den Betrieb einer LEG oder des gehosteten Produkts. Die Angaben zu Rechtsgrundlagen, Empfängern und Aufbewahrung müssen vor der tatsächlichen Aufnahme von Anträgen rechtlich geprüft werden."
+msgstr "Dieser Abschnitt betrifft nur Anträge, Mitgliedschaft, Beiträge und Veranstaltungen des Vereins. Er ersetzt keine Datenschutzerklärung für den Betrieb einer LEG oder des gehosteten Produkts. Die Angaben zu Rechtsgrundlagen, Empfängern und Aufbewahrung müssen vor der tatsächlichen Aufnahme von Anträgen rechtlich geprüft werden."
+
+msgid "Verantwortliche Stelle für Vereinsdaten"
+msgstr "Verantwortliche Stelle für Vereinsdaten"
+
+msgid "Welche Daten wofür verwendet werden"
+msgstr "Welche Daten wofür verwendet werden"
+
+msgid "Anträge: Name, E-Mail, Sprachwahl, Bestätigung der Volljährigkeit, Angaben zu Verbindungen zum Energiesektor, Bestätigungen zu Statuten und Datenschutz sowie Bestätigungs- und Entscheidungsverlauf. Diese Angaben dienen der Prüfung und Bearbeitung des Antrags."
+msgstr "Anträge: Name, E-Mail, Sprachwahl, Bestätigung der Volljährigkeit, Angaben zu Verbindungen zum Energiesektor, Bestätigungen zu Statuten und Datenschutz sowie Bestätigungs- und Entscheidungsverlauf. Diese Angaben dienen der Prüfung und Bearbeitung des Antrags."
+
+msgid "Mitgliedschaft: Aufnahme, Status, Austritt, begründete Entscheide und Beschwerden werden für die Mitgliederverwaltung und nachvollziehbare Entscheidungen festgehalten."
+msgstr "Mitgliedschaft: Aufnahme, Status, Austritt, begründete Entscheide und Beschwerden werden für die Mitgliederverwaltung und nachvollziehbare Entscheidungen festgehalten."
+
+msgid "Beiträge: Beitragsjahre, Forderungen, Fälligkeiten, Erinnerungen, Zahlungseingänge und Belegreferenzen dienen der Beitragsverwaltung und Buchhaltung. Vereinsbeiträge sind von Stromrechnungen getrennt."
+msgstr "Beiträge: Beitragsjahre, Forderungen, Fälligkeiten, Erinnerungen, Zahlungseingänge und Belegreferenzen dienen der Beitragsverwaltung und Buchhaltung. Vereinsbeiträge sind von Stromrechnungen getrennt."
+
+msgid "Veranstaltungen: Titel, Zeit, Ort, Organisation und freigegebene Notizen dienen der Durchführung und öffentlichen Information. Personenbezogene Inhalte benötigen eine Veröffentlichungserlaubnis. Private Entwürfe, Versionen und Freigabereferenzen bleiben in der internen Verwaltung."
+msgstr "Veranstaltungen: Titel, Zeit, Ort, Organisation und freigegebene Notizen dienen der Durchführung und öffentlichen Information. Personenbezogene Inhalte benötigen eine Veröffentlichungserlaubnis. Private Entwürfe, Versionen und Freigabereferenzen bleiben in der internen Verwaltung."
+
+msgid "Zugriff und Weitergabe"
+msgstr "Zugriff und Weitergabe"
+
+msgid "Anträge und Mitgliederdaten gehören in die private Vereinsverwaltung mit einzeln berechtigten Vorstandskonten. Mitglieder sehen ihre eigenen Angaben nach Anmeldung. Öffentlich werden nur ausdrücklich freigegebene Veranstaltungsinhalte und bereinigte Finanzberichte. Die tatsächlich eingesetzten Hosting-, E-Mail- und Zahlungsdienstleister, deren Standorte und Verträge sind vor der Aufnahme von Anträgen zu dokumentieren und rechtlich zu prüfen."
+msgstr "Anträge und Mitgliederdaten gehören in die private Vereinsverwaltung mit einzeln berechtigten Vorstandskonten. Mitglieder sehen ihre eigenen Angaben nach Anmeldung. Öffentlich werden nur ausdrücklich freigegebene Veranstaltungsinhalte und bereinigte Finanzberichte. Die tatsächlich eingesetzten Hosting-, E-Mail- und Zahlungsdienstleister, deren Standorte und Verträge sind vor der Aufnahme von Anträgen zu dokumentieren und rechtlich zu prüfen."
+
+msgid "Aufbewahrung und Löschung"
+msgstr "Aufbewahrung und Löschung"
+
+msgid "Ein Austritt oder Ausschluss beendet die Mitgliedschaft, löscht aber nicht automatisch Anträge, Entscheide, Beiträge und Belege. Es gibt noch keine genehmigte Aufbewahrungsfrist für Vereinsdaten und keine automatische Bereinigung. Die Abmeldung eines LEG-Adressprofils löscht keine Vereinsdaten. Gesetzliche Aufbewahrung und konkrete Löschregeln müssen gesondert geprüft werden."
+msgstr "Ein Austritt oder Ausschluss beendet die Mitgliedschaft, löscht aber nicht automatisch Anträge, Entscheide, Beiträge und Belege. Es gibt noch keine genehmigte Aufbewahrungsfrist für Vereinsdaten und keine automatische Bereinigung. Die Abmeldung eines LEG-Adressprofils löscht keine Vereinsdaten. Gesetzliche Aufbewahrung und konkrete Löschregeln müssen gesondert geprüft werden."
+
+msgid "Zurückgezogene Veranstaltungsnotizen verschwinden aus der aktuellen öffentlichen Ansicht; die private Versionsgeschichte bleibt erhalten. Eine Änderung der Veröffentlichung ist keine Löschung. Kopien, Exporte, Sicherungen und E-Mails müssen in den Aufbewahrungsregeln der tatsächlichen Betreiber berücksichtigt werden."
+msgstr "Zurückgezogene Veranstaltungsnotizen verschwinden aus der aktuellen öffentlichen Ansicht; die private Versionsgeschichte bleibt erhalten. Eine Änderung der Veröffentlichung ist keine Löschung. Kopien, Exporte, Sicherungen und E-Mails müssen in den Aufbewahrungsregeln der tatsächlichen Betreiber berücksichtigt werden."
+
+msgid "Auskunft, Berichtigung und Löschanfragen"
+msgstr "Auskunft, Berichtigung und Löschanfragen"
+
+msgid "Schreiben Sie für Auskunft, Berichtigung, Löschung oder den Widerruf einer Einwilligung an hallo@openleg.ch. Der Verein muss Ihre Berechtigung und mögliche Aufbewahrungspflichten prüfen. Der Widerruf betrifft künftige Verarbeitungen; er bedeutet nicht, dass bereits entstandene Unterlagen oder Kopien gelöscht sind."
+msgstr "Schreiben Sie für Auskunft, Berichtigung, Löschung oder den Widerruf einer Einwilligung an hallo@openleg.ch. Der Verein muss Ihre Berechtigung und mögliche Aufbewahrungspflichten prüfen. Der Widerruf betrifft künftige Verarbeitungen; er bedeutet nicht, dass bereits entstandene Unterlagen oder Kopien gelöscht sind."
+
+msgid "Version: %(version)s"
+msgstr "Version: %(version)s"
