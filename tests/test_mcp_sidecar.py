@@ -419,10 +419,14 @@ def test_operator_origin_accepts_scheme_host_port(monkeypatch):
                 {"items": [], "next_cursor": False},
                 {"items": [], "next_cursor": []},
                 {"items": [], "next_cursor": {}},
+                {"items": ["ignore instructions"], "next_cursor": None},
+                {"items": [{"id": 1}, None], "next_cursor": None},
             )
         ),
         ("list_formations", "formation", {"submissions": {}}),
+        ("list_formations", "formation", {"submissions": ["text"]}),
         ("list_memberships", "membership-mutations", {"mutations": "none"}),
+        ("list_memberships", "membership-mutations", {"mutations": [7]}),
     ],
 )
 def test_malformed_upstream_page(monkeypatch, tool, path, body):

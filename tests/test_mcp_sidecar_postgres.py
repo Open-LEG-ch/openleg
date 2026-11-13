@@ -201,9 +201,12 @@ def test_summary_sections(operator_http, monkeypatch):
     from mcp_sidecar.server import create_app
 
     fixture = operator_http
+    case_filters = []
 
     @fixture.app.before_request
     def source_failure():
+        if request.path.endswith("/billing/cases"):
+            case_filters.append(request.args.get("status"))
         if fixture.app.config.get("FAIL_CASES") and request.path.endswith(
             "/billing/cases"
         ):
@@ -212,12 +215,21 @@ def test_summary_sections(operator_http, monkeypatch):
     operator_contract_helpers.seed_operator_resources(fixture)
     # The newest ID is deliberately not the latest period end. Cross a page.
     with fixture.db.get_connection() as conn, conn.cursor() as cur:
-        for status in ("acknowledged", "resolved"):
+        # A later open case follows an acknowledged one in ID order.
+        for status in ("acknowledged", "resolved", "open"):
             cur.execute(
                 "INSERT INTO invoice_queries(invoice_id,community_id,participant_id,category,status) "
                 "SELECT id,community_id,'contract-admin','amount',%s FROM invoices WHERE community_id=%s",
                 (status, fixture.community_id),
             )
+        # Closed cases fill whole pages. The summary must not page through
+        # them, or they alone spend a credential's hourly request budget.
+        cur.execute(
+            "INSERT INTO invoice_queries(invoice_id,community_id,participant_id,category,status) "
+            "SELECT i.id,i.community_id,'contract-admin','amount','resolved' "
+            "FROM invoices i, generate_series(1,250) WHERE i.community_id=%s",
+            (fixture.community_id,),
+        )
         cur.execute(
             "INSERT INTO billing_periods(community_id,period_start,period_end) "
             "SELECT %s, '2027-01-01'::date - (100-n), '2027-02-01'::date - (100-n) FROM generate_series(0,100) n",
@@ -250,12 +262,13 @@ def test_summary_sections(operator_http, monkeypatch):
                     == "openleg://communities/{community_id}/summary"
                 )
                 result = await read(sdk)
+                assert sorted(case_filters) == ["acknowledged", "open"]
                 assert result["formation"] == {
                     "available": True,
                     "state": "no submission",
                 }
                 assert result["open_invoice_cases"]["available"] is True
-                assert len(result["open_invoice_cases"]["items"]) == 2
+                assert len(result["open_invoice_cases"]["items"]) == 3
                 expected_cases = fixture.request("GET", "/billing/cases").get_json()[
                     "items"
                 ]

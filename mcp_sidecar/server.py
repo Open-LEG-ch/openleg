@@ -121,6 +121,16 @@ def operations():
                 for key, value in collection["properties"].items()
                 if key != "schema_version" and "type" in value
             },
+            # Lists whose declared items are objects; any other item is refused.
+            "object_lists": [
+                key
+                for key, value in collection["properties"].items()
+                if "$ref" in value.get("items", {})
+                and spec["components"]["schemas"][
+                    value["items"]["$ref"].split("/")[-1]
+                ]["type"]
+                == "object"
+            ],
         }
     return reads
 
@@ -224,6 +234,10 @@ def create_app():
             if not all(
                 isinstance(result[key], kinds)
                 for key, kinds in op["result_types"].items()
+            ) or not all(
+                isinstance(item, dict)
+                for key in op["object_lists"]
+                for item in result[key]
             ):
                 raise ValueError("Malformed operator page")
             if re.search(r"olk_[A-Za-z0-9_-]+", json.dumps(result)):
@@ -256,11 +270,13 @@ def create_app():
             )
         ]
 
-    async def section(operation_id, community):
+    async def section(operation_id, community, status=None):
         name = next(
             name for name, op in reads.items() if op["operationId"] == operation_id
         )
         args = {"community_id": community}
+        if status:
+            args["status"] = status
         paginated = "limit" in reads[name]["schema"]["properties"]
         if paginated:
             args["limit"] = 100
@@ -291,12 +307,20 @@ def create_app():
             raise ValueError("invalid_arguments")
         community = match[1]
         summary = {}
-        for section_name, operation_id in (
-            ("formation", "listFormations"),
-            ("open_invoice_cases", "listCases"),
-            ("latest_billing_period", "listPeriods"),
+        for section_name, operation_id, statuses in (
+            ("formation", "listFormations", (None,)),
+            # Ask only for the shown statuses: closed cases can fill enough
+            # pages to spend a credential's hourly request budget.
+            ("open_invoice_cases", "listCases", ("open", "acknowledged")),
+            ("latest_billing_period", "listPeriods", (None,)),
         ):
-            value = await section(operation_id, community)
+            value = {"available": True, "items": []}
+            for status in statuses:
+                part = await section(operation_id, community, status)
+                if not part["available"]:
+                    value = part
+                    break
+                value["items"] += part["items"]
             if value["available"]:
                 items = value.pop("items")
                 try:
@@ -319,9 +343,8 @@ def create_app():
                             else None
                         )
                     else:
-                        value["items"] = [
-                            x for x in items if x["status"] in ("open", "acknowledged")
-                        ]
+                        # The operator API lists cases in ID order.
+                        value["items"] = sorted(items, key=lambda x: x["id"])
                 except (KeyError, TypeError, ValueError):
                     value = {"available": False, "reason": "operator_error"}
             summary[section_name] = value
