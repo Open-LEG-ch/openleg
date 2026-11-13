@@ -745,16 +745,19 @@ def create_credential(community_id):
             return _error("Webhook host must be publicly routable", 400)
     token = _new_secret("olk_")
     token_hash = _token_hash(token)
-    row = db.create_operator_api_client(
-        community_id,
-        building_id,
-        name,
-        capabilities,
-        token_hash,
-        webhook_url,
-        actor_kind=actor_kind,
-        agent_label=agent_label,
-    )
+    try:
+        row = db.create_operator_api_client(
+            community_id,
+            building_id,
+            name,
+            capabilities,
+            token_hash,
+            webhook_url,
+            actor_kind=actor_kind,
+            agent_label=agent_label,
+        )
+    except db.OperatorCredentialLimitReached:
+        return _error("Credential limit reached", 409)
     webhook_secret = row["webhook_secret"]
     return jsonify(
         credential=_safe_credential(row),
@@ -786,7 +789,10 @@ def rotate_credential(community_id, client_id):
         return _error("Invalid CSRF token", 400)
     token = _new_secret("olk_")
     token_hash = _token_hash(token)
-    row = db.rotate_operator_api_client(community_id, client_id, token_hash)
+    try:
+        row = db.rotate_operator_api_client(community_id, client_id, token_hash)
+    except db.OperatorCredentialLimitReached:
+        return _error("Credential limit reached", 409)
     return (
         jsonify(
             credential=_safe_credential(row),

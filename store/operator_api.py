@@ -9,6 +9,10 @@ from psycopg2.extras import Json
 import operator_actor
 
 
+class CredentialLimitReached(Exception):
+    """The community already has the maximum active credentials."""
+
+
 def _get_connection():
     import database
 
@@ -72,6 +76,22 @@ def enqueue_event(
     return event_id
 
 
+def _lock_credential_community(cur, community_id):
+    cur.execute(
+        "SELECT community_id FROM communities WHERE community_id=%s FOR UPDATE",
+        (community_id,),
+    )
+
+
+def _check_credential_capacity(cur, community_id):
+    cur.execute(
+        "SELECT COUNT(*) AS count FROM operator_api_clients WHERE community_id=%s AND active=TRUE",
+        (community_id,),
+    )
+    if cur.fetchone()["count"] >= 10:
+        raise CredentialLimitReached()
+
+
 def create_client(
     community_id,
     created_by,
@@ -86,6 +106,8 @@ def create_client(
 ):
     client_id = str(uuid.uuid4())
     with _get_connection() as conn, conn.cursor() as cur:
+        _lock_credential_community(cur, community_id)
+        _check_credential_capacity(cur, community_id)
         cur.execute(
             """INSERT INTO operator_api_clients (id,community_id,created_by,name,capabilities,token_hash,webhook_url,rate_limit_per_hour,webhook_secret,actor_kind,agent_label)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
@@ -127,6 +149,17 @@ def list_clients(community_id):
 
 def rotate_client(community_id, client_id, token_hash):
     with _get_connection() as conn, conn.cursor() as cur:
+        _lock_credential_community(cur, community_id)
+        cur.execute(
+            "SELECT active FROM operator_api_clients WHERE id=%s AND community_id=%s FOR UPDATE",
+            (client_id, community_id),
+        )
+        current = cur.fetchone()
+        if current is None:
+            return None
+        if not current["active"]:
+            # Rotation reactivates a revoked credential, which takes a slot.
+            _check_credential_capacity(cur, community_id)
         cur.execute(
             "UPDATE operator_api_clients SET token_hash=%s,webhook_secret=%s,active=TRUE,webhook_secret_version=webhook_secret_version+1,rotated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=%s AND community_id=%s RETURNING *",
             (

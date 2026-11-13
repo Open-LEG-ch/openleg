@@ -8,6 +8,13 @@ detaillierten Vertrag mit allen Endpunkten beschreibt
 
 ## Credentials
 
+Pro LEG sind höchstens 10 aktive Credentials erlaubt. Widerrufene Credentials
+zählen nicht mit. Eine Rotation aktiviert ein widerrufenes Credential wieder und
+braucht dafür einen freien Platz. Eine Erstellung oder Rotation über diesem
+Limit liefert HTTP 409 mit
+`{"error":"Credential limit reached","schema_version":"operator-api/1","code":"conflict","retryable":false}`
+und ändert keine Daten.
+
 Eine bestätigte LEG-Administration erstellt, liest, rotiert und widerruft
 Credentials unter `/leg/community/{community_id}/operator-api/credentials`.
 Der API-Token und das Webhook-Signing-Secret werden bei der Erstellung und
