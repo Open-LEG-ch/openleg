@@ -211,7 +211,12 @@ atomic check when processing concurrent deliveries. Record the ID in the same
 transaction as the business change it causes, so a failed processing attempt
 does not mark the event as seen. If processing has external side effects that
 cannot join that transaction, keep a recoverable processing state and answer
-non-2xx until it completes; OpenLEG then retries the delivery. Do not trust the
+non-2xx until it completes; OpenLEG then retries the delivery. Give each
+external call an idempotency key derived from the signed `event_id`, or
+reconcile an ambiguous outcome before retrying, so a retry cannot repeat an
+irreversible action such as a payment. Retries are bounded: after the fifth
+failed attempt the delivery stops at `failed`, and only an administrator's
+`POST …/deliveries/{delivery_id}/retry` sends it again. Do not trust the
 unsigned `OpenLEG-Delivery` header for deduplication. A freshness check alone
 does not prevent replay within the five-minute window.
 

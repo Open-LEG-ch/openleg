@@ -83,7 +83,13 @@ ausgelöste fachliche Änderung. So gilt ein Ereignis nach einem fehlgeschlagene
 Verarbeitungsversuch nicht als erledigt. Lassen sich externe Nebenwirkungen
 nicht in diese Transaktion einbinden, hält der Empfänger einen
 wiederaufnehmbaren Verarbeitungszustand und antwortet bis zum Abschluss nicht
-mit 2xx; OpenLEG stellt die Zustellung dann erneut zu. Der unsignierte Header
+mit 2xx; OpenLEG stellt die Zustellung dann erneut zu. Jeder externe Aufruf
+erhält einen Idempotenzschlüssel aus der signierten `event_id`, oder der
+Empfänger klärt ein unklares Ergebnis vor dem nächsten Versuch. So wiederholt
+eine erneute Zustellung keine unumkehrbare Handlung wie eine Zahlung. Die
+Wiederholungen sind begrenzt: Nach dem fünften fehlgeschlagenen Versuch bleibt
+die Zustellung auf `failed`, und nur eine Freigabe durch die Administration über
+`POST …/deliveries/{delivery_id}/retry` stellt sie erneut zu. Der unsignierte Header
 `OpenLEG-Delivery` eignet sich nicht als vertrauenswürdiger Deduplizierungsschlüssel.
 Ein Python-Beispiel steht in
 [operator-operations-api.md](operator-operations-api.md#webhook-payloads-and-signature-verification).
