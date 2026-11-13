@@ -19007,8 +19007,8 @@ msgstr "Richten Sie mit scripts/contribute Ihre Arbeitsumgebung und einen eigene
 msgid "Ändern Sie den Code, ergänzen Sie passende Tests und übersetzen Sie neue Texte."
 msgstr "Ändern Sie den Code, ergänzen Sie passende Tests und übersetzen Sie neue Texte."
 
-msgid "Prüfen Sie mit scripts/tdd_cycle.sh gate und bestätigen Sie die Herkunft Ihrer Beiträge mit git commit -s."
-msgstr "Prüfen Sie mit scripts/tdd_cycle.sh gate und bestätigen Sie die Herkunft Ihrer Beiträge mit git commit -s."
+msgid "Prüfen Sie mit scripts/tdd_cycle.sh gate. Wir empfehlen, die Herkunft Ihrer Beiträge mit git commit -s zu bestätigen."
+msgstr "Prüfen Sie mit scripts/tdd_cycle.sh gate. Wir empfehlen, die Herkunft Ihrer Beiträge mit git commit -s zu bestätigen."
 
 msgid "Öffnen Sie den Pull Request, verlinken Sie das Issue und bearbeiten Sie die Rückmeldungen."
 msgstr "Öffnen Sie den Pull Request, verlinken Sie das Issue und bearbeiten Sie die Rückmeldungen."
@@ -19088,11 +19088,11 @@ msgstr "Wer entscheidet?"
 msgid "Vorstand und Mitgliederversammlung verantworten Geld, Treffen, Mitgliedschaft und rechtliche Fragen. Die aktiven Maintainer entscheiden über die Technik. Der Vorstand überstimmt keine einzelnen technischen Entscheidungen."
 msgstr "Vorstand und Mitgliederversammlung verantworten Geld, Treffen, Mitgliedschaft und rechtliche Fragen. Die aktiven Maintainer entscheiden über die Technik. Der Vorstand überstimmt keine einzelnen technischen Entscheidungen."
 
-msgid "Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen. Ab drei Maintainern darf höchstens ein Drittel beim gleichen Arbeitgeber tätig sein."
-msgstr "Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen. Ab drei Maintainern darf höchstens ein Drittel beim gleichen Arbeitgeber tätig sein."
+msgid "Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen."
+msgstr "Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen."
 
-msgid "Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Die Übertragung ist damit nicht als abgeschlossen erklärt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an hallo@openleg.ch."
-msgstr "Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Die Übertragung ist damit nicht als abgeschlossen erklärt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an hallo@openleg.ch."
+msgid "Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Das ist noch nicht umgesetzt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an hallo@openleg.ch."
+msgstr "Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Das ist noch nicht umgesetzt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an hallo@openleg.ch."
 
 msgid "Governance lesen"
 msgstr "Governance lesen"
