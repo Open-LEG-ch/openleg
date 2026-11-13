@@ -21,7 +21,7 @@ def test_commands_cover_contract_and_exclude_submissions(capsys):
             if method != "get":
                 assert main([op["operationId"], "--help"]) != 0
                 capsys.readouterr()
-    assert len(expected) == 11
+    assert len(expected) == 12
 
 
 @pytest.mark.parametrize(
@@ -82,6 +82,7 @@ def test_upstream_cannot_echo_token(monkeypatch, capsys):
         "submitFormation-preview",
         "submitMembershipMutation-preview",
         "respondInvoiceCase-preview",
+        "confirmPaymentMatch-preview",
     ],
 )
 def test_preview_has_no_dry_run_override(command, capsys):

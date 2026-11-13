@@ -30,6 +30,8 @@ openleg-ctl submitMembershipMutation-preview --community-id leg-1 \
   --after '{"role":"member"}' --json
 openleg-ctl respondInvoiceCase-preview --community-id leg-1 --case-id 42 \
   --message "Checked." --status acknowledged
+openleg-ctl confirmPaymentMatch-preview --community-id leg-1 --entry-id 7 \
+  --invoice-id 42 --idempotency-key payment-7
 ```
 
 Read command names are the contract's exact `operationId`, including its

@@ -245,3 +245,31 @@ def test_case_response_preview_preserves_business_rows(operator_http, cli):
     )
     assert keyed == preview
     assert case_rows(operator_http) == before
+
+
+def test_payment_preview_sends_idempotency_key(operator_http, cli):
+    """The payment preview requires its key, sent as the request header."""
+    from tests.test_payment_confirmation_postgres import rows
+    from tests.test_payment_confirmation_postgres import (
+        seed_operator_resources as seed_payment,
+    )
+
+    ids = seed_payment(operator_http)
+    before = rows(operator_http)
+    preview = cli(
+        "confirmPaymentMatch-preview",
+        "--entry-id",
+        str(ids["entry_id"]),
+        "--invoice-id",
+        str(ids["invoice_id"]),
+        "--idempotency-key",
+        "payment-cli",
+    )
+    assert preview == {
+        "schema_version": "operator-api/1",
+        "dry_run": True,
+        "eligible": True,
+        "invoice_id": ids["invoice_id"],
+        "lifecycle_state": "paid",
+    }
+    assert rows(operator_http) == before
