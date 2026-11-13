@@ -14,6 +14,8 @@
 
 [English](#english) | [Deutsch](#deutsch)
 
+[Governance](GOVERNANCE.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Maintainers](MAINTAINERS.md) · [Anfrage / Request](https://github.com/Open-LEG-ch/openleg/issues/new?template=anfrage.yml)
+
 Open-source infrastructure for Swiss Local Electricity Communities. Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften.
 
 ## English
