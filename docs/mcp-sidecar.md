@@ -315,3 +315,91 @@ aktuell bestätigte Administration kann sie für ihre LEG delegieren.
 Bestehende Freigaben ohne gespeicherten Downstream-Hash können nicht erneuert
 werden und benötigen neue Zustimmung. Die Migration übernimmt keine aktuellen
 Credential-Hashes, da diese bereits ausserhalb von OAuth rotiert worden sein können.
+
+## Connect an MCP host
+
+Use OAuth for remote access. Register the host's public client ID and exact
+callback URL in the Flask app's `OPENLEG_OAUTH_CLIENTS` JSON configuration, for
+example `{"host":{"name":"My MCP host","redirect_uris":["https://host.example/callback"]}}`.
+There is no dynamic client registration or client secret for these public
+clients. Configure `OPENLEG_OAUTH_ISSUER=https://app.example` on both services,
+`OPENLEG_OAUTH_RESOURCE=https://mcp.example/mcp` on Flask and
+`OPENLEG_MCP_RESOURCE=https://mcp.example/mcp` on the sidecar. Configure the
+independent downstream key on Flask and the shared introspection secret as
+specified above. Keep dev-static mode unset for remote access.
+
+In the host, connect to the resource URL `https://mcp.example/mcp` using that
+client ID and registered callback. Resource discovery is at
+`https://mcp.example/.well-known/oauth-protected-resource/mcp`; issuer discovery
+is at `https://app.example/.well-known/oauth-authorization-server`.
+The host sends an authorization-code request with PKCE S256, `state`, the
+resource URL and requested scopes to the discovered authorization endpoint.
+Sign in to the dashboard as a confirmed community administrator, reopen the
+authorization request if needed, choose one community and approve the requested
+capabilities on the consent screen. The host exchanges the single-use code
+with its PKCE verifier at the token endpoint and sends the access token as a
+Bearer on MCP requests. Tokens last 300 seconds. The host must serialize refresh
+requests, replace both tokens after each refresh, and request consent again
+if refresh fails. Refresh-token reuse revokes the whole grant.
+
+Revoke access in the dashboard at
+`/leg/community/{community_id}/operator-api/credentials`. Session and CSRF
+protection apply. Revocation rejects the next MCP request and refresh.
+For local testing only, dev-static mode accepts existing `olk_` tokens with
+both listener and upstream restricted to loopback; see the local command above.
+
+### Available scopes
+
+These capabilities come from the operator contract. The readiness test checks
+this table against every `x-openleg-capability` in that contract.
+
+<!-- mcp-scopes:start -->
+| Scope | Permission |
+| --- | --- |
+| `billing.read` | Read billing periods and invoice summaries |
+| `cases.read` | Read invoice-case summaries |
+| `cases.mutate` | Preview or respond to an invoice case |
+| `formation.read` | Read formation submission summaries |
+| `formation.mutate` | Preview or request a formation submission |
+| `membership.read` | Read membership mutation summaries |
+| `membership.mutate` | Preview or request a membership mutation |
+| `metering.read` | Read metering jobs and calculated deliveries |
+| `metering.mutate` | Request a metering sync through the operator API |
+| `payments.read` | Read payment match summaries |
+| `payments.mutate` | Preview or confirm an exact payment match |
+<!-- mcp-scopes:end -->
+
+The grant also includes exactly one `community:<community_id>` binding. A token
+cannot access another community or capabilities the operator did not grant.
+A capability does not create an MCP tool: only the tools listed by this sidecar
+are callable. For example, `metering.mutate` exists in the operator contract but
+does not expose a metering-sync MCP tool.
+
+### Agent limits
+
+Agent requests for formation submissions and membership mutations return
+`awaiting_confirmation`. No VNB case, package or delivery exists before a human
+administrator confirms in the dashboard. Confirmation checks current authority
+and payload again; stale requests expire after 72 hours. A preview makes no
+business writes. Invoice-case responses and exact payment confirmations use
+their listed tools and capability checks.
+
+Agents cannot manage credentials, approve invoices, change tariffs, edit
+invoices, export private data, or write outside the listed tools. They receive
+only the operator API's allowlisted projections, without participant identifiers,
+bank details, invoice snapshots or raw readings. Public tools are anonymous,
+read-only and rate limited by both sidecar and upstream budgets described above.
+
+### Production readiness checklist
+
+- Install `requirements-dev.txt` and configure `DATABASE_URL` for a disposable
+  PostgreSQL test environment. Fixtures create and drop their own databases.
+- Run `scripts/mcp_readiness.sh` from this repository. It runs exactly the pinned
+  security tests plus `tests/test_mcp_readiness.py`, with randomization disabled.
+  Missing or renamed tests, deselection, skip/skipif/xfail markers, runtime skips,
+  xfails and any failures reject readiness. Do not filter or shard this command.
+- Review the host registration, issuer/resource binding, consent and revocation
+  flow, scopes and agent limits above.
+- Leave MCP disabled by default. Production enablement happens in the private
+  ops repository through the deploy process after this gate passes. This local
+  Compose overlay does not enable production.

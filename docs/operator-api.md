@@ -160,3 +160,26 @@ Erstellungszeit und letzter Verwendung. «Agentenzugriff widerrufen» sperrt
 die Freigabe und ihr separates Credential. Die nächste MCP-Anfrage und der
 nächste Refresh werden abgewiesen. Die Aktion erfordert Ihre bestätigte
 Administrationssitzung und ein CSRF-Token.
+
+## Agentenzugriff über MCP
+
+MCP-Hosts verbinden sich über OAuth mit PKCE S256. Registrieren Sie Client-ID
+und exakte Rücksprung-URL in `OPENLEG_OAUTH_CLIENTS`. Die bestätigte
+LEG-Administration meldet sich im Dashboard an und bewilligt eine LEG sowie
+die benötigten Capabilities. Tokens gelten nur für diese LEG, die bewilligten
+Rechte und die konfigurierte MCP-Ressource. Der
+[englische MCP-Leitfaden](mcp-sidecar.md#connect-an-mcp-host) beschreibt
+Issuer, Ressourcen-URL, Verbindung und die vollständige Scope-Liste.
+Statische Tokens sind nur im lokalen Loopback-Entwicklungsmodus vorgesehen.
+
+Agentenanfragen an den VNB warten auf die Bestätigung im Dashboard. Vorher
+entstehen weder Fall noch Paket oder Zustellung. Agenten können keine
+Zugangsdaten verwalten und nur die aufgeführten Werkzeuge nutzen. Öffentliche
+Werkzeuge sind anonym, nur lesend und ratenbegrenzt. Ein Widerruf unter
+`/leg/community/{community_id}/operator-api/credentials` sperrt die nächste
+MCP-Anfrage und Token-Erneuerung.
+
+Vor der Produktionsfreigabe muss `scripts/mcp_readiness.sh` vollständig bestehen.
+Fehlende, übersprungene oder ausgefilterte Nachweistests lassen die Prüfung
+scheitern. MCP bleibt standardmässig aus. Die Produktionsfreigabe erfolgt im
+privaten Ops-Repository über den Deployment-Prozess.
