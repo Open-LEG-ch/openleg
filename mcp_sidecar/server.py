@@ -200,6 +200,10 @@ def preview_operations():
             + body.get("required", []),
             "additionalProperties": False,
         }
+        # Keep conditional body rules, such as a change needing a non-empty
+        # after, so such calls fail locally before using request budget.
+        if "allOf" in body:
+            schema["allOf"] = body["allOf"]
         result[name] = (path, op["x-openleg-capability"], schema, description)
     return {
         name: result[name]

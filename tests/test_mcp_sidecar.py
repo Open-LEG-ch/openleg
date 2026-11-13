@@ -641,3 +641,54 @@ def test_upstream_error_metadata_and_authorization(monkeypatch):
             assert failure.value.error.data["retryable"] is True
 
     asyncio.run(unavailable())
+
+
+@pytest.mark.parametrize(
+    ("extra", "forwarded"),
+    [({}, False), ({"after": {}}, False), ({"after": {"status": "active"}}, True)],
+)
+def test_change_preview_requires_after_locally(monkeypatch, extra, forwarded):
+    """A change preview needs a non-empty after before it spends a request."""
+    from flask import Flask, jsonify
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+    calls = []
+
+    @upstream.post("/api/operator/v1/communities/one/membership-mutations")
+    def preview():
+        calls.append(1)
+        return jsonify(
+            intended_action={}, payload_fingerprint="sha256:0", recipient="vnb"
+        )
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(app, {"Authorization": "Bearer olk_test"}) as sdk,
+            ):
+                result = await sdk.call_tool(
+                    "preview_membership_mutation",
+                    {
+                        "community_id": "one",
+                        "mutation_id": "m-1",
+                        "participant_id": "p-1",
+                        "mutation_type": "change",
+                        "effective_date": "2027-01-01",
+                        "source_agreement_id": "a-1",
+                        **extra,
+                    },
+                )
+                assert result.isError is not forwarded
+                if not forwarded:
+                    assert result.structuredContent["code"] == "invalid_arguments"
+                assert calls == ([1] if forwarded else [])
+
+        asyncio.run(check())
