@@ -434,3 +434,18 @@ failed resources, and the next real destination. Run the relevant route, access,
 privacy, build and packaging checks. Preserve old routes and workspace behavior.
 Keep human language/legal review and actual account/payment setup visible as
 release prerequisites. A local preview does not establish launch readiness.
+
+## Participation and code journey
+
+The community page alternates a plain invitation, a cobalt meetup panel, a
+request/PR split, an unboxed two-column roles grid and a coral governance panel.
+Role descriptions state the work and an entry point. Membership remains a
+separate choice. Foundation facts come from `verein_facts`, never template dates.
+
+The software page pairs two static inline SVG journey maps. Both use the same
+eight numbered steps: people and tasks on the left, code modules on the right.
+On phones the complete views stack. SVG foreignObject labels wrap as HTML;
+identifiers may break within words. An expandable ordered list gives the same
+labels, actors and modules as text. Shared services and boundaries remain in
+ordinary HTML. The map has no script or motion, including under reduced motion.
+Use cobalt for the sequence and approval stages; do not imply automated approval.

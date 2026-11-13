@@ -26,6 +26,8 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 # of these stems, which also admits compounds such as Speicherdauer and
 # Datenquellen.
 ALLOWED_STEMS = {
+    "issue": "Issue/Issues: GitHub work-item terminology, not a German umlaut",
+    "betreu": "Betreuen: eu diphthong followed by an ending, not an umlaut",
     "quell": "Quelle family: Quelle, Quellen, Quellcode, Quelldokumente, "
     "Datenquellen, Rechtsquellen, Quelloffene (ue after l, not an umlaut)",
     "neu": "neue, Neue, neuen (diphthong eu, not an umlaut)",
@@ -118,3 +120,9 @@ def test_allow_list_entries_are_real_and_justified():
         assert any(word.startswith(stem) for word in words), (
             f"stem {stem!r} appears in no template; drop the entry"
         )
+
+
+def test_github_and_care_terms_do_not_hide_misspelled_umlauts():
+    assert not _violations("Issue Issues Betreuen")
+    for word in ("pruefen", "uebernehmen", "Gruendung"):
+        assert _violations(word)

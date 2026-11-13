@@ -1571,24 +1571,9 @@ msgstr ""
 "Même sans adresse précise, nous pouvons recueillir les demandes. L’inscription ne "
 "sera pas considérée comme un bâtiment."
 
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:5
-msgid ""
-"Auch verständlichere Texte, Übersetzungen und Rückmeldungen zu den Abläufen helfen. "
-"Ein Beitrag macht Sie nicht automatisch zum Vereinsmitglied."
-msgstr ""
-"Les textes, traductions et retours d'information plus compréhensibles vous aideront "
-"également à comprendre les processus. Une contribution ne vous fera pas "
-"automatiquement devenir membre de l'association."
-
 #: templates/leg_billing.html:152
 msgid "Audit-Verlauf"
 msgstr "Historique des audits"
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/home.html:50
-msgid "Auf GitHub mitarbeiten"
-msgstr "Contribuer sur GitHub"
 
 #: templates/gemeinde/rangliste.html:118
 msgid "Auf Kurs"
@@ -1750,11 +1735,6 @@ msgstr "Entrées CEL en attente"
 #: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:44
 msgid "Aussteller:"
 msgstr "Émetteur :"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:7
-msgid "Austausch und Mitgliedschaft"
-msgstr "Échanges et adhésion"
 
 #: templates/leg_dashboard.html:243 templates/leg_dashboard.html:258
 msgid "Austritt"
@@ -2216,15 +2196,6 @@ msgstr "Le calculateur tient-il compte des coûts d’investissement ?"
 msgid "Beschlossene Statuten und Aufnahmebedingungen"
 msgstr "Statuts adoptés et conditions d'admission"
 
-msgid ""
-"Beschreiben Sie auf GitHub das erwartete Verhalten, die verwendete Version und die "
-"Schritte zum Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und "
-"echte Messdaten aus öffentlichen Berichten."
-msgstr ""
-"Décrivez le comportement attendu, la version utilisée et les étapes à suivre dans un "
-"GitHub-Issue. Supprimez les données personnelles, les clés d'accès et les données de "
-"mesure réelles des rapports publics."
-
 #: sandbox_seed.py:79
 msgid "Beschränkter LEG-Betrieb"
 msgstr "Exploitation limitée de la CEL"
@@ -2265,11 +2236,6 @@ msgstr "Inscrire une CEL existante"
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
 msgstr "Consulter les CEL existantes dans le répertoire"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:6
-msgid "Bestehenden Zugang öffnen"
-msgstr "Ouvrir l'accès existant"
 
 #: templates/leg_gruenden.html:160
 msgid ""
@@ -2942,15 +2908,6 @@ msgstr "Regrouper les bâtiments pour une CEL"
 #: templates/fuer_gemeinden.html:119 templates/pricing.html:156
 msgid "Code auf GitHub"
 msgstr "Code sur GitHub"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:3
-msgid ""
-"Code prüfen, Erfahrungen teilen oder eine Frage stellen. Wählen Sie den passenden Weg"
-" für Ihr Anliegen."
-msgstr ""
-"Vérifiez le code, partagez vos expériences ou posez une question. Choisissez le moyen"
-" approprié pour répondre à votre demande."
 
 #: templates/index.html:180
 msgid "Codebase und Install"
@@ -5916,11 +5873,6 @@ msgstr "Une liste coordonnée des participants et des installations."
 msgid "Eine andere Startbestätigung liegt bereits vor."
 msgstr "Une autre confirmation de mise en service existe déjà."
 
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:6
-msgid "Eine eigene LEG vorbereiten"
-msgstr "Préparez votre propre LEG"
-
 #: dashboard.py:666
 msgid "Eine gültige Ersatzrechnung ist erforderlich."
 msgstr "Une facture de remplacement valide est requise."
@@ -6682,11 +6634,6 @@ msgstr "Erreur de connexion."
 msgid "Fehler beim vorgelagerten Dienst"
 msgstr "Erreur du service en amont"
 
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:5
-msgid "Fehler und Vorschläge auf GitHub"
-msgstr "Erreurs et suggestions sur GitHub"
-
 #: templates/meter_upload.html:110
 msgid "Fehler:"
 msgstr "Erreur:"
@@ -6986,18 +6933,6 @@ msgstr "Subvention"
 #: templates/datenschutz.html:78
 msgid "Für Anfragen wenden Sie sich bitte an:"
 msgstr "Pour toute demande, veuillez écrire à :"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:6
-msgid ""
-"Für Anschlüsse und Messdaten ist Ihr Verteilnetzbetreiber der passende "
-"Ansprechpartner. Für Ihren bestehenden Zugang verwenden Sie die Anmeldung. Die "
-"Gemeinde entscheidet nicht automatisch über den Betrieb Ihrer LEG."
-msgstr ""
-"Pour les connexions et les données de mesure, votre gestionnaire de réseau de "
-"distribution est l'interlocuteur approprié. Pour votre accès actuel, vous utilisez la"
-" connexion. La municipalité ne décide pas automatiquement du fonctionnement de votre "
-"LEG."
 
 #: templates/fuer_bewohner.html:24 templates/pricing.html:50
 msgid "Für Bewohner"
@@ -7600,17 +7535,6 @@ msgid "Geplant"
 msgstr "Prévu"
 
 #. Draft translation; native language and domain review pending.
-#: templates/release/community.html:7
-msgid ""
-"Geplant ist ein dreimonatiger Versuch mit einem monatlichen Online-Treffen und "
-"freigegebenen Notizen. Die Treffen werden nicht aufgezeichnet. Termine und Gastgeber "
-"werden erst nach ihrer Bestätigung veröffentlicht."
-msgstr ""
-"Une tentative de trois mois est prévue avec une réunion mensuelle en ligne et des "
-"notes partagées. Les réunions ne sont pas enregistrées. Les dates et les hôtes ne "
-"seront publiés qu'après leur confirmation."
-
-#. Draft translation; native language and domain review pending.
 #: templates/release/events.html:9
 msgid ""
 "Geplant sind drei monatliche Online-Treffen. Tatsächliche Termine und Gastgeber "
@@ -8006,11 +7930,6 @@ msgstr "Afficher l'assistant de démarrage et les modèles"
 #: templates/leg_gruenden.html:62
 msgid "Gründungsassistent öffnen"
 msgstr "Ouvrir l’assistant de création"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:6
-msgid "Gründungsleitfaden"
-msgstr "Guide de la création d'entreprise"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:21
@@ -12040,11 +11959,6 @@ msgstr ""
 "OpenLEG pour les communes : découvrir le tableau de bord, clarifier les "
 "responsabilités et choisir le mode d’exploitation adapté."
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/community.html:2
-msgid "OpenLEG gemeinsam weiterentwickeln"
-msgstr "Contribuer au développement d’OpenLEG"
-
 #: templates/partials/registry_trust.html:14
 msgid "OpenLEG hat den Eintrag freigeschaltet. Kein Betreiber hat ihn beansprucht."
 msgstr "OpenLEG a publié l’entrée. Aucun exploitant ne l’a revendiquée."
@@ -12759,11 +12673,6 @@ msgstr "Publication de la prévision"
 #: templates/release/footer.html:8
 msgid "Projekt"
 msgstr "Projet"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:6
-msgid "Projekt oder Verein kontaktieren"
-msgstr "Contacter le projet ou l'association"
 
 #: templates/fuer_gemeinden.html:120
 msgid "Projektsupport anfragen"
@@ -14202,20 +14111,6 @@ msgstr "Logiciels"
 #: templates/release/home.html:7
 msgid "Software ansehen"
 msgstr "Voir le logiciel"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:7
-msgid ""
-"Software nutzen, mitarbeiten und an einem Treffen teilnehmen ist auch ohne "
-"Vereinsmitgliedschaft möglich. Eine Spende verleiht kein Stimmrecht."
-msgstr ""
-"L'utilisation du logiciel, le travail et la participation à une réunion sont "
-"également possibles sans membre d'association. Un don ne donne pas droit de vote."
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/community.html:5
-msgid "Software und Dokumentation verbessern"
-msgstr "Améliorer les logiciels et la documentation"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/footer.html:10
@@ -18066,17 +17961,6 @@ msgstr ""
 
 #. Draft translation; native language and domain review pending.
 #, python-format
-msgid ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
-" an %(contact)s. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie "
-"keine Passwörter oder privaten Messdaten."
-msgstr ""
-"Écrivez des questions sur le projet, sur l'adhésion prévue ou sur la participation à "
-"%(contact)s. Indiquez votre demande et une possibilité de demander votre retour. Ne "
-"pas envoyer de mots de passe ou de données de mesure privées."
-
-#. Draft translation; native language and domain review pending.
-#, python-format
 msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: %(contact)s."
 msgstr "Cette réunion est complète. Questions sur d'autres dates : %(contact)s."
 
@@ -18360,12 +18244,6 @@ msgid ""
 msgstr ""
 "Votre CEL elle-même ou un prestataire qu'elle mandate. Un code ouvert ne signifie pas"
 " que quelqu'un assure l'exploitation ou l'assistance."
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/homepage.html:151
-#, python-format
-msgid "Gegründet am %(date)s in %(seat)s."
-msgstr "Fondé le %(date)s à %(seat)s."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/homepage.html:153
@@ -20012,3 +19890,315 @@ msgstr "Révoquer l’accès de l’agent"
 #: templates/operator_credentials.html:1
 msgid "Keine OAuth-Freigaben vorhanden."
 msgstr "Aucune autorisation OAuth."
+
+#. Draft translation; native language and domain review pending.
+msgid "Mehr funktionierende LEGs in der Schweiz."
+msgstr "Davantage de CEL qui fonctionnent en Suisse."
+
+#. Draft translation; native language and domain review pending.
+msgid "Mit Software, die alle prüfen und selbst betreiben können. Bringen Sie Code, Erfahrung aus Ihrer LEG oder Zeit für den Verein ein."
+msgstr "Avec un logiciel que chacun peut examiner et exploiter. Apportez du code, votre expérience d’une CEL ou du temps pour l’association."
+
+#. Draft translation; native language and domain review pending.
+msgid "OpenLEG ist ein Open-Source-Projekt. Der Verein openLEG Schweiz trägt es."
+msgstr "OpenLEG est un projet open source porté par l’association openLEG Schweiz."
+
+#. Draft translation; native language and domain review pending.
+msgid "OpenLEG ist ein Open-Source-Projekt. Verein openLEG Schweiz soll es tragen."
+msgstr "OpenLEG est un projet open source. L’association openLEG Schweiz doit le soutenir."
+
+#. Draft translation; native language and domain review pending.
+msgid "Der Verein pflegt Software, Dokumentation und Austausch. Er betreibt nicht das gehostete Produkt. Mitarbeit ist ohne Vereinsmitgliedschaft möglich."
+msgstr "L’association entretient le logiciel, la documentation et les échanges. Elle n’exploite pas le produit hébergé. Vous pouvez contribuer sans être membre."
+
+#. Draft translation; native language and domain review pending.
+msgid "Eine erste Aufgabe finden"
+msgstr "Trouver une première tâche"
+
+#. Draft translation; native language and domain review pending.
+msgid "Hier wird Hilfe gesucht"
+msgstr "Où votre aide est attendue"
+
+#. Draft translation; native language and domain review pending.
+msgid "Einmal im Monat online. Einmal im Quartal vor Ort."
+msgstr "En ligne chaque mois. En personne chaque trimestre."
+
+#. Draft translation; native language and domain review pending.
+msgid "Wir treffen uns zum Austausch über die LEG-Praxis und zur Entwicklung. Neue Anfragen besprechen wir beim monatlichen Online-Treffen. Termine, Orte und Gastgeber erscheinen erst nach ihrer Bestätigung."
+msgstr "Nous échangeons sur la pratique des CEL et le développement. Nous examinons les nouvelles demandes lors de la rencontre mensuelle en ligne. Dates, lieux et organisateurs ne sont publiés qu’après confirmation."
+
+#. Draft translation; native language and domain review pending.
+msgid "Was brauchen Sie?"
+msgstr "De quoi avez-vous besoin ?"
+
+#. Draft translation; native language and domain review pending.
+msgid "Beschreiben Sie, wer etwas braucht, welches Problem besteht und wie Sie es heute lösen. Angaben zur LEG oder Gemeinde sind freiwillig. Bitte keine persönlichen Daten, Zugangsschlüssel oder echten Messdaten veröffentlichen."
+msgstr "Décrivez qui a besoin de quoi, le problème et votre solution actuelle. Le contexte de la CEL ou de la commune est facultatif. Ne publiez pas de données personnelles, de clés d’accès ni de données de mesure réelles."
+
+#. Draft translation; native language and domain review pending.
+msgid "Anfrage einreichen"
+msgstr "Déposer une demande"
+
+#. Draft translation; native language and domain review pending.
+msgid "Ohne GitHub-Konto schreiben Sie an hallo@openleg.ch. Das Projekt nimmt Ihre Anfrage als Issue auf. Die gemeinsame Sichtung ist keine Zusage zur Umsetzung oder zu einer Antwortfrist."
+msgstr "Sans compte GitHub, écrivez à hallo@openleg.ch. Le projet crée une issue pour votre demande. Cet examen ne garantit ni réalisation ni délai de réponse."
+
+#. Draft translation; native language and domain review pending.
+msgid "Fragen in Discussions stellen"
+msgstr "Poser une question dans Discussions"
+
+#. Draft translation; native language and domain review pending.
+msgid "In fünf Schritten zum Pull Request"
+msgstr "Un pull request en cinq étapes"
+
+#. Draft translation; native language and domain review pending.
+msgid "Besprechen Sie die Änderung im Issue und grenzen Sie eine Aufgabe ab."
+msgstr "Discutez du changement dans l’issue et délimitez une tâche."
+
+#. Draft translation; native language and domain review pending.
+msgid "Richten Sie mit scripts/contribute Ihre Arbeitsumgebung und einen eigenen Branch ein."
+msgstr "Préparez votre environnement et une branche avec scripts/contribute."
+
+#. Draft translation; native language and domain review pending.
+msgid "Ändern Sie den Code, ergänzen Sie passende Tests und übersetzen Sie neue Texte."
+msgstr "Modifiez le code, ajoutez les tests utiles et traduisez les nouveaux textes."
+
+#. Draft translation; native language and domain review pending.
+msgid "Prüfen Sie mit scripts/tdd_cycle.sh gate. Wir empfehlen, die Herkunft Ihrer Beiträge mit git commit -s zu bestätigen."
+msgstr "Vérifiez avec scripts/tdd_cycle.sh gate. Nous recommandons d’attester l’origine de vos contributions avec git commit -s."
+
+#. Draft translation; native language and domain review pending.
+msgid "Öffnen Sie den Pull Request, verlinken Sie das Issue und bearbeiten Sie die Rückmeldungen."
+msgstr "Ouvrez le pull request, liez l’issue et traitez les retours."
+
+#. Draft translation; native language and domain review pending.
+msgid "Welche Aufgabe passt zu Ihnen?"
+msgstr "Quel rôle vous convient ?"
+
+#. Draft translation; native language and domain review pending.
+msgid "Wir suchen Mitwirkende am Code und Freiwillige für den Verein. Wählen Sie eine Aufgabe auf GitHub oder schreiben Sie uns, wo Sie anfangen möchten."
+msgstr "Nous cherchons des personnes pour contribuer au code et des bénévoles pour l’association. Choisissez une tâche sur GitHub ou écrivez-nous pour proposer votre aide."
+
+#. Draft translation; native language and domain review pending.
+msgid "Contributor"
+msgstr "Contributor"
+
+#. Draft translation; native language and domain review pending.
+msgid "Verbessern Sie Code, Tests oder Texte. Beginnen Sie mit einem Issue."
+msgstr "Améliorez le code, les tests ou les textes. Commencez par une issue."
+
+#. Draft translation; native language and domain review pending.
+msgid "Reviewer"
+msgstr "Reviewer"
+
+#. Draft translation; native language and domain review pending.
+msgid "Prüfen Sie Änderungen und erklären Sie Ihre Einwände. Beginnen Sie mit einem offenen Pull Request."
+msgstr "Examinez les changements et expliquez vos objections. Commencez par un pull request ouvert."
+
+#. Draft translation; native language and domain review pending.
+msgid "Maintainer pro Bereich"
+msgstr "Maintainer par domaine"
+
+#. Draft translation; native language and domain review pending.
+msgid "Betreuen Sie Abrechnung und Messdaten, VNB-Schnittstellen, Website und Übersetzungen oder Betrieb und Sicherheit. Beginnen Sie mit regelmässigen Beiträgen und Reviews in einem Bereich."
+msgstr "Suivez la facturation et les mesures, les interfaces GRD, le site et les traductions ou l’exploitation et la sécurité. Commencez par des contributions et revues régulières dans un domaine."
+
+#. Draft translation; native language and domain review pending.
+msgid "Technische Leitung"
+msgstr "Direction technique"
+
+#. Draft translation; native language and domain review pending.
+msgid "Die aktiven Maintainer entscheiden über Code, Releases und technische Planung. Wachsen Sie durch öffentliche Mitarbeit in diese Verantwortung."
+msgstr "Les maintainers actifs décident du code, des versions et de la planification technique. Accédez à cette responsabilité par des contributions publiques."
+
+#. Draft translation; native language and domain review pending.
+msgid "Vorstand"
+msgstr "Comité"
+
+#. Draft translation; native language and domain review pending.
+msgid "Übernehmen Sie Software und Dokumentation, Finanzen und Administration oder Community und Treffen. Melden Sie Ihr Interesse per E-Mail; die Mitgliederversammlung wählt den Vorstand."
+msgstr "Prenez en charge le logiciel et la documentation, les finances et l’administration ou la communauté et les rencontres. Manifestez votre intérêt par e-mail ; l’assemblée élit le comité."
+
+#. Draft translation; native language and domain review pending.
+msgid "Rechnungsprüfung"
+msgstr "Vérification des comptes"
+
+#. Draft translation; native language and domain review pending.
+msgid "Prüfen Sie Rechnung und Belege unabhängig. Schreiben Sie uns mit Ihrer Erfahrung."
+msgstr "Vérifiez les comptes et justificatifs en toute indépendance. Écrivez-nous en indiquant votre expérience."
+
+#. Draft translation; native language and domain review pending.
+msgid "Treffen organisieren"
+msgstr "Organiser des rencontres"
+
+#. Draft translation; native language and domain review pending.
+msgid "Bereiten Sie ein Online-Treffen oder einen Anlass vor Ort vor. Schlagen Sie uns ein Thema und einen Rahmen vor."
+msgstr "Préparez une rencontre en ligne ou sur place. Proposez-nous un thème et un format."
+
+#. Draft translation; native language and domain review pending.
+msgid "Übersetzen"
+msgstr "Traduire"
+
+#. Draft translation; native language and domain review pending.
+msgid "Prüfen Sie französische, italienische oder englische Texte und Fachbegriffe. Beginnen Sie mit einer Seite."
+msgstr "Vérifiez les textes et termes français, italiens ou anglais. Commencez par une page."
+
+#. Draft translation; native language and domain review pending.
+msgid "LEG-Praxis teilen"
+msgstr "Partager la pratique des CEL"
+
+#. Draft translation; native language and domain review pending.
+msgid "Sie betreiben bereits eine LEG? Begleiten Sie andere bei praktischen Fragen. Bringen Sie einen Fall zum Treffen mit."
+msgstr "Vous exploitez déjà une CEL ? Accompagnez d’autres personnes sur les questions pratiques. Apportez un cas à une rencontre."
+
+#. Draft translation; native language and domain review pending.
+msgid "Dokumentation schreiben"
+msgstr "Rédiger la documentation"
+
+#. Draft translation; native language and domain review pending.
+msgid "Erklären Sie einen Ablauf so, dass andere ihn nachvollziehen können. Beginnen Sie mit einer unklaren Anleitung."
+msgstr "Expliquez une procédure pour que d’autres puissent la suivre. Commencez par un guide peu clair."
+
+#. Draft translation; native language and domain review pending.
+msgid "Vom Contributor zum Reviewer und Maintainer führt anhaltende öffentliche Mitarbeit. Ein Maintainer schlägt Sie vor; ohne begründeten Einwand stimmt die Gruppe zu. Nach sechs Monaten ohne Aktivität wechselt ein Maintainer in den Emeritus-Status."
+msgstr "Une contribution publique durable mène de contributor à reviewer puis maintainer. Un maintainer vous propose ; sans objection motivée, le groupe accepte. Après six mois d’inactivité, un maintainer passe au statut émérite."
+
+#. Draft translation; native language and domain review pending.
+msgid "Wer entscheidet?"
+msgstr "Qui décide ?"
+
+#. Draft translation; native language and domain review pending.
+msgid "Vorstand und Mitgliederversammlung verantworten Geld, Treffen, Mitgliedschaft und rechtliche Fragen. Die aktiven Maintainer entscheiden über die Technik. Der Vorstand überstimmt keine einzelnen technischen Entscheidungen."
+msgstr "Le comité et l’assemblée répondent des finances, rencontres, adhésions et questions juridiques. Les maintainers actifs décident de la technique. Le comité ne renverse pas les décisions techniques individuelles."
+
+#. Draft translation; native language and domain review pending.
+msgid "Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen."
+msgstr "Les décisions sont documentées publiquement dans les issues, pull requests et notes approuvées. Sans objection motivée, une proposition est acceptée ; en cas de désaccord, la majorité des maintainers décide. Ils déclarent leurs affiliations."
+
+#. Draft translation; native language and domain review pending.
+msgid "Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Das ist noch nicht umgesetzt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an hallo@openleg.ch."
+msgstr "L’objectif est que l’association détienne le nom, openleg.ch et l’organisation GitHub. Ce n’est pas encore mis en œuvre. Le Contributor Covenant 2.1 régit les échanges ; les signalements vont à hallo@openleg.ch."
+
+#. Draft translation; native language and domain review pending.
+msgid "Governance lesen"
+msgstr "Lire la gouvernance"
+
+#. Draft translation; native language and domain review pending.
+msgid "Maintainer kennenlernen"
+msgstr "Voir les maintainers"
+
+#. Draft translation; native language and domain review pending.
+msgid "Verhaltenskodex"
+msgstr "Code de conduite"
+
+#. Draft translation; native language and domain review pending.
+msgid "Mehr funktionierende LEGs in der Schweiz brauchen Menschen, die Code prüfen, Erfahrungen teilen und Treffen organisieren. Machen Sie mit."
+msgstr "Pour que davantage de CEL fonctionnent en Suisse, il faut des personnes qui vérifient le code, partagent leur expérience et organisent des rencontres. Participez."
+
+#. Draft translation; native language and domain review pending.
+msgid "Was im Code steckt"
+msgstr "Ce que contient le code"
+
+#. Draft translation; native language and domain review pending.
+msgid "Ein Weg, zwei Ansichten. Links sehen Sie die Aufgaben der Beteiligten, rechts die zugehörigen Module. Jede Freigabe bleibt eine Entscheidung der verantwortlichen Person."
+msgstr "Un parcours, deux vues. À gauche, les tâches des participants ; à droite, les modules correspondants. Chaque validation reste une décision de la personne responsable."
+
+#. Draft translation; native language and domain review pending.
+msgid "Die Gemeinde kann den Einstieg unterstützen. Haushalte und LEG-Verwaltung vereinbaren die Teilnahme. Der VNB betreibt das Netz und liefert Messdaten; der Grundversorger liefert bei Bedarf den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht."
+msgstr "La commune peut faciliter le démarrage. Les ménages et l’administration de la CEL conviennent de la participation. Le GRD exploite le réseau et fournit les mesures ; le fournisseur de base livre le complément si nécessaire. OpenLEG ne remplace pas ces fonctions."
+
+#. Draft translation; native language and domain review pending.
+msgid "Menschen und Aufgaben"
+msgstr "Personnes et tâches"
+
+#. Draft translation; native language and domain review pending.
+msgid "Gemeinde und LEG-Verwaltung"
+msgstr "Commune et administration de la CEL"
+
+#. Draft translation; native language and domain review pending.
+msgid "Beteiligte aufnehmen"
+msgstr "Inscrire les participants"
+
+#. Draft translation; native language and domain review pending.
+msgid "Haushalte und LEG-Verwaltung"
+msgstr "Ménages et administration de la CEL"
+
+#. Draft translation; native language and domain review pending.
+msgid "Viertelstunden verteilen"
+msgstr "Répartir par quart d’heure"
+
+#. Draft translation; native language and domain review pending.
+msgid "Lokale Energie und Reststrom"
+msgstr "Énergie locale et fourniture résiduelle"
+
+#. Draft translation; native language and domain review pending.
+msgid "LEG-Verwaltung prüft die Grundlagen"
+msgstr "L’administration vérifie les bases"
+
+#. Draft translation; native language and domain review pending.
+msgid "Berechtigte Person entscheidet"
+msgstr "Une personne autorisée décide"
+
+#. Draft translation; native language and domain review pending.
+msgid "Zahlungen abgleichen"
+msgstr "Rapprocher les paiements"
+
+#. Draft translation; native language and domain review pending.
+msgid "Zahlungseingänge prüfen"
+msgstr "Vérifier les encaissements"
+
+#. Draft translation; native language and domain review pending.
+msgid "Archivieren"
+msgstr "Archiver"
+
+#. Draft translation; native language and domain review pending.
+msgid "Unterlagen geschützt aufbewahren"
+msgstr "Conserver les pièces en sécurité"
+
+#. Draft translation; native language and domain review pending.
+msgid "Module und Prüfpunkte"
+msgstr "Modules et contrôles"
+
+#. Draft translation; native language and domain review pending.
+msgid "Was alle Schritte verbindet"
+msgstr "Ce qui relie les étapes"
+
+#. Draft translation; native language and domain review pending.
+msgid "Flask und templates/ bilden die Oberfläche. PostgreSQL und store/ halten die Daten. vnb_exchange.py verwaltet VNB-Fälle. Öffentliche API und operator_api.py haben getrennte Zugänge; i18n.py übersetzt die Oberfläche."
+msgstr "Flask et templates/ forment l’interface. PostgreSQL et store/ conservent les données. vnb_exchange.py gère les dossiers GRD. L’API publique et operator_api.py ont des accès distincts ; i18n.py traduit l’interface."
+
+#. Draft translation; native language and domain review pending.
+msgid "Der MCP-Sidecar ist standardmässig ausgeschaltet. Das Demodorf verwendet getrennte, vergängliche Sandbox-Arbeitsbereiche mit erfundenen Daten."
+msgstr "Le sidecar MCP est désactivé par défaut. Le village de démonstration utilise des espaces sandbox séparés et temporaires avec des données fictives."
+
+#. Draft translation; native language and domain review pending.
+msgid "Die Karte als Text lesen"
+msgstr "Lire la carte en texte"
+
+#. Draft translation; native language and domain review pending.
+msgid "Architektur im Detail"
+msgstr "Architecture détaillée"
+
+#. Draft translation; native language and domain review pending.
+msgid "Was ein Open-Source-Projekt leisten kann, und was nicht"
+msgstr "Ce qu’un projet open source peut faire, et ses limites"
+
+#. Draft translation; native language and domain review pending.
+msgid "Prüfen, anpassen, selbst betreiben"
+msgstr "Examiner, adapter, exploiter"
+
+#. Draft translation; native language and domain review pending.
+msgid "Der Code steht unter AGPL-3.0-or-later öffentlich zur Verfügung. Sie können ihn prüfen, anpassen und selbst betreiben. Beiträge verbessern die gemeinsame Grundlage; die verfügbare Zeit der Freiwilligen ist begrenzt."
+msgstr "Le code est public sous AGPL-3.0-or-later. Vous pouvez l’examiner, l’adapter et l’exploiter. Les contributions améliorent la base commune ; le temps des bénévoles est limité."
+
+#. Draft translation; native language and domain review pending.
+msgid "Verantwortung bleibt vor Ort"
+msgstr "La responsabilité reste locale"
+
+#. Draft translation; native language and domain review pending.
+msgid "Es gibt keine Support-SLA und keine zugesagte Antwortzeit. OpenLEG bietet keine Rechts- oder Steuerberatung und liefert keinen Strom. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet werden."
+msgstr "Il n’y a ni SLA de support ni délai de réponse garanti. OpenLEG ne fournit pas de conseil juridique ou fiscal et ne livre pas d’électricité. L’inscription et la livraison des données doivent être configurées pour chaque GRD."
+
+#. Draft translation; native language and domain review pending.
+msgid "Gegründet am %(date)s. Sitz: %(seat)s."
+msgstr "Fondé le %(date)s. Siège : %(seat)s."
