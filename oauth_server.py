@@ -192,7 +192,9 @@ def authorize():
         )
         db.save_oauth_code(_token_hash(code), payload)
         query["code"] = code
-    uri = p["redirect_uri"]
+    # Redirect only to the registered URI that the request matched exactly.
+    registered = client["redirect_uris"]
+    uri = registered[registered.index(p["redirect_uri"])]
     return redirect(uri + ("&" if "?" in uri else "?") + urlencode(query))
 
 

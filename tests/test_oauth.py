@@ -196,15 +196,16 @@ def test_oauth_secrets_redacted(caplog):
     from mcp_sidecar.server import redact_transport_logs
 
     redact_transport_logs()
-    secrets = ["ola_accesssecret", "olc_codesecret", "olk_downstreamsecret"]
+    # Fake values in each credential format; redaction must hide all of them.
+    samples = ["ola_accesssample", "olc_codesample", "olk_downstreamsample"]
     with caplog.at_level(logging.WARNING):
         logging.getLogger("oauth.test").warning(
-            "Transport failed: %s", " ".join(secrets)
+            "Transport failed: %s", " ".join(samples)
         )
         logging.getLogger("oauth.test").warning(
             "Authorization: Bearer introspection_secret"
         )
-    assert all(secret not in caplog.text for secret in secrets)
+    assert all(sample not in caplog.text for sample in samples)
     assert "introspection_secret" not in caplog.text
 
 
