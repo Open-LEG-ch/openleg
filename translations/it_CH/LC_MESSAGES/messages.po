@@ -22581,66 +22581,76 @@ msgid "Diese Anfrage ist abgelaufen. Erstellen Sie eine neue Vorschau."
 msgstr "Questa richiesta è scaduta. Crei una nuova anteprima."
 
 #. Draft translation; native language and domain review pending.
-#: oauth_server.py:221
-msgid "Gründungsanmeldungen lesen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:222
-msgid "Gründungsanmeldungen einreichen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:223
-msgid "Mitgliedermutationen lesen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:224
-msgid "Mitgliedermutationen einreichen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:225
-msgid "Messdatenläufe lesen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:226
-msgid "Messdatenläufe wiederholen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
 #: oauth_server.py:227
 msgid "Abrechnungen lesen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:228
-msgid "Rechnungsanfragen lesen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:229
-msgid "Rechnungsanfragen beantworten"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:230
-msgid "Zahlungsabgleiche lesen"
-msgstr ""
-
-#. Draft translation; native language and domain review pending.
-#: oauth_server.py:231
-msgid "Zahlungsabgleiche bestätigen"
-msgstr ""
+msgstr "Leggere i conteggi"
 
 #. Draft translation; native language and domain review pending.
 #: templates/oauth_consent.html:2 templates/oauth_consent.html:5
 msgid "Agentenzugriff erlauben"
-msgstr ""
+msgstr "Consentire l’accesso all’agente"
 
 #. Draft translation; native language and domain review pending.
 #: templates/oauth_consent.html:11
 msgid "Erlauben"
-msgstr ""
+msgstr "Consentire"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:222
+msgid "Gründungsanmeldungen einreichen"
+msgstr "Inviare le domande di costituzione"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:221
+msgid "Gründungsanmeldungen lesen"
+msgstr "Leggere le domande di costituzione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/oauth_consent.html:9
+msgid "LEG auswählen"
+msgstr "Selezionare la LEG"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:225
+msgid "Messdatenläufe lesen"
+msgstr "Leggere le esecuzioni dei dati di misura"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:226
+msgid "Messdatenläufe wiederholen"
+msgstr "Ripetere le esecuzioni dei dati di misura"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:224
+msgid "Mitgliedermutationen einreichen"
+msgstr "Inviare le modifiche dei membri"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:223
+msgid "Mitgliedermutationen lesen"
+msgstr "Leggere le modifiche dei membri"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:229
+msgid "Rechnungsanfragen beantworten"
+msgstr "Rispondere alle richieste sulle fatture"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:228
+msgid "Rechnungsanfragen lesen"
+msgstr "Leggere le richieste sulle fatture"
+
+#. Draft translation; native language and domain review pending.
+#: templates/oauth_consent.html:14
+msgid "Rechte auswählen"
+msgstr "Selezionare i permessi"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:231
+msgid "Zahlungsabgleiche bestätigen"
+msgstr "Confermare gli abbinamenti dei pagamenti"
+
+#. Draft translation; native language and domain review pending.
+#: oauth_server.py:230
+msgid "Zahlungsabgleiche lesen"
+msgstr "Leggere gli abbinamenti dei pagamenti"

@@ -129,6 +129,7 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
         if "get" in op
     }
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(fixture.app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -265,6 +266,7 @@ def test_summary_sections(operator_http, monkeypatch):
             (fixture.community_id,),
         )
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(fixture.app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -408,6 +410,7 @@ def test_vnb_text_and_latest_formation(operator_http, monkeypatch):
             (fixture.community_id,),
         )
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(fixture.app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -481,6 +484,7 @@ def test_agent_submit_returns_confirmation_without_packages(
     with http.db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("UPDATE operator_api_clients SET actor_kind='agent'")
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(http.app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()

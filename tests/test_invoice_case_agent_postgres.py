@@ -180,6 +180,7 @@ def test_mcp_case_response(operator_http, monkeypatch):
     http = operator_http
     ids = helpers.seed_operator_resources(http)
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(http.app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()

@@ -824,7 +824,67 @@ def create_app():
     class Endpoint:
         async def __call__(self, scope, receive, send):
             if not dev_static:
-                authorization = Headers(scope=scope).get("authorization", "")
+                headers = Headers(scope=scope)
+                authorization = headers.get("authorization", "")
+                anonymous_protected = False
+                if scope["method"] == "POST":
+                    chunks = []
+                    size = 0
+                    while True:
+                        message = await receive()
+                        if message["type"] == "http.disconnect":
+                            return
+                        chunk = message.get("body", b"")
+                        size += len(chunk)
+                        if size > 1024 * 1024:
+                            return await JSONResponse(
+                                {"error": "request_too_large"}, status_code=413
+                            )(scope, receive, send)
+                        chunks.append(chunk)
+                        if not message.get("more_body", False):
+                            break
+                    body = b"".join(chunks)
+                    original_receive = receive
+                    replayed = False
+
+                    async def replay():
+                        nonlocal replayed
+                        if not replayed:
+                            replayed = True
+                            return {
+                                "type": "http.request",
+                                "body": body,
+                                "more_body": False,
+                            }
+                        return await original_receive()
+
+                    receive = replay
+                    if "authorization" not in headers:
+                        try:
+                            payload = json.loads(body)
+                        except (ValueError, UnicodeDecodeError):
+                            pass  # The SDK owns malformed JSON responses.
+                        else:
+                            requests = (
+                                payload if isinstance(payload, list) else [payload]
+                            )
+                            anonymous_protected = any(
+                                isinstance(item, dict)
+                                and (
+                                    item.get("method") == "resources/read"
+                                    or (
+                                        item.get("method") == "tools/call"
+                                        and (
+                                            not isinstance(item.get("params"), dict)
+                                            or not isinstance(
+                                                item["params"].get("name"), str
+                                            )
+                                            or item["params"]["name"] not in public
+                                        )
+                                    )
+                                )
+                                for item in requests
+                            )
                 identity = None
                 if re.fullmatch(r"Bearer ola_[A-Za-z0-9_-]+", authorization):
                     try:
@@ -861,7 +921,9 @@ def create_app():
                                 identity = candidate
                     except (httpx.HTTPError, ValueError, TypeError, AttributeError):
                         pass
-                if identity is None:
+                if identity is None and (
+                    "authorization" in headers or anonymous_protected
+                ):
                     response = JSONResponse(
                         {"error": "invalid_token"},
                         status_code=401,
@@ -875,7 +937,8 @@ def create_app():
                         },
                     )
                     return await response(scope, receive, send)
-                scope["oauth_identity"] = identity
+                if identity is not None:
+                    scope["oauth_identity"] = identity
             await manager.handle_request(scope, receive, send)
 
     async def metadata(request):

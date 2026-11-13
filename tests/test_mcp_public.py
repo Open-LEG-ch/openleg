@@ -50,6 +50,7 @@ def test_anonymous_catalog_matches_contract(monkeypatch):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     app = create_app()
     spec = json.loads(Path("docs/openapi/public-v1.json").read_text())
 
@@ -124,6 +125,7 @@ def test_public_calls_real_routes_without_credentials(public_app, monkeypatch):
         }
     ]
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     # A real proxy setting must not affect the fixed upstream.
     monkeypatch.setenv("HTTP_PROXY", "http://127.0.0.1:1")
     monkeypatch.setenv("ALL_PROXY", "http://127.0.0.1:1")
@@ -210,6 +212,7 @@ def test_public_rate_limit_is_enforced_by_flask(public_app, monkeypatch):
     for _ in range(240):
         assert client.get("/api/v1/municipalities").status_code == 200
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         sidecar = create_app()
@@ -248,6 +251,7 @@ def test_public_redirect_is_not_followed(public_app, monkeypatch):
         return redirect("/private-destination")
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         sidecar = create_app()
@@ -280,6 +284,7 @@ def test_integral_floats_keep_their_integer_meaning(public_app, monkeypatch):
         seen.append(request.full_path.rstrip("?"))
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         sidecar = create_app()
@@ -321,6 +326,7 @@ def test_public_budget_is_per_peer_before_upstream(public_app, monkeypatch):
         seen.append(request.path)
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv("OPENLEG_MCP_PUBLIC_CALLS", "1")
     with operator_server(public_app) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
@@ -362,6 +368,7 @@ def test_only_named_proxy_can_supply_client_ip(public_app, monkeypatch, trusted)
     from tests.test_mcp_sidecar_postgres import operator_server
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv("OPENLEG_MCP_PUBLIC_CALLS", "1")
     monkeypatch.setenv("OPENLEG_MCP_TRUSTED_PROXY", trusted)
     with operator_server(public_app) as origin:
@@ -403,6 +410,7 @@ def test_expiry_capacity_and_operator_independence(public_app, monkeypatch):
     now = [100.0]
     monkeypatch.setattr(limits, "time", clock)
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv("OPENLEG_MCP_PUBLIC_CALLS", "1")
     monkeypatch.setenv("OPENLEG_MCP_PUBLIC_WINDOW_SECONDS", "10")
     monkeypatch.setenv("OPENLEG_MCP_PUBLIC_MAX_CLIENTS", "2")
@@ -465,6 +473,7 @@ def test_invalid_proxy_headers_keep_peer_budget(public_app, monkeypatch, header)
     from tests.test_mcp_sidecar_postgres import operator_server
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv("OPENLEG_MCP_PUBLIC_CALLS", "1")
     monkeypatch.setenv("OPENLEG_MCP_TRUSTED_PROXY", "192.0.2.1")
     with operator_server(public_app) as origin:
@@ -495,6 +504,7 @@ def test_invalid_limit_settings_fail_startup(monkeypatch, setting, value):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.setenv(setting, value)
     with pytest.raises(ValueError):
         create_app()
@@ -507,6 +517,7 @@ def test_entry_point_preserves_connecting_peer(monkeypatch):
     import uvicorn
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     run = Mock()
     monkeypatch.setattr(uvicorn, "run", run)
     runpy.run_module("mcp_sidecar", run_name="__main__")

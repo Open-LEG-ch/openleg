@@ -250,3 +250,238 @@ def test_downstream_key_required_at_startup(monkeypatch):
             app.config["OAUTH_DOWNSTREAM_KEY"] = key
         with pytest.raises(ValueError, match="downstream key"):
             init_oauth(app)
+
+
+def test_oauth_anonymous_public_and_protected_requests(monkeypatch):
+    import asyncio
+    import json
+
+    import httpx
+    from flask import Flask, jsonify
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+
+    @upstream.get("/api/v1/search")
+    def search():
+        return jsonify({"items": ["public result"]})
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_OAUTH_ISSUER", "https://auth.example")
+    monkeypatch.setenv("OPENLEG_MCP_RESOURCE", "https://mcp.example/mcp")
+    monkeypatch.setenv("OPENLEG_OAUTH_INTROSPECTION_SECRET", "s" * 64)
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                httpx.AsyncClient(
+                    transport=httpx.ASGITransport(app),
+                    base_url="http://localhost",
+                    headers={"Accept": "application/json, text/event-stream"},
+                ) as client,
+            ):
+
+                def call(name):
+                    return {
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "method": "tools/call",
+                        "params": {"name": name, "arguments": {"q": "Dietikon"}},
+                    }
+
+                response = await client.post("/mcp", json=call("get_search"))
+                assert response.status_code == 200
+                assert response.json()["result"]["structuredContent"] == {
+                    "items": ["public result"]
+                }
+                for method in ("initialize", "tools/list", "resources/templates/list"):
+                    payload = {"jsonrpc": "2.0", "id": 1, "method": method}
+                    if method == "initialize":
+                        payload["params"] = {
+                            "protocolVersion": "2025-03-26",
+                            "capabilities": {},
+                            "clientInfo": {"name": "test", "version": "1"},
+                        }
+                    assert (await client.post("/mcp", json=payload)).status_code == 200
+                challenge = None
+                protected = [
+                    call("list_billing_periods"),
+                    {
+                        "jsonrpc": "2.0",
+                        "id": 2,
+                        "method": "resources/read",
+                        "params": {"uri": "openleg://communities/leg/summary"},
+                    },
+                ]
+                malformed_call = call("get_search")
+                malformed_call["params"]["name"] = []
+                for payload in [
+                    malformed_call,
+                    *protected,
+                    [call("get_search"), protected[0]],
+                ]:
+                    response = await client.post("/mcp", json=payload)
+                    assert response.status_code == 401
+                    assert "resource_metadata=" in response.headers["www-authenticate"]
+                    assert "scope=" in response.headers["www-authenticate"]
+                    challenge = response.headers["www-authenticate"]
+                for authorization in ("", "Bearer olk_static", "Bearer ola_invalid"):
+                    response = await client.post(
+                        "/mcp",
+                        json=call("get_search"),
+                        headers={"Authorization": authorization},
+                    )
+                    assert response.status_code == 401
+                    assert response.headers["www-authenticate"] == challenge
+                response = await client.post(
+                    "/mcp", content=b"{", headers={"Content-Type": "application/json"}
+                )
+                assert response.status_code == 400
+                assert response.json()["error"]["code"] == -32700
+                response = await client.post("/mcp", content=b" " * (1024 * 1024 + 1))
+                assert response.status_code == 413
+                # Inspect exact raw bytes at the SDK boundary, including a batch.
+                # The SDK itself currently rejects batches, after replay.
+                response = await client.post(
+                    "/mcp",
+                    content=json.dumps([call("get_search")]).encode(),
+                    headers={"Content-Type": "application/json"},
+                )
+                assert response.status_code != 401
+
+        asyncio.run(check())
+
+
+def test_oauth_all_operator_capabilities_and_body_replay(monkeypatch):
+    import asyncio
+    import time
+
+    from flask import Flask, jsonify, request
+
+    from mcp_sidecar.server import create_app, operations
+    from tests.test_mcp_sidecar import session
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+    identity = {
+        "active": True,
+        "iss": "https://auth.example",
+        "aud": "https://mcp.example/mcp",
+        "exp": time.time() + 300,
+        "community_id": "leg",
+        "scope": "community:leg unrelated.read",
+        "downstream_token": "olk_separate",
+    }
+    calls = []
+
+    @upstream.post("/oauth/introspect")
+    def introspect():
+        assert request.headers["Authorization"] == "Bearer " + "s" * 64
+        assert request.form["token"] == "ola_access"
+        return jsonify(identity)
+
+    @upstream.get("/api/operator/v1/communities/leg/billing/periods")
+    def periods():
+        calls.append(request.headers["Authorization"])
+        return jsonify(items=[], next_cursor=None)
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_OAUTH_ISSUER", identity["iss"])
+    monkeypatch.setenv("OPENLEG_MCP_RESOURCE", identity["aud"])
+    monkeypatch.setenv("OPENLEG_OAUTH_INTROSPECTION_SECRET", "s" * 64)
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(app, {"Authorization": "Bearer ola_access"}) as sdk,
+            ):
+                tools = {name: {} for name in operations()}
+                tools.update(
+                    {
+                        "preview_formation_submission": {},
+                        "submit_formation": {},
+                        "preview_membership_mutation": {
+                            "mutation_id": "m1",
+                            "source_agreement_id": "agreement1",
+                            "participant_id": "p1",
+                            "mutation_type": "exit",
+                            "effective_date": "2027-01-01",
+                        },
+                        "submit_membership_mutation": {
+                            "mutation_id": "m1",
+                            "source_agreement_id": "agreement1",
+                            "participant_id": "p1",
+                            "mutation_type": "exit",
+                            "effective_date": "2027-01-01",
+                        },
+                        "respond_invoice_case": {
+                            "case_id": 1,
+                            "message": "Answer",
+                            "status": "resolved",
+                            "idempotency_key": "test-key",
+                        },
+                        "confirm_payment_match": {
+                            "entry_id": 1,
+                            "invoice_id": 1,
+                            "idempotency_key": "test-key",
+                        },
+                    }
+                )
+                for name, arguments in tools.items():
+                    result = await sdk.call_tool(
+                        name, {"community_id": "leg", **arguments}
+                    )
+                    assert result.isError, name
+                    assert result.content[0].text == "forbidden", (name, result)
+                    assert result.structuredContent == {
+                        "code": "capability_denied",
+                        "field": None,
+                        "retryable": False,
+                    }
+                    result = await sdk.call_tool(
+                        name, {"community_id": "other", **arguments}
+                    )
+                    assert result.isError and result.content[0].text == "not_found", (
+                        name,
+                        result,
+                    )
+                assert not calls
+                identity["scope"] = "community:leg billing.read"
+                result = await sdk.call_tool(
+                    "list_billing_periods", {"community_id": "leg"}
+                )
+                assert not result.isError
+                assert result.structuredContent == {"items": [], "next_cursor": None}
+                assert calls == ["Bearer olk_separate"]
+                # Simulate loss of the endpoint identity at the SDK boundary.
+                # Operator tools must still fail closed with the stable RPC error.
+                import pytest
+                from mcp.server.streamable_http_manager import (
+                    StreamableHTTPSessionManager,
+                )
+                from mcp.shared.exceptions import McpError
+
+                original = StreamableHTTPSessionManager.handle_request
+
+                async def without_identity(self, scope, receive, send):
+                    scope.pop("oauth_identity", None)
+                    return await original(self, scope, receive, send)
+
+                monkeypatch.setattr(
+                    StreamableHTTPSessionManager, "handle_request", without_identity
+                )
+                with pytest.raises(McpError) as denied:
+                    await sdk.call_tool("list_billing_periods", {"community_id": "leg"})
+                assert denied.value.error.code == -32011
+                assert denied.value.error.data["code"] == "authentication_required"
+                assert calls == ["Bearer olk_separate"]
+
+        asyncio.run(check())

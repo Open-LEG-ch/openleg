@@ -769,7 +769,7 @@ msgstr ""
 msgid "Ablauf der Abrechnung"
 msgstr ""
 
-#: templates/admin/ops.html:151 templates/contact_requests.html:52 templates/oauth_consent.html:12
+#: templates/admin/ops.html:151 templates/contact_requests.html:52 templates/oauth_consent.html:20
 #: templates/verein/application.html:17
 msgid "Ablehnen"
 msgstr ""
@@ -824,7 +824,7 @@ msgstr ""
 msgid "Abrechnungen"
 msgstr ""
 
-#: oauth_server.py:227
+#: oauth_server.py:272
 msgid "Abrechnungen lesen"
 msgstr ""
 
@@ -5834,7 +5834,7 @@ msgstr ""
 msgid "Erinnerung tatsächlich versendet am"
 msgstr ""
 
-#: templates/oauth_consent.html:11
+#: templates/oauth_consent.html:19
 msgid "Erlauben"
 msgstr ""
 
@@ -7409,11 +7409,11 @@ msgstr ""
 msgid "Gründungsanmeldung"
 msgstr ""
 
-#: oauth_server.py:222
+#: oauth_server.py:267
 msgid "Gründungsanmeldungen einreichen"
 msgstr ""
 
-#: oauth_server.py:221
+#: oauth_server.py:266
 msgid "Gründungsanmeldungen lesen"
 msgstr ""
 
@@ -9109,8 +9109,7 @@ msgstr ""
 msgid "LEA Inbox"
 msgstr ""
 
-#: templates/admin/abrechnungen.html:49 templates/oauth_consent.html:6
-#: templates/release/knowledge.html:10
+#: templates/admin/abrechnungen.html:49 templates/release/knowledge.html:10
 msgid "LEG"
 msgstr ""
 
@@ -9142,6 +9141,10 @@ msgstr ""
 
 #: templates/gemeinde/pilotgemeinde.html:38
 msgid "LEG anmelden"
+msgstr ""
+
+#: templates/oauth_consent.html:9
+msgid "LEG auswählen"
 msgstr ""
 
 #: templates/leg_gruenden.html:36 templates/leg_gruenden.html:183
@@ -9952,11 +9955,11 @@ msgstr ""
 msgid "Messdaten, Tarifversionen, Rechnungsprüfung und die Voraussetzungen für den Betrieb."
 msgstr ""
 
-#: oauth_server.py:225
+#: oauth_server.py:270
 msgid "Messdatenläufe lesen"
 msgstr ""
 
-#: oauth_server.py:226
+#: oauth_server.py:271
 msgid "Messdatenläufe wiederholen"
 msgstr ""
 
@@ -10149,11 +10152,11 @@ msgstr ""
 msgid "Mitgliedermutation"
 msgstr ""
 
-#: oauth_server.py:224
+#: oauth_server.py:269
 msgid "Mitgliedermutationen einreichen"
 msgstr ""
 
-#: oauth_server.py:223
+#: oauth_server.py:268
 msgid "Mitgliedermutationen lesen"
 msgstr ""
 
@@ -12392,11 +12395,11 @@ msgstr ""
 msgid "Rechnungen verwalten"
 msgstr ""
 
-#: oauth_server.py:229
+#: oauth_server.py:274
 msgid "Rechnungsanfragen beantworten"
 msgstr ""
 
-#: oauth_server.py:228
+#: oauth_server.py:273
 msgid "Rechnungsanfragen lesen"
 msgstr ""
 
@@ -12425,6 +12428,10 @@ msgstr ""
 msgid ""
 "Rechnungspräfix: 2 bis 16 Zeichen, nur Grossbuchstaben, Ziffern und Bindestrich, beginnend mit "
 "Buchstabe oder Ziffer."
+msgstr ""
+
+#: templates/oauth_consent.html:14
+msgid "Rechte auswählen"
 msgstr ""
 
 #: templates/llms.txt:18
@@ -15550,11 +15557,11 @@ msgstr ""
 msgid "Zahlungsabgleich prüfen"
 msgstr ""
 
-#: oauth_server.py:231
+#: oauth_server.py:276
 msgid "Zahlungsabgleiche bestätigen"
 msgstr ""
 
-#: oauth_server.py:230
+#: oauth_server.py:275
 msgid "Zahlungsabgleiche lesen"
 msgstr ""
 

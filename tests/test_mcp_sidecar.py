@@ -455,6 +455,7 @@ def test_standalone_bind_host(monkeypatch, bind_host, expected):
     import uvicorn
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     monkeypatch.delenv("OPENLEG_MCP_BIND_HOST", raising=False)
     if bind_host is not None:
         monkeypatch.setenv("OPENLEG_MCP_BIND_HOST", bind_host)
@@ -468,7 +469,10 @@ def test_operator_origin_accepts_scheme_host_port(monkeypatch):
     from mcp_sidecar.server import create_app
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
-    monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", "http://host:5000")
+    monkeypatch.setenv("OPENLEG_OAUTH_ISSUER", "https://auth.example")
+    monkeypatch.setenv("OPENLEG_MCP_RESOURCE", "https://mcp.example/mcp")
+    monkeypatch.setenv("OPENLEG_OAUTH_INTROSPECTION_SECRET", "s" * 64)
+    monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", "https://host:5000")
     assert create_app() is not None
 
 
@@ -510,6 +514,7 @@ def test_malformed_upstream_page(monkeypatch, tool, path, body):
         return jsonify(body)
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -569,6 +574,7 @@ def test_summary_refuses_cases_without_integer_ids(monkeypatch, ids):
         return jsonify({"items": [], "next_cursor": None})
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -618,6 +624,7 @@ def test_upstream_error_metadata_and_authorization(monkeypatch):
         ), status
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
@@ -692,6 +699,7 @@ def test_change_preview_requires_after_locally(monkeypatch, extra, forwarded):
         )
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream) as origin:
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()

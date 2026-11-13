@@ -24,7 +24,8 @@ pip install -r requirements-mcp.txt
 OPENLEG_MCP_ENABLED=true OPENLEG_MCP_DEV_STATIC=true OPENLEG_OPERATOR_ORIGIN=http://127.0.0.1:5000 python -m mcp_sidecar
 ```
 
-The standalone listener binds to `127.0.0.1:8000` by default.
+The standalone listener binds to `127.0.0.1:8000` in dev-static mode and
+`0.0.0.0:8000` in OAuth mode.
 `OPENLEG_MCP_BIND_HOST` overrides the bind address. The Compose overlay sets
 it to `0.0.0.0` inside the container so Caddy can connect; only Caddy publishes
 a host port, bound to loopback. Host and Origin checks do not restrict which
@@ -104,8 +105,17 @@ homepage and template endpoints are not exposed.
 
 Public calls never forward the caller's Authorization header. They return the
 public API response unchanged, including decimal strings. Operator tools remain
-listed but require their bearer on each call; anonymous calls fail with the
-JSON-RPC authorization error described in
+listed. In OAuth mode, anonymous `tools/call` requests for operator tools and
+`resources/read` requests return HTTP 401 with `WWW-Authenticate` discovery
+metadata and scopes. Initialization, tool listing, resource-template listing and
+public tool calls work without Authorization. An invalid Authorization header
+returns the same 401 even for public calls. The endpoint inspects single and
+batch JSON-RPC requests and replays their exact bytes to the SDK; bodies over
+1 MiB return 413. Malformed JSON is handled by the SDK. Each operator tool
+checks the token's community and its own required capability before calling
+upstream with the separate downstream credential.
+
+Dev-static mode retains the JSON-RPC authorization error described in
 [the operator contract](operator-operations-api.md#mcp-error-boundary).
 
 Calls use the same public HTTP routes and their existing rate limits. The app
@@ -206,14 +216,16 @@ Der Host schickt diesen Scope, `client_id`, `redirect_uri`, `response_type=code`
 `state`, `code_challenge`, `code_challenge_method=S256` und `resource` an
 `/oauth/authorize`. Die bestätigte LEG-Administration meldet sich zuerst im
 Dashboard an, öffnet die Autorisierung erneut und bestätigt die angezeigten
-Rechte. Deutsch und Französisch verwenden die Übersetzungskataloge.
+Rechte. Deutsch, Französisch, Englisch und Italienisch verwenden die
+Übersetzungskataloge.
 
 Der Host tauscht den Code per Formular-POST an `/oauth/token`:
 `grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`,
 `code_verifier` und dieselbe `resource`. Er verwendet das erhaltene Token als
 Bearer für `/mcp`. Der Zugriff gilt ausschliesslich für diese Ressource und LEG.
 
-Der Sidecar introspektiert bei jeder Anfrage über `POST /oauth/introspect`.
+Der Sidecar introspektiert bei jeder Anfrage mit MCP-Token über
+`POST /oauth/introspect`.
 Das gemeinsame Secret authentifiziert den Sidecar. Die Antwort enthält neben
 Issuer, Audience, Ablauf, Scope und LEG ein separates Downstream-Credential.
 Introspektion vermeidet Signaturschlüssel im Sidecar und prüft Widerruf sofort;
@@ -247,7 +259,7 @@ Die Ressourcenbindung folgt
 [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707.html).
 
 Nur lokal kann `OPENLEG_MCP_DEV_STATIC=true` den bisherigen `olk_`-Pfad
-aktivieren. Der Prozesseinstieg bindet dann ausschliesslich an 127.0.0.1;
+aktivieren. Der Prozesseinstieg bindet dann standardmässig an 127.0.0.1;
 auch der Betreiber-Origin muss Loopback sein. Diesen Modus niemals über einen
 Produktionsproxy veröffentlichen. In Produktion bleibt die Variable ungesetzt.
 Proxy-Logs dürfen keine Authorization-Header, Formularinhalte oder OAuth-
