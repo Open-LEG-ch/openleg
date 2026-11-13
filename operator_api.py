@@ -12,7 +12,7 @@ import secrets
 import socket
 import ssl
 import urllib.error
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from functools import wraps
 from ipaddress import ip_address
 from urllib.parse import urlparse
@@ -953,6 +953,8 @@ def dispatch_pending_webhooks(
         }
         if row.get("actor"):
             payload["actor"] = row["actor"]
+        payload["delivery_id"] = row["delivery_id"]
+        payload["sent_at"] = datetime.now(UTC).isoformat()
         body = json.dumps(
             payload, sort_keys=True, separators=(",", ":"), default=_json_default
         ).encode()

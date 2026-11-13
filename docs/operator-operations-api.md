@@ -160,12 +160,25 @@ per-client webhook secret disclosed at credential creation. Verify before
 parsing:
 
 ```python
-import hashlib, hmac
+import hashlib
+import hmac
+import json
+from datetime import datetime, timedelta, timezone
 
 
 def verify(body: bytes, secret: str, header_value: str) -> bool:
     expected = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, header_value)
+    if not hmac.compare_digest(expected, header_value):
+        return False
+    # Parse only authenticated bytes; missing or invalid timestamps fail closed.
+    try:
+        event = json.loads(body)
+        sent_at = datetime.fromisoformat(event["sent_at"])
+        if sent_at.tzinfo is None or sent_at.utcoffset() != timedelta(0):
+            return False
+        return abs(datetime.now(timezone.utc) - sent_at) <= timedelta(minutes=5)
+    except (ValueError, TypeError, KeyError):
+        return False
 ```
 
 A minimal `membership.mutation.acknowledged` payload:
@@ -174,6 +187,8 @@ A minimal `membership.mutation.acknowledged` payload:
 {
   "schema_version": "operator-event/1",
   "event_id": "<stable event id>",
+  "delivery_id": "<stable delivery id>",
+  "sent_at": "2026-11-11T12:00:00+00:00",
   "event_type": "membership.mutation.acknowledged",
   "aggregate_id": "<case id>",
   "community_id": "leg-1",
@@ -182,9 +197,32 @@ A minimal `membership.mutation.acknowledged` payload:
 }
 ```
 
-Consumers must verify the signature, treat unknown payload keys as ignorable
-within version 1, and respond to non-2xx delivery outcomes by waiting for the
-bounded retry schedule rather than re-posting events themselves.
+The signed top-level `delivery_id` matches `OpenLEG-Delivery` and stays stable
+across retries. The signed `sent_at` is the UTC ISO-8601 timestamp of this
+attempt; each retry gets a fresh timestamp and signature. These are additive
+fields within `operator-event/1`; existing event fields remain unchanged.
+
+Verify the signature over the raw body before parsing JSON. Reject a delivery
+if its signed `sent_at` is more than five minutes before or after the receiver's
+current clock, or if the timestamp is missing or invalid. Keep receiver clocks
+synchronised. After verification and the freshness check, deduplicate on the
+signed `event_id` and/or signed `delivery_id`, using durable storage and an
+atomic check when processing concurrent deliveries. Record the ID in the same
+transaction as the business change it causes, so a failed processing attempt
+does not mark the event as seen. If processing has external side effects that
+cannot join that transaction, keep a recoverable processing state and answer
+non-2xx until it completes; OpenLEG then retries the delivery. Give each
+external call an idempotency key derived from the signed `event_id`, or
+reconcile an ambiguous outcome before retrying, so a retry cannot repeat an
+irreversible action such as a payment. Retries are bounded: after the fifth
+failed attempt the delivery stops at `failed`, and only an administrator's
+`POST …/deliveries/{delivery_id}/retry` sends it again. Do not trust the
+unsigned `OpenLEG-Delivery` header for deduplication. A freshness check alone
+does not prevent replay within the five-minute window.
+
+Consumers must ignore unknown optional fields within version 1 and respond to
+non-2xx delivery outcomes by waiting for the bounded retry schedule rather
+than re-posting events themselves.
 
 Dashboard-session administrators manage credentials at
 `/leg/community/{community_id}/operator-api/credentials` (create/list), with

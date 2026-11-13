@@ -339,6 +339,8 @@ def test_dispatch_signs_canonical_body_and_headers_for_the_delivery(
         == json.dumps(
             {
                 "event_id": "event-1",
+                "delivery_id": "delivery-1",
+                "sent_at": json.loads(body)["sent_at"],
                 "event_type": "formation.submitted",
                 "schema_version": "operator-event/1",
                 "aggregate_id": "case-1",
