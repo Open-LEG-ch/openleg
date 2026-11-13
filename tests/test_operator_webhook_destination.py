@@ -84,6 +84,7 @@ def test_credential_route_refuses_a_webhook_that_resolves_to_a_non_public_addres
             json={
                 "name": "Integrator",
                 "capabilities": ["formation.read"],
+                "actor_kind": "service",
                 "webhook_url": "https://hooks.example.net/ingest",
             },
         )
@@ -121,11 +122,13 @@ def test_credential_route_refuses_a_webhook_without_https(
             json={
                 "name": "Integrator",
                 "capabilities": ["formation.read"],
+                "actor_kind": "service",
                 "webhook_url": url,
             },
         )
 
     assert response.status_code == 400
+    assert response.get_json()["error"] == "Webhook URL must use HTTPS"
     assert not create_client.called
 
 

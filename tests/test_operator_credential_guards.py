@@ -34,7 +34,11 @@ STORE_CALLS = (
     "retry_operator_webhook_delivery",
     "list_operator_webhook_deliveries",
 )
-CREATE_BODY = {"name": "Integrator", "capabilities": ["formation.read"]}
+CREATE_BODY = {
+    "name": "Integrator",
+    "capabilities": ["formation.read"],
+    "actor_kind": "service",
+}
 
 
 @pytest.fixture
