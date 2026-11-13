@@ -251,3 +251,29 @@ def test_preview_sends_header_parameters(monkeypatch, capsys, key):
     with server(app) as url:
         assert main([*arguments, "--url", url]) == 0, capsys.readouterr()
     assert seen == [(key, "true")]
+
+
+def test_non_json_429_keeps_retry_delay(monkeypatch, capsys):
+    """A proxy 429 with an HTML body still reports the retry delay."""
+    import json
+
+    from flask import Flask
+
+    from openleg_ctl import main
+    from tests.test_openleg_ctl_postgres import server
+
+    app = Flask(__name__)
+
+    @app.get("/api/operator/v1/communities/leg/billing/periods")
+    def limited():
+        return "<html>Too many requests</html>", 429, {"Retry-After": "60"}
+
+    monkeypatch.setenv("OPENLEG_TOKEN", "olk_secret")
+    with server(app) as url:
+        assert (
+            main(["listPeriods", "--community-id", "leg", "--url", url, "--json"]) == 1
+        )
+    assert json.loads(capsys.readouterr().err) == {
+        "code": "operator_error",
+        "retry_after": "60",
+    }

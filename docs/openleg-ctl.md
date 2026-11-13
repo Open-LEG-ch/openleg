@@ -45,7 +45,9 @@ as request headers. Object and array inputs use JSON.
 Every command accepts `--url` to override `OPENLEG_URL` and `--json` for compact
 machine-readable output. Without `--json`, output is indented JSON for reading
 in a terminal. Collections return one page and its `next_cursor`; pass that
-cursor unchanged on the next invocation.
+cursor unchanged on the next invocation. `listFormations` and `listMemberships`
+have no pagination: they return only the latest 20 submissions and the latest
+100 mutations. Older records cannot be fetched through these commands.
 
 Success exits 0. API, configuration and network failures exit 1 and print a
 JSON object on stderr containing `code`. Argument errors exit 2 and print

@@ -202,10 +202,15 @@ def execute(args):
             response = exc
         with response:
             status = response.code
+            # Read the retry delay first: a proxy 429 may have no JSON body.
+            details = {}
+            if status == 429:
+                delay = response.headers.get("Retry-After", "")
+                details["retry_after"] = delay if delay.isdigit() else "unknown"
             try:
                 payload = json.load(response)
             except (ValueError, UnicodeError):
-                return fail("operator_error")
+                return fail("operator_error", **details)
             if status != 200:
                 codes = resolve(
                     spec, spec["components"]["schemas"]["Error"]["properties"]["code"]
@@ -213,10 +218,6 @@ def execute(args):
                 code = payload.get("code") if isinstance(payload, dict) else None
                 if code not in codes:
                     code = "operator_error"
-                details = {}
-                if status == 429:
-                    delay = response.headers.get("Retry-After", "")
-                    details["retry_after"] = delay if delay.isdigit() else "unknown"
                 return fail(code, **details)
             return emit(payload)
     except InvalidURL:
