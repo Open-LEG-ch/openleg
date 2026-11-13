@@ -74,7 +74,11 @@ endet im Status `delivered`.
 Administrationen sehen Zustellversuche unter
 `/leg/community/{community_id}/operator-api/deliveries`. Einen endgültig
 fehlgeschlagenen Versuch können sie über
-`POST …/deliveries/{delivery_id}/retry` kontrolliert erneut freigeben. Die Zustellung erhält danach genau einen weiteren Versuch; die bisherigen Versuche bleiben gezählt.
+`POST …/deliveries/{delivery_id}/retry` kontrolliert erneut freigeben. Hat die
+Zustellung ihre fünf Versuche aufgebraucht, erhält sie genau einen weiteren
+Versuch. Wurde sie vorher abgebrochen, etwa wegen eines fehlenden
+Webhook-Geheimnisses, erhält sie die verbleibenden Versuche bis fünf. Die
+bisherigen Versuche bleiben gezählt.
 
 ## Handelnde Person oder Anwendung
 

@@ -146,3 +146,67 @@ def test_a_rearmed_delivery_claimed_by_a_dead_worker_is_recovered(
     assert totals == {"attempted": 1, "delivered": 1, "failed": 0}
     assert after["status"] == "delivered"
     assert after["attempt_count"] == 6
+
+
+@pytest.mark.integration
+def test_a_delivery_stopped_early_gets_its_remaining_attempts_after_rearm(
+    interest_database,
+):
+    db = interest_database
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO communities(community_id,name) VALUES (%s,'Fictional LEG')",
+            (COMMUNITY,),
+        )
+    db.create_operator_api_client(
+        COMMUNITY,
+        "building-1",
+        "Integrator",
+        ["formation.read"],
+        "token-hash-early",
+        "https://hooks.example.net/ingest",
+    )
+    db.create_operator_event(
+        "formation.submission.prepared", "case-1", COMMUNITY, {"state": "prepared"}
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT webhook_secret FROM operator_api_clients")
+        secret = cur.fetchone()["webhook_secret"]
+        # A missing secret stops the delivery on its first attempt.
+        cur.execute("UPDATE operator_api_clients SET webhook_secret=NULL")
+
+    def refusing(url, body, headers, timeout):
+        return 503
+
+    _make_due(db)
+    operator_api.dispatch_pending_webhooks(transport=refusing, signing_key="k")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE operator_api_clients SET webhook_secret=%s", (secret,))
+
+    client = _admin_client()
+    with patch(
+        "operator_api.formation_wizard.get_community_status",
+        return_value={
+            "members": [
+                {"building_id": "building-1", "status": "confirmed", "role": "admin"}
+            ]
+        },
+    ):
+        [failed] = client.get(DELIVERIES).get_json()["deliveries"]
+        assert (failed["status"], failed["attempt_count"]) == ("failed", 1)
+        assert (
+            client.post(
+                f"{DELIVERIES}/{failed['delivery_id']}/retry",
+                headers={"X-CSRF-Token": "csrf-secret"},
+            ).status_code
+            == 200
+        )
+        states = []
+        for _ in range(4):
+            _make_due(db)
+            operator_api.dispatch_pending_webhooks(transport=refusing, signing_key="k")
+            [row] = client.get(DELIVERIES).get_json()["deliveries"]
+            states.append((row["status"], row["attempt_count"]))
+
+    # Not one more attempt but the remaining four, up to five in total.
+    assert states == [("retry", 2), ("retry", 3), ("retry", 4), ("failed", 5)]
