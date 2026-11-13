@@ -21,24 +21,25 @@ def _get_connection():
     return database.get_connection()
 
 
-def participant_manifest(cursor, community_id):
+def participant_manifest(cursor, community_id, *, lock=True):
     """Lock membership and profile facts used by one formation document bundle."""
-    cursor.execute(
-        """SELECT building_id FROM community_members WHERE community_id = %s
-           ORDER BY building_id FOR SHARE""",
-        (community_id,),
-    )
-    cursor.fetchall()
-    cursor.execute(
-        """SELECT cm.building_id
-           FROM community_members cm
-           JOIN buildings b ON b.building_id = cm.building_id
-           JOIN consents c ON c.building_id = cm.building_id
-           WHERE cm.community_id = %s
-           ORDER BY cm.building_id FOR SHARE OF b, c""",
-        (community_id,),
-    )
-    cursor.fetchall()
+    if lock:
+        cursor.execute(
+            """SELECT building_id FROM community_members WHERE community_id = %s
+               ORDER BY building_id FOR SHARE""",
+            (community_id,),
+        )
+        cursor.fetchall()
+        cursor.execute(
+            """SELECT cm.building_id
+               FROM community_members cm
+               JOIN buildings b ON b.building_id = cm.building_id
+               JOIN consents c ON c.building_id = cm.building_id
+               WHERE cm.community_id = %s
+               ORDER BY cm.building_id FOR SHARE OF b, c""",
+            (community_id,),
+        )
+        cursor.fetchall()
     cursor.execute(
         """SELECT cm.building_id, b.email, b.address, b.potential_pv_kwp
            FROM community_members cm
@@ -79,19 +80,26 @@ def bundle_fingerprint(documents, signers):
 
 def locked_signature_bundle(cursor, community_id, actor):
     """Validate the current bundle while holding its community and fact locks."""
+    return _signature_bundle(cursor, community_id, actor, lock=True)
+
+
+def _signature_bundle(cursor, community_id, actor, *, lock):
+    """Apply the same bundle checks to locked facts or a read-only snapshot."""
     cursor.execute(
-        "SELECT status FROM communities WHERE community_id = %s FOR UPDATE",
+        "SELECT status FROM communities WHERE community_id = %s"
+        + (" FOR UPDATE" if lock else ""),
         (community_id,),
     )
     community = cursor.fetchone()
-    expected_manifest = participant_manifest(cursor, community_id)
+    expected_manifest = participant_manifest(cursor, community_id, lock=lock)
     signers = [row["building_id"] for row in expected_manifest]
     if not community or actor not in signers:
         raise SignatureDenied()
     cursor.execute(
         """SELECT id, doc_type, filename, pdf_data, participant_manifest FROM leg_documents
            WHERE community_id = %s AND signing_status IS DISTINCT FROM 'superseded'
-           ORDER BY id FOR UPDATE""",
+           ORDER BY id"""
+        + (" FOR UPDATE" if lock else ""),
         (community_id,),
     )
     documents = cursor.fetchall()
@@ -209,12 +217,19 @@ def record_formation_signature(community_id, actor, fingerprint, provider, evide
             )
 
 
-def validate_formation_signature_receipts(community_id, actor):
+def validate_formation_signature_receipts(community_id, actor, *, snapshot=False):
     """Preserve legacy provider bundles; reject retired participant receipts."""
     with _get_connection() as connection, connection.cursor() as cursor:
+        if snapshot:
+            # One MVCC snapshot covers membership, profiles, PDFs and receipts.
+            # SET TRANSACTION does not change the pooled connection's defaults.
+            cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         cursor.execute(
             "SELECT 1 FROM leg_signature_receipts WHERE community_id = %s LIMIT 1",
             (community_id,),
         )
         if cursor.fetchone():
-            locked_signature_bundle(cursor, community_id, actor)
+            if snapshot:
+                _signature_bundle(cursor, community_id, actor, lock=False)
+            else:
+                locked_signature_bundle(cursor, community_id, actor)

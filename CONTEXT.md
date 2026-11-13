@@ -11,6 +11,7 @@ concept never travels under two labels.
 | LEG | Lokale Elektrizitätsgemeinschaft. Neighbours who share locally produced electricity over the public grid at a reduced network fee. The product's reason to exist. |
 | ZEV | Zusammenschluss zum Eigenverbrauch. The older, building-bound model. A LEG is the wider successor and reaches across parcels. |
 | VNB | Verteilnetzbetreiber. The distribution grid operator that meters the LEG, applies the network discount, and bills the residual grid supply. |
+| VNB preview | Authorization, validation and conflict checks for a VNB-bound request without business writes. Returns intended action, canonical payload fingerprint and adapter recipient; usage accounting still applies. |
 | EVU | Elektrizitätsversorgungsunternehmen. The utility. Often the same company as the VNB; kept apart because the roles differ. |
 | ElCom | Eidgenössische Elektrizitätskommission. Publishes the yearly tariff dataset per municipality and category. |
 | BFS | Bundesamt für Statistik. `bfs_number` is the municipality primary key across the whole codebase. |

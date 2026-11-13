@@ -42,6 +42,44 @@ def test_contract_tool(monkeypatch):
     async def check():
         async with app.router.lifespan_context(app), session(app) as sdk:
             result = await sdk.list_tools()
+            names = [t.name for t in result.tools]
+            assert "list_billing_periods" in names
+            # The preview tools follow the read tools.
+            assert names[-2:] == [
+                "preview_formation_submission",
+                "preview_membership_mutation",
+            ]
+            previews = result.tools[-2:]
+            spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
+            for preview, suffix, capability in zip(
+                previews,
+                ("/formation/submissions", "/membership-mutations"),
+                ("formation.mutate", "membership.mutate"),
+                strict=True,
+            ):
+                assert preview.annotations.readOnlyHint is True
+                assert preview.meta["x-openleg-capability"] == capability
+                assert "dry_run" not in preview.inputSchema["properties"]
+                operation = spec["paths"][
+                    "/api/operator/v1/communities/{community_id}" + suffix
+                ]["post"]
+                body = (
+                    operation.get("requestBody", {})
+                    .get("content", {})
+                    .get("application/json", {})
+                    .get("schema", {})
+                )
+                assert preview.inputSchema["properties"] == {
+                    "community_id": spec["components"]["parameters"]["community_id"][
+                        "schema"
+                    ],
+                    **body.get("properties", {}),
+                }
+                assert preview.inputSchema["required"] == ["community_id"] + body.get(
+                    "required", []
+                )
+                assert preview.inputSchema["additionalProperties"] is False
+            assert "access_roles" in previews[1].description
             tool = next(t for t in result.tools if t.name == "list_billing_periods")
             spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
             op = spec["paths"][
@@ -603,3 +641,54 @@ def test_upstream_error_metadata_and_authorization(monkeypatch):
             assert failure.value.error.data["retryable"] is True
 
     asyncio.run(unavailable())
+
+
+@pytest.mark.parametrize(
+    ("extra", "forwarded"),
+    [({}, False), ({"after": {}}, False), ({"after": {"status": "active"}}, True)],
+)
+def test_change_preview_requires_after_locally(monkeypatch, extra, forwarded):
+    """A change preview needs a non-empty after before it spends a request."""
+    from flask import Flask, jsonify
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+    calls = []
+
+    @upstream.post("/api/operator/v1/communities/one/membership-mutations")
+    def preview():
+        calls.append(1)
+        return jsonify(
+            intended_action={}, payload_fingerprint="sha256:0", recipient="vnb"
+        )
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(app, {"Authorization": "Bearer olk_test"}) as sdk,
+            ):
+                result = await sdk.call_tool(
+                    "preview_membership_mutation",
+                    {
+                        "community_id": "one",
+                        "mutation_id": "m-1",
+                        "participant_id": "p-1",
+                        "mutation_type": "change",
+                        "effective_date": "2027-01-01",
+                        "source_agreement_id": "a-1",
+                        **extra,
+                    },
+                )
+                assert result.isError is not forwarded
+                if not forwarded:
+                    assert result.structuredContent["code"] == "invalid_arguments"
+                assert calls == ([1] if forwarded else [])
+
+        asyncio.run(check())

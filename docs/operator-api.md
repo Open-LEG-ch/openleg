@@ -83,7 +83,10 @@ Bei der Ausstellung wählen Sie `actor_kind`: `human` (Mensch), `service`
 höchstens 200 Zeichen. Bestehende Credentials erhalten `service`.
 Agenten dürfen derzeit weder Gründungsanmeldungen noch Mitgliedermutationen
 einreichen, auch wenn das Credential die entsprechende Capability besitzt.
-Diese Anfragen erhalten die bestehende Antwort mit HTTP 403.
+Diese Anfragen erhalten HTTP 403 mit dem Code `capability_denied`.
+Vorschauen mit `dry_run=true` sind auch für Agenten erlaubt und schreiben keine
+Geschäftsdaten. Ungültige oder wiederholte `dry_run`-Werte sowie `dry_run` im
+JSON-Body erhalten zuerst HTTP 400 mit `invalid_request`.
 
 `created_by` bleibt die Gebäudeidentität für die Berechtigungsprüfung.
 API-Schreibvorgänge speichern zusätzlich einen unveränderlichen `actor`:

@@ -151,6 +151,66 @@ UNTRUSTED_BY_OPERATION = {
 AUTHENTICATION_FAILED = -32011
 
 
+def preview_operations():
+    spec = yaml.safe_load(
+        (Path(__file__).parents[1] / "docs/openapi/operator-v1.yaml").read_text()
+    )
+    names = {
+        "submitFormation": (
+            "preview_formation_submission",
+            (
+                "Preview the current signed formation package. All documents must be fully signed. "
+                "Checks authorization and conflicts; does not submit or predict delivery."
+            ),
+        ),
+        "submitMembershipMutation": (
+            "preview_membership_mutation",
+            (
+                "Preview a membership mutation. Supply mutation_id, participant_id, mutation_type, "
+                "effective_date and source_agreement_id. change accepts only status, role, "
+                "access_roles in after; join and exit derive facts from the LEG record. "
+                "Does not submit or predict delivery."
+            ),
+        ),
+    }
+    result = {}
+    for path, methods in spec["paths"].items():
+        op = methods.get("post", {})
+        if op.get("operationId") not in names:
+            continue
+        name, description = names[op["operationId"]]
+        body = (
+            op.get("requestBody", {})
+            .get("content", {})
+            .get("application/json", {})
+            .get("schema", {})
+        )
+        parameters = [
+            spec["components"]["parameters"][p["$ref"].split("/")[-1]]
+            for p in op["parameters"]
+            if "$ref" in p
+        ]
+        schema = {
+            "type": "object",
+            "properties": {
+                **{p["name"]: p["schema"] for p in parameters},
+                **body.get("properties", {}),
+            },
+            "required": [p["name"] for p in parameters if p.get("required")]
+            + body.get("required", []),
+            "additionalProperties": False,
+        }
+        # Keep conditional body rules, such as a change needing a non-empty
+        # after, so such calls fail locally before using request budget.
+        if "allOf" in body:
+            schema["allOf"] = body["allOf"]
+        result[name] = (path, op["x-openleg-capability"], schema, description)
+    return {
+        name: result[name]
+        for name in ("preview_formation_submission", "preview_membership_mutation")
+    }
+
+
 def create_app():
     if os.environ.get("OPENLEG_MCP_ENABLED", "false") != "true":
         raise RuntimeError("MCP sidecar is disabled")
@@ -171,6 +231,7 @@ def create_app():
     ):
         raise ValueError("Operator origin must contain only scheme, host and port")
     server = Server("openleg-mcp")
+    previews = preview_operations()
 
     @server.list_tools()
     async def list_tools():
@@ -189,6 +250,22 @@ def create_app():
                 },
             )
             for name, op in reads.items()
+        ] + [
+            types.Tool(
+                name=name,
+                description=description,
+                inputSchema=input_schema,
+                annotations=types.ToolAnnotations(
+                    readOnlyHint=True, destructiveHint=False, idempotentHint=True
+                ),
+                _meta={"x-openleg-capability": required_capability},
+            )
+            for name, (
+                _,
+                required_capability,
+                input_schema,
+                description,
+            ) in previews.items()
         ]
 
     error_schema = yaml.safe_load(
@@ -208,14 +285,16 @@ def create_app():
     @server.call_tool(validate_input=False)
     async def call_tool(name, arguments):
         # Do not echo SDK validation exceptions: they contain caller input.
-        if name not in reads or not Draft202012Validator(
-            reads[name]["schema"]
+        preview = previews.get(name)
+        op = reads.get(name)
+        if (op is None and preview is None) or not Draft202012Validator(
+            preview[2] if preview else op["schema"]
         ).is_valid(arguments):
             return error("invalid_arguments")
-        op = reads[name]
+        input_schema = preview[2] if preview else op["schema"]
         arguments = {
             key: int(value)
-            if op["schema"]["properties"][key].get("type") == "integer"
+            if input_schema["properties"][key].get("type") == "integer"
             and isinstance(value, float)
             else value
             for key, value in arguments.items()
@@ -231,11 +310,23 @@ def create_app():
             async with httpx.AsyncClient(
                 follow_redirects=False, trust_env=False, timeout=10
             ) as client:
-                response = await client.get(
-                    origin + op["path"].format(community_id=community),
-                    params={k: v for k, v in arguments.items() if k != "community_id"},
-                    headers={"Authorization": authorization},
-                )
+                if preview:
+                    response = await client.post(
+                        origin + preview[0].format(community_id=community),
+                        params={"dry_run": "true"},
+                        json={
+                            k: v for k, v in arguments.items() if k != "community_id"
+                        },
+                        headers={"Authorization": authorization},
+                    )
+                else:
+                    response = await client.get(
+                        origin + op["path"].format(community_id=community),
+                        params={
+                            k: v for k, v in arguments.items() if k != "community_id"
+                        },
+                        headers={"Authorization": authorization},
+                    )
             if response.status_code == 401:
                 return error("invalid_credential")
             if response.status_code != 200:
@@ -266,16 +357,22 @@ def create_app():
                     text={403: "forbidden"}.get(response.status_code),
                 )
             body = response.json()
-            result = {key: body[key] for key in op["result_keys"]}
-            if not all(
-                isinstance(result[key], kinds)
-                for key, kinds in op["result_types"].items()
-            ) or not all(
-                isinstance(item, dict)
-                for key in op["object_lists"]
-                for item in result[key]
-            ):
-                raise ValueError("Malformed operator page")
+            if preview:
+                result = {
+                    key: body[key]
+                    for key in ("intended_action", "payload_fingerprint", "recipient")
+                }
+            else:
+                result = {key: body[key] for key in op["result_keys"]}
+                if not all(
+                    isinstance(result[key], kinds)
+                    for key, kinds in op["result_types"].items()
+                ) or not all(
+                    isinstance(item, dict)
+                    for key in op["object_lists"]
+                    for item in result[key]
+                ):
+                    raise ValueError("Malformed operator page")
             if re.search(r"olk_[A-Za-z0-9_-]+", json.dumps(result)):
                 return error("operator_error")
             untrusted = []
@@ -284,7 +381,7 @@ def create_app():
                     continue
                 for i, item in enumerate(value):
                     for field in UNTRUSTED_FIELDS + UNTRUSTED_BY_OPERATION.get(
-                        op["operationId"], ()
+                        op["operationId"] if op else None, ()
                     ):
                         if isinstance(item, dict) and item.get(field) is not None:
                             untrusted.append(f"/{key}/{i}/{field}")

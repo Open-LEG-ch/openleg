@@ -172,18 +172,35 @@ def formation_status(community_id):
     )
 
 
+def _dry_run_option():
+    """Accept only one exact query boolean; never silently submit a body option."""
+    values = request.args.getlist("dry_run")
+    payload = request.get_json(silent=True)
+    if (
+        len(values) > 1
+        or (values and values[0] not in {"true", "false"})
+        or (isinstance(payload, dict) and "dry_run" in payload)
+    ):
+        return None
+    return values[0] if values else "false"
+
+
 @operator_api_bp.post(
     "/api/operator/v1/communities/<community_id>/formation/submissions"
 )
 @require_operator("formation.mutate")
 def submit_formation(community_id):
-    if g.operator_client.get("actor_kind") == "agent":
+    dry_run = _dry_run_option()
+    if dry_run is None:
+        return _error("Invalid dry_run option", 400)
+    if dry_run != "true" and g.operator_client.get("actor_kind") == "agent":
         return _error("Formation submission denied", 403)
     try:
         outcome = vnb_exchange.submit_formation(
             vnb_exchange.FormationSubmission(
                 community_id, g.operator_client["created_by"]
-            )
+            ),
+            **({"dry_run": True} if dry_run == "true" else {}),
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return _error("Formation submission denied", 403)
@@ -192,6 +209,8 @@ def submit_formation(community_id):
         return _error("Formation submission invalid or conflicting", 409, exc.reason)
     except db.VnbExchangeStoreError:
         return _error("Formation submission unavailable", 503)
+    if dry_run == "true":
+        return jsonify(schema_version=API_SCHEMA_VERSION, **outcome.__dict__)
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
         state=outcome.state,
@@ -216,7 +235,10 @@ def membership_mutations(community_id):
 )
 @require_operator("membership.mutate")
 def submit_membership_mutation(community_id):
-    if g.operator_client.get("actor_kind") == "agent":
+    dry_run = _dry_run_option()
+    if dry_run is None:
+        return _error("Invalid dry_run option", 400)
+    if dry_run != "true" and g.operator_client.get("actor_kind") == "agent":
         return _error("Membership mutation denied", 403)
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
@@ -232,7 +254,8 @@ def submit_membership_mutation(community_id):
                 str(payload.get("effective_date", "")),
                 str(payload.get("source_agreement_id", "")),
                 payload.get("after") if isinstance(payload.get("after"), dict) else {},
-            )
+            ),
+            **({"dry_run": True} if dry_run == "true" else {}),
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return _error("Membership mutation denied", 403)
@@ -249,6 +272,8 @@ def submit_membership_mutation(community_id):
         )
     except db.VnbExchangeStoreError:
         return _error("Membership mutation unavailable", 503)
+    if dry_run == "true":
+        return jsonify(schema_version=API_SCHEMA_VERSION, **outcome.__dict__)
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
         state=outcome.state,
