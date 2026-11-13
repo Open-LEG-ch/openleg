@@ -538,6 +538,7 @@ from store.verein_payments import prepare as prepare_verein_recipient  # noqa: F
 from store.verein_payments import review as get_verein_recipient_review  # noqa: F401
 from store.verein_payments import withdraw as withdraw_verein_recipient  # noqa: F401
 
+OAuthAdminLookupUnavailable = _oauth.AdminLookupUnavailable
 save_oauth_code = _oauth.save_code
 redeem_oauth_code = _oauth.redeem
 introspect_oauth_token = _oauth.introspect

@@ -824,7 +824,7 @@ msgstr ""
 msgid "Abrechnungen"
 msgstr ""
 
-#: oauth_server.py:279
+#: oauth_server.py:288
 msgid "Abrechnungen lesen"
 msgstr ""
 
@@ -7409,11 +7409,11 @@ msgstr ""
 msgid "Gründungsanmeldung"
 msgstr ""
 
-#: oauth_server.py:274
+#: oauth_server.py:283
 msgid "Gründungsanmeldungen einreichen"
 msgstr ""
 
-#: oauth_server.py:273
+#: oauth_server.py:282
 msgid "Gründungsanmeldungen lesen"
 msgstr ""
 
@@ -9955,11 +9955,11 @@ msgstr ""
 msgid "Messdaten, Tarifversionen, Rechnungsprüfung und die Voraussetzungen für den Betrieb."
 msgstr ""
 
-#: oauth_server.py:277
+#: oauth_server.py:286
 msgid "Messdatenläufe lesen"
 msgstr ""
 
-#: oauth_server.py:278
+#: oauth_server.py:287
 msgid "Messdatenläufe wiederholen"
 msgstr ""
 
@@ -10152,11 +10152,11 @@ msgstr ""
 msgid "Mitgliedermutation"
 msgstr ""
 
-#: oauth_server.py:276
+#: oauth_server.py:285
 msgid "Mitgliedermutationen einreichen"
 msgstr ""
 
-#: oauth_server.py:275
+#: oauth_server.py:284
 msgid "Mitgliedermutationen lesen"
 msgstr ""
 
@@ -12395,11 +12395,11 @@ msgstr ""
 msgid "Rechnungen verwalten"
 msgstr ""
 
-#: oauth_server.py:281
+#: oauth_server.py:290
 msgid "Rechnungsanfragen beantworten"
 msgstr ""
 
-#: oauth_server.py:280
+#: oauth_server.py:289
 msgid "Rechnungsanfragen lesen"
 msgstr ""
 
@@ -15557,11 +15557,11 @@ msgstr ""
 msgid "Zahlungsabgleich prüfen"
 msgstr ""
 
-#: oauth_server.py:283
+#: oauth_server.py:292
 msgid "Zahlungsabgleiche bestätigen"
 msgstr ""
 
-#: oauth_server.py:282
+#: oauth_server.py:291
 msgid "Zahlungsabgleiche lesen"
 msgstr ""
 

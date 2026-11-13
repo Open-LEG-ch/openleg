@@ -112,28 +112,37 @@ def scopes(value):
 @oauth_bp.route("/oauth/authorize", methods=["GET", "POST"])
 def authorize():
     p = request.args if request.method == "GET" else request.form
-    if request.method == "POST" and set(p) - PROTOCOL_FIELDS - CONSENT_FIELDS:
-        return invalid()
     if any(len(p.getlist(k)) != 1 for k in p if k != "capabilities"):
         return invalid()
-    if p.get("resource") != current_app.config["OAUTH_RESOURCE"]:
-        return invalid("invalid_target")
     client = current_app.config.get("OAUTH_CLIENTS", {}).get(p.get("client_id"))
     if not client or p.get("redirect_uri") not in client["redirect_uris"]:
         return invalid()
-    if (
-        p.get("response_type") != "code"
-        or p.get("code_challenge_method") != "S256"
-        or not re.fullmatch(r"[A-Za-z0-9_-]{43}", p.get("code_challenge", ""))
+
+    def callback(**query):
+        if "state" in p:
+            query["state"] = p["state"]
+        # Redirect only to the registered URI that the request matched exactly.
+        registered = client["redirect_uris"]
+        uri = registered[registered.index(p["redirect_uri"])]
+        return redirect(uri + ("&" if "?" in uri else "?") + urlencode(query))
+
+    if request.method == "POST" and set(p) - PROTOCOL_FIELDS - CONSENT_FIELDS:
+        return callback(error="invalid_request")
+    if p.get("resource") != current_app.config["OAUTH_RESOURCE"]:
+        return callback(error="invalid_target")
+    if p.get("response_type") != "code":
+        return callback(error="unsupported_response_type")
+    if p.get("code_challenge_method") != "S256" or not re.fullmatch(
+        r"[A-Za-z0-9_-]{43}", p.get("code_challenge", "")
     ):
-        return invalid()
+        return callback(error="invalid_request")
     try:
         community, caps = scopes(p.get("scope", ""))
     except ValueError:
-        return invalid("invalid_scope")
+        return callback(error="invalid_scope")
     building = session.get("dashboard_building_id")
     if not building:
-        return invalid("access_denied", 403)
+        return callback(error="access_denied")
     communities = [
         row
         for row in formation_wizard.get_user_communities(building)
@@ -143,14 +152,18 @@ def authorize():
     if not communities or (
         chosen and chosen not in {r["community_id"] for r in communities}
     ):
-        return invalid("access_denied", 403)
+        return callback(error="access_denied")
     if request.method == "POST":
+        if not _require_csrf():
+            return callback(error="access_denied")
+        if p.get("decision") != "approve":
+            return callback(error="access_denied")
         community = chosen
         if not community:
-            return invalid("invalid_scope")
+            return callback(error="invalid_scope")
         selected = p.getlist("capabilities")
         if not selected or not set(selected) <= set(caps):
-            return invalid("invalid_scope")
+            return callback(error="invalid_scope")
         caps = list(dict.fromkeys(selected))
     if request.method == "GET":
         session.setdefault("dashboard_csrf_token", secrets.token_urlsafe(32))
@@ -165,37 +178,28 @@ def authorize():
             _=_,
             private_page=True,
         )
-    if not _require_csrf():
-        return invalid("access_denied", 403)
-    query = {"state": p["state"]} if "state" in p else {}
-    if p.get("decision") != "approve":
-        query["error"] = "access_denied"
-    else:
-        code = "olc_" + secrets.token_urlsafe(32)
-        payload = {
-            k: p[k]
-            for k in (
-                "client_id",
-                "redirect_uri",
-                "code_challenge",
-                "resource",
-                "scope",
-            )
-        }
-        payload["scope"] = " ".join(["community:" + community, *caps])
-        payload.update(
-            community_id=community,
-            capabilities=caps,
-            building_id=building,
-            name=client["name"],
-            issuer=current_app.config["OAUTH_ISSUER"],
+    code = "olc_" + secrets.token_urlsafe(32)
+    payload = {
+        k: p[k]
+        for k in (
+            "client_id",
+            "redirect_uri",
+            "code_challenge",
+            "resource",
+            "scope",
         )
-        db.save_oauth_code(_token_hash(code), payload)
-        query["code"] = code
-    # Redirect only to the registered URI that the request matched exactly.
-    registered = client["redirect_uris"]
-    uri = registered[registered.index(p["redirect_uri"])]
-    return redirect(uri + ("&" if "?" in uri else "?") + urlencode(query))
+    }
+    payload["scope"] = " ".join(["community:" + community, *caps])
+    payload.update(
+        community_id=community,
+        capabilities=caps,
+        building_id=building,
+        name=client["name"],
+        issuer=current_app.config["OAUTH_ISSUER"],
+    )
+    db.save_oauth_code(_token_hash(code), payload)
+
+    return callback(code=code)
 
 
 @oauth_bp.post("/oauth/token")
@@ -233,6 +237,8 @@ def token():
             _token_hash(access),
             _token_hash(downstream),
         )
+    except db.OAuthAdminLookupUnavailable:
+        return invalid("temporarily_unavailable", 503)
     except db.OperatorCredentialLimitReached:
         return jsonify(
             error="invalid_grant", error_description="Credential limit reached"
@@ -251,7 +257,10 @@ def introspect():
         request.headers.get("Authorization", ""), "Bearer " + secret
     ):
         return invalid("invalid_client", 401)
-    row = db.introspect_oauth_token(_token_hash(request.form.get("token", "")))
+    try:
+        row = db.introspect_oauth_token(_token_hash(request.form.get("token", "")))
+    except db.OAuthAdminLookupUnavailable:
+        return invalid("temporarily_unavailable", 503)
     if not row:
         return jsonify(active=False)
     downstream = downstream_token(request.form.get("token", ""))
@@ -328,7 +337,7 @@ def init_oauth(app):
     ):
         raise ValueError("OAuth downstream key requires independent random 32-byte hex")
     for client in app.config["OAUTH_CLIENTS"].values():
-        if not isinstance(client["name"], str) or not 1 <= len(client["name"]) <= 200:
+        if not isinstance(client["name"], str) or not 1 <= len(client["name"]) <= 128:
             raise ValueError("OAuth client name is required")
         for uri in client["redirect_uris"]:
             u = urlsplit(uri)

@@ -886,6 +886,7 @@ def create_app():
                                 for item in requests
                             )
                 identity = None
+                unavailable = False
                 if re.fullmatch(r"Bearer ola_[A-Za-z0-9_-]+", authorization):
                     try:
                         async with httpx.AsyncClient(
@@ -900,6 +901,8 @@ def create_app():
                             )
                         if result.status_code == 200:
                             candidate = result.json()
+                            if not isinstance(candidate, dict):
+                                raise ValueError("Malformed introspection body")
                             words = candidate.get("scope", "").split()
                             community = candidate.get("community_id")
                             if (
@@ -919,8 +922,18 @@ def create_app():
                                 )
                             ):
                                 identity = candidate
-                    except (httpx.HTTPError, ValueError, TypeError, AttributeError):
+                        else:
+                            unavailable = True
+                    except (httpx.HTTPError, ValueError):
+                        unavailable = True
+                    except (TypeError, AttributeError):
                         pass
+                if unavailable:
+                    return await JSONResponse(
+                        {"error": "temporarily_unavailable"},
+                        status_code=503,
+                        headers={"Retry-After": "5", "Cache-Control": "no-store"},
+                    )(scope, receive, send)
                 if identity is None and (
                     "authorization" in headers or anonymous_protected
                 ):

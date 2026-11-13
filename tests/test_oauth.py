@@ -265,6 +265,10 @@ def test_oauth_anonymous_public_and_protected_requests(monkeypatch):
 
     upstream = Flask(__name__)
 
+    @upstream.post("/oauth/introspect")
+    def introspect():
+        return jsonify(active=False)
+
     @upstream.get("/api/v1/search")
     def search():
         return jsonify({"items": ["public result"]})
@@ -486,3 +490,73 @@ def test_oauth_all_operator_capabilities_and_body_replay(monkeypatch):
                 assert calls == ["Bearer olk_separate"]
 
         asyncio.run(check())
+
+
+def test_sidecar_reports_introspection_unavailable(monkeypatch):
+    import asyncio
+
+    import httpx
+
+    from mcp_sidecar.server import create_app
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_OAUTH_ISSUER", "https://auth.example")
+    monkeypatch.setenv("OPENLEG_MCP_RESOURCE", "https://mcp.example/mcp")
+    monkeypatch.setenv("OPENLEG_OAUTH_INTROSPECTION_SECRET", "s" * 64)
+    app = create_app()
+    result = None
+
+    async def upstream(self, request):
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", upstream)
+
+    async def check():
+        nonlocal result
+        async with (
+            app.router.lifespan_context(app),
+            httpx.AsyncClient(
+                transport=httpx.ASGITransport(app), base_url="http://localhost"
+            ) as client,
+        ):
+            for result in (
+                httpx.ConnectError("offline"),
+                httpx.Response(503, json={"error": "temporarily_unavailable"}),
+                httpx.Response(200, text="not JSON"),
+                httpx.Response(200, json=[]),
+            ):
+                response = await client.post(
+                    "/mcp", headers={"Authorization": "Bearer ola_access"}
+                )
+                assert response.status_code == 503
+                assert response.json() == {"error": "temporarily_unavailable"}
+                assert response.headers["retry-after"] == "5"
+                assert response.headers["cache-control"] == "no-store"
+                assert "www-authenticate" not in response.headers
+
+    asyncio.run(check())
+
+
+def test_client_name_matches_storage_limit():
+    import pytest
+
+    from oauth_server import init_oauth
+
+    def configured(name):
+        app = Flask(__name__)
+        app.config.update(
+            OAUTH_ISSUER="https://auth.example",
+            OAUTH_RESOURCE="https://mcp.example/mcp",
+            OAUTH_DOWNSTREAM_KEY="0123456789abcdef" * 4,  # gitleaks:allow
+            OAUTH_INTROSPECTION_SECRET="s" * 64,
+            OAUTH_CLIENTS={
+                "host": {"name": name, "redirect_uris": ["https://host.example/cb"]}
+            },
+        )
+        return app
+
+    init_oauth(configured("n" * 128))
+    with pytest.raises(ValueError, match="client name"):
+        init_oauth(configured("n" * 129))

@@ -3,6 +3,12 @@
 
 from psycopg2.extras import Json
 
+import community_access
+
+
+class AdminLookupUnavailable(RuntimeError):
+    """The approving administrator could not be checked."""
+
 
 def _get_connection():
     import database
@@ -28,6 +34,19 @@ def redeem(
     token_hash,
     downstream_hash,
 ):
+    # Release the read connection before checking membership. The community
+    # lookup must not need a second connection while the OAuth one is held.
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT payload FROM oauth_codes WHERE code_hash=%s
+            AND expires_at > CURRENT_TIMESTAMP
+            AND payload->>'client_id'=%s AND payload->>'redirect_uri'=%s
+            AND payload->>'code_challenge'=%s AND payload->>'resource'=%s""",
+            (code_hash, client_id, redirect_uri, challenge, resource),
+        )
+        row = cur.fetchone()
+    if not row or not approving_admin_valid(row["payload"]):
+        return None
     # The conditional DELETE and grant creation share one transaction.
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
@@ -42,8 +61,6 @@ def redeem(
         if not row:
             return None
         p = row["payload"]
-        if not approving_admin_valid(p):
-            return None
         # Each grant adds a live credential, so it obeys the per-community cap.
         # At the limit this raises and rolls back, leaving the code unused.
         from store.operator_api import (
@@ -86,16 +103,27 @@ def introspect(token_hash):
             (token_hash,),
         )
         row = cur.fetchone()
-        return dict(row) if row and approving_admin_valid(row["payload"]) else None
+    return dict(row) if row and approving_admin_valid(row["payload"]) else None
 
 
 def approving_admin_valid(payload):
-    from operator_api import _admin_for
-
+    # Community presentation lookups swallow DB errors as None. Read the own
+    # membership directly so missing membership and unavailable storage differ.
     try:
-        return _admin_for(payload["community_id"], payload["building_id"])
-    except Exception:
-        return False
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """SELECT role, access_roles, status FROM community_members
+                WHERE community_id=%s AND building_id=%s""",
+                (payload["community_id"], payload["building_id"]),
+            )
+            member = cur.fetchone()
+    except Exception as exc:
+        raise AdminLookupUnavailable("Administrator lookup unavailable") from exc
+    return bool(
+        member
+        and community_access.is_administrator(member)
+        and member["status"] == "confirmed"
+    )
 
 
 def credential_grant_valid(client_id):
@@ -106,4 +134,7 @@ def credential_grant_valid(client_id):
             (client_id,),
         )
         row = cur.fetchone()
-    return row is None or (row["valid"] and approving_admin_valid(row["payload"]))
+    try:
+        return row is None or (row["valid"] and approving_admin_valid(row["payload"]))
+    except AdminLookupUnavailable:
+        return False

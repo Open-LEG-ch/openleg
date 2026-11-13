@@ -164,30 +164,58 @@ def test_exchange_rejects_mismatch(oauth, change):
         {"scope": "community:contract-leg community:other billing.read"},
         {"scope": "community:contract-leg credential.create"},
         {"code_challenge_method": "plain"},
+        {"code_challenge": ""},
+        {"response_type": "token"},
+        {"client_id": "unknown"},
         {"resource": "https://other.example/mcp"},
     ],
 )
 def test_authorization_rejects_invalid_request(oauth, change):
     r = oauth.client.get("/oauth/authorize", query_string=authorize(oauth, **change))
-    assert r.status_code == 400
-    assert "Location" not in r.headers
+    if "redirect_uri" in change or "client_id" in change:
+        assert r.status_code == 400
+        assert r.json == {"error": "invalid_request"}
+        assert "Location" not in r.headers
+    else:
+        error = (
+            "invalid_target"
+            if "resource" in change
+            else "invalid_scope"
+            if "scope" in change
+            else "unsupported_response_type"
+            if "response_type" in change
+            else "invalid_request"
+        )
+        assert r.status_code == 302
+        assert r.location.startswith("https://host.example/callback?")
+        assert parse_qs(urlsplit(r.location).query) == {
+            "error": [error],
+            "state": ["state"],
+        }
 
 
 @pytest.mark.integration
 def test_admin_and_csrf_required(oauth):
     data = authorize(oauth)
-    assert (
-        oauth.client.post(
-            "/oauth/authorize",
-            data={**data, "decision": "approve", "capabilities": "billing.read"},
-        ).status_code
-        == 403
+    response = oauth.client.post(
+        "/oauth/authorize",
+        data={**data, "decision": "approve", "capabilities": "billing.read"},
     )
+    assert response.status_code == 302
+    assert parse_qs(urlsplit(response.location).query) == {
+        "error": ["access_denied"],
+        "state": ["state"],
+    }
     with oauth.db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             "UPDATE community_members SET status='pending' WHERE community_id='contract-leg'"
         )
-    assert oauth.client.get("/oauth/authorize", query_string=data).status_code == 403
+    response = oauth.client.get("/oauth/authorize", query_string=data)
+    assert response.status_code == 302
+    assert parse_qs(urlsplit(response.location).query) == {
+        "error": ["access_denied"],
+        "state": ["state"],
+    }
 
 
 @pytest.mark.integration
@@ -305,7 +333,11 @@ def test_expired_code_and_foreign_administrator(oauth):
         "/oauth/authorize",
         query_string=authorize(oauth, scope="community:other billing.read"),
     )
-    assert r.status_code == 403
+    assert r.status_code == 302
+    assert parse_qs(urlsplit(r.location).query) == {
+        "error": ["access_denied"],
+        "state": ["state"],
+    }
 
 
 @pytest.mark.integration
@@ -630,7 +662,7 @@ def test_sdk_discovery_authorization_and_tool(oauth, monkeypatch):
 @pytest.mark.integration
 @pytest.mark.parametrize("stage", ["exchange", "introspection", "operator"])
 def test_grant_fails_closed_when_community_unavailable(oauth, monkeypatch, stage):
-    import formation_wizard
+    from contextlib import contextmanager
 
     code = grant(oauth)
     if stage != "exchange":
@@ -641,25 +673,49 @@ def test_grant_fails_closed_when_community_unavailable(oauth, monkeypatch, stage
             headers={"Authorization": "Bearer " + "s" * 64},
         ).json
 
-    def unavailable(*args):
-        raise RuntimeError("community unavailable")
+    original = oauth.db.get_connection
+    calls = 0
 
-    monkeypatch.setattr(formation_wizard, "get_community_status", unavailable)
-    if stage == "exchange":
-        assert exchange(oauth, code).json == {"error": "invalid_grant"}
-    elif stage == "introspection":
-        assert oauth.client.post(
-            "/oauth/introspect",
-            data={"token": token},
-            headers={"Authorization": "Bearer " + "s" * 64},
-        ).json == {"active": False}
-    else:
-        assert (
-            oauth.client.get(
+    @contextmanager
+    def unavailable():
+        nonlocal calls
+        calls += 1
+        if calls == (3 if stage == "operator" else 2):
+            raise RuntimeError("community lookup unavailable")
+        with original() as conn:
+            yield conn
+
+    with monkeypatch.context() as patch:
+        patch.setattr(oauth.db, "get_connection", unavailable)
+        if stage == "exchange":
+            response = exchange(oauth, code)
+        elif stage == "introspection":
+            response = oauth.client.post(
+                "/oauth/introspect",
+                data={"token": token},
+                headers={"Authorization": "Bearer " + "s" * 64},
+            )
+        else:
+            response = oauth.client.get(
                 "/api/operator/v1/communities/contract-leg/billing/periods",
                 headers={"Authorization": "Bearer " + info["downstream_token"]},
-            ).status_code
-            == 401
+            )
+        if stage == "operator":
+            assert response.status_code == 401
+        else:
+            assert response.status_code == 503
+            assert response.json == {"error": "temporarily_unavailable"}
+    if stage == "exchange":
+        # The failed lookup must not consume the single-use code.
+        assert exchange(oauth, code).status_code == 200
+    elif stage == "introspection":
+        assert (
+            oauth.client.post(
+                "/oauth/introspect",
+                data={"token": token},
+                headers={"Authorization": "Bearer " + "s" * 64},
+            ).json["active"]
+            is True
         )
 
 
@@ -729,8 +785,12 @@ def test_consent_rejects_invalid_selection(oauth, changes):
         **changes,
     }
     response = oauth.client.post("/oauth/authorize", data=data)
-    assert response.status_code in (400, 403)
-    assert "Location" not in response.headers
+    assert response.status_code == 302
+    assert response.location.startswith("https://host.example/callback?")
+    assert parse_qs(urlsplit(response.location).query) == {
+        "error": ["access_denied" if "community_id" in changes else "invalid_scope"],
+        "state": ["state"],
+    }
 
 
 @pytest.mark.integration
@@ -815,7 +875,11 @@ def test_consent_post_rejects_unknown_fields(oauth):
             "unexpected": "value",
         },
     )
-    assert response.status_code == 400
+    assert response.status_code == 302
+    assert parse_qs(urlsplit(response.location).query) == {
+        "error": ["invalid_request"],
+        "state": ["state"],
+    }
 
 
 @pytest.mark.integration
@@ -824,7 +888,11 @@ def test_consent_requires_explicit_capability_selection(oauth):
         "/oauth/authorize",
         data={**authorize(oauth), "csrf_token": "csrf", "decision": "approve"},
     )
-    assert response.status_code == 400
+    assert response.status_code == 302
+    assert parse_qs(urlsplit(response.location).query) == {
+        "error": ["invalid_scope"],
+        "state": ["state"],
+    }
 
 
 @pytest.mark.integration
@@ -856,3 +924,78 @@ def test_exchange_respects_the_credential_limit(oauth):
             "WHERE id=(SELECT id FROM oauth_grants ORDER BY created_at LIMIT 1)"
         )
     assert exchange(oauth, code).status_code == 200
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("csrf", ["csrf", "wrong"])
+def test_deny_without_capabilities_returns_access_denied(oauth, csrf):
+    response = oauth.client.post(
+        "/oauth/authorize",
+        data={**authorize(oauth), "csrf_token": csrf, "decision": "deny"},
+    )
+    assert response.status_code == 302
+    assert parse_qs(urlsplit(response.location).query) == {
+        "error": ["access_denied"],
+        "state": ["state"],
+    }
+
+
+@pytest.mark.integration
+def test_oauth_lookup_works_with_one_available_pool_connection(oauth):
+    code = grant(oauth)
+    pool = oauth.db._connection_pool
+    held = [pool.getconn() for _ in range(5)]
+    try:
+        response = exchange(oauth, code)
+        assert response.status_code == 200
+        response = oauth.client.post(
+            "/oauth/introspect",
+            data={"token": response.json["access_token"]},
+            headers={"Authorization": "Bearer " + "s" * 64},
+        )
+        assert response.status_code == 200
+        assert response.json["active"] is True
+    finally:
+        for conn in held:
+            pool.putconn(conn)
+
+
+@pytest.mark.integration
+def test_authorization_duplicates_do_not_redirect(oauth):
+    from werkzeug.datastructures import MultiDict
+
+    data = MultiDict(authorize(oauth))
+    data.add("state", "duplicate")
+    response = oauth.client.get("/oauth/authorize", query_string=data)
+    assert response.status_code == 400
+    assert response.json == {"error": "invalid_request"}
+    assert "Location" not in response.headers
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("with_state", [True, False])
+def test_authorization_error_preserves_registered_query(oauth, with_state):
+    uri = "https://host.example/callback?registered=yes"
+    oauth.app.config["OAUTH_CLIENTS"]["host"]["redirect_uris"] = [uri]
+    data = authorize(oauth, redirect_uri=uri, response_type="token")
+    if not with_state:
+        del data["state"]
+    response = oauth.client.get("/oauth/authorize", query_string=data)
+    assert response.status_code == 302
+    expected = {"registered": ["yes"], "error": ["unsupported_response_type"]}
+    if with_state:
+        expected["state"] = ["state"]
+    assert parse_qs(urlsplit(response.location).query) == expected
+
+
+@pytest.mark.integration
+def test_csrf_precedes_approval_selection_validation(oauth):
+    response = oauth.client.post(
+        "/oauth/authorize",
+        data={**authorize(oauth), "csrf_token": "wrong", "decision": "approve"},
+    )
+    assert response.status_code == 302
+    assert parse_qs(urlsplit(response.location).query) == {
+        "error": ["access_denied"],
+        "state": ["state"],
+    }
