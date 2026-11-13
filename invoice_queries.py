@@ -4,6 +4,13 @@
 import os
 from datetime import UTC, datetime, timedelta
 
+from operator_errors import ErrorCode
+
+
+class InvoiceCaseInvalid(ValueError):
+    reason = ErrorCode.INVALID_CASE
+
+
 CATEGORIES = frozenset({"amount", "metering", "payment", "other"})
 STATUSES = frozenset({"open", "acknowledged", "resolved"})
 TRANSITIONS = {
@@ -32,17 +39,21 @@ def validate_open(category: str, message: str) -> tuple[str, str]:
     if category not in CATEGORIES:
         raise ValueError("Bitte wählen Sie einen gültigen Grund.")
     if not message or len(message) > 4000:
-        raise ValueError("Die Nachricht muss zwischen 1 und 4000 Zeichen enthalten.")
+        raise InvoiceCaseInvalid(
+            "Die Nachricht muss zwischen 1 und 4000 Zeichen enthalten."
+        )
     return category, message
 
 
 def validate_message(message: str) -> str:
     message = (message or "").strip()
     if not message or len(message) > 4000:
-        raise ValueError("Die Nachricht muss zwischen 1 und 4000 Zeichen enthalten.")
+        raise InvoiceCaseInvalid(
+            "Die Nachricht muss zwischen 1 und 4000 Zeichen enthalten."
+        )
     return message
 
 
 def require_transition(current: str, target: str) -> None:
     if target not in STATUSES or target not in TRANSITIONS.get(current, frozenset()):
-        raise ValueError("Dieser Statuswechsel ist nicht erlaubt.")
+        raise InvoiceCaseInvalid("Dieser Statuswechsel ist nicht erlaubt.")

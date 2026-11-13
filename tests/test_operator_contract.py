@@ -53,8 +53,9 @@ def test_application_rate_limit_response_matches_contract(full_operator_app):
     response = client.get(path.format(community_id="x"))
     assert response.status_code == 429
     assert response.headers["Retry-After"] == "60"
-    assert response.get_json()["retry_after_seconds"] == 60
-    assert "schema_version" not in response.get_json()
+    # Operator routes answer the IP limit in the operator error envelope.
+    assert response.get_json()["code"] == "rate_limited"
+    assert response.get_json()["schema_version"] == "operator-api/1"
     validate_response(load_contract(), path, "get", response)
 
 

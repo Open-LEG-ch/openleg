@@ -11,6 +11,7 @@ from psycopg2.extras import Json
 
 import community_access
 import operator_actor
+from operator_errors import ErrorCode
 from store.operator_api import enqueue_event
 from translation_markers import gettext_noop as _N
 
@@ -26,9 +27,13 @@ if TYPE_CHECKING:
 class VnbExchangeStoreError(RuntimeError):
     """A VNB submission case could not be persisted."""
 
+    reason = ErrorCode.UNAVAILABLE
+
 
 class VnbSubmissionConflict(VnbExchangeStoreError):
     """Another active submission prevents this formation attempt."""
+
+    reason = ErrorCode.CONFLICT
 
 
 _MUTATION_SELECT = """

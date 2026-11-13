@@ -25,6 +25,7 @@ import formation_wizard
 import operator_actor
 import sdat_ingestion
 import vnb_exchange
+from operator_errors import ErrorCode
 
 API_SCHEMA_VERSION = "operator-api/1"
 EVENT_SCHEMA_VERSION = "operator-event/1"
@@ -90,8 +91,28 @@ def _json_default(value):
     raise TypeError
 
 
-def _error(message, status):
-    response = jsonify({"error": message, "schema_version": API_SCHEMA_VERSION})
+def _error(message, status, code=None, *, field=None):
+    code = (
+        code
+        or {
+            400: ErrorCode.INVALID_REQUEST,
+            401: ErrorCode.INVALID_CREDENTIAL,
+            403: ErrorCode.CAPABILITY_DENIED,
+            404: ErrorCode.NOT_FOUND,
+            409: ErrorCode.CONFLICT,
+            429: ErrorCode.RATE_LIMITED,
+            503: ErrorCode.UNAVAILABLE,
+        }[status]
+    )
+    body = {
+        "error": message,
+        "schema_version": API_SCHEMA_VERSION,
+        "code": code.value,
+        "retryable": status in (429, 503),
+    }
+    if field is not None:
+        body["field"] = field
+    response = jsonify(body)
     response.status_code = status
     response.headers.update(
         {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
@@ -105,7 +126,9 @@ def require_operator(capability):
         def wrapped(community_id, *args, **kwargs):
             header = request.headers.get("Authorization", "")
             if not header.startswith("Bearer "):
-                return _error("Authentication required", 401)
+                return _error(
+                    "Authentication required", 401, ErrorCode.AUTHENTICATION_REQUIRED
+                )
             client = db.get_operator_api_client_by_token_hash(
                 _token_hash(header.removeprefix("Bearer ").strip())
             )
@@ -164,9 +187,9 @@ def submit_formation(community_id):
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return _error("Formation submission denied", 403)
-    except (vnb_exchange.FormationSubmissionInvalid, db.VnbSubmissionConflict):
+    except (vnb_exchange.FormationSubmissionInvalid, db.VnbSubmissionConflict) as exc:
         # Domain messages stay internal; the public error vocabulary is fixed.
-        return _error("Formation submission invalid or conflicting", 409)
+        return _error("Formation submission invalid or conflicting", 409, exc.reason)
     except db.VnbExchangeStoreError:
         return _error("Formation submission unavailable", 503)
     return jsonify(
@@ -217,9 +240,13 @@ def submit_membership_mutation(community_id):
         vnb_exchange.ParticipantMutationInvalid,
         ValueError,
         db.VnbSubmissionConflict,
-    ):
+    ) as exc:
         # Domain messages stay internal; the public error vocabulary is fixed.
-        return _error("Membership mutation invalid or conflicting", 409)
+        return _error(
+            "Membership mutation invalid or conflicting",
+            409,
+            getattr(exc, "reason", ErrorCode.INVALID_MEMBERSHIP),
+        )
     except db.VnbExchangeStoreError:
         return _error("Membership mutation unavailable", 503)
     return jsonify(
@@ -248,7 +275,7 @@ def _page_args():
 def _page(read, community_id, safe):
     arguments = _page_args()
     if arguments is None:
-        return _error("Invalid pagination", 400)
+        return _error("Invalid pagination", 400, ErrorCode.INVALID_PAGINATION)
     rows, next_cursor = read(community_id, **arguments)
     return jsonify(
         schema_version=API_SCHEMA_VERSION,
@@ -380,12 +407,17 @@ def calculated_deliveries(community_id):
 def retry_metering_job(community_id, job_id):
     key = _idempotency_key()
     if not key:
-        return _error("Valid Idempotency-Key required", 400)
+        return _error(
+            "Valid Idempotency-Key required",
+            400,
+            ErrorCode.INVALID_IDEMPOTENCY_KEY,
+            field="Idempotency-Key",
+        )
     claim = db.claim_operator_ingestion_retry(community_id, job_id, key)
     if not claim:
         return _error("Resource not found or not eligible", 404)
     if claim.get("pending"):
-        return _error("Retry already in progress", 409)
+        return _error("Retry already in progress", 409, ErrorCode.RETRY_IN_PROGRESS)
     if claim.get("replay"):
         return jsonify(schema_version=API_SCHEMA_VERSION, **claim["replay"])
     schedule = claim["schedule"]
@@ -434,8 +466,15 @@ def _idempotency_key():
 def respond_invoice_case(community_id, case_id):
     key = _idempotency_key()
     if not key:
-        return _error("Valid Idempotency-Key required", 400)
-    payload = request.get_json(silent=True) or {}
+        return _error(
+            "Valid Idempotency-Key required",
+            400,
+            ErrorCode.INVALID_IDEMPOTENCY_KEY,
+            field="Idempotency-Key",
+        )
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _error("JSON object required", 400)
     try:
         result = db.respond_operator_invoice_case(
             case_id,
@@ -445,9 +484,13 @@ def respond_invoice_case(community_id, case_id):
             payload.get("status", ""),
             key,
         )
-    except ValueError:
+    except ValueError as exc:
         # Store validation messages stay internal; the API answer is fixed.
-        return _error("Invoice case update invalid", 409)
+        return _error(
+            "Invoice case update invalid",
+            409,
+            getattr(exc, "reason", ErrorCode.INVALID_CASE),
+        )
     return (
         jsonify(schema_version=API_SCHEMA_VERSION, **result)
         if result
@@ -462,10 +505,22 @@ def respond_invoice_case(community_id, case_id):
 def confirm_payment_match(community_id, entry_id):
     key = _idempotency_key()
     if not key:
-        return _error("Valid Idempotency-Key required", 400)
-    payload = request.get_json(silent=True) or {}
+        return _error(
+            "Valid Idempotency-Key required",
+            400,
+            ErrorCode.INVALID_IDEMPOTENCY_KEY,
+            field="Idempotency-Key",
+        )
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return _error("JSON object required", 400)
     if not isinstance(payload.get("invoice_id"), int):
-        return _error("Invalid payment confirmation", 400)
+        return _error(
+            "Invalid payment confirmation",
+            400,
+            ErrorCode.INVALID_PAYMENT,
+            field="invoice_id",
+        )
     try:
         result = db.confirm_operator_payment_match(
             entry_id,
@@ -474,9 +529,13 @@ def confirm_payment_match(community_id, entry_id):
             g.operator_client["created_by"],
             key,
         )
-    except (TypeError, ValueError):
+    except (TypeError, ValueError) as exc:
         # Store validation messages stay internal; the API answer is fixed.
-        return _error("Invalid payment confirmation", 409)
+        return _error(
+            "Invalid payment confirmation",
+            409,
+            getattr(exc, "reason", ErrorCode.INVALID_PAYMENT),
+        )
     return (
         jsonify(schema_version=API_SCHEMA_VERSION, **result)
         if result

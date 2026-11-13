@@ -466,3 +466,42 @@ def test_mutation_rejection_keeps_leg_facts_and_evidence():
     assert outcome.next_action == "review_rejection"
     assert stored["before"] == {"status": "confirmed"}
     assert stored["after"] == {"status": "exited"}
+
+
+def test_incomplete_membership_mutation_carries_a_typed_reason(monkeypatch):
+    from operator_errors import ErrorCode
+
+    monkeypatch.setattr(
+        vnb_exchange.db,
+        "fetch_community_with_members",
+        lambda cid: {
+            "community_id": cid,
+            "vnb_adapter_key": "manual-handover",
+            "members": [
+                {
+                    "building_id": "operator",
+                    "status": "confirmed",
+                    "access_roles": ["membership"],
+                },
+                {"building_id": "participant", "status": "invited", "role": "member"},
+            ],
+        },
+    )
+
+    with pytest.raises(ValueError) as failure:
+        vnb_exchange.submit_membership_mutation(
+            vnb_exchange.ParticipantMutationSubmission(
+                "mutation-1",
+                "community-1",
+                "participant",
+                "operator",
+                "join",
+                "2026-10-01",
+                "",
+                {},
+            ),
+            cases=MutationCases(),
+        )
+
+    assert failure.value.reason == ErrorCode.INVALID_MEMBERSHIP
+    assert str(failure.value) == "Participant mutation identity is incomplete"

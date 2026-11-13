@@ -160,6 +160,7 @@ also_copy = [
     "neighbor_view.py",
     "operator_actor.py",
     "operator_api.py",
+    "operator_errors.py",
     "payment_reconciliation.py",
     "pyproject.toml",
     "public_data.py",

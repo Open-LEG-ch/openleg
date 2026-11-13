@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from threading import Thread
 
 import pytest
+from mcp.shared.exceptions import McpError
 from werkzeug.serving import make_server
 
 from tests import operator_contract_helpers
@@ -83,9 +84,9 @@ def test_real_http_pagination_and_scope(operator_http, monkeypatch, caplog):
                 )
                 assert second.structuredContent["next_cursor"] is None
                 transport.headers.pop("Authorization")
-                missing = await sdk.call_tool("list_billing_periods", args)
-                assert missing.isError
-                assert missing.content[0].text == "unauthorized"
+                with pytest.raises(McpError) as failure:
+                    await sdk.call_tool("list_billing_periods", args)
+                assert failure.value.error.code == -32011
                 transport.headers.update(fixture.headers)
                 denied = await sdk.call_tool(
                     "list_billing_periods", {"community_id": "other-leg"}
@@ -93,9 +94,9 @@ def test_real_http_pagination_and_scope(operator_http, monkeypatch, caplog):
                 assert denied.isError
                 assert denied.content[0].text == "not_found"
                 async with session(app) as anonymous:
-                    missing = await anonymous.call_tool("list_billing_periods", args)
-                    assert missing.isError
-                    assert missing.content[0].text == "unauthorized"
+                    with pytest.raises(McpError) as failure:
+                        await anonymous.call_tool("list_billing_periods", args)
+                    assert failure.value.error.code == -32011
                 restricted, _ = fixture.credential_headers(["payments.read"])
                 async with session(app, restricted) as other:
                     denied = await other.call_tool("list_billing_periods", args)

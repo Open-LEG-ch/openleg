@@ -4,6 +4,8 @@
 import hashlib
 import json
 
+from operator_errors import IdempotencyConflict
+
 
 def _get_connection():
     import database
@@ -203,7 +205,9 @@ def _replay(cur, community_id, action, key, fingerprint):
     if not row:
         return None
     if row["request_hash"] != fingerprint:
-        raise ValueError("Idempotency-Key was already used for another request")
+        raise IdempotencyConflict(
+            "Idempotency-Key was already used for another request"
+        )
     response = row["response"]
     if response is None:
         return None

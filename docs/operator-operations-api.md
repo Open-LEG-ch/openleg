@@ -90,7 +90,10 @@ evidence, and events. Responses exclude package and acknowledgement bytes.
 
 There is deliberately no invoice update endpoint. Invoice totals and snapshots
 remain immutable, and payment confirmation uses the existing invoice lifecycle.
-Errors have `error` and `schema_version`; authentication, capability, scope,
+Errors retain generic `error` text and `schema_version`, and carry a closed-enum
+`code`, optional `field`, and boolean `retryable`. Domain exception messages stay
+internal. The enum in the OpenAPI contract is authoritative; clients must branch
+on codes, never on error text. Authentication, capability, scope,
 validation, conflict, and rate errors use 401, 403, 404, 400/409, and 429.
 
 Lifecycle events use `operator-event/1`. Webhook requests include
@@ -232,3 +235,18 @@ counts are structured domain data, not VNB instructions. Case messages,
 response evidence and package bytes are excluded by the operator projection.
 The summary copies no VNB response text: it uses formation state and the
 billing/case projections.
+
+## MCP error boundary
+
+Tool failures expose `code`, `field` (null when absent), and `retryable` in
+`structuredContent`. Only contract-declared codes and known field names pass
+through; upstream error text is discarded. HTTP 503 remains a retryable tool
+failure; a failed HTTP connection is a JSON-RPC internal error (-32603).
+
+Missing, malformed, or rejected bearer credentials produce a JSON-RPC
+authorization error (-32011, application-defined; chosen to avoid codes MCP SDKs already use, such as -32001 for a request timeout), with the stable reason in
+`error.data`. They are never sent as `CallToolResult`. The pinned MCP Python
+SDK catches exceptions inside its `call_tool` decorator, so the boundary promotes
+these failures to `McpError` outside that decorator. The SDK has no dedicated
+authorization exception for an upstream credential rejection. This development
+bearer flow does not implement the OAuth HTTP challenge planned in #838.

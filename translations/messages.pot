@@ -190,7 +190,7 @@ msgstr[1] ""
 msgid "%(platform_name)s · LEG für %(city_name)s"
 msgstr ""
 
-#: app.py:237
+#: app.py:243
 #, python-format
 msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr ""
@@ -957,11 +957,11 @@ msgstr ""
 msgid "Adresse ist zu kurz"
 msgstr ""
 
-#: app.py:567
+#: app.py:573
 msgid "Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: app.py:559
+#: app.py:565
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr ""
 
@@ -2251,7 +2251,7 @@ msgid ""
 "Die Bestätigung ist noch keine Aufnahme. Der Vorstand prüft den Antrag."
 msgstr ""
 
-#: app.py:242
+#: app.py:248
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre Interessenmeldung für eine Lokale Elektrizitätsgemeinschaft (LEG) in "
@@ -2282,7 +2282,7 @@ msgstr ""
 msgid "Bestätigen Sie den vollständigen Konten- und Anbieterumfang ohne fehlende Fremdwährungsbestände."
 msgstr ""
 
-#: app.py:797
+#: app.py:803
 #, python-format
 msgid ""
 "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen Gebietsanfrage bei OpenLEG "
@@ -2495,7 +2495,7 @@ msgstr ""
 msgid "Bewohner-Dashboard mit Bereitschaftsanzeige, Checkliste und Ersparnisrechner"
 msgstr ""
 
-#: billing_lifecycle.py:17 templates/sandbox/payments.html:52 templates/sandbox/payments.html:60
+#: billing_lifecycle.py:20 templates/sandbox/payments.html:52 templates/sandbox/payments.html:60
 #: templates/verein/dues.html:2
 msgid "Bezahlt"
 msgstr ""
@@ -3617,7 +3617,7 @@ msgid ""
 "anschliessend."
 msgstr ""
 
-#: app.py:871
+#: app.py:877
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -3798,7 +3798,7 @@ msgid ""
 "Verwenden Sie ausschliesslich Beispieldaten."
 msgstr ""
 
-#: store/formation_signatures.py:171 store/vnb_exchange.py:337
+#: store/formation_signatures.py:171 store/vnb_exchange.py:342
 msgid "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
 msgstr ""
 
@@ -4135,7 +4135,7 @@ msgstr ""
 msgid "Die Rechnung hat eine ungültige Zuordnung."
 msgstr ""
 
-#: billing_lifecycle.py:60
+#: billing_lifecycle.py:63
 msgid "Die Rechnung hat einen ungültigen Status."
 msgstr ""
 
@@ -4672,7 +4672,7 @@ msgid ""
 "neue Version vor, falls eine Korrektur nötig ist."
 msgstr ""
 
-#: billing_lifecycle.py:43
+#: billing_lifecycle.py:46
 msgid "Dieser Statuswechsel ist nicht zulässig."
 msgstr ""
 
@@ -5039,7 +5039,7 @@ msgid ""
 "erfolgreichem VNB-Abgleich."
 msgstr ""
 
-#: billing_lifecycle.py:45
+#: billing_lifecycle.py:48
 msgid "Ein Grund ist erforderlich."
 msgstr ""
 
@@ -5111,7 +5111,7 @@ msgid ""
 " trägt."
 msgstr ""
 
-#: billing_lifecycle.py:50 dashboard.py:645
+#: billing_lifecycle.py:53 dashboard.py:645
 msgid "Ein gültiges Zahlungsdatum ist erforderlich."
 msgstr ""
 
@@ -5271,7 +5271,7 @@ msgid ""
 "Messzeit. Die Summe schliesst Profile mit mehreren Quellen im gleichen Kanal aus."
 msgstr ""
 
-#: billing_lifecycle.py:47
+#: billing_lifecycle.py:50
 msgid "Eine Zahlungsreferenz ist erforderlich."
 msgstr ""
 
@@ -5976,7 +5976,7 @@ msgid ""
 "Versandproblem können Sie es erneut versuchen."
 msgstr ""
 
-#: app.py:814
+#: app.py:820
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr ""
 
@@ -6271,7 +6271,7 @@ msgstr ""
 msgid "Freigeben"
 msgstr ""
 
-#: billing_lifecycle.py:15 templates/verein/recipient_edit.html:9
+#: billing_lifecycle.py:18 templates/verein/recipient_edit.html:9
 msgid "Freigegeben"
 msgstr ""
 
@@ -6664,7 +6664,7 @@ msgstr ""
 msgid "Gebiet und Voraussetzungen prüfen"
 msgstr ""
 
-#: app.py:728
+#: app.py:734
 msgid "Gebäude nicht gefunden."
 msgstr ""
 
@@ -8590,7 +8590,7 @@ msgstr ""
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1113 store/vnb_exchange.py:370
+#: dashboard.py:1113 store/vnb_exchange.py:375
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
@@ -8618,7 +8618,7 @@ msgstr ""
 msgid "Keine Datei ausgewählt"
 msgstr ""
 
-#: app.py:544 app.py:596 app.py:649
+#: app.py:550 app.py:602 app.py:655
 msgid "Keine Daten empfangen."
 msgstr ""
 
@@ -8744,7 +8744,7 @@ msgstr ""
 msgid "Keine ausstehenden Einträge"
 msgstr ""
 
-#: app.py:574
+#: app.py:580
 msgid "Keine direkten Partner gefunden."
 msgstr ""
 
@@ -8959,7 +8959,7 @@ msgstr ""
 msgid "Korrigieren Sie die markierten Angaben. Ihre Eingaben bleiben erhalten."
 msgstr ""
 
-#: billing_lifecycle.py:19
+#: billing_lifecycle.py:22
 msgid "Korrigiert"
 msgstr ""
 
@@ -11416,7 +11416,7 @@ msgstr ""
 msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr ""
 
-#: app.py:795
+#: app.py:801
 msgid "OpenLEG: Löschung bestätigen"
 msgstr ""
 
@@ -11519,7 +11519,7 @@ msgstr ""
 msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr ""
 
-#: app.py:581
+#: app.py:587
 msgid "Partner gefunden!"
 msgstr ""
 
@@ -11527,7 +11527,7 @@ msgstr ""
 msgid "Passwort"
 msgstr ""
 
-#: app.py:1074
+#: app.py:1080
 msgid "Period not found"
 msgstr ""
 
@@ -12837,11 +12837,11 @@ msgid ""
 "laufende Kosten verursachen."
 msgstr ""
 
-#: app.py:738 app.py:745
+#: app.py:744 app.py:751
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr ""
 
-#: app.py:589
+#: app.py:595
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr ""
 
@@ -13509,7 +13509,7 @@ msgstr ""
 msgid "Stornieren"
 msgstr ""
 
-#: billing_lifecycle.py:18
+#: billing_lifecycle.py:21
 msgid "Storniert"
 msgstr ""
 
@@ -15171,7 +15171,7 @@ msgid ""
 "erhalten Sie die nächsten Schritte."
 msgstr ""
 
-#: app.py:859
+#: app.py:865
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -15583,7 +15583,7 @@ msgstr ""
 msgid "Zu meinen Solargeräten"
 msgstr ""
 
-#: app.py:178 templates/partials/address_intake.html:115
+#: app.py:184 templates/partials/address_intake.html:115
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 msgstr ""
 
@@ -15623,7 +15623,7 @@ msgstr ""
 msgid "Zugangslink anfordern"
 msgstr ""
 
-#: billing_lifecycle.py:16 sandbox_formation.py:185 templates/leg_dashboard.html:253
+#: billing_lifecycle.py:19 sandbox_formation.py:185 templates/leg_dashboard.html:253
 #: templates/leg_dashboard.html:282 templates/sandbox/formation.html:36
 msgid "Zugestellt"
 msgstr ""
@@ -15910,7 +15910,7 @@ msgstr ""
 msgid "bis 40"
 msgstr ""
 
-#: app.py:722
+#: app.py:728
 msgid "building_id und csv_content erforderlich."
 msgstr ""
 
@@ -16150,7 +16150,7 @@ msgid ""
 "einen Abrechnungslauf und definitive Rechnungsdokumente sind noch kein durchgängiger Ablauf."
 msgstr ""
 
-#: app.py:719
+#: app.py:725
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr ""
 

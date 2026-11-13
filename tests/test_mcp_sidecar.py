@@ -8,6 +8,7 @@ import pytest
 import yaml
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
+from mcp.shared.exceptions import McpError
 
 
 def test_disabled_by_default(monkeypatch):
@@ -166,10 +167,11 @@ def test_http_trust_boundary(monkeypatch, caplog):
                     assert result.isError
                     assert len(seen) == count
                 async with session(app) as sdk:
-                    result = await sdk.call_tool(
-                        "list_billing_periods", {"community_id": "one"}
-                    )
-                    assert result.isError
+                    with pytest.raises(McpError) as failure:
+                        await sdk.call_tool(
+                            "list_billing_periods", {"community_id": "one"}
+                        )
+                    assert failure.value.error.code == -32011
                     assert len(seen) == count
 
         asyncio.run(check())
@@ -453,9 +455,15 @@ def test_malformed_upstream_page(monkeypatch, tool, path, body):
                 session(app, {"Authorization": "Bearer olk_test"}) as sdk,
             ):
                 result = await sdk.call_tool(tool, {"community_id": "one"})
+                # A reachable operator with a malformed page is an operator
+                # error, not a transport failure.
                 assert result.isError
-                assert result.content[0].text == "operator_unavailable"
-                assert result.structuredContent is None
+                assert result.content[0].text == "operator_error"
+                assert result.structuredContent == {
+                    "code": "operator_error",
+                    "field": None,
+                    "retryable": False,
+                }
 
         asyncio.run(check())
 
@@ -515,3 +523,83 @@ def test_summary_refuses_cases_without_integer_ids(monkeypatch, ids):
                 assert summary["latest_billing_period"]["available"]
 
         asyncio.run(check())
+
+
+def test_upstream_error_metadata_and_authorization(monkeypatch):
+    from flask import Flask, jsonify, request
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+
+    @upstream.get("/<path:path>")
+    def fail(path):
+        status = int(request.args["status"])
+        return jsonify(
+            schema_version="operator-api/1",
+            error="private participant stack detail",
+            code={
+                400: "invalid_pagination",
+                401: "invalid_credential",
+                403: "capability_denied",
+                404: "not_found",
+                409: "conflict",
+                429: "rate_limited",
+                503: "unavailable",
+            }[status],
+            field="limit",
+            retryable=status in (429, 503),
+        ), status
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                session(app, {"Authorization": "Bearer olk_test"}) as sdk,
+            ):
+                for status, code in [
+                    (400, "invalid_pagination"),
+                    (403, "capability_denied"),
+                    (404, "not_found"),
+                    (409, "conflict"),
+                    (429, "rate_limited"),
+                    (503, "unavailable"),
+                ]:
+                    result = await sdk.call_tool(
+                        "list_billing_periods",
+                        {"community_id": "leg", "status": str(status)},
+                    )
+                    assert result.isError
+                    assert result.structuredContent == {
+                        "code": code,
+                        "field": "limit",
+                        "retryable": status in (429, 503),
+                    }
+                    assert "private participant" not in str(result)
+                with pytest.raises(McpError) as failure:
+                    await sdk.call_tool(
+                        "list_billing_periods", {"community_id": "leg", "status": "401"}
+                    )
+                assert failure.value.error.code == -32011
+                assert failure.value.error.data["code"] == "invalid_credential"
+
+        asyncio.run(check())
+    # The upstream listener is now closed: network errors are protocol errors.
+    app = create_app()
+
+    async def unavailable():
+        async with (
+            app.router.lifespan_context(app),
+            session(app, {"Authorization": "Bearer olk_test"}) as sdk,
+        ):
+            with pytest.raises(McpError) as failure:
+                await sdk.call_tool("list_billing_periods", {"community_id": "leg"})
+            assert failure.value.error.code == -32603
+            assert failure.value.error.data["retryable"] is True
+
+    asyncio.run(unavailable())

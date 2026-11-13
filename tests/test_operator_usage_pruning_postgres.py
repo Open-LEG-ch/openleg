@@ -75,6 +75,8 @@ def test_request_prunes_only_its_expired_usage_and_preserves_budget(interest_dat
     assert rejected.headers["Retry-After"] == "3600"
     assert rejected.get_json() == {
         "error": "Rate limit exceeded",
+        "code": "rate_limited",
+        "retryable": True,
         "schema_version": "operator-api/1",
     }
     with db.get_connection() as conn, conn.cursor() as cur:
