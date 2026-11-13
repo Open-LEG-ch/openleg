@@ -207,6 +207,14 @@ def test_summary_sections(operator_http, monkeypatch):
     def source_failure():
         if request.path.endswith("/billing/cases"):
             case_filters.append(request.args.get("status"))
+            moved = fixture.app.config.get("ACKNOWLEDGE_BETWEEN_READS")
+            if moved and request.args.get("status") == "acknowledged":
+                # The case changes status after the open cases were read.
+                with fixture.db.get_connection() as conn, conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE invoice_queries SET status='acknowledged' WHERE id=%s",
+                        (moved,),
+                    )
         if fixture.app.config.get("FAIL_CASES") and request.path.endswith(
             "/billing/cases"
         ):
@@ -326,6 +334,22 @@ def test_summary_sections(operator_http, monkeypatch):
                 assert failed["formation"]["available"]
                 assert failed["latest_billing_period"]["available"]
                 fixture.app.config["FAIL_CASES"] = False
+                moved = next(
+                    x["id"]
+                    for x in result["open_invoice_cases"]["items"]
+                    if x["status"] == "open"
+                )
+                fixture.app.config["ACKNOWLEDGE_BETWEEN_READS"] = moved
+                raced = await read(sdk)
+                fixture.app.config["ACKNOWLEDGE_BETWEEN_READS"] = None
+                raced_cases = raced["open_invoice_cases"]["items"]
+                assert [x["id"] for x in raced_cases] == [
+                    x["id"] for x in result["open_invoice_cases"]["items"]
+                ]
+                assert (
+                    next(x for x in raced_cases if x["id"] == moved)["status"]
+                    == "acknowledged"
+                )
                 headers, _ = fixture.credential_headers(
                     operator_contract_helpers.CAPABILITIES, budget=1
                 )

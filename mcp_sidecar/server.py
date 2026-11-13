@@ -343,8 +343,10 @@ def create_app():
                             else None
                         )
                     else:
-                        # The operator API lists cases in ID order.
-                        value["items"] = sorted(items, key=lambda x: x["id"])
+                        # A case can change status between the two reads.
+                        # Keep its later copy, in the API's ID order.
+                        latest = {x["id"]: x for x in items}
+                        value["items"] = sorted(latest.values(), key=lambda x: x["id"])
                 except (KeyError, TypeError, ValueError):
                     value = {"available": False, "reason": "operator_error"}
             summary[section_name] = value
