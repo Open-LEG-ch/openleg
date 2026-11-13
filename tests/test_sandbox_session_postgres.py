@@ -92,8 +92,17 @@ def test_head_confirmation_never_deletes_profile_or_rotates_login(founder, tmp_p
     assert binding._current() == previous
 
 
+@pytest.mark.parametrize(
+    ("failure_type", "category"),
+    [
+        (OSError, "storage_unavailable"),
+        (PermissionError, "storage_unavailable"),
+        (RuntimeError, "preparation_unavailable"),
+        (ValueError, "unexpected"),
+    ],
+)
 def test_generation_failure_after_delete_rolls_back_profile_and_token(
-    founder, tmp_path, monkeypatch
+    founder, tmp_path, monkeypatch, caplog, failure_type, category
 ):
     client, db = founder
     binding = VillageSessions(tmp_path)
@@ -111,24 +120,65 @@ def test_generation_failure_after_delete_rolls_back_profile_and_token(
         cursor.execute("""CREATE TRIGGER sandbox_note_deletion BEFORE DELETE ON buildings
                        FOR EACH ROW EXECUTE FUNCTION sandbox_note_deletion()""")
 
+    path = "/unsubscribe/" + token
+    email = db.get_building("founder")["email"]
+    failure_text = (
+        f"synthetic generation storage failure: http://localhost{path} "
+        f"{email} password=synthetic-secret SQL parameters=('founder', '{token}')"
+    )
+
     def unavailable():
-        raise OSError("synthetic generation storage failure")
+        raise failure_type(failure_text)
 
     rotate = binding._rotate
     monkeypatch.setattr(binding, "_rotate", unavailable)
     try:
-        assert client.post("/unsubscribe/" + token).status_code == 503
+        caplog.clear()
+        with caplog.at_level("DEBUG", logger=client.application.logger.name):
+            assert client.post(path).status_code == 503
+        records = [
+            record
+            for record in caplog.records
+            if record.name == client.application.logger.name
+        ]
+        assert len(records) == 1
+        record = records[0]
+        assert record.levelname == "ERROR"
+        assert record.msg == "profile_deletion_preparation_failed category=%s"
+        assert record.args == (category,)
+        assert record.getMessage() == (
+            "profile_deletion_preparation_failed category=" + category
+        )
+        assert record.exc_info is None
+        assert record.exc_text is None
+        assert record.stack_info is None
+        for captured in caplog.records:
+            for forbidden in (
+                token,
+                email,
+                path,
+                "http://localhost",
+                failure_text,
+                "synthetic generation storage failure",
+                "synthetic-secret",
+                "SQL parameters",
+            ):
+                assert forbidden not in repr(vars(captured))
         with db.get_connection() as connection, connection.cursor() as cursor:
             cursor.execute("SELECT is_called FROM sandbox_deletion_attempt")
             assert cursor.fetchone()["is_called"] is True
         assert db.get_building("founder")["verified"] is True
         assert db.get_token(token) is not None
         assert binding._current() == previous
+        with client.session_transaction() as state:
+            assert state["dashboard_building_id"] == "founder"
+            assert state["sandbox_generation"] == previous
         monkeypatch.setattr(binding, "_rotate", rotate)
         assert client.post("/unsubscribe/" + token).status_code == 200
         assert db.get_building("founder") is None
         assert db.get_token(token) is None
         assert binding._current() != previous
+        assert len(caplog.records) == 1
     finally:
         with db.get_connection() as connection, connection.cursor() as cursor:
             cursor.execute("DROP TRIGGER sandbox_note_deletion ON buildings")

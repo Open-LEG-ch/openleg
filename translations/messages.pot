@@ -3646,7 +3646,7 @@ msgid ""
 "anschliessend."
 msgstr ""
 
-#: app.py:878
+#: app.py:886
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -11642,7 +11642,7 @@ msgstr ""
 msgid "Passwort"
 msgstr ""
 
-#: app.py:1081
+#: app.py:1089
 msgid "Period not found"
 msgstr ""
 
@@ -15308,7 +15308,7 @@ msgid ""
 "erhalten Sie die nächsten Schritte."
 msgstr ""
 
-#: app.py:866
+#: app.py:874
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
