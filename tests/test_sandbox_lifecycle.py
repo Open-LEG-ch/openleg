@@ -74,6 +74,11 @@ def test_reset_requires_confirmation_retires_old_tabs_and_preserves_other_visito
                        '["payments.read"]',%s)""",
             (hashlib.sha256(b"fictional-api-token").hexdigest(),),
         )
+        # Bearer access requires the credential creator to be a confirmed admin.
+        cursor.execute(
+            """INSERT INTO community_members(community_id,building_id,role,status)
+               VALUES ('fictional-leg','sonnwil-resident','admin','confirmed')"""
+        )
     api = "/api/operator/v1/communities/fictional-leg/payments/matches"
     headers = {"Authorization": "Bearer fictional-api-token"}
     assert first.get(old + api, headers=headers).status_code == 200
