@@ -189,11 +189,9 @@ def rotate_client(community_id, client_id, token_hash):
             (client_id, community_id),
         )
         current = cur.fetchone()
-        if current is None:
+        if current is None or not current["active"]:
+            # Revocation is final; rotation never brings a credential back.
             return None
-        if not current["active"]:
-            # Rotation reactivates a revoked credential, which takes a slot.
-            _check_credential_capacity(cur, community_id)
         cur.execute(
             "UPDATE operator_api_clients SET token_hash=%s,webhook_secret=%s,webhook_secret_version=webhook_secret_version+1,rotated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=%s AND community_id=%s AND active=TRUE RETURNING *",
             (

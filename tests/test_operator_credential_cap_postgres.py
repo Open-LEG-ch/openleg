@@ -105,8 +105,10 @@ def test_concurrent_creations_share_the_last_slot(credential_http, interest_data
     assert len(interest_database.list_operator_api_clients("cap-leg")) == 10
 
 
-def test_rotation_cannot_reactivate_past_the_limit(credential_http, interest_database):
-    """Rotating a revoked credential reactivates it, which needs a free slot."""
+def test_revoked_credential_never_rotates_back_into_a_slot(
+    credential_http, interest_database
+):
+    """Revocation is final: rotation answers not found at and below the limit."""
     client = admin_client(credential_http)
     ids = [create(client).get_json()["credential"]["id"] for _ in range(10)]
     revoked = ids[0]
@@ -114,18 +116,20 @@ def test_rotation_cannot_reactivate_past_the_limit(credential_http, interest_dat
     assert create(client).status_code == 201
     before = interest_database.list_operator_api_clients("cap-leg")
 
-    rejected = client.post(f"{URL}/{revoked}/rotate", headers=HEADERS)
-    assert rejected.status_code == 409
-    assert rejected.get_json() == ERROR
+    at_limit = client.post(f"{URL}/{revoked}/rotate", headers=HEADERS)
+    assert at_limit.status_code == 404
+    assert at_limit.get_json()["error"] == "Credential not found"
     assert interest_database.list_operator_api_clients("cap-leg") == before
 
     # An active credential still rotates at the limit.
     assert client.post(f"{URL}/{ids[1]}/rotate", headers=HEADERS).status_code == 200
-    # With a free slot, rotation reactivates the revoked credential.
+    # A free slot does not bring the revoked credential back either.
     assert client.post(f"{URL}/{ids[2]}/revoke", headers=HEADERS).status_code == 200
-    assert client.post(f"{URL}/{revoked}/rotate", headers=HEADERS).status_code == 200
+    below_limit = client.post(f"{URL}/{revoked}/rotate", headers=HEADERS)
+    assert below_limit.status_code == 404
     rows = interest_database.list_operator_api_clients("cap-leg")
-    assert sum(row["active"] for row in rows) == 10
+    assert sum(row["active"] for row in rows) == 9
+    assert not next(row for row in rows if row["id"] == revoked)["active"]
 
 
 @pytest.mark.parametrize("expired", [True, False])
