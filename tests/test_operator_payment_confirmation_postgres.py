@@ -50,12 +50,7 @@ def payment_client(interest_database):
     app.config["TESTING"] = True
     app.register_blueprint(operator_api.operator_api_bp)
     with patch(
-        "operator_api.formation_wizard.get_community_status",
-        return_value={
-            "members": [
-                {"building_id": "operator-a", "role": "admin", "status": "confirmed"}
-            ]
-        },
+        "operator_api.db.operator_creator_is_confirmed_admin", return_value=True
     ):
         yield app
 
@@ -135,7 +130,9 @@ def test_concurrent_entries_pay_delivered_invoice_only_once(payment_client):
     assert sorted(r.status_code for r in responses) == [200, 409]
     loser = next(r for r in responses if r.status_code == 409)
     assert loser.get_json() == {
+        "code": "invalid_payment",
         "error": "Invalid payment confirmation",
+        "retryable": False,
         "schema_version": "operator-api/1",
     }
     from store.operator_operations import list_payments
@@ -203,7 +200,9 @@ def test_request_replay_is_stable_and_payload_reuse_conflicts(payment_client):
     conflict = _confirm(payment_client, entry_id, invoice_id + 1)
     assert conflict.status_code == 409
     assert conflict.get_json() == {
+        "code": "idempotency_conflict",
         "error": "Invalid payment confirmation",
+        "retryable": False,
         "schema_version": "operator-api/1",
     }
     assert len(db.list_operator_webhook_deliveries(COMMUNITY)) == 2
@@ -289,9 +288,11 @@ def test_ineligible_payment_leaves_entry_and_invoice_untouched(payment_client, g
     response = _confirm(payment_client, entry_id, invoice_id)
     assert response.status_code == (404 if guard == "foreign_entry" else 409)
     assert response.get_json() == {
+        "code": "not_found" if guard == "foreign_entry" else "invalid_payment",
         "error": "Resource not found or not eligible"
         if guard == "foreign_entry"
         else "Invalid payment confirmation",
+        "retryable": False,
         "schema_version": "operator-api/1",
     }
     assert list_payments(community) == before_entries

@@ -419,6 +419,7 @@ create_operator_api_client = _operator_api.create_client
 claim_operator_api_usage = _operator_api.claim_usage
 create_operator_event = _operator_api.create_event
 get_operator_api_client_by_token_hash = _operator_api.get_client_by_token_hash
+operator_creator_is_confirmed_admin = _operator_api.creator_is_confirmed_admin
 get_pending_webhook_deliveries = _operator_api.get_pending_deliveries
 get_operator_webhook_delivery_context = _operator_api.delivery_context
 list_operator_api_clients = _operator_api.list_clients

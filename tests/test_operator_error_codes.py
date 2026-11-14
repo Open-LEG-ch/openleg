@@ -25,6 +25,9 @@ def client(monkeypatch):
         },
     )
     monkeypatch.setattr(operator_api.db, "claim_operator_api_usage", lambda *a: True)
+    monkeypatch.setattr(
+        operator_api.db, "operator_creator_is_confirmed_admin", lambda *a: True
+    )
     return app.test_client()
 
 

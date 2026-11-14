@@ -236,18 +236,7 @@ def test_concurrent_changes_persist_one_transition(
     assert _counts()["operator_webhook_deliveries"] == 1
 
 
-@patch(
-    "operator_api.formation_wizard.get_community_status",
-    return_value={
-        "members": [
-            {
-                "building_id": "operator",
-                "role": "admin",
-                "status": "confirmed",
-            }
-        ]
-    },
-)
+@patch("operator_api.db.operator_creator_is_confirmed_admin", return_value=True)
 def test_authenticated_operator_adapter_preserves_capabilities_scope_and_response(
     _community_status,
     invoice_case,

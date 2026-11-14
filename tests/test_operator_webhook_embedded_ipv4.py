@@ -35,18 +35,20 @@ def webhook_boundary(app):
         "created_by": "building-1",
     }
     with (
+        # The dashboard session creates credentials; dispatch checks the creator.
         patch(
             "operator_api.formation_wizard.get_community_status",
             return_value={
                 "members": [
                     {
                         "building_id": "building-1",
-                        "status": "confirmed",
                         "role": "admin",
+                        "status": "confirmed",
                     }
                 ]
             },
         ),
+        patch("operator_api.db.operator_creator_is_confirmed_admin", return_value=True),
         patch(
             "operator_api.db.create_operator_api_client",
             return_value={"id": "client-1", "webhook_secret": "olwhsec_test"},
@@ -86,6 +88,7 @@ def webhook_boundary(app):
                     json={
                         "name": "Integrator",
                         "capabilities": ["formation.read"],
+                        "actor_kind": "service",
                         "webhook_url": delivery["webhook_url"],
                     },
                 )

@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from flask import Flask
+from psycopg2.extras import Json
 
 from i18n import init_app
 from tests import test_interest_postgres
@@ -37,7 +38,11 @@ def test_revoked_community_credential_cannot_be_rotated_or_used(app, interest_da
     created = client.post(
         base,
         headers=headers,
-        json={"name": "Operator", "capabilities": ["formation.read"]},
+        json={
+            "name": "Operator",
+            "capabilities": ["formation.read"],
+            "actor_kind": "service",
+        },
     )
     assert created.status_code == 201
     credential = created.json
@@ -50,7 +55,9 @@ def test_revoked_community_credential_cannot_be_rotated_or_used(app, interest_da
     denied = client.post(path + "/rotate", headers=headers)
     assert denied.status_code == 404
     assert denied.json == {
+        "code": "not_found",
         "error": "Credential not found",
+        "retryable": False,
         "schema_version": "operator-api/1",
     }
     listed = client.get(base, headers=headers).json["credentials"]
@@ -83,7 +90,11 @@ def test_other_community_administrator_can_revoke_creator_credential(
     created = client.post(
         base,
         headers=headers,
-        json={"name": "Operator", "capabilities": ["formation.read"]},
+        json={
+            "name": "Operator",
+            "capabilities": ["formation.read"],
+            "actor_kind": "service",
+        },
     ).json
     client = http_client(app, "other-admin")
     with patch(
@@ -102,3 +113,36 @@ def test_other_community_administrator_can_revoke_creator_credential(
         ).status_code
         == 401
     )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "role,access_roles,status,expected",
+    [
+        ("admin", [], "confirmed", True),
+        ("member", ["admin"], "confirmed", True),
+        ("member", ["billing_approver"], "confirmed", False),
+        ("admin", [], "exited", False),
+        ("admin", [], "pending", False),
+    ],
+)
+def test_creator_authority_reads_the_creator_membership(
+    interest_database, role, access_roles, status, expected
+):
+    db = interest_database
+    db.save_building(
+        "admin-a",
+        "admin@example.ch",
+        {"address": "Testweg 1", "lat": 47.2, "lon": 8.2},
+        {},
+    )
+    cid = db.create_community_record("Test LEG", "admin-a", "simple", "")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE community_members SET role=%s, access_roles=%s, status=%s
+            WHERE community_id=%s AND building_id='admin-a'""",
+            (role, Json(access_roles), status, cid),
+        )
+    assert db.operator_creator_is_confirmed_admin(cid, "admin-a") is expected
+    assert db.operator_creator_is_confirmed_admin(cid, "absent-building") is False
+    assert db.operator_creator_is_confirmed_admin("other-leg", "admin-a") is False

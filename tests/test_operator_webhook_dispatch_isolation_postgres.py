@@ -28,7 +28,7 @@ def test_cron_releases_without_attempt_and_next_run_can_deliver(interest_databas
     app.config["CRON_SECRET"] = "test-secret"
     app.register_blueprint(cron.cron_bp)
     with (
-        patch("operator_api._administrator_authority", return_value=True),
+        patch("operator_api._creator_authority", return_value=True),
         patch("operator_api._default_transport", side_effect=TimeoutError),
     ):
         response = app.test_client().post(
@@ -44,7 +44,7 @@ def test_cron_releases_without_attempt_and_next_run_can_deliver(interest_databas
     assert released["last_attempt_at"] is None
     assert released["response_status"] is None
     with (
-        patch("operator_api._administrator_authority", return_value=True),
+        patch("operator_api._creator_authority", return_value=True),
         patch("operator_api._default_transport", return_value=204) as transport,
     ):
         response = app.test_client().post(

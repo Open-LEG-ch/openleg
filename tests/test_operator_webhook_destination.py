@@ -24,12 +24,7 @@ CREATE_PATH = f"/leg/community/{COMMUNITY}/operator-api/credentials"
 def confirmed_credential_creator():
     """Dispatch delivers only for credentials whose creator is still an admin."""
     with patch(
-        "operator_api.formation_wizard.get_community_status",
-        return_value={
-            "members": [
-                {"building_id": "building-1", "role": "admin", "status": "confirmed"}
-            ]
-        },
+        "operator_api.db.operator_creator_is_confirmed_admin", return_value=True
     ):
         yield
 

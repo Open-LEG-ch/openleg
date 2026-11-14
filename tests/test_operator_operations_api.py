@@ -11,16 +11,7 @@ import operator_api
 @pytest.fixture(autouse=True)
 def confirmed_credential_creator():
     with patch(
-        "operator_api.formation_wizard.get_community_status",
-        return_value={
-            "members": [
-                {
-                    "building_id": CLIENT["created_by"],
-                    "role": "admin",
-                    "status": "confirmed",
-                }
-            ]
-        },
+        "operator_api.db.operator_creator_is_confirmed_admin", return_value=True
     ):
         yield
 

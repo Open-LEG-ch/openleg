@@ -25,7 +25,7 @@ def test_timeout_releases_same_client_and_delivers_other_community():
 
     with (
         patch("operator_api.db.get_pending_webhook_deliveries", return_value=rows),
-        patch("operator_api._administrator_authority", return_value=True),
+        patch("operator_api._creator_authority", return_value=True),
         patch("operator_api.db.record_webhook_attempt") as record,
         patch("operator_api.db.release_webhook_delivery", create=True) as release,
     ):
@@ -55,7 +55,7 @@ def test_run_budget_releases_unreached_deliveries():
 
     with (
         patch("operator_api.db.get_pending_webhook_deliveries", return_value=rows),
-        patch("operator_api._administrator_authority", return_value=True),
+        patch("operator_api._creator_authority", return_value=True),
         patch("operator_api.db.record_webhook_attempt") as record,
         patch("operator_api.db.release_webhook_delivery") as release,
     ):
@@ -101,7 +101,7 @@ def test_default_transport_stops_trickling_headers_and_closes_connection(prefix)
                 "operator_api.db.get_pending_webhook_deliveries",
                 return_value=[_delivery_row()],
             ),
-            patch("operator_api._administrator_authority", return_value=True),
+            patch("operator_api._creator_authority", return_value=True),
             patch("operator_api.db.record_webhook_attempt") as record,
             patch(
                 "operator_api.socket.getaddrinfo",
@@ -152,7 +152,7 @@ def test_connect_and_tls_share_the_response_deadline():
                 "operator_api.db.get_pending_webhook_deliveries",
                 return_value=[_delivery_row()],
             ),
-            patch("operator_api._administrator_authority", return_value=True),
+            patch("operator_api._creator_authority", return_value=True),
             patch("operator_api.db.record_webhook_attempt") as record,
             patch("operator_api.time", SimpleNamespace(monotonic=lambda: now[0])),
             patch(

@@ -29,55 +29,78 @@ def http_client(app, actor="admin-a"):
     return client
 
 
-@pytest.mark.parametrize(
-    "members",
-    [
-        [{**CREATOR, "role": "member", "access_roles": ["billing_approver"]}],
-        [{**CREATOR, "status": "exited"}],
-        [{**CREATOR, "status": "pending"}],
-        [],
-        [{**CREATOR, "building_id": "other-admin"}],
-    ],
-)
-@pytest.mark.parametrize(
-    "method,path,body,store",
-    [
-        ("get", "formation", None, "list_vnb_submission_cases"),
-        (
-            "post",
-            "payments/matches/12/confirm",
-            {"invoice_id": 3},
-            "confirm_operator_payment_match",
-        ),
-    ],
-)
+FORBIDDEN = {
+    "code": "capability_denied",
+    "error": "Forbidden",
+    "retryable": False,
+    "schema_version": "operator-api/1",
+}
+OPERATIONS = [
+    ("get", "formation", None, "list_vnb_submission_cases"),
+    (
+        "post",
+        "payments/matches/12/confirm",
+        {"invoice_id": 3},
+        "confirm_operator_payment_match",
+    ),
+]
+
+
+def _bearer(client, method, path, body):
+    return getattr(client, method)(
+        "/api/operator/v1/communities/community-a/" + path,
+        headers={"Authorization": "Bearer token", "Idempotency-Key": "payment-12"},
+        json=body,
+    )
+
+
+@pytest.mark.parametrize("method,path,body,store", OPERATIONS)
 def test_community_authority_loss_denies_operator_reads_and_payments(
-    app, members, method, path, body, store
+    app, method, path, body, store
 ):
     client = http_client(app)
     with (
         patch(
             "operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT
         ),
-        patch("operator_api.db.claim_operator_api_usage", return_value=True),
+        patch("operator_api.db.claim_operator_api_usage", return_value=True) as usage,
         patch(
-            "operator_api.formation_wizard.get_community_status",
-            return_value={"members": members},
-        ) as status,
+            "operator_api.db.operator_creator_is_confirmed_admin", return_value=False
+        ) as authority,
         patch(
             "operator_api.db." + store,
             return_value=[] if method == "get" else {"id": 12},
         ) as action,
     ):
-        response = getattr(client, method)(
-            "/api/operator/v1/communities/community-a/" + path,
-            headers={"Authorization": "Bearer token", "Idempotency-Key": "payment-12"},
-            json=body,
-        )
+        response = _bearer(client, method, path, body)
     assert response.status_code == 403
-    assert response.json == {"error": "Forbidden", "schema_version": "operator-api/1"}
+    assert response.json == FORBIDDEN
     action.assert_not_called()
-    status.assert_called_once_with("community-a", "admin-a")
+    usage.assert_not_called()
+    authority.assert_called_once_with("community-a", "admin-a")
+
+
+@pytest.mark.parametrize("method,path,body,store", OPERATIONS)
+def test_creator_authority_does_not_depend_on_community_presentation(
+    app, method, path, body, store
+):
+    """Status assembly swallows errors as None; authority must not inherit that."""
+    client = http_client(app)
+    with (
+        patch(
+            "operator_api.db.get_operator_api_client_by_token_hash", return_value=CLIENT
+        ),
+        patch("operator_api.db.claim_operator_api_usage", return_value=True),
+        patch("operator_api.db.operator_creator_is_confirmed_admin", return_value=True),
+        patch("operator_api.formation_wizard.get_community_status", return_value=None),
+        patch(
+            "operator_api.db." + store,
+            return_value=[] if method == "get" else {"id": 12},
+        ) as action,
+    ):
+        response = _bearer(client, method, path, body)
+    assert response.status_code == 200
+    action.assert_called_once()
 
 
 def test_other_community_administrator_cannot_rotate_creator_credential(app):
@@ -98,14 +121,11 @@ def test_other_community_administrator_cannot_rotate_creator_credential(app):
             headers={"X-CSRF-Token": "csrf"},
         )
     assert response.status_code == 403
-    assert response.json == {"error": "Forbidden", "schema_version": "operator-api/1"}
+    assert response.json == FORBIDDEN
     rotate.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    "member", [{**CREATOR, "role": "member"}, {**CREATOR, "status": "exited"}]
-)
-def test_cron_fails_webhooks_after_community_authority_loss(app, member):
+def test_cron_fails_webhooks_after_community_authority_loss(app):
     from tests.test_operator_api import _delivery_row
 
     if "cron" not in app.blueprints:
@@ -119,9 +139,8 @@ def test_cron_fails_webhooks_after_community_authority_loss(app, member):
         patch("operator_api.db.get_pending_webhook_deliveries", return_value=rows),
         patch("operator_api.db.record_webhook_attempt") as record,
         patch(
-            "operator_api.formation_wizard.get_community_status",
-            return_value={"members": [member]},
-        ) as status,
+            "operator_api.db.operator_creator_is_confirmed_admin", return_value=False
+        ) as authority,
         patch("operator_api._default_transport", return_value=204) as transport,
     ):
         response = app.test_client().post(
@@ -131,7 +150,7 @@ def test_cron_fails_webhooks_after_community_authority_loss(app, member):
     assert response.status_code == 200
     assert response.json == {"attempted": 2, "delivered": 0, "failed": 2}
     transport.assert_not_called()
-    status.assert_called_once_with("community-a", "admin-a")
+    authority.assert_called_once_with("community-a", "admin-a")
     assert record.call_count == 2
     for index, attempt in enumerate(record.call_args_list):
         assert attempt.args == (f"delivery-{index}",)
@@ -155,7 +174,10 @@ def test_cron_retries_webhooks_when_community_authority_cannot_be_loaded(app):
             return_value=[_delivery_row(created_by="admin-a")],
         ),
         patch("operator_api.db.record_webhook_attempt") as record,
-        patch("operator_api.formation_wizard.get_community_status", return_value=None),
+        patch(
+            "operator_api.db.operator_creator_is_confirmed_admin",
+            side_effect=RuntimeError("database unavailable"),
+        ),
         patch("operator_api._default_transport", return_value=204) as transport,
     ):
         response = app.test_client().post(

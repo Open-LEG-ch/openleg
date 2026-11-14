@@ -6,6 +6,7 @@ import uuid
 
 from psycopg2.extras import Json
 
+import community_access
 import operator_actor
 
 
@@ -149,6 +150,26 @@ def get_client_by_token_hash(token_hash):
     from store.oauth import credential_grant_valid
 
     return dict(row) if row and credential_grant_valid(row["id"]) else None
+
+
+def creator_is_confirmed_admin(community_id, building_id):
+    """Return whether a credential creator is a confirmed community administrator.
+
+    Community status assembly swallows storage errors as None, so this reads
+    the creator's own membership row. Storage errors propagate to the caller.
+    """
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT role, access_roles, status FROM community_members
+            WHERE community_id=%s AND building_id=%s""",
+            (community_id, building_id),
+        )
+        member = cur.fetchone()
+    return bool(
+        member
+        and community_access.is_administrator(member)
+        and member["status"] == "confirmed"
+    )
 
 
 def list_clients(community_id):

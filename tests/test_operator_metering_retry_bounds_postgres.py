@@ -54,7 +54,9 @@ def test_completed_retry_cools_down_new_keys_but_replays_first_key(
         second = retry(retry_app, "second", job)
         assert second.status_code == 429
         assert second.json == {
+            "code": "rate_limited",
             "error": "Rate limit exceeded",
+            "retryable": True,
             "schema_version": "operator-api/1",
         }
         assert 895 <= int(second.headers["Retry-After"]) <= 900

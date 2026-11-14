@@ -8,6 +8,7 @@ import hmac
 import http.client
 import io
 import json
+import logging
 import os
 import secrets
 import socket
@@ -40,6 +41,8 @@ import operator_request
 import sdat_ingestion
 import vnb_exchange
 from operator_errors import ErrorCode
+
+logger = logging.getLogger(__name__)
 
 API_SCHEMA_VERSION = "operator-api/1"
 EVENT_SCHEMA_VERSION = "operator-event/1"
@@ -163,7 +166,9 @@ def require_operator(capability):
                 return _error("Resource not found", 404)
             if capability not in set(client.get("capabilities") or []):
                 return _error("Capability denied", 403)
-            if not _admin_for(community_id, client["created_by"]):
+            if not db.operator_creator_is_confirmed_admin(
+                community_id, client["created_by"]
+            ):
                 return _error("Forbidden", 403)
             if not db.claim_operator_api_usage(
                 client["id"], request.path, int(client["rate_limit_per_hour"])
@@ -652,16 +657,13 @@ def confirm_payment_match(community_id, entry_id):
 
 
 def _admin_for(community_id: str, building_id: str | None) -> bool:
-    return bool(_administrator_authority(community_id, building_id))
-
-
-def _administrator_authority(community_id: str, building_id: str | None) -> bool | None:
-    """Return the member's administrator authority, or None when unknown."""
     status = formation_wizard.get_community_status(community_id, building_id)
-    if status is None:
-        return None
     member = next(
-        (row for row in status.get("members", []) if row["building_id"] == building_id),
+        (
+            row
+            for row in (status or {}).get("members", [])
+            if row["building_id"] == building_id
+        ),
         None,
     )
     return bool(
@@ -669,6 +671,15 @@ def _administrator_authority(community_id: str, building_id: str | None) -> bool
         and community_access.is_administrator(member)
         and member.get("status") == "confirmed"
     )
+
+
+def _creator_authority(community_id: str, building_id: str | None) -> bool | None:
+    """Return a credential creator's current authority, or None when unknown."""
+    try:
+        return db.operator_creator_is_confirmed_admin(community_id, building_id)
+    except Exception:
+        logger.exception("[OPERATOR] Creator authority lookup failed")
+        return None
 
 
 def _require_csrf():
@@ -1035,10 +1046,10 @@ def dispatch_pending_webhooks(
         totals["attempted"] += 1
         identity = (row["community_id"], row.get("created_by"))
         if identity not in authority:
-            authority[identity] = _administrator_authority(*identity)
+            authority[identity] = _creator_authority(*identity)
         if authority[identity] is None:
-            # Community status is unavailable; this is transient, not a loss
-            # of authority, so keep the delivery within its retry budget.
+            # Storage is unavailable; this is transient, not a loss of
+            # authority, so keep the delivery within its retry budget.
             retryable = row["attempt_count"] + 1 < max_attempts
             db.record_webhook_attempt(
                 row["delivery_id"],
