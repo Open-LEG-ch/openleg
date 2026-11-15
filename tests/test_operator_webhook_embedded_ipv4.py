@@ -2,6 +2,7 @@
 """Public webhook routing policy at credential and delivery boundaries."""
 
 import io
+import ipaddress
 import socket
 from unittest.mock import MagicMock, patch
 
@@ -236,3 +237,12 @@ def test_one_nonpublic_answer_rejects_the_entire_host(
     if not unsafe_first:
         addresses.reverse()
     webhook_boundary(seam, addresses, False)
+
+
+@pytest.mark.parametrize("address", ["64:ff9b:1::a00:1", "64:ff9b:1::5db8:d70e"])
+def test_local_use_nat64_is_rejected_whatever_the_interpreter_policy(
+    monkeypatch, address
+):
+    """Older 3.11 patch releases report 64:ff9b:1::/48 as global."""
+    monkeypatch.setattr(ipaddress.IPv6Address, "is_global", property(lambda self: True))
+    assert operator_api._is_public_webhook_address(address) is False

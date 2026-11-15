@@ -74,9 +74,11 @@ Mutations require an `Idempotency-Key` of 1–128 characters:
   A new key during this cooldown returns `429`, `Retry-After` with the remaining
   seconds, and `{"error":"Rate limit exceeded","schema_version":"operator-api/1"}`.
   The same key replays its stored result during the cooldown. An in-flight retry
-  blocks other keys with `409` (`Retry already in progress`). A claim without a
-  result expires after 15 minutes, so a worker killed mid-run cannot block the
-  job permanently.
+  blocks other keys with `409` (`Retry already in progress`). The same `409`
+  answers when scheduled ingestion is already running for the tenant; that call
+  makes no attempt, starts no cooldown and can be sent again with the same key.
+  A claim without a result expires after 15 minutes, so a worker killed mid-run
+  cannot block the job permanently.
 - `POST /billing/cases/{id}/responses` accepts `message` and the next permitted
   `status` (`acknowledged` or `resolved`).
 - `POST /payments/matches/{id}/confirm` accepts `invoice_id` and confirms only

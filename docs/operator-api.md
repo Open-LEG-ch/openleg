@@ -74,7 +74,10 @@ auch bei einem Fehler. Ein weiterer Aufruf mit neuem `Idempotency-Key` erhält
 `{"error":"Rate limit exceeded","schema_version":"operator-api/1"}`.
 Derselbe Schlüssel liefert während der Sperrfrist das gespeicherte Ergebnis.
 Solange ein Versuch läuft, erhalten andere Schlüssel `409`
-(`Retry already in progress`). Eine Reservierung ohne Ergebnis verfällt nach
+(`Retry already in progress`). Dieselbe Antwort folgt, wenn für den Mandanten
+bereits ein geplanter Import läuft. Dann findet kein Versuch statt, es beginnt
+keine Sperrfrist, und derselbe Schlüssel kann erneut gesendet werden.
+Eine Reservierung ohne Ergebnis verfällt nach
 15 Minuten, damit ein abgebrochener Worker den Job nicht dauerhaft sperrt.
 
 ## Events und Webhooks

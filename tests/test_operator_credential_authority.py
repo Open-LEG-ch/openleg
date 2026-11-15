@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Current community authority at the operator HTTP boundary."""
 
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import pytest
 
@@ -150,7 +150,7 @@ def test_cron_fails_webhooks_after_community_authority_loss(app):
     assert response.status_code == 200
     assert response.json == {"attempted": 2, "delivered": 0, "failed": 2}
     transport.assert_not_called()
-    authority.assert_called_once_with("community-a", "admin-a")
+    assert authority.call_args_list == [call("community-a", "admin-a")] * 2
     assert record.call_count == 2
     for index, attempt in enumerate(record.call_args_list):
         assert attempt.args == (f"delivery-{index}",)

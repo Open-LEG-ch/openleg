@@ -518,6 +518,10 @@ def retry_metering_job(community_id, job_id):
     except Exception:
         db.release_operator_ingestion_retry(community_id, job_id, key)
         raise
+    if result.get("status") == "locked":
+        # Scheduled ingestion holds the territory: no attempt ran, so no cooldown.
+        db.release_operator_ingestion_retry(community_id, job_id, key)
+        return _error("Retry already in progress", 409, ErrorCode.RETRY_IN_PROGRESS)
     db.complete_operator_ingestion_retry(community_id, job_id, key, result)
     return jsonify(schema_version=API_SCHEMA_VERSION, **result)
 
@@ -899,9 +903,11 @@ def _is_public_webhook_address(value):
             return False
         if address in ip_network("::/96") or address in ip_network("64:ff9b::/96"):
             return IPv4Address(int(address) & 0xFFFFFFFF).is_global
-    # Python's is_global already checks mapped IPv4 and rejects all of
-    # 64:ff9b:1::/48. Keep that local-use NAT64 prefix rejected: its configured
-    # translation prefix length cannot be inferred from the address alone.
+        # Local-use NAT64 hides a translation prefix length that the address
+        # does not reveal. Older 3.11 patch releases report it as global.
+        if address in ip_network("64:ff9b:1::/48"):
+            return False
+    # Python's is_global already checks mapped IPv4.
     return address.is_global
 
 
@@ -1037,17 +1043,15 @@ def dispatch_pending_webhooks(
     claim = {"max_attempts": max_attempts, "limit": batch_size}
     if community_id is not None:
         claim["community_id"] = community_id
-    authority = {}
     timed_out_clients = set()
     for row in db.get_pending_webhook_deliveries(**claim):
         if clock() >= run_deadline or row["client_id"] in timed_out_clients:
             db.release_webhook_delivery(row["delivery_id"], claim_id=row["claim_id"])
             continue
         totals["attempted"] += 1
-        identity = (row["community_id"], row.get("created_by"))
-        if identity not in authority:
-            authority[identity] = _creator_authority(*identity)
-        if authority[identity] is None:
+        # Recheck per delivery: authority can be lost during a run.
+        authority = _creator_authority(row["community_id"], row.get("created_by"))
+        if authority is None:
             # Storage is unavailable; this is transient, not a loss of
             # authority, so keep the delivery within its retry budget.
             retryable = row["attempt_count"] + 1 < max_attempts
@@ -1061,7 +1065,7 @@ def dispatch_pending_webhooks(
             totals["failed"] += 1
             continue
         if (
-            not authority[identity]
+            not authority
             or row.get("status") != "processing"
             or row.get("schema_version") != EVENT_SCHEMA_VERSION
             or not row.get("webhook_secret")
@@ -1102,14 +1106,14 @@ def dispatch_pending_webhooks(
                 row["webhook_secret"],
             ),
         }
+        # Release outside the transport handler: a release failure is not a
+        # failed delivery and must not consume an attempt.
+        remaining = run_deadline - clock()
+        if remaining <= 0:
+            db.release_webhook_delivery(row["delivery_id"], claim_id=row["claim_id"])
+            totals["attempted"] -= 1
+            continue
         try:
-            remaining = run_deadline - clock()
-            if remaining <= 0:
-                db.release_webhook_delivery(
-                    row["delivery_id"], claim_id=row["claim_id"]
-                )
-                totals["attempted"] -= 1
-                continue
             status = transport(row["webhook_url"], body, headers, min(15, remaining))
         except TimeoutError:
             timed_out_clients.add(row["client_id"])

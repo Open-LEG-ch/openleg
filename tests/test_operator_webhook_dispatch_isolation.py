@@ -68,6 +68,58 @@ def test_run_budget_releases_unreached_deliveries():
     assert [call.args[0] for call in release.call_args_list] == ["8", "9"]
 
 
+def test_creator_authority_is_rechecked_for_each_delivery():
+    rows = [
+        _delivery_row(delivery_id="first"),
+        _delivery_row(delivery_id="second", client_id="other"),
+    ]
+    sent = []
+
+    def transport(url, body, headers, timeout):
+        sent.append(headers["OpenLEG-Delivery"])
+        return 204
+
+    with (
+        patch("operator_api.db.get_pending_webhook_deliveries", return_value=rows),
+        patch(
+            "operator_api._creator_authority", side_effect=[True, False]
+        ) as authority,
+        patch("operator_api.db.record_webhook_attempt") as record,
+    ):
+        totals = operator_api.dispatch_pending_webhooks(transport=transport)
+    assert sent == ["first"]
+    assert authority.call_count == 2
+    assert totals == {"attempted": 2, "delivered": 1, "failed": 1}
+    assert record.call_args_list[1].args == ("second",)
+    assert record.call_args_list[1].kwargs["status"] == "failed"
+
+
+def test_release_failure_before_transport_does_not_consume_an_attempt():
+    # Start, loop check, then the pre-transport check finds the budget spent.
+    ticks = iter([0.0, 0.0, 120.0])
+    transport_calls = []
+
+    with (
+        patch(
+            "operator_api.db.get_pending_webhook_deliveries",
+            return_value=[_delivery_row(delivery_id="late")],
+        ),
+        patch("operator_api._creator_authority", return_value=True),
+        patch("operator_api.db.record_webhook_attempt") as record,
+        patch(
+            "operator_api.db.release_webhook_delivery",
+            side_effect=RuntimeError("database unavailable"),
+        ),
+        pytest.raises(RuntimeError),
+    ):
+        operator_api.dispatch_pending_webhooks(
+            transport=lambda *args: transport_calls.append(args),
+            clock=lambda: next(ticks),
+        )
+    record.assert_not_called()
+    assert transport_calls == []
+
+
 @pytest.mark.parametrize(
     "prefix", [b"HTTP/1.1 204 ", b"HTTP/1.1 204 No Content\r\nX-Trickle: "]
 )

@@ -83,3 +83,23 @@ def test_http_retry_attempts_once_without_sleeping(retry_app, tmp_path, monkeypa
     sleeper.assert_not_called()
     assert runner.call_args.args[0] == "retry-tenant"
     assert schedule["max_attempts"] == 5
+
+
+def test_locked_territory_releases_the_claim_without_a_cooldown(retry_app):
+    with (
+        patch(
+            "operator_api.db.claim_operator_ingestion_retry",
+            return_value={"schedule": {"territory": "retry-tenant"}},
+        ),
+        patch("operator_api.db.complete_operator_ingestion_retry") as complete,
+        patch("operator_api.db.release_operator_ingestion_retry") as release,
+        patch(
+            "operator_api.sdat_ingestion.run",
+            return_value={"status": "locked", "territory": "retry-tenant"},
+        ),
+    ):
+        response = retry(retry_app, "first")
+    assert response.status_code == 409
+    assert response.json["code"] == "retry_in_progress"
+    complete.assert_not_called()
+    release.assert_called_once_with("retry-community", 7, "first")
