@@ -39,6 +39,7 @@ CREATE_BODY = {
     "capabilities": ["formation.read"],
     "actor_kind": "service",
 }
+REACHES = dict(zip(ADMIN_ONLY, STORE_CALLS))
 
 
 @pytest.fixture
@@ -133,7 +134,9 @@ def test_a_confirmed_administrator_with_the_csrf_token_reaches_the_store(
         "webhook_secret": "olwhsec_x",
     }
     store["revoke_operator_api_client"].return_value = {"id": "client-1"}
-    store["list_operator_api_clients"].return_value = []
+    store["list_operator_api_clients"].return_value = [
+        {"id": "client-1", "created_by": "building-1", "active": True}
+    ]
     store["retry_operator_webhook_delivery"].return_value = {"delivery_id": "d"}
     store["list_operator_webhook_deliveries"].return_value = []
     client, patcher, headers = _client(app, ADMIN)
@@ -143,7 +146,7 @@ def test_a_confirmed_administrator_with_the_csrf_token_reaches_the_store(
         patcher.stop()
 
     assert response.status_code in {200, 201}
-    assert sum(mock.call_count for mock in store.values()) == 1
+    assert store[REACHES[(method, path)]].call_count == 1
 
 
 @pytest.mark.parametrize(("method", "path"), STATE_CHANGING)

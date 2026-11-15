@@ -68,7 +68,17 @@ hashes, or signing secrets.
 Mutations require an `Idempotency-Key` of 1–128 characters:
 
 - `POST /metering/jobs/{id}/retry` retries only a failed job belonging to the
-  community's tenant.
+  community's tenant. Each API retry makes one ingestion attempt without retry
+  sleeps; scheduled ingestion keeps its configured retry policy. After the retry
+  completes, whether successful or failed, the job has a 15-minute cooldown.
+  A new key during this cooldown returns `429`, `Retry-After` with the remaining
+  seconds, and `{"error":"Rate limit exceeded","schema_version":"operator-api/1"}`.
+  The same key replays its stored result during the cooldown. An in-flight retry
+  blocks other keys with `409` (`Retry already in progress`). The same `409`
+  answers when scheduled ingestion is already running for the tenant; that call
+  makes no attempt, starts no cooldown and can be sent again with the same key.
+  A claim without a result expires after 15 minutes, so a worker killed mid-run
+  cannot block the job permanently.
 - `POST /billing/cases/{id}/responses` accepts `message` and the next permitted
   `status` (`acknowledged` or `resolved`).
 - `POST /payments/matches/{id}/confirm` accepts `invoice_id` and confirms only
@@ -234,6 +244,14 @@ dashboard CSRF token. They can inspect delivery attempts at
 `/leg/community/{community_id}/operator-api/deliveries` and retry a failed
 delivery at `/{delivery_id}/retry`. The cron worker dispatches pending events
 through `POST /api/cron/process-operator-webhooks`, protected by `CRON_SECRET`.
+
+Each cron run claims up to 50 deliveries for 15 minutes and has a 120-second
+dispatch budget. Each attempt has a 15-second total deadline for connection,
+TLS, request and response headers, capped by the remaining run budget.
+Timeouts record response status 0 and follow the normal retry rules.
+After a credential times out, its remaining deliveries in the batch return to
+`retry` without consuming an attempt. Deliveries not reached within the run
+budget are released in the same way and can be claimed by a later run.
 
 ## MCP reads
 

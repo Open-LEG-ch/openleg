@@ -6,6 +6,7 @@ import uuid
 
 from psycopg2.extras import Json
 
+import community_access
 import operator_actor
 
 
@@ -151,6 +152,26 @@ def get_client_by_token_hash(token_hash):
     return dict(row) if row and credential_grant_valid(row["id"]) else None
 
 
+def creator_is_confirmed_admin(community_id, building_id):
+    """Return whether a credential creator is a confirmed community administrator.
+
+    Community status assembly swallows storage errors as None, so this reads
+    the creator's own membership row. Storage errors propagate to the caller.
+    """
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT role, access_roles, status FROM community_members
+            WHERE community_id=%s AND building_id=%s""",
+            (community_id, building_id),
+        )
+        member = cur.fetchone()
+    return bool(
+        member
+        and community_access.is_administrator(member)
+        and member["status"] == "confirmed"
+    )
+
+
 def list_clients(community_id):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
@@ -168,13 +189,11 @@ def rotate_client(community_id, client_id, token_hash):
             (client_id, community_id),
         )
         current = cur.fetchone()
-        if current is None:
+        if current is None or not current["active"]:
+            # Revocation is final; rotation never brings a credential back.
             return None
-        if not current["active"]:
-            # Rotation reactivates a revoked credential, which takes a slot.
-            _check_credential_capacity(cur, community_id)
         cur.execute(
-            "UPDATE operator_api_clients SET token_hash=%s,webhook_secret=%s,active=TRUE,webhook_secret_version=webhook_secret_version+1,rotated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=%s AND community_id=%s RETURNING *",
+            "UPDATE operator_api_clients SET token_hash=%s,webhook_secret=%s,webhook_secret_version=webhook_secret_version+1,rotated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=%s AND community_id=%s AND active=TRUE RETURNING *",
             (
                 token_hash,
                 "olwhsec_" + secrets.token_urlsafe(32),
@@ -289,7 +308,7 @@ def get_pending_deliveries(max_attempts=5, limit=100, *, community_id=None):
                )
                SELECT claimed.delivery_id,claimed.client_id,claimed.status,
                       claimed.claim_id,claimed.attempt_count,e.*,c.webhook_url,
-                      c.webhook_secret_version,c.webhook_secret
+                      c.webhook_secret_version,c.webhook_secret,c.created_by
                FROM claimed JOIN operator_events e ON e.event_id=claimed.event_id
                JOIN operator_api_clients c ON c.id=claimed.client_id
                ORDER BY e.occurred_at""",
@@ -370,3 +389,14 @@ def retry_delivery(community_id, delivery_id):
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+def release_delivery(delivery_id, *, claim_id):
+    """Release an unattempted delivery only while this worker owns its claim."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE operator_webhook_deliveries
+                  SET status='retry', claim_id=NULL, claimed_at=NULL
+                WHERE delivery_id=%s AND status='processing' AND claim_id=%s""",
+            (delivery_id, claim_id),
+        )

@@ -4,6 +4,7 @@
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
+from unittest.mock import patch
 
 import pytest
 
@@ -235,7 +236,9 @@ def test_concurrent_changes_persist_one_transition(
     assert _counts()["operator_webhook_deliveries"] == 1
 
 
+@patch("operator_api.db.operator_creator_is_confirmed_admin", return_value=True)
 def test_authenticated_operator_adapter_preserves_capabilities_scope_and_response(
+    _community_status,
     invoice_case,
 ):
     from flask import Flask

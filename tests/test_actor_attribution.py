@@ -17,6 +17,22 @@ billing_database = payments.billing_database
 payment_client = payments.payment_client
 
 
+def _confirmed_admin(db, community_id, building_id):
+    """Bearer requests require the credential creator to be a confirmed admin."""
+    db.save_building(
+        building_id,
+        f"{building_id}@example.invalid",
+        {"address": "Fictional 1", "lat": 47.2, "lon": 8.2},
+        {},
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO community_members(community_id,building_id,role,status)
+            VALUES (%s,%s,'admin','confirmed')""",
+            (community_id, building_id),
+        )
+
+
 @pytest.mark.parametrize(
     "path,message",
     [
@@ -34,6 +50,9 @@ def test_agent_cannot_reach_vnb(path, message):
             return_value={**CLIENT, "actor_kind": "agent"},
         ),
         patch.object(operator_api.db, "claim_operator_api_usage", return_value=True),
+        patch.object(
+            operator_api.db, "operator_creator_is_confirmed_admin", return_value=True
+        ),
         patch.object(
             operator_api.db,
             "create_agent_confirmation_request",
@@ -132,6 +151,7 @@ def test_http_membership_attribution_survives_credential_changes(
         cur.execute(
             "INSERT INTO communities(community_id,name) VALUES ('leg','Fictional LEG')"
         )
+    _confirmed_admin(db, "leg", "building")
     sender = db.create_operator_api_client(
         "leg",
         "building",
@@ -246,6 +266,7 @@ def test_agent_invoice_reply_records_actor_on_message_and_events(interest_databa
             (invoice,),
         )
         case_id = cur.fetchone()["id"]
+    _confirmed_admin(db, "leg", "building")
     actor = db.create_operator_api_client(
         "leg",
         "building",
@@ -335,6 +356,7 @@ def test_metering_retry_records_initiator_on_run(interest_database):
             return_value={**CLIENT, "capabilities": ["metering.mutate"]},
         ),
         patch.object(db, "claim_operator_api_usage", return_value=True),
+        patch.object(db, "operator_creator_is_confirmed_admin", return_value=True),
         patch.object(
             db,
             "claim_operator_ingestion_retry",
@@ -384,6 +406,7 @@ def test_formation_gate_prevents_package_and_event_creation(interest_database, k
         cur.execute(
             "INSERT INTO communities(community_id,name) VALUES ('leg','Fictional LEG')"
         )
+    _confirmed_admin(db, "leg", "building")
     actor = db.create_operator_api_client(
         "leg",
         "building",
@@ -479,6 +502,9 @@ def test_webhook_actor_is_optional_and_never_uses_subscriber_identity():
             ],
         ),
         patch.object(operator_api.db, "record_webhook_attempt"),
+        patch.object(
+            operator_api.db, "operator_creator_is_confirmed_admin", return_value=True
+        ),
     ):
         operator_api.dispatch_pending_webhooks(transport=transport)
     assert bodies[0]["actor"] == actor
@@ -490,6 +516,9 @@ def test_webhook_actor_is_optional_and_never_uses_subscriber_identity():
             return_value=[_delivery_row(webhook_secret="stored-secret")],
         ),
         patch.object(operator_api.db, "record_webhook_attempt"),
+        patch.object(
+            operator_api.db, "operator_creator_is_confirmed_admin", return_value=True
+        ),
     ):
         operator_api.dispatch_pending_webhooks(transport=transport)
     assert "actor" not in bodies[1]

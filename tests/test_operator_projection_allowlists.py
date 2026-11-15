@@ -82,6 +82,7 @@ def http_client():
             return_value=credential,
         ),
         patch("operator_api.db.claim_operator_api_usage", return_value=True),
+        patch("operator_api.db.operator_creator_is_confirmed_admin", return_value=True),
         patch(
             "operator_api.formation_wizard.get_community_status",
             return_value={

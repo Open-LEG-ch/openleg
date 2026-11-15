@@ -68,12 +68,38 @@ def claim_ingestion_retry(community_id, job_id, key):
     action = f"metering.retry:{job_id}"
     fingerprint = request_hash({"job_id": job_id})
     with _get_connection() as conn, conn.cursor() as cur:
+        # Serialize claims and completion for this job, across idempotency keys.
+        cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (action,))
+        replay = _replay(cur, community_id, action, key, fingerprint)
+        if replay:
+            return {"replay": replay}
+        cur.execute(
+            """SELECT CEIL(EXTRACT(EPOCH FROM
+                      (MAX(completed_at) + INTERVAL '15 minutes' - clock_timestamp())))
+                      AS retry_after
+                 FROM operator_action_idempotency
+                WHERE community_id=%s AND action=%s""",
+            (community_id, action),
+        )
+        retry_after = cur.fetchone()["retry_after"]
+        if retry_after is not None and retry_after > 0:
+            return {"retry_after": int(retry_after)}
+        # A claim whose worker was killed mid-run is never released; expire it
+        # so the job does not stay blocked. Ingestion holds its own territory
+        # lock, so a late-finishing run cannot overlap a new one.
         cur.execute(
             """DELETE FROM operator_action_idempotency
-                WHERE community_id=%s AND action=%s AND idempotency_key=%s
-                  AND response IS NULL AND created_at<NOW()-INTERVAL '15 minutes'""",
-            (community_id, action, key),
+                WHERE community_id=%s AND action=%s AND response IS NULL
+                  AND created_at<NOW()-INTERVAL '15 minutes'""",
+            (community_id, action),
         )
+        cur.execute(
+            """SELECT 1 FROM operator_action_idempotency
+                WHERE community_id=%s AND action=%s AND response IS NULL LIMIT 1""",
+            (community_id, action),
+        )
+        if cur.fetchone():
+            return {"pending": True}
         cur.execute(
             """INSERT INTO operator_action_idempotency(community_id,action,idempotency_key,request_hash,response)
                VALUES (%s,%s,%s,%s,NULL) ON CONFLICT DO NOTHING RETURNING idempotency_key""",
@@ -112,7 +138,12 @@ def get_ingestion_retry_in_cursor(cur, community_id, job_id):
 def complete_ingestion_retry(community_id, job_id, key, response):
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """UPDATE operator_action_idempotency SET response=%s::jsonb
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+            (f"metering.retry:{job_id}",),
+        )
+        cur.execute(
+            """UPDATE operator_action_idempotency SET response=%s::jsonb,
+                       completed_at=clock_timestamp()
                 WHERE community_id=%s AND action=%s AND idempotency_key=%s AND response IS NULL""",
             (
                 json.dumps(response, default=str),

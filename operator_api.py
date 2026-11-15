@@ -6,15 +6,18 @@ from __future__ import annotations
 import hashlib
 import hmac
 import http.client
+import io
 import json
+import logging
 import os
 import secrets
 import socket
 import ssl
+import time
 import urllib.error
 from datetime import UTC, date, datetime
 from functools import wraps
-from ipaddress import ip_address
+from ipaddress import IPv4Address, ip_address, ip_network
 from urllib.parse import urlparse
 
 from flask import (
@@ -38,6 +41,8 @@ import operator_request
 import sdat_ingestion
 import vnb_exchange
 from operator_errors import ErrorCode
+
+logger = logging.getLogger(__name__)
 
 API_SCHEMA_VERSION = "operator-api/1"
 EVENT_SCHEMA_VERSION = "operator-event/1"
@@ -161,6 +166,10 @@ def require_operator(capability):
                 return _error("Resource not found", 404)
             if capability not in set(client.get("capabilities") or []):
                 return _error("Capability denied", 403)
+            if not db.operator_creator_is_confirmed_admin(
+                community_id, client["created_by"]
+            ):
+                return _error("Forbidden", 403)
             if not db.claim_operator_api_usage(
                 client["id"], request.path, int(client["rate_limit_per_hour"])
             ):
@@ -493,16 +502,26 @@ def retry_metering_job(community_id, job_id):
     claim = db.claim_operator_ingestion_retry(community_id, job_id, key)
     if not claim:
         return _error("Resource not found or not eligible", 404)
+    if claim.get("retry_after"):
+        response = _error("Rate limit exceeded", 429)
+        response.headers["Retry-After"] = str(claim["retry_after"])
+        return response
     if claim.get("pending"):
         return _error("Retry already in progress", 409, ErrorCode.RETRY_IN_PROGRESS)
     if claim.get("replay"):
         return jsonify(schema_version=API_SCHEMA_VERSION, **claim["replay"])
     schedule = claim["schedule"]
     try:
-        result = sdat_ingestion.run(schedule["territory"], schedule)
+        result = sdat_ingestion.run(
+            schedule["territory"], {**schedule, "max_attempts": 1}
+        )
     except Exception:
         db.release_operator_ingestion_retry(community_id, job_id, key)
         raise
+    if result.get("status") == "locked":
+        # Scheduled ingestion holds the territory: no attempt ran, so no cooldown.
+        db.release_operator_ingestion_retry(community_id, job_id, key)
+        return _error("Retry already in progress", 409, ErrorCode.RETRY_IN_PROGRESS)
     db.complete_operator_ingestion_retry(community_id, job_id, key, result)
     return jsonify(schema_version=API_SCHEMA_VERSION, **result)
 
@@ -658,6 +677,15 @@ def _admin_for(community_id: str, building_id: str | None) -> bool:
     )
 
 
+def _creator_authority(community_id: str, building_id: str | None) -> bool | None:
+    """Return a credential creator's current authority, or None when unknown."""
+    try:
+        return db.operator_creator_is_confirmed_admin(community_id, building_id)
+    except Exception:
+        logger.exception("[OPERATOR] Creator authority lookup failed")
+        return None
+
+
 def _require_csrf():
     submitted = request.headers.get("X-CSRF-Token") or request.form.get(
         "csrf_token", ""
@@ -794,6 +822,18 @@ def rotate_credential(community_id, client_id):
         return _error("Forbidden", 403)
     if not _require_csrf():
         return _error("Invalid CSRF token", 400)
+    credential = next(
+        (
+            row
+            for row in db.list_operator_api_clients(community_id)
+            if row["id"] == client_id
+        ),
+        None,
+    )
+    if not credential:
+        return _error("Credential not found", 404)
+    if credential["created_by"] != session.get("dashboard_building_id"):
+        return _error("Forbidden", 403)
     token = _new_secret("olk_")
     token_hash = _token_hash(token)
     try:
@@ -851,6 +891,26 @@ def retry_webhook_delivery(community_id, delivery_id):
     return jsonify(delivery=delivery) if delivery else _error("Delivery not found", 404)
 
 
+def _is_public_webhook_address(value):
+    """Check embedded destinations before the interpreter's general IP policy."""
+    address = ip_address(value)
+    if address.version == 6:
+        if address.teredo is not None:
+            return all(ipv4.is_global for ipv4 in address.teredo)
+        if address.sixtofour is not None:
+            return address.sixtofour.is_global
+        if address.is_site_local:
+            return False
+        if address in ip_network("::/96") or address in ip_network("64:ff9b::/96"):
+            return IPv4Address(int(address) & 0xFFFFFFFF).is_global
+        # Local-use NAT64 hides a translation prefix length that the address
+        # does not reveal. Older 3.11 patch releases report it as global.
+        if address in ip_network("64:ff9b:1::/48"):
+            return False
+    # Python's is_global already checks mapped IPv4.
+    return address.is_global
+
+
 def _public_webhook_addresses(url):
     parsed = urlparse(url)
     if parsed.scheme != "https" or not parsed.hostname:
@@ -866,7 +926,7 @@ def _public_webhook_addresses(url):
         return ()
     return (
         tuple(sorted(addresses))
-        if addresses and all(ip_address(value).is_global for value in addresses)
+        if addresses and all(_is_public_webhook_address(value) for value in addresses)
         else ()
     )
 
@@ -882,37 +942,87 @@ def _is_public_webhook_url(url):
 
 
 def _default_transport(url, body, headers, timeout):
+    deadline = time.monotonic() + timeout
     parsed = urlparse(url)
     addresses = _public_webhook_addresses(url)
     if not addresses:
         raise ValueError("Webhook destination is not public")
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Webhook delivery deadline exceeded")
     connection = _PinnedHTTPSConnection(
-        parsed.hostname, addresses[0], parsed.port or 443, timeout=timeout
+        parsed.hostname, addresses[0], parsed.port or 443, timeout=remaining
     )
     try:
         target = parsed.path or "/"
         if parsed.query:
             target += "?" + parsed.query
         connection.request("POST", target, body=body, headers=headers)
-        return connection.getresponse().status
+        with connection.getresponse() as response:
+            return response.status
     finally:
         connection.close()
+
+
+class _DeadlineReader(io.RawIOBase):
+    """Refresh the socket timeout before every raw read, including header reads."""
+
+    def __init__(self, connection):
+        self.connection = connection
+
+    def readable(self):
+        return True
+
+    def readinto(self, buffer):
+        self.connection.sock.settimeout(self.connection.remaining())
+        return self.connection.sock.recv_into(buffer)
+
+
+class _DeadlineSocket:
+    """HTTP socket facade sharing the connect/TLS deadline with writes and reads."""
+
+    def __init__(self, sock, remaining):
+        self.sock = sock
+        self.remaining = remaining
+
+    def sendall(self, data):
+        self.sock.settimeout(self.remaining())
+        self.sock.sendall(data)
+
+    def makefile(self, mode):
+        return io.BufferedReader(_DeadlineReader(self))
+
+    def close(self):
+        self.sock.close()
 
 
 class _PinnedHTTPSConnection(http.client.HTTPSConnection):
     """Connect to a validated address while verifying TLS for the original host."""
 
     def __init__(self, hostname, address, port, *, timeout):
+        self._deadline = time.monotonic() + timeout
         super().__init__(
             hostname, port=port, timeout=timeout, context=ssl.create_default_context()
         )
         self._validated_address = address
 
+    def _remaining(self):
+        remaining = self._deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("Webhook delivery deadline exceeded")
+        return remaining
+
     def connect(self):
         raw = socket.create_connection(
-            (self._validated_address, self.port), self.timeout, self.source_address
+            (self._validated_address, self.port), self._remaining(), self.source_address
         )
-        self.sock = self._context.wrap_socket(raw, server_hostname=self.host)
+        try:
+            raw.settimeout(self._remaining())
+            secured = self._context.wrap_socket(raw, server_hostname=self.host)
+        except BaseException:
+            raw.close()
+            raise
+        self.sock = _DeadlineSocket(secured, self._remaining)
 
 
 def dispatch_pending_webhooks(
@@ -922,18 +1032,41 @@ def dispatch_pending_webhooks(
     batch_size=50,
     signing_key=None,
     community_id=None,
+    clock=None,
 ):
     """Claim scoped deliveries, sign payloads and record retryable transport results."""
+    clock = clock or time.monotonic
+    run_deadline = clock() + 120
     transport = transport or _default_transport
     batch_size = max(1, min(int(batch_size), MAX_WEBHOOK_BATCH_SIZE))
     totals = {"attempted": 0, "delivered": 0, "failed": 0}
     claim = {"max_attempts": max_attempts, "limit": batch_size}
     if community_id is not None:
         claim["community_id"] = community_id
+    timed_out_clients = set()
     for row in db.get_pending_webhook_deliveries(**claim):
+        if clock() >= run_deadline or row["client_id"] in timed_out_clients:
+            db.release_webhook_delivery(row["delivery_id"], claim_id=row["claim_id"])
+            continue
         totals["attempted"] += 1
+        # Recheck per delivery: authority can be lost during a run.
+        authority = _creator_authority(row["community_id"], row.get("created_by"))
+        if authority is None:
+            # Storage is unavailable; this is transient, not a loss of
+            # authority, so keep the delivery within its retry budget.
+            retryable = row["attempt_count"] + 1 < max_attempts
+            db.record_webhook_attempt(
+                row["delivery_id"],
+                claim_id=row["claim_id"],
+                status="retry" if retryable else "failed",
+                response_status=0,
+                retryable=retryable,
+            )
+            totals["failed"] += 1
+            continue
         if (
-            row.get("status") != "processing"
+            not authority
+            or row.get("status") != "processing"
             or row.get("schema_version") != EVENT_SCHEMA_VERSION
             or not row.get("webhook_secret")
         ):
@@ -973,8 +1106,18 @@ def dispatch_pending_webhooks(
                 row["webhook_secret"],
             ),
         }
+        # Release outside the transport handler: a release failure is not a
+        # failed delivery and must not consume an attempt.
+        remaining = run_deadline - clock()
+        if remaining <= 0:
+            db.release_webhook_delivery(row["delivery_id"], claim_id=row["claim_id"])
+            totals["attempted"] -= 1
+            continue
         try:
-            status = transport(row["webhook_url"], body, headers, 10)
+            status = transport(row["webhook_url"], body, headers, min(15, remaining))
+        except TimeoutError:
+            timed_out_clients.add(row["client_id"])
+            status = 0
         except urllib.error.HTTPError as error:
             status = error.code
         except Exception:

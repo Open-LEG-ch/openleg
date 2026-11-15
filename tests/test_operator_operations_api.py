@@ -3,7 +3,18 @@
 
 from unittest.mock import patch
 
+import pytest
+
 import operator_api
+
+
+@pytest.fixture(autouse=True)
+def confirmed_credential_creator():
+    with patch(
+        "operator_api.db.operator_creator_is_confirmed_admin", return_value=True
+    ):
+        yield
+
 
 CLIENT = {
     "id": "client-1",
@@ -192,7 +203,7 @@ def test_retry_runs_only_the_tenant_scoped_eligible_schedule(
     )
     assert response.status_code == 200
     claim.assert_called_once_with("community-a", 7, "retry-7")
-    run.assert_called_once_with("tenant-a", schedule)
+    run.assert_called_once_with("tenant-a", {**schedule, "max_attempts": 1})
     complete.assert_called_once_with(
         "community-a", 7, "retry-7", {"status": "success", "territory": "tenant-a"}
     )

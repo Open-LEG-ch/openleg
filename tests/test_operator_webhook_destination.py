@@ -20,6 +20,15 @@ PUBLIC_IP = "93.184.215.14"
 CREATE_PATH = f"/leg/community/{COMMUNITY}/operator-api/credentials"
 
 
+@pytest.fixture(autouse=True)
+def confirmed_credential_creator():
+    """Dispatch delivers only for credentials whose creator is still an admin."""
+    with patch(
+        "operator_api.db.operator_creator_is_confirmed_admin", return_value=True
+    ):
+        yield
+
+
 def _resolves_to(*addresses):
     def fake_getaddrinfo(host, port, *args, **kwargs):
         return [
@@ -135,6 +144,8 @@ def test_credential_route_refuses_a_webhook_without_https(
 def _delivery(**overrides):
     row = {
         "delivery_id": "delivery-1",
+        "client_id": "client-1",
+        "created_by": "building-1",
         "claim_id": "claim-1",
         "status": "processing",
         "schema_version": "operator-event/1",

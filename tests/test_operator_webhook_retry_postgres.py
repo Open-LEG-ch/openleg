@@ -28,6 +28,22 @@ def _admin_client():
     return client
 
 
+def _confirmed_creator(db):
+    """Dispatch delivers only while the credential creator is a confirmed admin."""
+    db.save_building(
+        "building-1",
+        "building-1@example.invalid",
+        {"address": "Fictional 1", "lat": 47.2, "lon": 8.2},
+        {},
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO community_members(community_id,building_id,role,status)
+            VALUES (%s,'building-1','admin','confirmed')""",
+            (COMMUNITY,),
+        )
+
+
 def _make_due(db):
     """Let the backoff elapse without sleeping in the test."""
     with db.get_connection() as conn, conn.cursor() as cur:
@@ -46,6 +62,7 @@ def test_an_exhausted_delivery_rearmed_by_an_administrator_is_delivered(
             "INSERT INTO communities(community_id,name) VALUES (%s,'Fictional LEG')",
             (COMMUNITY,),
         )
+    _confirmed_creator(db)
     db.create_operator_api_client(
         COMMUNITY,
         "building-1",
@@ -112,6 +129,7 @@ def test_a_rearmed_delivery_claimed_by_a_dead_worker_is_recovered(
             "INSERT INTO communities(community_id,name) VALUES (%s,'Fictional LEG')",
             (COMMUNITY,),
         )
+    _confirmed_creator(db)
     db.create_operator_api_client(
         COMMUNITY,
         "building-1",
@@ -158,6 +176,7 @@ def test_a_delivery_stopped_early_gets_its_remaining_attempts_after_rearm(
             "INSERT INTO communities(community_id,name) VALUES (%s,'Fictional LEG')",
             (COMMUNITY,),
         )
+    _confirmed_creator(db)
     db.create_operator_api_client(
         COMMUNITY,
         "building-1",

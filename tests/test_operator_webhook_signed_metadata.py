@@ -7,6 +7,8 @@ import json
 from datetime import UTC, datetime
 from unittest.mock import patch
 
+import pytest
+
 import operator_api
 
 SECRET = "olwhsec_metadata-test"
@@ -25,12 +27,23 @@ def delivery():
     return {
         **EVENT,
         "delivery_id": "delivery-1",
+        "client_id": "client-1",
+        "created_by": "admin-a",
         "claim_id": "claim-1",
         "status": "processing",
         "attempt_count": 0,
         "webhook_url": "https://hooks.example.net/ingest",
         "webhook_secret": SECRET,
     }
+
+
+@pytest.fixture(autouse=True)
+def confirmed_credential_creator():
+    """Dispatch delivers only for credentials whose creator is still an admin."""
+    with patch(
+        "operator_api.db.operator_creator_is_confirmed_admin", return_value=True
+    ):
+        yield
 
 
 def assert_signature(body, headers):

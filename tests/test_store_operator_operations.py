@@ -130,38 +130,46 @@ def test_retry_reads_only_failed_runs_of_the_own_tenant(monkeypatch):
 
 def test_retry_claim_holds_the_key_only_for_an_eligible_failure(monkeypatch):
     schedule = {"territory": "tenant-a", "enabled": True, "max_attempts": 2}
-    cursor = Cursor([{"idempotency_key": "key-7"}, schedule])
+    cursor = Cursor(
+        [None, {"retry_after": None}, None, {"idempotency_key": "key-7"}, schedule]
+    )
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     assert store.claim_ingestion_retry(COMMUNITY, 7, "key-7") == {"schedule": schedule}
 
-    assert "DELETE FROM operator_action_idempotency" in cursor.executed[0][0]
-    assert "INSERT INTO operator_action_idempotency" in cursor.executed[1][0]
-    eligibility_query, eligibility_params = cursor.executed[2]
+    assert "pg_advisory_xact_lock" in cursor.executed[0][0]
+    stale_query, stale_params = cursor.executed[3]
+    assert "DELETE FROM operator_action_idempotency" in stale_query
+    assert "created_at<NOW()-INTERVAL '15 minutes'" in stale_query
+    assert stale_params == (COMMUNITY, "metering.retry:7")
+    assert "INSERT INTO operator_action_idempotency" in cursor.executed[5][0]
+    eligibility_query, eligibility_params = cursor.executed[6]
     assert "r.status='failure' AND r.territory=b.city_id" in eligibility_query
     assert eligibility_params == (COMMUNITY, 7)
 
 
 def test_retry_claim_releases_the_key_for_a_pending_job(monkeypatch):
-    cursor = Cursor([{"idempotency_key": "key-7"}, None])
+    cursor = Cursor(
+        [None, {"retry_after": None}, None, {"idempotency_key": "key-7"}, None]
+    )
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     assert store.claim_ingestion_retry(COMMUNITY, 7, "key-7") is None
 
-    release_query, release_params = cursor.executed[3]
+    release_query, release_params = cursor.executed[7]
     assert "DELETE FROM operator_action_idempotency" in release_query
     assert "created_at" not in release_query
     assert release_params == (COMMUNITY, "metering.retry:7", "key-7")
 
 
 def test_retry_claim_reports_pending_while_the_first_attempt_is_in_flight(monkeypatch):
-    cursor = Cursor([None, None])
+    cursor = Cursor([None, {"retry_after": None}, {"exists": 1}])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     assert store.claim_ingestion_retry(COMMUNITY, 7, "key-7") == {"pending": True}
     assert (
         "SELECT response,request_hash FROM operator_action_idempotency"
-        in (cursor.executed[2][0])
+        in (cursor.executed[1][0])
     )
 
 
@@ -170,7 +178,7 @@ def test_replayed_retry_key_replays_the_completed_response(monkeypatch):
         "response": json.dumps({"status": "success", "territory": "tenant-a"}),
         "request_hash": store.request_hash({"job_id": 7}),
     }
-    cursor = Cursor([None, stored])
+    cursor = Cursor([stored])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     claim = store.claim_ingestion_retry(COMMUNITY, 7, "key-7")
@@ -181,7 +189,7 @@ def test_replayed_retry_key_replays_the_completed_response(monkeypatch):
 
 
 def test_reused_retry_key_with_a_different_payload_conflicts(monkeypatch):
-    cursor = Cursor([None, {"response": None, "request_hash": "a" * 64}])
+    cursor = Cursor([{"response": None, "request_hash": "a" * 64}])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
 
     with pytest.raises(ValueError, match="already used for another request"):
@@ -251,7 +259,7 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         None,
         "BANK-1",
         date(2026, 9, 1),
-        "operator:key-12",
+        "paid",
     )
     assert "previous_state, new_state" in " ".join(
         next(

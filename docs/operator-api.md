@@ -63,6 +63,23 @@ asynchron (`202`) und enthalten `case_id`, `state` und `event_id`. Validierung,
 Rechte, Zustandsübergänge und Auditpfad sind dieselben Domain-Aufrufe wie in der
 Bedienoberfläche.
 
+## Messdaten erneut abrufen
+
+`POST /api/operator/v1/communities/{community_id}/metering/jobs/{job_id}/retry`
+startet für einen fehlgeschlagenen Job genau einen Importversuch ohne
+Wartepausen zwischen Versuchen. Geplante Importe behalten ihre konfigurierten
+Wiederholungen. Nach Abschluss gilt für den Job eine Sperrfrist von 15 Minuten,
+auch bei einem Fehler. Ein weiterer Aufruf mit neuem `Idempotency-Key` erhält
+`429`, `Retry-After` mit den verbleibenden Sekunden und
+`{"error":"Rate limit exceeded","schema_version":"operator-api/1"}`.
+Derselbe Schlüssel liefert während der Sperrfrist das gespeicherte Ergebnis.
+Solange ein Versuch läuft, erhalten andere Schlüssel `409`
+(`Retry already in progress`). Dieselbe Antwort folgt, wenn für den Mandanten
+bereits ein geplanter Import läuft. Dann findet kein Versuch statt, es beginnt
+keine Sperrfrist, und derselbe Schlüssel kann erneut gesendet werden.
+Eine Reservierung ohne Ergebnis verfällt nach
+15 Minuten, damit ein abgebrochener Worker den Job nicht dauerhaft sperrt.
+
 ## Events und Webhooks
 
 Events tragen `schema_version: operator-event/1`, eine stabile `event_id`, eine
@@ -100,6 +117,12 @@ Ein Python-Beispiel steht in
 
 Ein Cronlauf beansprucht atomar höchstens 50 Zustellungen. Andere Worker können
 diese Zustellungen während der 15-minütigen Claim-Frist nicht übernehmen.
+Ein Zustellversuch hat insgesamt 15 Sekunden für Verbindung, TLS, Anfrage und
+Antwort-Header. Ein Timeout zählt als fehlgeschlagener Versuch mit
+Antwortstatus 0. Nach einem Timeout gibt der Worker die übrigen Zustellungen
+desselben Credentials im Batch ohne zusätzlichen Versuch als `retry` frei.
+Der Lauf hat ein Zeitbudget von 120 Sekunden; nicht begonnene Zustellungen
+werden ebenfalls ohne zusätzlichen Versuch freigegeben.
 Fehler werden mit exponentiellem Abstand höchstens fünfmal versucht. Danach
 bleibt die Delivery sichtbar im Status `failed`; ein erfolgreicher 2xx-Aufruf
 endet im Status `delivered`.
