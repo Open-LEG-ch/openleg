@@ -1,4 +1,4 @@
-mcp==1.30.0
+mcp==2.3.0
 httpx==0.28.1
 PyYAML==6.0.3
 jsonschema==4.26.0
