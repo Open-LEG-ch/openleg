@@ -197,9 +197,9 @@ def test_mcp_case_response(operator_http, monkeypatch):
                 )
                 assert tool.meta["x-openleg-capability"] == "cases.mutate"
                 assert tool.meta["x-openleg-operation-id"] == "respondInvoiceCase"
-                assert tool.annotations.destructiveHint is True
-                assert tool.annotations.idempotentHint is True
-                assert tool.annotations.readOnlyHint is False
+                assert tool.annotations.destructive_hint is True
+                assert tool.annotations.idempotent_hint is True
+                assert tool.annotations.read_only_hint is False
                 args = {
                     "community_id": http.community_id,
                     "case_id": ids["case_id"],
@@ -210,24 +210,24 @@ def test_mcp_case_response(operator_http, monkeypatch):
                 }
                 before = snapshot(http)
                 preview = await sdk.call_tool("respond_invoice_case", args)
-                assert not preview.isError
-                assert preview.structuredContent["dry_run"] is True
+                assert not preview.is_error
+                assert preview.structured_content["dry_run"] is True
                 assert snapshot(http) == before
                 missing = await sdk.call_tool(
                     "respond_invoice_case",
                     {k: v for k, v in args.items() if k != "idempotency_key"},
                 )
-                assert missing.isError
+                assert missing.is_error
                 args["dry_run"] = False
                 result = await sdk.call_tool("respond_invoice_case", args)
-                assert not result.isError
-                assert result.structuredContent["status"] == "acknowledged"
+                assert not result.is_error
+                assert result.structured_content["status"] == "acknowledged"
                 replay = await sdk.call_tool("respond_invoice_case", args)
-                assert replay.structuredContent["replayed"] is True
+                assert replay.structured_content["replayed"] is True
                 conflict = await sdk.call_tool(
                     "respond_invoice_case", {**args, "message": "Changed."}
                 )
-                assert conflict.isError
-                assert conflict.structuredContent["code"] == "idempotency_conflict"
+                assert conflict.is_error
+                assert conflict.structured_content["code"] == "idempotency_conflict"
 
         asyncio.run(check())

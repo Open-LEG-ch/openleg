@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from threading import Thread
 
 import pytest
-from mcp.shared.exceptions import McpError
+from mcp.shared.exceptions import MCPError
 from werkzeug.serving import make_server
 
 from tests import operator_contract_helpers
@@ -60,48 +60,48 @@ def test_real_http_pagination_and_scope(operator_http, monkeypatch, caplog):
             ):
                 args = {"community_id": fixture.community_id, "limit": 1}
                 first = await sdk.call_tool("list_billing_periods", args)
-                assert not first.isError
+                assert not first.is_error
                 expected = fixture.request("GET", "/billing/periods?limit=1").get_json()
-                assert first.structuredContent == {
+                assert first.structured_content == {
                     k: expected[k] for k in ("items", "next_cursor")
                 }
                 floating = await sdk.call_tool(
                     "list_billing_periods", {**args, "limit": 1.0}
                 )
-                assert not floating.isError
-                assert floating.structuredContent == first.structuredContent
+                assert not floating.is_error
+                assert floating.structured_content == first.structured_content
                 fractional = await sdk.call_tool(
                     "list_billing_periods", {**args, "limit": 1.5}
                 )
-                assert fractional.isError
+                assert fractional.is_error
                 assert fractional.content[0].text == "invalid_arguments"
-                assert first.structuredContent["next_cursor"] is not None
-                args["cursor"] = first.structuredContent["next_cursor"]
+                assert first.structured_content["next_cursor"] is not None
+                args["cursor"] = first.structured_content["next_cursor"]
                 second = await sdk.call_tool("list_billing_periods", args)
-                assert not second.isError
+                assert not second.is_error
                 assert (
-                    second.structuredContent["items"]
-                    != first.structuredContent["items"]
+                    second.structured_content["items"]
+                    != first.structured_content["items"]
                 )
-                assert second.structuredContent["next_cursor"] is None
+                assert second.structured_content["next_cursor"] is None
                 transport.headers.pop("Authorization")
-                with pytest.raises(McpError) as failure:
+                with pytest.raises(MCPError) as failure:
                     await sdk.call_tool("list_billing_periods", args)
                 assert failure.value.error.code == -32011
                 transport.headers.update(fixture.headers)
                 denied = await sdk.call_tool(
                     "list_billing_periods", {"community_id": "other-leg"}
                 )
-                assert denied.isError
+                assert denied.is_error
                 assert denied.content[0].text == "not_found"
                 async with session(app) as anonymous:
-                    with pytest.raises(McpError) as failure:
+                    with pytest.raises(MCPError) as failure:
                         await anonymous.call_tool("list_billing_periods", args)
                     assert failure.value.error.code == -32011
                 restricted, _ = fixture.credential_headers(["payments.read"])
                 async with session(app, restricted) as other:
                     denied = await other.call_tool("list_billing_periods", args)
-                    assert denied.isError
+                    assert denied.is_error
                     assert denied.content[0].text == "forbidden"
                 assert (
                     fixture.headers["Authorization"].split()[1]
@@ -159,7 +159,7 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
                 for tool in tools:
                     path, op = reads[tool.meta["operationId"]]
                     assert re.fullmatch("[a-z_]+", tool.name)
-                    assert tool.annotations.readOnlyHint
+                    assert tool.annotations.read_only_hint
                     assert (
                         tool.meta["x-openleg-capability"] == op["x-openleg-capability"]
                     )
@@ -167,7 +167,7 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
                         spec["components"]["parameters"][p["$ref"].split("/")[-1]]
                         for p in op["parameters"]
                     ]
-                    assert tool.inputSchema == {
+                    assert tool.input_schema == {
                         "type": "object",
                         "properties": {p["name"]: p["schema"] for p in params},
                         "required": [p["name"] for p in params if p.get("required")],
@@ -183,13 +183,13 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
                     result = await sdk.call_tool(
                         tool.name, {"community_id": fixture.community_id}
                     )
-                    assert not result.isError
+                    assert not result.is_error
                     expected = fixture.client.get(
                         path.format(community_id=fixture.community_id),
                         headers=fixture.headers,
                     ).get_json()
                     expected.pop("schema_version")
-                    actual = dict(result.structuredContent)
+                    actual = dict(result.structured_content)
                     if op["operationId"] == "listCalculatedDeliverys":
                         # Rejected VNB deliveries keep the VNB's own version
                         # and transport strings, so those are untrusted too.
@@ -204,7 +204,7 @@ def test_every_read_contract_and_http(operator_http, monkeypatch):
                     denied = await sdk.call_tool(
                         tool.name, {"community_id": "other-leg"}
                     )
-                    assert denied.isError and denied.content[0].text == "not_found"
+                    assert denied.is_error and denied.content[0].text == "not_found"
 
         asyncio.run(check())
 
@@ -282,9 +282,9 @@ def test_summary_sections(operator_http, monkeypatch):
                 app.router.lifespan_context(app),
                 session(app, fixture.headers) as sdk,
             ):
-                templates = (await sdk.list_resource_templates()).resourceTemplates
+                templates = (await sdk.list_resource_templates()).resource_templates
                 assert (
-                    templates[0].uriTemplate
+                    templates[0].uri_template
                     == "openleg://communities/{community_id}/summary"
                 )
                 result = await read(sdk)
@@ -435,8 +435,8 @@ def test_vnb_text_and_latest_formation(operator_http, monkeypatch):
                     result = await sdk.call_tool(
                         tool, {"community_id": fixture.community_id}
                     )
-                    assert not result.isError
-                    data = result.structuredContent
+                    assert not result.is_error
+                    data = result.structured_content
                     assert data["untrusted_fields"] == [
                         f"/{key}/{i}/{field}"
                         for i in range(len(data[key]))
@@ -497,9 +497,11 @@ def test_agent_submit_returns_confirmation_without_packages(
                 result = await sdk.call_tool(
                     name, {"community_id": http.community_id, **payload}
                 )
-                assert not result.isError
-                assert result.structuredContent["state"] == "awaiting_confirmation"
-                assert "/confirmations/" in result.structuredContent["confirmation_url"]
+                assert not result.is_error
+                assert result.structured_content["state"] == "awaiting_confirmation"
+                assert (
+                    "/confirmations/" in result.structured_content["confirmation_url"]
+                )
 
         asyncio.run(check())
     with http.db.get_connection() as conn, conn.cursor() as cur:

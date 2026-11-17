@@ -4,11 +4,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
+import httpx2
 import pytest
 import yaml
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
-from mcp.shared.exceptions import McpError
+from mcp.shared.exceptions import MCPError
 
 
 def test_disabled_by_default(monkeypatch):
@@ -21,12 +22,13 @@ def test_disabled_by_default(monkeypatch):
 
 @asynccontextmanager
 async def session(app, headers=None, *, expose_http=False):
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), headers=headers
+    # The SDK client accepts only httpx2 clients.
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=app), headers=headers
     ) as client:
         async with streamable_http_client(
             "http://localhost/mcp", http_client=client
-        ) as (read, write, _):
+        ) as (read, write):
             async with ClientSession(read, write) as sdk:
                 await sdk.initialize()
                 yield (sdk, client) if expose_http else sdk
@@ -67,9 +69,9 @@ def test_contract_tool(monkeypatch):
                 ("formation.mutate", "membership.mutate"),
                 strict=True,
             ):
-                assert preview.annotations.readOnlyHint is True
+                assert preview.annotations.read_only_hint is True
                 assert preview.meta["x-openleg-capability"] == capability
-                assert "dry_run" not in preview.inputSchema["properties"]
+                assert "dry_run" not in preview.input_schema["properties"]
                 operation = spec["paths"][
                     "/api/operator/v1/communities/{community_id}" + suffix
                 ]["post"]
@@ -79,19 +81,19 @@ def test_contract_tool(monkeypatch):
                     .get("application/json", {})
                     .get("schema", {})
                 )
-                assert preview.inputSchema["properties"] == {
+                assert preview.input_schema["properties"] == {
                     "community_id": spec["components"]["parameters"]["community_id"][
                         "schema"
                     ],
                     **body.get("properties", {}),
                 }
-                assert preview.inputSchema["required"] == ["community_id"] + body.get(
+                assert preview.input_schema["required"] == ["community_id"] + body.get(
                     "required", []
                 )
-                assert preview.inputSchema["additionalProperties"] is False
+                assert preview.input_schema["additionalProperties"] is False
             assert "access_roles" in previews[1].description
             assert "access_roles" in submits[1].description
-            assert all(t.annotations.readOnlyHint is False for t in tools[-4:])
+            assert all(t.annotations.read_only_hint is False for t in tools[-4:])
             tool = next(t for t in result.tools if t.name == "list_billing_periods")
             spec = yaml.safe_load(Path("docs/openapi/operator-v1.yaml").read_text())
             op = spec["paths"][
@@ -101,18 +103,50 @@ def test_contract_tool(monkeypatch):
                 spec["components"]["parameters"][p["$ref"].split("/")[-1]]
                 for p in op["parameters"]
             ]
-            assert tool.inputSchema == {
+            assert tool.input_schema == {
                 "type": "object",
                 "properties": {p["name"]: p["schema"] for p in params},
                 "required": ["community_id"],
                 "additionalProperties": False,
             }
-            assert tool.annotations.readOnlyHint is True
+            assert tool.annotations.read_only_hint is True
             assert (
                 tool.meta["x-openleg-capability"]
                 == op["x-openleg-capability"]
                 == "billing.read"
             )
+
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize("mode", ["legacy", "2026-07-28"])
+def test_protocol_eras_share_error_boundary(monkeypatch, mode):
+    """SDK 2 also serves 2026-07-28 clients; both eras get the same errors."""
+    from mcp import Client
+
+    from mcp_sidecar.server import create_app
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
+    app = create_app()
+
+    async def check():
+        async with (
+            app.router.lifespan_context(app),
+            httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app)) as http,
+            Client(
+                streamable_http_client("http://localhost/mcp", http_client=http),
+                mode=mode,
+            ) as client,
+        ):
+            with pytest.raises(MCPError) as denied:
+                await client.call_tool("list_billing_periods", {"community_id": "one"})
+            assert denied.value.code == -32011
+            assert denied.value.data["code"] == "authentication_required"
+            with pytest.raises(MCPError) as invalid:
+                await client.read_resource("openleg://communities/one/other")
+            assert invalid.value.code == -32602
+            assert invalid.value.message == "invalid_arguments"
 
     asyncio.run(check())
 
@@ -186,8 +220,8 @@ def test_http_trust_boundary(monkeypatch, caplog):
                             result = await sdk.call_tool(
                                 "list_billing_periods", {"community_id": community}
                             )
-                            assert not result.isError
-                            assert result.structuredContent["items"] == [
+                            assert not result.is_error
+                            assert result.structured_content["items"] == [
                                 {"community_id": community}
                             ]
 
@@ -198,7 +232,7 @@ def test_http_trust_boundary(monkeypatch, caplog):
                             "list_billing_periods",
                             {"community_id": "one", "status": status},
                         )
-                        assert result.isError
+                        assert result.is_error
                         assert token not in str(result)
                     count = len(seen)
                     for community in (
@@ -211,15 +245,15 @@ def test_http_trust_boundary(monkeypatch, caplog):
                         result = await sdk.call_tool(
                             "list_billing_periods", {"community_id": community}
                         )
-                        assert result.isError
+                        assert result.is_error
                     result = await sdk.call_tool(
                         "list_billing_periods",
                         {"community_id": "one", "url": "https://evil.example"},
                     )
-                    assert result.isError
+                    assert result.is_error
                     assert len(seen) == count
                 async with session(app) as sdk:
-                    with pytest.raises(McpError) as failure:
+                    with pytest.raises(MCPError) as failure:
                         await sdk.call_tool(
                             "list_billing_periods", {"community_id": "one"}
                         )
@@ -543,9 +577,9 @@ def test_malformed_upstream_page(monkeypatch, tool, path, body):
                 result = await sdk.call_tool(tool, {"community_id": "one"})
                 # A reachable operator with a malformed page is an operator
                 # error, not a transport failure.
-                assert result.isError
+                assert result.is_error
                 assert result.content[0].text == "operator_error"
-                assert result.structuredContent == {
+                assert result.structured_content == {
                     "code": "operator_error",
                     "field": None,
                     "retryable": False,
@@ -662,14 +696,14 @@ def test_upstream_error_metadata_and_authorization(monkeypatch):
                         "list_billing_periods",
                         {"community_id": "leg", "status": str(status)},
                     )
-                    assert result.isError
-                    assert result.structuredContent == {
+                    assert result.is_error
+                    assert result.structured_content == {
                         "code": code,
                         "field": "limit",
                         "retryable": status in (429, 503),
                     }
                     assert "private participant" not in str(result)
-                with pytest.raises(McpError) as failure:
+                with pytest.raises(MCPError) as failure:
                     await sdk.call_tool(
                         "list_billing_periods", {"community_id": "leg", "status": "401"}
                     )
@@ -685,7 +719,7 @@ def test_upstream_error_metadata_and_authorization(monkeypatch):
             app.router.lifespan_context(app),
             session(app, {"Authorization": "Bearer olk_test"}) as sdk,
         ):
-            with pytest.raises(McpError) as failure:
+            with pytest.raises(MCPError) as failure:
                 await sdk.call_tool("list_billing_periods", {"community_id": "leg"})
             assert failure.value.error.code == -32603
             assert failure.value.error.data["retryable"] is True
@@ -737,9 +771,9 @@ def test_change_preview_requires_after_locally(monkeypatch, extra, forwarded):
                         **extra,
                     },
                 )
-                assert result.isError is not forwarded
+                assert result.is_error is not forwarded
                 if not forwarded:
-                    assert result.structuredContent["code"] == "invalid_arguments"
+                    assert result.structured_content["code"] == "invalid_arguments"
                 assert calls == ([1] if forwarded else [])
 
         asyncio.run(check())

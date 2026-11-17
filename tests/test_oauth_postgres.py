@@ -269,11 +269,11 @@ def test_mcp_host_flow(oauth, monkeypatch):
                 result = await sdk.call_tool(
                     "list_billing_periods", {"community_id": "contract-leg"}
                 )
-                assert not result.isError
+                assert not result.is_error
                 denied = await sdk.call_tool(
                     "list_billing_periods", {"community_id": "other"}
                 )
-                assert denied.isError and denied.content[0].text == "not_found"
+                assert denied.is_error and denied.content[0].text == "not_found"
 
         asyncio.run(check())
         assert len(seen) == 1
@@ -378,7 +378,7 @@ def test_sidecar_enforces_capability(oauth, monkeypatch):
                 denied = await sdk.call_tool(
                     "list_billing_periods", {"community_id": "contract-leg"}
                 )
-                assert denied.isError and denied.content[0].text == "forbidden"
+                assert denied.is_error and denied.content[0].text == "forbidden"
 
         asyncio.run(check())
         assert oauth.operator_requests == []
@@ -542,9 +542,9 @@ def test_downstream_secret_requires_random_token_material(oauth):
 def test_sdk_discovery_authorization_and_tool(oauth, monkeypatch):
     import asyncio
 
-    import httpx
+    import httpx2
     from mcp import ClientSession
-    from mcp.client.auth import OAuthClientProvider
+    from mcp.client.auth import AuthorizationCodeResult, OAuthClientProvider
     from mcp.client.streamable_http import streamable_http_client
     from mcp.shared.auth import OAuthClientInformationFull, OAuthClientMetadata
 
@@ -595,7 +595,11 @@ def test_sdk_discovery_authorization_and_tool(oauth, monkeypatch):
         callback.update(parse_qs(urlsplit(response.location).query))
 
     async def receive_callback():
-        return callback["code"][0], callback["state"][0]
+        return AuthorizationCodeResult(
+            code=callback["code"][0],
+            state=callback["state"][0],
+            iss=callback.get("iss", [None])[0],
+        )
 
     with operator_server(oauth.app) as origin:
         oauth.app.config.update(
@@ -612,7 +616,7 @@ def test_sdk_discovery_authorization_and_tool(oauth, monkeypatch):
         app = create_app()
         seen = []
 
-        class Transport(httpx.AsyncBaseTransport):
+        class Transport(httpx2.AsyncBaseTransport):
             async def handle_async_request(self, request):
                 seen.append(request.url.path)
                 transport = sidecar if request.url.host == "localhost" else network
@@ -620,8 +624,8 @@ def test_sdk_discovery_authorization_and_tool(oauth, monkeypatch):
 
         async def check():
             nonlocal sidecar, network
-            sidecar = httpx.ASGITransport(app)
-            network = httpx.AsyncHTTPTransport()
+            sidecar = httpx2.ASGITransport(app)
+            network = httpx2.AsyncHTTPTransport()
             storage = Storage()
             auth = OAuthClientProvider(
                 "http://localhost/mcp",
@@ -636,17 +640,17 @@ def test_sdk_discovery_authorization_and_tool(oauth, monkeypatch):
             async with (
                 app.router.lifespan_context(app),
                 network,
-                httpx.AsyncClient(transport=Transport(), auth=auth) as client,
+                httpx2.AsyncClient(transport=Transport(), auth=auth) as client,
             ):
                 async with streamable_http_client(
                     "http://localhost/mcp", http_client=client
-                ) as (read, write, _):
+                ) as (read, write):
                     async with ClientSession(read, write) as sdk:
                         await sdk.initialize()
                         result = await sdk.call_tool(
                             "list_billing_periods", {"community_id": "contract-leg"}
                         )
-                        assert not result.isError
+                        assert not result.is_error
             assert storage.tokens.scope == "community:contract-leg billing.read"
             for path in (
                 "/.well-known/oauth-protected-resource",
