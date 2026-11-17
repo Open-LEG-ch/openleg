@@ -15,12 +15,14 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT_PATH = os.path.join(PROJECT_ROOT, "scripts", "sdat_pipeline.sh")
 
 RECORDER = """#!/usr/bin/env bash
+[[ "$*" == *check_requirements.py* ]] && exit 0
 printf '%s\\n' "$*" >> "$RECORD_FILE"
 printf '%s\\n' "$#" >> "$COUNT_FILE"
 exit 0
 """
 
 FAILING_FETCH_RECORDER = """#!/usr/bin/env bash
+[[ "$*" == *check_requirements.py* ]] && exit 0
 printf '%s\\n' "$*" >> "$RECORD_FILE"
 printf '%s\\n' "$#" >> "$COUNT_FILE"
 if [[ "$*" == *fetch_sdat.py* ]]; then
@@ -30,7 +32,18 @@ fi
 exit 0
 """
 
+STALE_VENV_RECORDER = """#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$RECORD_FILE"
+printf '%s\\n' "$#" >> "$COUNT_FILE"
+if [[ "$*" == *check_requirements.py* ]]; then
+  echo "qrcode==8.2 (fehlt)" >&2
+  exit 1
+fi
+exit 0
+"""
+
 FAILING_COLLECT_RECORDER = """#!/usr/bin/env bash
+[[ "$*" == *check_requirements.py* ]] && exit 0
 printf '%s\\n' "$*" >> "$RECORD_FILE"
 printf '%s\\n' "$#" >> "$COUNT_FILE"
 if [[ "$*" == *collect_sdat_downloads.py* ]]; then
@@ -230,6 +243,18 @@ def test_missing_interpreter_still_fails_fast(tmp_path):
 
     assert result.returncode == 2
     assert "Virtualenv" in result.stderr
+
+
+def test_stale_venv_fails_before_any_step(fake_python):
+    env, calls, _counts = fake_python(STALE_VENV_RECORDER)
+
+    result = run_pipeline(env)
+
+    assert result.returncode == 2
+    assert "pip install -r requirements.txt" in result.stderr
+    recorded = calls()
+    assert len(recorded) == 1
+    assert "scripts/check_requirements.py" in recorded[0]
 
 
 def test_german_prose_uses_swiss_high_german():
