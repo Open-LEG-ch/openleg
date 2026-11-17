@@ -66,18 +66,18 @@ def test_anonymous_catalog_matches_contract(monkeypatch):
                     continue
                 tool = tools[op["operationId"]]
                 params = op.get("parameters", [])
-                assert tool.inputSchema == {
+                assert tool.input_schema == {
                     "type": "object",
                     "properties": {p["name"]: p["schema"] for p in params},
                     "required": [p["name"] for p in params if p.get("required")],
                     "additionalProperties": False,
                 }
-                assert tool.annotations.readOnlyHint is True
-            from mcp.shared.exceptions import McpError
+                assert tool.annotations.read_only_hint is True
+            from mcp.shared.exceptions import MCPError
 
             # Operator tools still need a bearer: an anonymous call is an MCP
             # authorization error, not a tool result.
-            with pytest.raises(McpError) as denied:
+            with pytest.raises(MCPError) as denied:
                 await sdk.call_tool("list_billing_periods", {"community_id": "one"})
             assert denied.value.error.code == -32011
             assert denied.value.error.data["code"] == "authentication_required"
@@ -152,8 +152,8 @@ def test_public_calls_real_routes_without_credentials(public_app, monkeypatch):
                             if path.endswith("/tariffs"):
                                 args["year"] = 2026
                             result = await sdk.call_tool(op["operationId"], args)
-                            assert not result.isError, result
-                            actual = result.structuredContent
+                            assert not result.is_error, result
+                            actual = result.structured_content
                             expected = (
                                 app.test_client()
                                 .get(
@@ -184,7 +184,7 @@ def test_public_calls_real_routes_without_credentials(public_app, monkeypatch):
                         ("get_address_profile", {}),
                     ):
                         result = await sdk.call_tool(name, args)
-                        assert result.isError
+                        assert result.is_error
                         assert result.content[0].text == "invalid_arguments"
                     assert len(seen) == count
 
@@ -223,9 +223,9 @@ def test_public_rate_limit_is_enforced_by_flask(public_app, monkeypatch):
                 session(sidecar) as sdk,
             ):
                 result = await sdk.call_tool("get_municipalities", {})
-                assert result.isError
+                assert result.is_error
                 assert result.content[0].text == "rate_limited"
-                assert result.structuredContent == {
+                assert result.structured_content == {
                     "code": "rate_limited",
                     "field": None,
                     "retryable": True,
@@ -262,7 +262,7 @@ def test_public_redirect_is_not_followed(public_app, monkeypatch):
                 session(sidecar) as sdk,
             ):
                 result = await sdk.call_tool("get_municipalities", {})
-                assert result.isError
+                assert result.is_error
                 assert result.content[0].text == "public_error"
                 assert seen == ["/api/v1/municipalities"]
 
@@ -296,8 +296,8 @@ def test_integral_floats_keep_their_integer_meaning(public_app, monkeypatch):
             ):
                 as_float = await sdk.call_tool("get_municipalities_bfs", {"bfs": 261.0})
                 as_int = await sdk.call_tool("get_municipalities_bfs", {"bfs": 261})
-                assert not as_float.isError
-                assert as_float.structuredContent == as_int.structuredContent
+                assert not as_float.is_error
+                assert as_float.structured_content == as_int.structured_content
                 await sdk.call_tool("get_tariffs", {"year": 2025.0})
 
         asyncio.run(check())
@@ -335,17 +335,17 @@ def test_public_budget_is_per_peer_before_upstream(public_app, monkeypatch):
         async def check():
             async with app.router.lifespan_context(app):
                 async with session(peer_app(app, "192.0.2.1")) as sdk:
-                    assert not (await sdk.call_tool("get_municipalities", {})).isError
+                    assert not (await sdk.call_tool("get_municipalities", {})).is_error
                     limited = await sdk.call_tool("get_tariffs", {})
-                    assert limited.isError
+                    assert limited.is_error
                     assert limited.content[0].text == "rate_limited"
-                    assert limited.structuredContent["code"] == "rate_limited"
-                    assert 1 <= limited.structuredContent["retry_after"] <= 60
-                    from mcp.shared.exceptions import McpError
+                    assert limited.structured_content["code"] == "rate_limited"
+                    assert 1 <= limited.structured_content["retry_after"] <= 60
+                    from mcp.shared.exceptions import MCPError
 
                     # The public budget does not apply to operator tools,
                     # which still need a bearer.
-                    with pytest.raises(McpError) as operator:
+                    with pytest.raises(MCPError) as operator:
                         await sdk.call_tool(
                             "list_billing_periods", {"community_id": "one"}
                         )
@@ -354,9 +354,9 @@ def test_public_budget_is_per_peer_before_upstream(public_app, monkeypatch):
                     )
                 # A new stateless SDK session cannot reset the same peer's budget.
                 async with session(peer_app(app, "192.0.2.1")) as sdk:
-                    assert (await sdk.call_tool("get_municipalities", {})).isError
+                    assert (await sdk.call_tool("get_municipalities", {})).is_error
                 async with session(peer_app(app, "192.0.2.2")) as sdk:
-                    assert not (await sdk.call_tool("get_municipalities", {})).isError
+                    assert not (await sdk.call_tool("get_municipalities", {})).is_error
             assert seen == ["/api/v1/municipalities"] * 2
 
         asyncio.run(check())
@@ -386,7 +386,9 @@ def test_only_named_proxy_can_supply_client_ip(public_app, monkeypatch, trusted)
                         },
                     ) as sdk:
                         result = await sdk.call_tool("get_municipalities", {})
-                        assert result.isError == (index == 2 and trusted != "192.0.2.1")
+                        assert result.is_error == (
+                            index == 2 and trusted != "192.0.2.1"
+                        )
 
         asyncio.run(check())
 
@@ -426,35 +428,35 @@ def test_expiry_capacity_and_operator_independence(public_app, monkeypatch):
 
         async def check():
             async with app.router.lifespan_context(app):
-                assert not (await call("192.0.2.1")).isError
+                assert not (await call("192.0.2.1")).is_error
                 now[0] = 105.0
-                assert not (await call("192.0.2.2")).isError
+                assert not (await call("192.0.2.2")).is_error
                 for index in range(3, 15):
                     result = await call(f"192.0.2.{index}")
-                    assert result.structuredContent == {
+                    assert result.structured_content == {
                         "code": "rate_limited",
                         "field": None,
                         "retryable": True,
                         "retry_after": 5,
                     }
-                assert (await call("192.0.2.1")).isError
+                assert (await call("192.0.2.1")).is_error
                 for _ in range(3):
                     result = await call(
                         "192.0.2.1", "list_billing_periods", {"community_id": "one"}
                     )
-                    assert not result.isError
-                    assert result.structuredContent == {
+                    assert not result.is_error
+                    assert result.structured_content == {
                         "items": [],
                         "next_cursor": None,
                     }
                 now[0] = 109.2
-                assert (await call("192.0.2.1")).structuredContent["retry_after"] == 1
+                assert (await call("192.0.2.1")).structured_content["retry_after"] == 1
                 now[0] = 110.0
-                assert not (await call("192.0.2.3")).isError
+                assert not (await call("192.0.2.3")).is_error
                 # The second client's unexpired budget survives eviction.
-                assert (await call("192.0.2.2")).structuredContent["retry_after"] == 5
+                assert (await call("192.0.2.2")).structured_content["retry_after"] == 5
                 now[0] = 120.0
-                assert not (await call("192.0.2.1")).isError
+                assert not (await call("192.0.2.1")).is_error
 
         asyncio.run(check())
 
@@ -483,9 +485,9 @@ def test_invalid_proxy_headers_keep_peer_budget(public_app, monkeypatch, header)
         async def check():
             async with app.router.lifespan_context(app):
                 async with session(peer_app(app, "192.0.2.1")) as sdk:
-                    assert not (await sdk.call_tool("get_municipalities", {})).isError
+                    assert not (await sdk.call_tool("get_municipalities", {})).is_error
                 async with session(peer_app(app, "192.0.2.1"), header) as sdk:
-                    assert (await sdk.call_tool("get_municipalities", {})).isError
+                    assert (await sdk.call_tool("get_municipalities", {})).is_error
 
         asyncio.run(check())
 

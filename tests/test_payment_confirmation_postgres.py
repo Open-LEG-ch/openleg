@@ -286,9 +286,9 @@ def test_mcp_payment_tool(operator_http, monkeypatch):
                 )
                 assert tool.meta["x-openleg-capability"] == "payments.mutate"
                 assert tool.meta["operationId"] == "confirmPaymentMatch"
-                assert tool.annotations.readOnlyHint is False
-                assert tool.annotations.destructiveHint is True
-                assert tool.annotations.idempotentHint is True
+                assert tool.annotations.read_only_hint is False
+                assert tool.annotations.destructive_hint is True
+                assert tool.annotations.idempotent_hint is True
                 args = {
                     "community_id": http.community_id,
                     "entry_id": ids["entry_id"],
@@ -298,24 +298,24 @@ def test_mcp_payment_tool(operator_http, monkeypatch):
                 }
                 before = rows(http)
                 preview = await sdk.call_tool(tool.name, args)
-                assert not preview.isError
-                assert preview.structuredContent["eligible"] is True
+                assert not preview.is_error
+                assert preview.structured_content["eligible"] is True
                 assert rows(http) == before
                 foreign = await sdk.call_tool(
                     tool.name, {**args, "community_id": "foreign-leg"}
                 )
-                assert foreign.isError
-                assert foreign.structuredContent["code"] == "not_found"
+                assert foreign.is_error
+                assert foreign.structured_content["code"] == "not_found"
                 assert rows(http) == before
                 invalid = await sdk.call_tool(
                     tool.name, {k: v for k, v in args.items() if k != "idempotency_key"}
                 )
-                assert invalid.isError
+                assert invalid.is_error
                 result = await sdk.call_tool(tool.name, {**args, "dry_run": False})
-                assert not result.isError
-                assert result.structuredContent["match_decision"] == "matched"
+                assert not result.is_error
+                assert result.structured_content["match_decision"] == "matched"
                 replay = await sdk.call_tool(tool.name, {**args, "dry_run": False})
-                assert replay.structuredContent["replayed"] is True
+                assert replay.structured_content["replayed"] is True
 
         asyncio.run(check())
 

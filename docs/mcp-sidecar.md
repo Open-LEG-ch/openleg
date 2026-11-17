@@ -109,8 +109,9 @@ Public calls never forward the caller's Authorization header. They return the
 public API response unchanged, including decimal strings. Operator tools remain
 listed. In OAuth mode, anonymous `tools/call` requests for operator tools and
 `resources/read` requests return HTTP 401 with `WWW-Authenticate` discovery
-metadata and scopes. Initialization, tool listing, resource-template listing and
-public tool calls work without Authorization. An invalid Authorization header
+metadata and scopes. Initialization, server discovery, tool listing,
+resource-template listing and public tool calls work without Authorization.
+The same checks apply to 2025-era and 2026-07-28 clients. An invalid Authorization header
 returns the same 401 even for public calls. The endpoint inspects single and
 batch JSON-RPC requests and replays their exact bytes to the SDK; bodies over
 1 MiB return 413. Malformed JSON is handled by the SDK. Each operator tool

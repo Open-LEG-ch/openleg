@@ -231,13 +231,13 @@ def test_mcp_preview_cannot_submit(operator_http, monkeypatch, suffix, payload):
                 )
                 args = {"community_id": http.community_id, **payload}
                 result = await sdk.call_tool(name, args)
-                assert not result.isError
+                assert not result.is_error
                 assert (
-                    result.structuredContent["intended_action"]
+                    result.structured_content["intended_action"]
                     == "prepare_manual_package"
                 )
-                assert (await sdk.call_tool(name, {**args, "dry_run": False})).isError
-                assert (await sdk.call_tool("unknown_submit", args)).isError
+                assert (await sdk.call_tool(name, {**args, "dry_run": False})).is_error
+                assert (await sdk.call_tool("unknown_submit", args)).is_error
 
         asyncio.run(check())
     after = snapshot(http.db)

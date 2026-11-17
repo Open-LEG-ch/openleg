@@ -24,7 +24,7 @@ def payment_tool(spec):
     required.extend(body["required"])
     return path, types.Tool(
         name="confirm_payment_match",
-        inputSchema={
+        input_schema={
             "type": "object",
             "properties": properties,
             "required": required,

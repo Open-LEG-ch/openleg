@@ -44,7 +44,7 @@ def public_operations():
                 types.Tool(
                     name=name,
                     description=op["summary"],
-                    inputSchema=schema,
+                    input_schema=schema,
                     annotations=types.ToolAnnotations(
                         readOnlyHint=True, destructiveHint=False, idempotentHint=True
                     ),

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+import pytest
 from flask import Flask
 
 from operator_api import CAPABILITIES
@@ -253,6 +254,67 @@ def test_downstream_key_required_at_startup(monkeypatch):
             init_oauth(app)
 
 
+@pytest.mark.parametrize("mode", ["legacy", "2026-07-28"])
+def test_oauth_gate_covers_both_protocol_eras(monkeypatch, mode):
+    """The bearer gate reads the JSON-RPC body, whatever era the client uses."""
+    import asyncio
+
+    import httpx2
+    from flask import Flask, jsonify
+    from mcp import Client, MCPError
+    from mcp.client.streamable_http import streamable_http_client
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+    calls = []
+
+    @upstream.get("/api/v1/search")
+    def search():
+        return jsonify({"items": ["public result"]})
+
+    @upstream.route("/<path:path>", methods=["GET", "POST"])
+    def other(path):
+        calls.append(path)
+        return jsonify(active=False)
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_OAUTH_ISSUER", "https://auth.example")
+    monkeypatch.setenv("OPENLEG_MCP_RESOURCE", "https://mcp.example/mcp")
+    monkeypatch.setenv("OPENLEG_OAUTH_INTROSPECTION_SECRET", "s" * 64)
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with (
+                app.router.lifespan_context(app),
+                httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app)) as http,
+                Client(
+                    streamable_http_client("http://localhost/mcp", http_client=http),
+                    mode=mode,
+                ) as client,
+            ):
+                result = await client.call_tool("get_search", {"q": "Dietikon"})
+                assert not result.is_error
+                assert result.structured_content == {"items": ["public result"]}
+                # Anonymous protected requests stop at the HTTP 401 challenge.
+                # The SDK reports that 401 as -32603, not the tool boundary's
+                # -32011.
+                with pytest.raises(MCPError) as denied:
+                    await client.call_tool(
+                        "list_billing_periods", {"community_id": "leg"}
+                    )
+                assert denied.value.code == -32603
+                with pytest.raises(MCPError) as denied:
+                    await client.read_resource("openleg://communities/leg/summary")
+                assert denied.value.code == -32603
+
+        asyncio.run(check())
+    assert calls == []
+
+
 def test_oauth_anonymous_public_and_protected_requests(monkeypatch):
     import asyncio
     import json
@@ -444,9 +506,9 @@ def test_oauth_all_operator_capabilities_and_body_replay(monkeypatch):
                     result = await sdk.call_tool(
                         name, {"community_id": "leg", **arguments}
                     )
-                    assert result.isError, name
+                    assert result.is_error, name
                     assert result.content[0].text == "forbidden", (name, result)
-                    assert result.structuredContent == {
+                    assert result.structured_content == {
                         "code": "capability_denied",
                         "field": None,
                         "retryable": False,
@@ -454,7 +516,7 @@ def test_oauth_all_operator_capabilities_and_body_replay(monkeypatch):
                     result = await sdk.call_tool(
                         name, {"community_id": "other", **arguments}
                     )
-                    assert result.isError and result.content[0].text == "not_found", (
+                    assert result.is_error and result.content[0].text == "not_found", (
                         name,
                         result,
                     )
@@ -463,8 +525,8 @@ def test_oauth_all_operator_capabilities_and_body_replay(monkeypatch):
                 result = await sdk.call_tool(
                     "list_billing_periods", {"community_id": "leg"}
                 )
-                assert not result.isError
-                assert result.structuredContent == {"items": [], "next_cursor": None}
+                assert not result.is_error
+                assert result.structured_content == {"items": [], "next_cursor": None}
                 assert calls == ["Bearer olk_separate"]
                 # Simulate loss of the endpoint identity at the SDK boundary.
                 # Operator tools must still fail closed with the stable RPC error.
@@ -472,7 +534,7 @@ def test_oauth_all_operator_capabilities_and_body_replay(monkeypatch):
                 from mcp.server.streamable_http_manager import (
                     StreamableHTTPSessionManager,
                 )
-                from mcp.shared.exceptions import McpError
+                from mcp.shared.exceptions import MCPError
 
                 original = StreamableHTTPSessionManager.handle_request
 
@@ -483,7 +545,7 @@ def test_oauth_all_operator_capabilities_and_body_replay(monkeypatch):
                 monkeypatch.setattr(
                     StreamableHTTPSessionManager, "handle_request", without_identity
                 )
-                with pytest.raises(McpError) as denied:
+                with pytest.raises(MCPError) as denied:
                     await sdk.call_tool("list_billing_periods", {"community_id": "leg"})
                 assert denied.value.error.code == -32011
                 assert denied.value.error.data["code"] == "authentication_required"

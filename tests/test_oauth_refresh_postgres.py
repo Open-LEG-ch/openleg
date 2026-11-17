@@ -256,6 +256,7 @@ def test_next_mcp_request_rejected(oauth, monkeypatch, revoke_method):
     import asyncio
 
     import httpx
+    from mcp.shared.exceptions import MCPError
 
     from mcp_sidecar.server import create_app
     from tests.test_mcp_sidecar import session
@@ -273,50 +274,38 @@ def test_next_mcp_request_rejected(oauth, monkeypatch, revoke_method):
 
         async def check():
             async with app.router.lifespan_context(app):
-                with pytest.raises(BaseExceptionGroup) as rejected:
-                    async with session(
-                        app, {"Authorization": "Bearer " + tokens["access_token"]}
-                    ) as sdk:
-                        result = await sdk.call_tool(
-                            "list_billing_periods", {"community_id": "contract-leg"}
+                async with session(
+                    app, {"Authorization": "Bearer " + tokens["access_token"]}
+                ) as sdk:
+                    result = await sdk.call_tool(
+                        "list_billing_periods", {"community_id": "contract-leg"}
+                    )
+                    assert not result.is_error
+                    if revoke_method == "reuse":
+                        assert refresh(oauth, first["refresh_token"]).status_code == 400
+                    else:
+                        with (
+                            oauth.db.get_connection() as conn,
+                            conn.cursor() as cur,
+                        ):
+                            cur.execute("SELECT id FROM oauth_grants")
+                            gid = cur.fetchone()["id"]
+                        assert (
+                            oauth.client.post(
+                                "/leg/community/contract-leg/operator-api/credentials/grants/"
+                                + gid
+                                + "/revoke",
+                                data={"csrf_token": "csrf"},
+                            ).status_code
+                            == 302
                         )
-                        assert not result.isError
-                        if revoke_method == "reuse":
-                            assert (
-                                refresh(oauth, first["refresh_token"]).status_code
-                                == 400
-                            )
-                        else:
-                            with (
-                                oauth.db.get_connection() as conn,
-                                conn.cursor() as cur,
-                            ):
-                                cur.execute("SELECT id FROM oauth_grants")
-                                gid = cur.fetchone()["id"]
-                            assert (
-                                oauth.client.post(
-                                    "/leg/community/contract-leg/operator-api/credentials/grants/"
-                                    + gid
-                                    + "/revoke",
-                                    data={"csrf_token": "csrf"},
-                                ).status_code
-                                == 302
-                            )
+                    # The SDK reports the transport's HTTP 401 as an error on
+                    # this call; the raw request below pins the status.
+                    with pytest.raises(MCPError) as rejected:
                         await sdk.call_tool(
                             "list_billing_periods", {"community_id": "contract-leg"}
                         )
-
-                def leaves(exc):
-                    if isinstance(exc, BaseExceptionGroup):
-                        return [e for nested in exc.exceptions for e in leaves(nested)]
-                    return [exc]
-
-                errors = leaves(rejected.value)
-                assert any(
-                    isinstance(e, httpx.HTTPStatusError)
-                    and e.response.status_code == 401
-                    for e in errors
-                )
+                    assert rejected.value.code == -32603
                 async with httpx.AsyncClient(
                     transport=httpx.ASGITransport(app=app),
                     base_url="http://localhost:8000",
@@ -535,7 +524,7 @@ def test_refresh_after_access_expiry(oauth, monkeypatch):
                 result = await sdk.call_tool(
                     "list_billing_periods", {"community_id": "contract-leg"}
                 )
-                assert not result.isError
+                assert not result.is_error
 
         asyncio.run(check())
 

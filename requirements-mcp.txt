@@ -1,5 +1,7 @@
 mcp==2.3.0
 httpx==0.28.1
+# The SDK's HTTP client; tests build MCP clients with it.
+httpx2==2.16.2
 PyYAML==6.0.3
 jsonschema==4.26.0
 uvicorn==0.49.0
