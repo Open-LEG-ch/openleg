@@ -85,6 +85,13 @@ fi
 
 cd "$REPO_ROOT"
 
+# Ein .venv, das hinter requirements.txt zurückliegt, bricht sonst erst im
+# Import mit ModuleNotFoundError ab, nachdem der Abruf schon gelaufen ist.
+if ! "$PYTHON" scripts/check_requirements.py requirements.txt; then
+  echo "Aktualisieren mit: .venv/bin/pip install -r requirements.txt" >&2
+  exit 2
+fi
+
 if [[ "$FETCH" -eq 1 ]]; then
   echo "==> 1/3 Datahub abrufen nach $DEST"
   if ! "$PYTHON" scripts/fetch_sdat.py --out "$DEST"; then
