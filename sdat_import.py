@@ -257,12 +257,14 @@ def _partial_archive(target: Path) -> Iterator[tuple[Path, BinaryIO]]:
     is called.
     """
     partial = target.with_name(f"sdat-{secrets.token_hex(8)}.part")
+    name = os.fspath(partial)
     try:
-        raw = open(partial, "xb")  # noqa: SIM115 - the with below owns it
-    except FileExistsError:
-        raise  # Another file holds this name; leave it alone.
+        # Only C code runs from here to the exclusive create (barring Python
+        # audit hooks), so an interrupt caught below landed after it.
+        raw = open(name, "xb")  # noqa: SIM115 - the with below owns it
+    except Exception:
+        raise  # The create failed; whatever holds the name is not ours.
     except BaseException:
-        # Interrupted after the exclusive create: the name is ours to remove.
         partial.unlink(missing_ok=True)
         raise
     with raw:

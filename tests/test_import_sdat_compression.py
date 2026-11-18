@@ -12,6 +12,7 @@ A dry run, parse failure, or unknown document must leave the file untouched,
 because the file is the only local copy of that delivery.
 """
 
+import errno
 import gzip
 import shutil
 from pathlib import Path
@@ -221,6 +222,28 @@ def test_a_partial_name_collision_spares_the_other_file(tmp_path, monkeypatch):
     assert other.read_bytes() == b"another import's unfinished archive"
     assert source.read_bytes() == FIXTURE.read_bytes()
     assert not (tmp_path / "sample.xml.gz").exists()
+
+
+def test_a_failed_create_never_removes_a_file_it_did_not_make(tmp_path, monkeypatch):
+    """Running out of descriptors on a taken name must spare the other file."""
+    source = _staged(tmp_path)
+    monkeypatch.setattr(sdat_import.secrets, "token_hex", lambda n: "cd" * n)
+    other = tmp_path / "sdat-cdcdcdcdcdcdcdcd.part"
+    other.write_bytes(b"another import's unfinished archive")
+    real_open = open
+
+    def exhausted_open(file, mode="r", *args, **kwargs):
+        if mode == "xb":
+            raise OSError(errno.EMFILE, "Too many open files")
+        return real_open(file, mode, *args, **kwargs)
+
+    monkeypatch.setattr(sdat_import, "open", exhausted_open, raising=False)
+
+    with pytest.raises(OSError):
+        sdat_import.compress_imported_file(source)
+
+    assert other.read_bytes() == b"another import's unfinished archive"
+    assert source.read_bytes() == FIXTURE.read_bytes()
 
 
 def test_interleaved_compressions_leave_one_complete_archive(tmp_path, monkeypatch):
