@@ -286,6 +286,22 @@ def test_http_trust_boundary(monkeypatch, caplog, tmp_path):
     monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
     with operator_server(upstream, loopback_tls(tmp_path, monkeypatch)) as origin:
         assert origin.startswith("https://")
+
+        async def replay_control():
+            # A shared client replays the probe cookie, so the sidecar's
+            # no-cookie assertion below cannot pass vacuously.
+            url = origin + "/api/operator/v1/communities/one/billing/periods"
+            async with httpx.AsyncClient(trust_env=False) as client:
+                for _ in range(2):
+                    await client.get(url)
+
+        # The control's own transport logs carry the cookie; the log assertion
+        # below covers the sidecar only.
+        with caplog.at_level(logging.WARNING):
+            asyncio.run(replay_control())
+        control = seen[:]
+        seen.clear()
+        assert [cookie for _, _, cookie in control] == [None, "secret=" + token]
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
 
