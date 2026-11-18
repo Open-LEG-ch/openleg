@@ -150,7 +150,7 @@ def test_compression_conflict_preserves_existing_archive_and_plain_source(tmp_pa
 
     assert source.read_bytes() == FIXTURE.read_bytes()
     assert archive.read_bytes() == b"existing archive"
-    assert not (tmp_path / "sample.xml.gz.part").exists()
+    assert not list(tmp_path.glob("*.part"))
 
 
 def test_compression_race_preserves_competing_archive_and_plain_source(
@@ -172,7 +172,42 @@ def test_compression_race_preserves_competing_archive_and_plain_source(
 
     assert source.read_bytes() == FIXTURE.read_bytes()
     assert archive.read_bytes() == b"competing archive"
-    assert not (tmp_path / "sample.xml.gz.part").exists()
+    assert not list(tmp_path.glob("*.part"))
+
+
+def test_compression_never_touches_another_writers_partial(tmp_path):
+    """Concurrent imports of one delivery must not share a temporary archive."""
+    source = _staged(tmp_path)
+    other = tmp_path / "sample.xml.gz.part"
+    other.write_bytes(b"another import's unfinished archive")
+
+    result = sdat_import.compress_imported_file(source)
+
+    assert other.read_bytes() == b"another import's unfinished archive"
+    with gzip.open(result, "rb") as handle:
+        assert handle.read() == FIXTURE.read_bytes()
+
+
+def test_interleaved_compressions_leave_one_complete_archive(tmp_path, monkeypatch):
+    """A second import that packs the same file mid-write must not corrupt it."""
+    source = _staged(tmp_path)
+    real_copy = sdat_import.shutil.copyfileobj
+    interleaved = []
+
+    def copy_after_another_import(src, dst, *args):
+        if not interleaved:
+            interleaved.append(True)
+            sdat_import.compress_imported_file(source)
+        return real_copy(src, dst, *args)
+
+    monkeypatch.setattr(sdat_import.shutil, "copyfileobj", copy_after_another_import)
+
+    with pytest.raises(FileExistsError):
+        sdat_import.compress_imported_file(source)
+
+    assert [p.name for p in tmp_path.iterdir()] == ["sample.xml.gz"]
+    with gzip.open(tmp_path / "sample.xml.gz", "rb") as handle:
+        assert handle.read() == FIXTURE.read_bytes()
 
 
 def test_the_original_survives_when_compression_fails(tmp_path, monkeypatch):

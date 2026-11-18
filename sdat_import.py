@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import gzip
 import os
+import secrets
 import shutil
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -216,10 +217,14 @@ def compress_imported_file(path: str | Path) -> Path | None:
     target = path.with_name(path.name + GZ_SUFFIX)
     if target.exists():
         raise FileExistsError(f"Archiv existiert bereits: {target.name}")
-    partial = target.with_name(target.name + ".part")
     original_size = path.stat().st_size
+    partial, descriptor = _create_partial(target)
     try:
-        with open(path, "rb") as source, gzip.open(partial, "wb") as sink:
+        with (
+            os.fdopen(descriptor, "wb") as raw,
+            open(path, "rb") as source,
+            gzip.GzipFile(filename=path.name, mode="wb", fileobj=raw) as sink,
+        ):
             shutil.copyfileobj(source, sink)
         written = 0
         with gzip.open(partial, "rb") as handle:
@@ -245,6 +250,21 @@ def compress_imported_file(path: str | Path) -> Path | None:
     partial.unlink(missing_ok=True)
     path.unlink(missing_ok=True)
     return target
+
+
+def _create_partial(target: Path) -> tuple[Path, int]:
+    """Create this call's own temporary archive next to ``target``.
+
+    Each call gets a fresh name, created exclusively, so concurrent imports of
+    one delivery never write, link or delete each other's unfinished archive.
+    """
+    while True:
+        partial = target.with_name(f"{target.name}.{secrets.token_hex(8)}.part")
+        try:
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            return partial, os.open(partial, flags, 0o666)
+        except FileExistsError:
+            continue
 
 
 def _storage() -> Any:

@@ -569,10 +569,12 @@ file plain. A failed parse or an unrecognised document may be a delivery problem
 someone has to read, and that file is the only local copy of it. "Not an E66" is
 therefore not treated as "an E31": the importer tests for E31 explicitly.
 
-The archive is written to a `.part` file and read back before it is published
-without overwriting an existing archive. Only then is the original deleted. A
-failed pack or name conflict costs disk space, never data, and reports a warning
-without failing the run. `--no-compress` turns it off.
+The archive is written to the import's own uniquely named `.part` file and read
+back before it is published without overwriting an existing archive, so two
+imports packing the same file never share an unfinished archive. Only then is
+the original deleted. A failed pack or name conflict costs disk space, never
+data, and reports a warning without failing the run. `--no-compress` turns it
+off.
 
 The import reads `*.xml.gz` directly, so packing never hides a file from
 the importer and `--force` still works afterwards. That is also why
