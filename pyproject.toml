@@ -183,6 +183,7 @@ also_copy = [
     "registry_intake.py",
     "scripts",
     "sdat_datahub.py",
+    "sdat_import.py",
     "sdat_ingestion.py",
     "sdat_e66.py",
     "sandbox_mail.py",

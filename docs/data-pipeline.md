@@ -156,8 +156,9 @@ missing spring hour runs on the first cron tick after the clock jump.
 The job downloads into `SWISSELDEX_SDAT_DIR/<territory>` unless `local_dir` is
 set to another relative directory below `SWISSELDEX_SDAT_DIR`. Absolute paths
 and parent traversal are rejected. It
-then uses `scripts/import_sdat.py`, including the existing document ledger and
-idempotent reading writes. A PostgreSQL advisory lock prevents two application
+then runs `sdat_import.import_paths`, the import behind `scripts/import_sdat.py`,
+including the document ledger and idempotent reading writes. It reads only
+structured counts, never the command's printed text. A PostgreSQL advisory lock prevents two application
 processes from running the same tenant concurrently. Configure the external
 cron at least as often as the precision needed for `local_time`, for example
 every five minutes.
@@ -175,7 +176,7 @@ Recovery by error code:
 | `fetch_failed` | Check Datahub reachability, TLS settings, and credentials, then trigger the cron endpoint again. |
 | `fetch_partial_failure` | Keep the remote files in place, check connectivity and disk space, then retry. Existing downloads are skipped. |
 | `import_failed` | Run `scripts/import_sdat.py <local_dir> --dry-run`, correct the reported document or database problem, then retry. |
-| `import_report_unavailable` | Check that the deployed importer matches this application release, then retry after deploying matching code. |
+| `import_report_unavailable` | Recorded only by releases that read the import command's printed summary. Current releases no longer produce it; retry after deploying a current release. |
 
 Disabling a schedule stops future due runs without deleting files or history.
 After fixing a failure, invoke
@@ -573,7 +574,7 @@ without overwriting an existing archive. Only then is the original deleted. A
 failed pack or name conflict costs disk space, never data, and reports a warning
 without failing the run. `--no-compress` turns it off.
 
-`import_sdat.py` reads `*.xml.gz` directly, so packing never hides a file from
+The import reads `*.xml.gz` directly, so packing never hides a file from
 the importer and `--force` still works afterwards. That is also why
 `sdat_pipeline.sh` no longer unpacks the municipality directory: a settled file
 stays packed and is never opened again. Unpacking it for the importer to repack
@@ -591,7 +592,8 @@ and stay unversioned.
 ```bash
 pytest tests/test_sdat_e66.py tests/test_store_metering.py \
        tests/test_metering_schema.py tests/test_import_sdat_script.py \
-       tests/test_import_sdat_compression.py tests/test_import_sdat_skip.py -q
+       tests/test_import_sdat_compression.py tests/test_import_sdat_skip.py \
+       tests/test_sdat_import.py tests/test_sdat_ingestion.py -q
 ```
 
 ## Public API Reads

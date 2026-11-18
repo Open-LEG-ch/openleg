@@ -16,6 +16,9 @@ from pathlib import Path
 
 import pytest
 
+import sdat_import
+from tests.sdat_import_helpers import use_storage
+
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "import_sdat.py"
 FIXTURE = ROOT / "tests" / "fixtures" / "sdat_e66_sample.xml"
@@ -82,11 +85,11 @@ class _FakeDb:
 
 
 @pytest.fixture
-def counted_reads(importer, monkeypatch):
-    """Count how much of each file the importer actually touched."""
+def counted_reads(monkeypatch):
+    """Count how much of each file the import actually touched."""
     counts = {"head": 0, "full": 0}
-    real_head = importer._read_head
-    real_text = importer._read_text
+    real_head = sdat_import._read_head
+    real_text = sdat_import._read_text
 
     def head(path, *args, **kwargs):
         counts["head"] += 1
@@ -96,8 +99,8 @@ def counted_reads(importer, monkeypatch):
         counts["full"] += 1
         return real_text(path, *args, **kwargs)
 
-    monkeypatch.setattr(importer, "_read_head", head)
-    monkeypatch.setattr(importer, "_read_text", text)
+    monkeypatch.setattr(sdat_import, "_read_head", head)
+    monkeypatch.setattr(sdat_import, "_read_text", text)
     return counts
 
 
@@ -126,7 +129,7 @@ def test_a_known_file_name_does_not_skip_a_different_document(
     importer, tmp_path, monkeypatch, counted_reads
 ):
     fake = _FakeDb(file_names=["sample.xml"])
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _packed(tmp_path)
 
     exit_code = importer.main([str(tmp_path)])
@@ -139,7 +142,7 @@ def test_a_known_file_name_does_not_skip_a_different_document(
 def test_the_ledger_is_read_once_per_run(importer, tmp_path, monkeypatch):
     # One bulk query, not one per file. That is the whole point.
     fake = _FakeDb(file_names=["a.xml", "b.xml", "c.xml"])
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     for name in ("a.xml.gz", "b.xml.gz", "c.xml.gz"):
         _packed(tmp_path, name)
 
@@ -152,7 +155,7 @@ def test_the_ledger_is_read_once_per_run(importer, tmp_path, monkeypatch):
 def test_a_known_name_still_plain_is_packed_once(importer, tmp_path, monkeypatch):
     # Directories from before packing existed are full of plain imported XML.
     # Skipping must not mean they stay large forever.
-    monkeypatch.setattr(importer, "db", _FakeDb(file_names=["sample.xml"]))
+    use_storage(monkeypatch, _FakeDb(file_names=["sample.xml"]))
     path = _staged(tmp_path)
 
     importer.main([str(tmp_path)])
@@ -162,7 +165,7 @@ def test_a_known_name_still_plain_is_packed_once(importer, tmp_path, monkeypatch
 
 
 def test_a_known_name_already_packed_is_left_untouched(importer, tmp_path, monkeypatch):
-    monkeypatch.setattr(importer, "db", _FakeDb(file_names=["sample.xml"]))
+    use_storage(monkeypatch, _FakeDb(file_names=["sample.xml"]))
     archive = _packed(tmp_path)
     before = archive.read_bytes()
 
@@ -173,9 +176,8 @@ def test_a_known_name_already_packed_is_left_untouched(importer, tmp_path, monke
 
 
 def test_the_summary_reports_what_was_skipped(importer, tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr(
-        importer,
-        "db",
+    use_storage(
+        monkeypatch,
         _FakeDb(
             file_names=["a.xml", "b.xml"],
             document_ids=[DOCUMENT_ID],
@@ -200,7 +202,7 @@ def test_a_renamed_file_is_caught_by_its_document_id(
 ):
     # The id inside the header matches, so it must not be parsed or imported again.
     fake = _FakeDb(file_names=["some-old-name.xml"], document_ids=[DOCUMENT_ID])
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _staged(tmp_path, "renamed.xml")
 
     importer.main([str(tmp_path)])
@@ -213,7 +215,7 @@ def test_a_renamed_file_is_caught_by_its_document_id(
 def test_an_e31_is_classified_from_the_head_alone(
     importer, tmp_path, monkeypatch, counted_reads
 ):
-    monkeypatch.setattr(importer, "db", _FakeDb())
+    use_storage(monkeypatch, _FakeDb())
     (tmp_path / "aggregate.xml").write_text(E31_DOCUMENT, encoding="utf-8")
 
     importer.main([str(tmp_path)])
@@ -226,7 +228,7 @@ def test_a_new_document_is_still_fully_imported(
     importer, tmp_path, monkeypatch, counted_reads
 ):
     fake = _FakeDb()
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _staged(tmp_path)
 
     exit_code = importer.main([str(tmp_path)])
@@ -244,8 +246,8 @@ def test_a_document_without_an_extractable_id_is_not_skipped(
 ):
     # extract_document_id returning None must cost time, never correctness.
     fake = _FakeDb(document_ids=[DOCUMENT_ID])
-    monkeypatch.setattr(importer, "db", fake)
-    monkeypatch.setattr(importer.sdat_e66, "extract_document_id", lambda head: None)
+    use_storage(monkeypatch, fake)
+    monkeypatch.setattr(sdat_import.sdat_e66, "extract_document_id", lambda head: None)
     _staged(tmp_path)
 
     importer.main([str(tmp_path)])
@@ -257,7 +259,7 @@ def test_an_empty_ledger_processes_everything(importer, tmp_path, monkeypatch):
     # A failed ledger read returns empty sets, which must mean "import", not
     # "skip everything".
     fake = _FakeDb()
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _staged(tmp_path)
 
     importer.main([str(tmp_path)])
@@ -269,7 +271,7 @@ def test_duplicate_document_ids_in_one_run_are_written_once(
     importer, tmp_path, monkeypatch
 ):
     fake = _FakeDb()
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _staged(tmp_path, "first.xml")
     _staged(tmp_path, "second.xml")
 
@@ -286,7 +288,7 @@ def test_failed_bulk_ledger_read_falls_through_to_full_processing(
     fake.get_sdat_import_index = lambda: (_ for _ in ()).throw(
         RuntimeError("database read failed")
     )
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _staged(tmp_path)
 
     exit_code = importer.main([str(tmp_path)])
@@ -297,7 +299,7 @@ def test_failed_bulk_ledger_read_falls_through_to_full_processing(
 
 def test_force_bypasses_both_layers(importer, tmp_path, monkeypatch, counted_reads):
     fake = _FakeDb(file_names=["sample.xml"], document_ids=[DOCUMENT_ID])
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _staged(tmp_path)
 
     importer.main([str(tmp_path), "--force"])
@@ -309,7 +311,7 @@ def test_force_bypasses_both_layers(importer, tmp_path, monkeypatch, counted_rea
 def test_a_dry_run_needs_no_ledger(importer, tmp_path, monkeypatch):
     # --dry-run works with no database at all, so it must not ask for the index.
     fake = _FakeDb(file_names=["sample.xml"])
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _staged(tmp_path)
 
     importer.main([str(tmp_path), "--dry-run"])
@@ -328,7 +330,7 @@ def test_a_mixed_directory_only_works_on_what_is_new(
         file_names=["settled_plain.xml", "settled_packed.xml"],
         document_ids=["OLD-1", "OLD-2"],
     )
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
 
     _staged(tmp_path, "new_delivery.xml")
     _staged(tmp_path, "settled_plain.xml", "OLD-1")
@@ -365,7 +367,7 @@ class _VeracityDb(_FakeDb):
 
 def test_a_clean_delivery_records_no_flags(importer, tmp_path, monkeypatch):
     fake = _VeracityDb()
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
     _staged(tmp_path)
 
     exit_code = importer.main([str(tmp_path)])
@@ -393,7 +395,7 @@ def test_a_flagged_delivery_records_its_flags_and_still_imports(
     )
 
     fake = _VeracityDb()
-    monkeypatch.setattr(importer, "db", fake)
+    use_storage(monkeypatch, fake)
 
     exit_code = importer.main([str(tmp_path)])
 

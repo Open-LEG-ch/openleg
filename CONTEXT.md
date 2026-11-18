@@ -115,6 +115,7 @@ Domain logic sits above storage and stays free of SQL:
 | `formation_wizard.py`, `document_generator.py` | LEG formation and documents |
 | `formation_guide.py` | Public formation-guide FAQ context and matching FAQPage data |
 | `sdat_e66.py`, `sdat_datahub.py`, `meter_data.py` | Meter data parsing and retrieval |
+| `sdat_import.py` | SDAT import shared by `scripts/import_sdat.py` and scheduled ingestion: discovery, document order, ledger replay, persistence checks, packing, and structured per-file outcomes and totals |
 | `data_enricher.py` | Address-suggestion and profile outcomes; live/mock selection, normalization, and fallback cause |
 | `ml_models.py` | Clustering algorithms and generated load profiles |
 | `clustering_run.py` | Complete clustering-run orchestration and persistence outcomes |

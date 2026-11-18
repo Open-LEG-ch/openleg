@@ -165,8 +165,9 @@ Application and API routes:
   with `MemberInvoiceDataError` on a malformed or non-finite snapshot rather
   than rendering an invented value, and renders the identical PDF through the
   public `document_generator.render_pdf_html` seam.
-- `sdat_datahub.py`, `sdat_e66.py`, `sdat_ingestion.py`, `meter_data.py`: meter
-  data retrieval, SDAT parsing, scheduled orchestration, and upload ingestion.
+- `sdat_datahub.py`, `sdat_e66.py`, `sdat_import.py`, `sdat_ingestion.py`,
+  `meter_data.py`: meter data retrieval, SDAT parsing, the shared SDAT import,
+  scheduled orchestration, and upload ingestion.
 - `templates/`, `static/`, `tests/`, `scripts/`.
 
 ## Data layer
@@ -270,10 +271,12 @@ environment-variable names are documented in `docs/data-pipeline.md`.
   Rangliste, the Gemeindeprofil, and the public API.
 - **Citizen meter data**: `sdat_datahub.py` and `scripts/fetch_sdat.py` retrieve
   SDAT files from the Swisseldex Datahub;
-  `scripts/import_sdat.py` parses E66 messages through `sdat_e66.py` and writes
+  `sdat_import.py` parses E66 messages through `sdat_e66.py` and writes
   `metering_points`, `metering_point_readings`, and the `sdat_imports` ledger.
-  `sdat_ingestion.py` schedules that same path per tenant; its store holds
-  schedules, advisory locks, and aggregate run reports.
+  `scripts/import_sdat.py` prints its structured outcomes for operators.
+  `sdat_ingestion.py` runs the same import per tenant on the application's
+  live pool and keeps only counts; its store holds schedules, advisory locks,
+  and aggregate run reports.
   The `/meter-upload` page is a separate manual path that writes
   `meter_readings` per building.
 
