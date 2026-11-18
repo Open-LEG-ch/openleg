@@ -701,13 +701,72 @@ def test_a_stalled_upload_does_not_prevent_expiry(village):
     assert not workspace["directory"].exists()
 
 
-def test_recovery_preserves_unrelated_processes_in_a_shared_worker_group(tmp_path):
+def _wait_for_child_identities(path, timeout=5):
     import json
+    import time
+
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            children = json.loads(path.read_text())
+            return {"private": children["private"], "unrelated": children["unrelated"]}
+        except (FileNotFoundError, json.JSONDecodeError, KeyError) as error:
+            if time.monotonic() >= deadline:
+                raise AssertionError(
+                    f"Timed out waiting for complete child identities in {path}"
+                ) from error
+        time.sleep(0.01)
+
+
+@pytest.mark.parametrize("initial", ["", '{"private":', '{"private": 123}'])
+def test_child_identities_wait_for_complete_data(tmp_path, monkeypatch, initial):
+    import json
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    identities = tmp_path / "children.json"
+    identities.write_text(initial)
+    children = {"private": 123, "unrelated": 456}
+    reading = Event()
+    read_text = type(identities).read_text
+
+    def observe_read(path, *args, **kwargs):
+        content = read_text(path, *args, **kwargs)
+        if path == identities:
+            reading.set()
+        return content
+
+    def publish():
+        assert reading.wait(timeout=1)
+        time.sleep(0.03)
+        identities.write_text(json.dumps(children))
+
+    monkeypatch.setattr(type(identities), "read_text", observe_read)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        writer = executor.submit(publish)
+        try:
+            assert _wait_for_child_identities(identities, timeout=1) == children
+        finally:
+            writer.result(timeout=1)
+
+
+@pytest.mark.parametrize("initial", [None, "", '{"private":', '{"private": 123}'])
+def test_child_identities_timeout_when_publication_is_incomplete(tmp_path, initial):
+    identities = tmp_path / "children.json"
+    if initial is not None:
+        identities.write_text(initial)
+    with pytest.raises(AssertionError, match="complete child identities") as error:
+        _wait_for_child_identities(identities, timeout=0.03)
+    assert str(identities) in str(error.value)
+    assert error.value.__cause__ is not None
+
+
+def test_recovery_preserves_unrelated_processes_in_a_shared_worker_group(tmp_path):
     import os
     import signal
     import subprocess
     import sys
-    import time
 
     from sandbox_lifecycle import ScratchOwner
 
@@ -740,11 +799,7 @@ finally:
     )
     owner = None
     try:
-        deadline = time.monotonic() + 5
-        while not identities.exists():
-            assert time.monotonic() < deadline
-            time.sleep(0.02)
-        children = json.loads(identities.read_text())
+        children = _wait_for_child_identities(identities)
         private_start = ScratchOwner.start_token(children["private"])
         unrelated_start = ScratchOwner.start_token(children["unrelated"])
         owner = ScratchOwner(root, tmp_path)

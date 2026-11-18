@@ -3,6 +3,8 @@
 
 import io
 import re
+import shutil
+import subprocess
 from decimal import Decimal
 
 import pytest
@@ -64,6 +66,43 @@ def _prepare(client, prefix):
         prefix + "/sandbox/billing/prepare",
         data={"csrf_token": _csrf(page), "confirm": "yes"},
         follow_redirects=True,
+    )
+
+
+def _assert_simulation_pdf_without_payment(data):
+    """Extract rendered PDF text: the simulation warning is present, payment content absent."""
+    pdftotext = shutil.which("pdftotext")
+    if pdftotext is None:
+        pytest.skip("requires pdftotext (poppler-utils); CI requires it before pytest")
+    # Inspect the downloaded PDF, using the same pdftotext approach as sandbox QA.
+    # A broken extractor must fail this safety contract.
+    extracted = subprocess.run(
+        [pdftotext, "-enc", "UTF-8", "-", "-"],
+        input=data,
+        capture_output=True,
+        check=True,
+        timeout=30,
+    )
+    pdf_text = " ".join(extracted.stdout.decode("utf-8").split())
+    # Use the stable warning text before PDF extraction dehyphenates the final word.
+    assert (
+        "SIMULATION SONNWIL - Erfundenes Dokument. Keine rechtsgültige Unterschrift, "
+        "keine Zahlungsaufforderung"
+    ) in pdf_text
+    # Swiss QR payment labels from verein_payment_routes.QR_LABELS["de_CH"].
+    for marker in (
+        "Zahlteil",
+        "Empfangsschein",
+        "Konto / Zahlbar an",
+        "IBAN",  # Includes QR-IBAN, even without a visible account number.
+        "QR-Rechnung",
+        "Swiss QR",
+        "Bankverbindung",
+    ):
+        assert marker.casefold() not in pdf_text.casefold(), marker
+    # Also reject unlabelled Swiss/Liechtenstein bank destinations, grouped or not.
+    assert not re.search(
+        r"(?:CH|LI)\d{2}[A-Z0-9]{17}", re.sub(r"\s", "", pdf_text.upper())
     )
 
 
@@ -236,6 +275,8 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
         and "Storniert" in cancelled.text
         and "43.20" in cancelled.text
     )
+    # Last, so a host without poppler-utils still runs every assertion above.
+    _assert_simulation_pdf_without_payment(pdf.data)
 
 
 @pytest.mark.parametrize(
