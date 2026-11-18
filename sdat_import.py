@@ -22,7 +22,8 @@ import gzip
 import os
 import secrets
 import shutil
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, BinaryIO
@@ -218,15 +219,13 @@ def compress_imported_file(path: str | Path) -> Path | None:
     if target.exists():
         raise FileExistsError(f"Archiv existiert bereits: {target.name}")
     original_size = path.stat().st_size
-    partial: Path | None = None
-    try:
-        partial, raw = _create_partial(target)
+    with _partial_archive(target) as (partial, raw):
         with (
-            raw,
             open(path, "rb") as source,
             gzip.GzipFile(filename=path.name, mode="wb", fileobj=raw) as sink,
         ):
             shutil.copyfileobj(source, sink)
+        raw.close()
         written = 0
         with gzip.open(partial, "rb") as handle:
             while chunk := handle.read(1024 * 1024):
@@ -238,37 +237,31 @@ def compress_imported_file(path: str | Path) -> Path | None:
             )
         # A hard link instead of replace: if the target appeared since the
         # check above, this fails atomically and neither delivery is lost.
-        os.link(partial, target)
-    except _PACK_ERRORS as exc:
-        if partial is not None:
-            partial.unlink(missing_ok=True)
-        if isinstance(exc, FileExistsError):
+        try:
+            os.link(partial, target)
+        except FileExistsError as exc:
             raise FileExistsError(f"Archiv existiert bereits: {target.name}") from exc
-        raise
-    except BaseException:
-        if partial is not None:
-            partial.unlink(missing_ok=True)
-        raise
 
-    partial.unlink(missing_ok=True)
     path.unlink(missing_ok=True)
     return target
 
 
-def _create_partial(target: Path) -> tuple[Path, BinaryIO]:
-    """Create and open this call's own temporary archive next to ``target``.
+@contextmanager
+def _partial_archive(target: Path) -> Iterator[tuple[Path, BinaryIO]]:
+    """This call's own temporary archive next to ``target``, removed on exit.
 
-    Each call gets a fresh name, created exclusively, so concurrent imports of
-    one delivery never write, link or delete each other's unfinished archive.
-    The name has a fixed length: any delivery whose archive name fits also
-    fits its temporary file.
+    Each call creates a random name exclusively, so concurrent imports of one
+    delivery never write, link or delete each other's unfinished archive; a
+    name collision fails the pack and leaves the other file alone. The
+    26-character name stays within any file-name limit, whatever the delivery
+    is called.
     """
-    while True:
-        partial = target.with_name(f"import-{secrets.token_hex(8)}.gz.part")
+    partial = target.with_name(f"sdat-{secrets.token_hex(8)}.part")
+    with open(partial, "xb") as raw:
         try:
-            return partial, open(partial, "xb")
-        except FileExistsError:
-            continue
+            yield partial, raw
+        finally:
+            partial.unlink(missing_ok=True)
 
 
 def _storage() -> Any:
