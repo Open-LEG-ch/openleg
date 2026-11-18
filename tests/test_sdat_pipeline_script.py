@@ -7,7 +7,6 @@ das Verhalten der einzelnen Python-Skripte.
 """
 
 import os
-import shlex
 import subprocess
 
 import pytest
@@ -39,6 +38,16 @@ printf '%s\\n' "$#" >> "$COUNT_FILE"
 if [[ "$*" == *check_requirements.py* ]]; then
   echo "qrcode==8.2 (fehlt)" >&2
   exit 1
+fi
+exit 0
+"""
+
+UNREADABLE_REQUIREMENTS_RECORDER = """#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$RECORD_FILE"
+printf '%s\\n' "$#" >> "$COUNT_FILE"
+if [[ "$*" == *check_requirements.py* ]]; then
+  echo "requirements.txt nicht lesbar" >&2
+  exit 2
 fi
 exit 0
 """
@@ -247,8 +256,19 @@ def test_missing_interpreter_still_fails_fast(tmp_path):
 
 
 def printed_fix_command(stderr):
-    """Liefert die Argumente des ausgegebenen Befehls, wie eine Shell sie liest."""
-    return shlex.split(stderr.split("Aktualisieren mit: ", 1)[1].splitlines()[0])
+    """Liefert die Argumente des ausgegebenen Befehls, wie Bash sie liest.
+
+    Bash liest auch ``$'...'``, das ``printf %q`` unter LC_ALL=C für Umlaute
+    ausgibt. ``set --`` übernimmt nur die Argumente und führt nichts aus.
+    """
+    line = stderr.split("Aktualisieren mit: ", 1)[1].splitlines()[0]
+    parsed = subprocess.run(
+        ["bash", "-c", 'eval "set -- $1"; printf "%s\\0" "$@"', "_", line],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return parsed.stdout.split("\0")[:-1]
 
 
 def test_stale_venv_fails_before_any_step(fake_python):
@@ -313,6 +333,80 @@ def test_relative_interpreter_is_resolved_from_the_callers_directory(
     printed = printed_fix_command(result.stderr)[0]
     assert os.path.isabs(printed)
     assert os.path.samefile(printed, interpreter)
+
+
+def test_fix_command_survives_umlauts_under_the_c_locale(tmp_path):
+    """Under LC_ALL=C, ``printf %q`` writes ``ü`` as ``$'\\303\\274'``."""
+    venv = tmp_path / "Zürich"
+    venv.mkdir()
+    interpreter = venv / "python"
+    interpreter.write_text(STALE_VENV_RECORDER)
+    interpreter.chmod(0o755)
+    env = dict(os.environ, LC_ALL="C")
+    env["PYTHON"] = str(interpreter)
+    env["RECORD_FILE"] = str(tmp_path / "calls.log")
+    env["COUNT_FILE"] = str(tmp_path / "counts.log")
+
+    result = run_pipeline(env)
+
+    assert result.returncode == 2
+    assert printed_fix_command(result.stderr)[0] == str(interpreter)
+
+
+def test_bare_interpreter_name_is_looked_up_on_path(fake_python, tmp_path):
+    """A name without a slash runs from PATH, so the guard must check that file."""
+    env, calls, _counts = fake_python(STALE_VENV_RECORDER)
+    interpreter = env["PYTHON"]
+    env["PATH"] = os.path.dirname(interpreter) + os.pathsep + env["PATH"]
+    env["PYTHON"] = os.path.basename(interpreter)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+
+    result = subprocess.run(
+        [SCRIPT_PATH],
+        cwd=elsewhere,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2, result.stderr
+    assert len(calls()) == 1
+    printed = printed_fix_command(result.stderr)[0]
+    assert os.path.isabs(printed)
+    assert os.path.samefile(printed, interpreter)
+
+
+def test_bare_name_outside_path_is_a_missing_interpreter(fake_python, tmp_path):
+    """Bash would not run ./name for a bare name, so the guard must not accept it."""
+    env, calls, _counts = fake_python(STALE_VENV_RECORDER)
+    env["PYTHON"] = os.path.basename(env["PYTHON"])
+
+    result = subprocess.run(
+        [SCRIPT_PATH],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "Virtualenv fehlt: fake_python" in result.stderr
+    assert calls() == []
+
+
+def test_unreadable_requirements_prints_no_install_command(fake_python):
+    """pip install -r cannot fix a file the checker cannot read."""
+    env, calls, _counts = fake_python(UNREADABLE_REQUIREMENTS_RECORDER)
+
+    result = run_pipeline(env)
+
+    assert result.returncode == 2
+    assert "nicht lesbar" in result.stderr
+    assert "Aktualisieren mit" not in result.stderr
+    assert len(calls()) == 1
 
 
 def test_german_prose_uses_swiss_high_german():

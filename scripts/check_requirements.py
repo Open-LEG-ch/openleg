@@ -4,7 +4,8 @@
 
 Liest die Zeilen ``name==version`` aus einer requirements-Datei und vergleicht
 sie mit den installierten Paketen. Fehlt ein Paket oder weicht die Version ab,
-listet das Skript die Abweichungen auf und endet mit Code 1.
+listet das Skript die Abweichungen auf und endet mit Code 1. Lässt sich die
+Datei nicht lesen, endet es mit Code 2.
 
 So bricht ein veraltetes .venv ab, bevor die Arbeit beginnt, statt mitten im
 Import mit ModuleNotFoundError.
@@ -30,7 +31,7 @@ except ImportError:  # Ohne packaging bleibt der exakte Textvergleich.
     Specifier = None
 
 DEFAULT_REQUIREMENTS = Path(__file__).resolve().parent.parent / "requirements.txt"
-PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;#\[*,]+)$")
+PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)\s*==\s*([^\s;#\[*,]+)$")
 
 
 def _normalize(name):
@@ -74,7 +75,12 @@ def mismatches(pins):
 def main(argv=None):
     args = sys.argv[1:] if argv is None else argv
     path = Path(args[0]) if args else DEFAULT_REQUIREMENTS
-    problems = mismatches(pinned_requirements(path.read_text(encoding="utf-8")))
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        print(f"{path} nicht lesbar: {error}", file=sys.stderr)
+        return 2
+    problems = mismatches(pinned_requirements(text))
     if not problems:
         return 0
     print(f"Virtualenv passt nicht zu {path.name}:", file=sys.stderr)

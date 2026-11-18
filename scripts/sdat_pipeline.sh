@@ -80,12 +80,17 @@ fi
 # "source .venv/bin/activate" nötig ist. PYTHON lässt sich für Tests
 # überschreiben.
 PYTHON="${PYTHON:-$REPO_ROOT/.venv/bin/python}"
+REQUESTED_PYTHON="$PYTHON"
+# Einen Namen ohne Schrägstrich sucht Bash im PATH, nicht im Aufrufverzeichnis.
+if [[ "$PYTHON" != */* ]]; then
+  PYTHON="$(type -P -- "$PYTHON" || true)"
+fi
 # Ein relativer Pfad gilt ab dem Aufrufverzeichnis, auch nach dem cd unten.
-if [[ "$PYTHON" == */* && "$PYTHON" != /* ]]; then
+if [[ -n "$PYTHON" && "$PYTHON" != /* ]]; then
   PYTHON="$PWD/$PYTHON"
 fi
 if [[ ! -x "$PYTHON" ]]; then
-  echo "Virtualenv fehlt: $PYTHON" >&2
+  echo "Virtualenv fehlt: $REQUESTED_PYTHON" >&2
   echo "Anlegen mit: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt" >&2
   exit 2
 fi
@@ -94,8 +99,14 @@ cd "$REPO_ROOT"
 
 # Ein .venv, das hinter requirements.txt zurückliegt, bricht sonst erst im
 # Import mit ModuleNotFoundError ab, nachdem der Abruf schon gelaufen ist.
-if ! "$PYTHON" scripts/check_requirements.py requirements.txt; then
-  printf 'Aktualisieren mit: %q -m pip install -r %q\n' "$PYTHON" "$REPO_ROOT/requirements.txt" >&2
+# Code 1 meldet fehlende oder abweichende Pakete. Andere Codes, etwa eine
+# unlesbare requirements.txt, behebt pip install nicht.
+check_status=0
+"$PYTHON" scripts/check_requirements.py requirements.txt || check_status=$?
+if [[ "$check_status" -ne 0 ]]; then
+  if [[ "$check_status" -eq 1 ]]; then
+    printf 'Aktualisieren mit: %q -m pip install -r %q\n' "$PYTHON" "$REPO_ROOT/requirements.txt" >&2
+  fi
   exit 2
 fi
 

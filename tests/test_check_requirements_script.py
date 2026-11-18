@@ -17,19 +17,32 @@ _spec.loader.exec_module(check_requirements)
 PYTEST_VERSION = metadata.version("pytest")
 
 
-def run_check(path):
+def run_check(path, env=None):
     return subprocess.run(
         [sys.executable, SCRIPT_PATH, str(path)],
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
+
+
+def fake_distribution(tmp_path, name, version):
+    """Liefert eine Umgebung, in der ``name`` mit genau ``version`` installiert ist."""
+    site = tmp_path / "site"
+    dist_info = site / f"{name.replace('-', '_')}-{version}.dist-info"
+    dist_info.mkdir(parents=True)
+    (dist_info / "METADATA").write_text(
+        f"Metadata-Version: 2.1\nName: {name}\nVersion: {version}\n"
+    )
+    return {**os.environ, "PYTHONPATH": str(site)}
 
 
 def test_only_plain_pins_are_read():
     text = """# Kommentar
 
 Flask==3.1.0  # Web
+qrcode == 8.2
 psycopg[binary]==3.2.0
 tomli==2.0.1; python_version < '3.11'
 requests>=2.0
@@ -37,7 +50,10 @@ click==8.*
 jinja2==3.1.0,>=3
 -r other.txt
 """
-    assert check_requirements.pinned_requirements(text) == [("Flask", "3.1.0")]
+    assert check_requirements.pinned_requirements(text) == [
+        ("Flask", "3.1.0"),
+        ("qrcode", "8.2"),
+    ]
 
 
 def test_matching_environment_passes(tmp_path):
@@ -63,10 +79,11 @@ def test_equivalent_version_spelling_passes(tmp_path):
     A text comparison would keep failing after ``pip install`` reports that
     everything is already installed, so the pipeline could never start.
     """
+    env = fake_distribution(tmp_path, "openleg-fake", "1.2")
     req = tmp_path / "requirements.txt"
-    req.write_text(f"pytest=={PYTEST_VERSION}.0\n")
+    req.write_text("openleg-fake==1.2.0\n")
 
-    result = run_check(req)
+    result = run_check(req, env)
 
     assert result.returncode == 0, result.stderr
 
@@ -95,3 +112,12 @@ def test_version_mismatch_is_reported(tmp_path):
 
     assert result.returncode == 1
     assert f"pytest==0.0.1 (installiert: {PYTEST_VERSION})" in result.stderr
+
+
+def test_unreadable_requirements_file_is_an_input_error(tmp_path):
+    """A missing file is not a stale venv, so it must not exit like one."""
+    result = run_check(tmp_path / "fehlt.txt")
+
+    assert result.returncode == 2
+    assert "fehlt.txt" in result.stderr
+    assert "Traceback" not in result.stderr
