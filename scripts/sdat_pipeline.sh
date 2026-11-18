@@ -42,6 +42,9 @@ Steps:
   2  collect_sdat_downloads.py --dest <dest>
   3  import_sdat.py <dest> [import-args...]
 
+Vor Schritt 1 prüft die Pipeline, ob das Virtualenv zu requirements.txt passt.
+Fehlt ein Paket oder weicht eine Version ab, bricht sie mit Code 2 ab.
+
 Der Import liest .xml.gz direkt und überspringt Dateien, die schon in der
 Datenbank liegen.
 
@@ -88,7 +91,7 @@ cd "$REPO_ROOT"
 # Ein .venv, das hinter requirements.txt zurückliegt, bricht sonst erst im
 # Import mit ModuleNotFoundError ab, nachdem der Abruf schon gelaufen ist.
 if ! "$PYTHON" scripts/check_requirements.py requirements.txt; then
-  echo "Aktualisieren mit: .venv/bin/pip install -r requirements.txt" >&2
+  echo "Aktualisieren mit: $PYTHON -m pip install -r requirements.txt" >&2
   exit 2
 fi
 

@@ -55,6 +55,20 @@ def test_names_are_normalized(tmp_path):
     assert run_check(req).returncode == 0
 
 
+def test_equivalent_version_spelling_passes(tmp_path):
+    """pip treats ``==X.Y`` and ``==X.Y.0`` as the same version.
+
+    A text comparison would keep failing after ``pip install`` reports that
+    everything is already installed, so the pipeline could never start.
+    """
+    req = tmp_path / "requirements.txt"
+    req.write_text(f"pytest=={PYTEST_VERSION}.0\n")
+
+    result = run_check(req)
+
+    assert result.returncode == 0, result.stderr
+
+
 def test_missing_package_is_reported(tmp_path):
     req = tmp_path / "requirements.txt"
     req.write_text("surely-not-installed-openleg-pkg==1.0\n")

@@ -251,7 +251,9 @@ def test_stale_venv_fails_before_any_step(fake_python):
     result = run_pipeline(env)
 
     assert result.returncode == 2
-    assert "pip install -r requirements.txt" in result.stderr
+    # The fix must install into the interpreter the pipeline runs, also when
+    # PYTHON points somewhere other than .venv.
+    assert f"{env['PYTHON']} -m pip install -r requirements.txt" in result.stderr
     recorded = calls()
     assert len(recorded) == 1
     assert "scripts/check_requirements.py" in recorded[0]
