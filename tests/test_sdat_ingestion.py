@@ -323,16 +323,19 @@ def test_scheduled_import_leaves_other_threads_output_alone(
     worker.start()
     try:
         assert saving.wait(10), "import never reached storage"
-        stdout_while_importing = sys.stdout
+        streams_while_importing = (sys.stdout, sys.stderr)
         print("another request's output")
+        print("another request's warning", file=sys.stderr)
     finally:
         finish.set()
         worker.join(10)
 
     assert results, "scheduled import did not finish"
     assert results[0]["files_imported"] == 1
-    assert stdout_while_importing is sys.stdout
-    assert "another request's output" in capsys.readouterr().out
+    assert streams_while_importing == (sys.stdout, sys.stderr)
+    captured = capsys.readouterr()
+    assert "another request's output" in captured.out
+    assert "another request's warning" in captured.err
 
 
 def test_retries_keep_counts_from_every_attempt_of_the_shared_import(
