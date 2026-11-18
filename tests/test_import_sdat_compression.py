@@ -188,6 +188,41 @@ def test_compression_never_touches_another_writers_partial(tmp_path):
         assert handle.read() == FIXTURE.read_bytes()
 
 
+def test_an_interrupted_partial_create_leaves_nothing_behind(tmp_path, monkeypatch):
+    """Ctrl-C right after the exclusive create must not strand the partial."""
+    source = _staged(tmp_path)
+    real_open = open
+
+    def interrupted_open(file, mode="r", *args, **kwargs):
+        handle = real_open(file, mode, *args, **kwargs)
+        if mode == "xb":
+            handle.close()
+            raise KeyboardInterrupt
+        return handle
+
+    monkeypatch.setattr(sdat_import, "open", interrupted_open, raising=False)
+
+    with pytest.raises(KeyboardInterrupt):
+        sdat_import.compress_imported_file(source)
+
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["sample.xml"]
+    assert source.read_bytes() == FIXTURE.read_bytes()
+
+
+def test_a_partial_name_collision_spares_the_other_file(tmp_path, monkeypatch):
+    source = _staged(tmp_path)
+    monkeypatch.setattr(sdat_import.secrets, "token_hex", lambda n: "ab" * n)
+    other = tmp_path / "sdat-abababababababab.part"
+    other.write_bytes(b"another import's unfinished archive")
+
+    with pytest.raises(FileExistsError):
+        sdat_import.compress_imported_file(source)
+
+    assert other.read_bytes() == b"another import's unfinished archive"
+    assert source.read_bytes() == FIXTURE.read_bytes()
+    assert not (tmp_path / "sample.xml.gz").exists()
+
+
 def test_interleaved_compressions_leave_one_complete_archive(tmp_path, monkeypatch):
     """A second import that packs the same file mid-write must not corrupt it."""
     source = _staged(tmp_path)
