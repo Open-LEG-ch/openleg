@@ -25,7 +25,7 @@ import shutil
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 import sdat_e66
 
@@ -218,10 +218,11 @@ def compress_imported_file(path: str | Path) -> Path | None:
     if target.exists():
         raise FileExistsError(f"Archiv existiert bereits: {target.name}")
     original_size = path.stat().st_size
-    partial, descriptor = _create_partial(target)
+    partial: Path | None = None
     try:
+        partial, raw = _create_partial(target)
         with (
-            os.fdopen(descriptor, "wb") as raw,
+            raw,
             open(path, "rb") as source,
             gzip.GzipFile(filename=path.name, mode="wb", fileobj=raw) as sink,
         ):
@@ -239,12 +240,14 @@ def compress_imported_file(path: str | Path) -> Path | None:
         # check above, this fails atomically and neither delivery is lost.
         os.link(partial, target)
     except _PACK_ERRORS as exc:
-        partial.unlink(missing_ok=True)
+        if partial is not None:
+            partial.unlink(missing_ok=True)
         if isinstance(exc, FileExistsError):
             raise FileExistsError(f"Archiv existiert bereits: {target.name}") from exc
         raise
     except BaseException:
-        partial.unlink(missing_ok=True)
+        if partial is not None:
+            partial.unlink(missing_ok=True)
         raise
 
     partial.unlink(missing_ok=True)
@@ -252,17 +255,18 @@ def compress_imported_file(path: str | Path) -> Path | None:
     return target
 
 
-def _create_partial(target: Path) -> tuple[Path, int]:
-    """Create this call's own temporary archive next to ``target``.
+def _create_partial(target: Path) -> tuple[Path, BinaryIO]:
+    """Create and open this call's own temporary archive next to ``target``.
 
     Each call gets a fresh name, created exclusively, so concurrent imports of
     one delivery never write, link or delete each other's unfinished archive.
+    The name has a fixed length: any delivery whose archive name fits also
+    fits its temporary file.
     """
     while True:
-        partial = target.with_name(f"{target.name}.{secrets.token_hex(8)}.part")
+        partial = target.with_name(f"import-{secrets.token_hex(8)}.gz.part")
         try:
-            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-            return partial, os.open(partial, flags, 0o666)
+            return partial, open(partial, "xb")
         except FileExistsError:
             continue
 

@@ -210,18 +210,37 @@ def test_interleaved_compressions_leave_one_complete_archive(tmp_path, monkeypat
         assert handle.read() == FIXTURE.read_bytes()
 
 
-def test_the_original_survives_when_compression_fails(tmp_path, monkeypatch):
+@pytest.mark.parametrize("stage", ["GzipFile", "open"])
+def test_the_original_survives_when_compression_fails(tmp_path, monkeypatch, stage):
+    """Writing (GzipFile) and reading back (open) can both fail."""
     path = _staged(tmp_path)
 
     def _boom(*args, **kwargs):
         raise OSError("disk full")
 
-    monkeypatch.setattr(sdat_import.gzip, "open", _boom)
+    monkeypatch.setattr(sdat_import.gzip, stage, _boom)
 
     with pytest.raises(OSError):
         sdat_import.compress_imported_file(path)
 
-    assert path.exists(), "a failed compression must never lose the delivery"
+    assert path.read_bytes() == FIXTURE.read_bytes(), (
+        "a failed compression must never lose the delivery"
+    )
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["sample.xml"]
+
+
+def test_a_long_delivery_name_still_packs(tmp_path):
+    """The temporary name must not be longer than the archive name allows."""
+    name = "d" * (250 - len(".xml.gz")) + ".xml"
+    path = tmp_path / name
+    shutil.copy(FIXTURE, path)
+
+    result = sdat_import.compress_imported_file(path)
+
+    assert result.name == name + ".gz"
+    with gzip.open(result, "rb") as handle:
+        assert handle.read() == FIXTURE.read_bytes()
+    assert sorted(p.name for p in tmp_path.iterdir()) == [name + ".gz"]
 
 
 # ==== When the importer compresses ====
