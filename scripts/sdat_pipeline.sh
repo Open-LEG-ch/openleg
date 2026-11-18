@@ -91,7 +91,7 @@ cd "$REPO_ROOT"
 # Ein .venv, das hinter requirements.txt zurückliegt, bricht sonst erst im
 # Import mit ModuleNotFoundError ab, nachdem der Abruf schon gelaufen ist.
 if ! "$PYTHON" scripts/check_requirements.py requirements.txt; then
-  echo "Aktualisieren mit: $PYTHON -m pip install -r requirements.txt" >&2
+  printf 'Aktualisieren mit: %q -m pip install -r %q\n' "$PYTHON" "$REPO_ROOT/requirements.txt" >&2
   exit 2
 fi
 

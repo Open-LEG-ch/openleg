@@ -9,8 +9,9 @@ listet das Skript die Abweichungen auf und endet mit Code 1.
 So bricht ein veraltetes .venv ab, bevor die Arbeit beginnt, statt mitten im
 Import mit ModuleNotFoundError.
 
-Das Skript überspringt Zeilen mit Markern, Extras oder ohne ``==``. Versionen
-vergleicht es nach PEP 440 wie pip, also gilt ``1.0`` gleich ``1.0.0``.
+Das Skript überspringt Zeilen mit Markern, Extras, Platzhaltern wie ``1.*``,
+mehreren Bedingungen oder ohne ``==``. Versionen vergleicht es nach PEP 440 wie
+pip: ``==1.0`` passt auch zu ``1.0.0`` und ``1.0+lokal``.
 
 Aufruf:
     .venv/bin/python scripts/check_requirements.py
@@ -23,23 +24,24 @@ from importlib import metadata
 from pathlib import Path
 
 try:
-    from packaging.version import InvalidVersion, Version
+    from packaging.specifiers import InvalidSpecifier, Specifier
+    from packaging.version import InvalidVersion
 except ImportError:  # Ohne packaging bleibt der exakte Textvergleich.
-    Version = None
+    Specifier = None
 
 DEFAULT_REQUIREMENTS = Path(__file__).resolve().parent.parent / "requirements.txt"
-PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;#\[]+)$")
+PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;#\[*,]+)$")
 
 
 def _normalize(name):
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def _same_version(installed, wanted):
-    if Version is not None:
+def _satisfies(installed, wanted):
+    if Specifier is not None:
         try:
-            return Version(installed) == Version(wanted)
-        except InvalidVersion:
+            return Specifier(f"=={wanted}").contains(installed, prereleases=True)
+        except (InvalidSpecifier, InvalidVersion):
             pass
     return installed == wanted
 
@@ -64,7 +66,7 @@ def mismatches(pins):
         except metadata.PackageNotFoundError:
             problems.append(f"{name}=={wanted} (fehlt)")
             continue
-        if not _same_version(installed, wanted):
+        if not _satisfies(installed, wanted):
             problems.append(f"{name}=={wanted} (installiert: {installed})")
     return problems
 

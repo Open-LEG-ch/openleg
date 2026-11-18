@@ -33,6 +33,8 @@ Flask==3.1.0  # Web
 psycopg[binary]==3.2.0
 tomli==2.0.1; python_version < '3.11'
 requests>=2.0
+click==8.*
+jinja2==3.1.0,>=3
 -r other.txt
 """
     assert check_requirements.pinned_requirements(text) == [("Flask", "3.1.0")]
@@ -67,6 +69,12 @@ def test_equivalent_version_spelling_passes(tmp_path):
     result = run_check(req)
 
     assert result.returncode == 0, result.stderr
+
+
+def test_public_pin_accepts_a_local_build():
+    """pip accepts ``1.0+local`` for ``==1.0``, so the check must too."""
+    assert check_requirements._satisfies("1.0+local", "1.0")
+    assert not check_requirements._satisfies("1.0.1", "1.0")
 
 
 def test_missing_package_is_reported(tmp_path):

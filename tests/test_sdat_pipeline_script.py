@@ -7,6 +7,7 @@ das Verhalten der einzelnen Python-Skripte.
 """
 
 import os
+import shlex
 import subprocess
 
 import pytest
@@ -252,11 +253,31 @@ def test_stale_venv_fails_before_any_step(fake_python):
 
     assert result.returncode == 2
     # The fix must install into the interpreter the pipeline runs, also when
-    # PYTHON points somewhere other than .venv.
-    assert f"{env['PYTHON']} -m pip install -r requirements.txt" in result.stderr
+    # PYTHON points somewhere other than .venv, and work from any directory.
+    requirements = os.path.join(PROJECT_ROOT, "requirements.txt")
+    assert f"{env['PYTHON']} -m pip install -r {requirements}" in result.stderr
     recorded = calls()
     assert len(recorded) == 1
     assert "scripts/check_requirements.py" in recorded[0]
+
+
+def test_stale_venv_fix_command_survives_spaces(tmp_path):
+    """The printed command must still run when the interpreter path has a space."""
+    spaced = tmp_path / "mein venv"
+    spaced.mkdir()
+    interpreter = spaced / "python"
+    interpreter.write_text(STALE_VENV_RECORDER)
+    interpreter.chmod(0o755)
+    env = dict(os.environ)
+    env["PYTHON"] = str(interpreter)
+    env["RECORD_FILE"] = str(tmp_path / "calls.log")
+    env["COUNT_FILE"] = str(tmp_path / "counts.log")
+
+    result = run_pipeline(env)
+
+    assert result.returncode == 2
+    command = result.stderr.split("Aktualisieren mit: ", 1)[1].strip()
+    assert shlex.split(command)[0] == str(interpreter)
 
 
 def test_german_prose_uses_swiss_high_german():
