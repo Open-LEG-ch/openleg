@@ -63,9 +63,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
+      - name: Install PDF inspection dependency
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
+
       - name: Require sandbox process dependencies
         run: |
           test -x /usr/lib/postgresql/16/bin/initdb
+          command -v pdftotext
           python -c 'import ctypes; ctypes.CDLL("libseccomp.so.2")'
 
       - name: Run tests
