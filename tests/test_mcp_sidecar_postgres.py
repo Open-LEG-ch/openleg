@@ -15,12 +15,13 @@ from tests.test_mcp_sidecar import session
 
 
 @contextmanager
-def operator_server(app):
-    server = make_server("127.0.0.1", 0, app, threaded=True)
+def operator_server(app, ssl_context=None):
+    server = make_server("127.0.0.1", 0, app, threaded=True, ssl_context=ssl_context)
     thread = Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    scheme = "https" if ssl_context else "http"
     try:
-        yield f"http://127.0.0.1:{server.server_port}"
+        yield f"{scheme}://127.0.0.1:{server.server_port}"
     finally:
         server.shutdown()
         thread.join()
