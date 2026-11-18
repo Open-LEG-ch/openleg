@@ -173,7 +173,84 @@ def test_origin_rejects_non_origins(monkeypatch, origin):
         create_app()
 
 
-def test_http_trust_boundary(monkeypatch, caplog):
+def loopback_tls(directory, monkeypatch):
+    """Serve a fake upstream over HTTPS that the sidecar's own client trusts.
+
+    Clients send Secure cookies only over HTTPS, so cookie-isolation probes
+    need TLS to stay meaningful.
+    """
+    import datetime
+    import ipaddress
+    import ssl
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "127.0.0.1")])
+    now = datetime.datetime.now(datetime.UTC)
+    ski = x509.SubjectKeyIdentifier.from_public_key(key.public_key())
+    certificate = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - datetime.timedelta(minutes=5))
+        .not_valid_after(now + datetime.timedelta(hours=1))
+        .add_extension(
+            x509.SubjectAlternativeName(
+                [x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]
+            ),
+            critical=False,
+        )
+        .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                key_cert_sign=True,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False,
+            ),
+            critical=True,
+        )
+        .add_extension(
+            x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False
+        )
+        .add_extension(ski, critical=False)
+        .add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_subject_key_identifier(ski),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+    certificate_path = directory / "upstream.pem"
+    key_path = directory / "upstream.key"
+    certificate_path.write_bytes(certificate.public_bytes(serialization.Encoding.PEM))
+    key_path.write_bytes(
+        key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        )
+    )
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    context.load_cert_chain(certificate_path, key_path)
+    # The sidecar ignores SSL_* variables (trust_env=False) and verifies
+    # against certifi's bundle, so trust the fake upstream there.
+    monkeypatch.setattr("certifi.where", lambda: str(certificate_path))
+    return context
+
+
+def test_http_trust_boundary(monkeypatch, caplog, tmp_path):
     import logging
 
     from flask import Flask, jsonify, redirect, request
@@ -200,12 +277,31 @@ def test_http_trust_boundary(monkeypatch, caplog):
         if request.args.get("status") == "failure":
             return jsonify(error=token), 500
         result = jsonify(items=[{"community_id": path.split("/")[4]}], next_cursor=None)
-        result.set_cookie("secret", token)
+        result.set_cookie(
+            "secret", token, secure=True, httponly=True, samesite="Strict"
+        )
         return result
 
     monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
     monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
-    with operator_server(upstream) as origin:
+    with operator_server(upstream, loopback_tls(tmp_path, monkeypatch)) as origin:
+        assert origin.startswith("https://")
+
+        async def replay_control():
+            # A shared client replays the probe cookie, so the sidecar's
+            # no-cookie assertion below cannot pass vacuously.
+            url = origin + "/api/operator/v1/communities/one/billing/periods"
+            async with httpx.AsyncClient(trust_env=False) as client:
+                for _ in range(2):
+                    await client.get(url)
+
+        # The control's own transport logs carry the cookie; the log assertion
+        # below covers the sidecar only.
+        with caplog.at_level(logging.WARNING):
+            asyncio.run(replay_control())
+        control = seen[:]
+        seen.clear()
+        assert [cookie for _, _, cookie in control] == [None, "secret=" + token]
         monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
         app = create_app()
 
