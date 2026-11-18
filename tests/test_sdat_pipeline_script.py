@@ -246,6 +246,11 @@ def test_missing_interpreter_still_fails_fast(tmp_path):
     assert "Virtualenv" in result.stderr
 
 
+def printed_fix_command(stderr):
+    """Liefert die Argumente des ausgegebenen Befehls, wie eine Shell sie liest."""
+    return shlex.split(stderr.split("Aktualisieren mit: ", 1)[1].splitlines()[0])
+
+
 def test_stale_venv_fails_before_any_step(fake_python):
     env, calls, _counts = fake_python(STALE_VENV_RECORDER)
 
@@ -255,7 +260,14 @@ def test_stale_venv_fails_before_any_step(fake_python):
     # The fix must install into the interpreter the pipeline runs, also when
     # PYTHON points somewhere other than .venv, and work from any directory.
     requirements = os.path.join(PROJECT_ROOT, "requirements.txt")
-    assert f"{env['PYTHON']} -m pip install -r {requirements}" in result.stderr
+    assert printed_fix_command(result.stderr) == [
+        env["PYTHON"],
+        "-m",
+        "pip",
+        "install",
+        "-r",
+        requirements,
+    ]
     recorded = calls()
     assert len(recorded) == 1
     assert "scripts/check_requirements.py" in recorded[0]
@@ -276,8 +288,31 @@ def test_stale_venv_fix_command_survives_spaces(tmp_path):
     result = run_pipeline(env)
 
     assert result.returncode == 2
-    command = result.stderr.split("Aktualisieren mit: ", 1)[1].strip()
-    assert shlex.split(command)[0] == str(interpreter)
+    assert printed_fix_command(result.stderr)[0] == str(interpreter)
+
+
+def test_relative_interpreter_is_resolved_from_the_callers_directory(
+    fake_python, tmp_path
+):
+    """The venv guard, every step and the fix command must use the same interpreter."""
+    env, calls, _counts = fake_python(STALE_VENV_RECORDER)
+    interpreter = env["PYTHON"]
+    env["PYTHON"] = os.path.join(".", os.path.basename(interpreter))
+
+    result = subprocess.run(
+        [SCRIPT_PATH],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2, result.stderr
+    assert len(calls()) == 1
+    printed = printed_fix_command(result.stderr)[0]
+    assert os.path.isabs(printed)
+    assert os.path.samefile(printed, interpreter)
 
 
 def test_german_prose_uses_swiss_high_german():

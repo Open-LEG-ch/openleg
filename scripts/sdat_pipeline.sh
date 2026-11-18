@@ -80,6 +80,10 @@ fi
 # "source .venv/bin/activate" nötig ist. PYTHON lässt sich für Tests
 # überschreiben.
 PYTHON="${PYTHON:-$REPO_ROOT/.venv/bin/python}"
+# Ein relativer Pfad gilt ab dem Aufrufverzeichnis, auch nach dem cd unten.
+if [[ "$PYTHON" == */* && "$PYTHON" != /* ]]; then
+  PYTHON="$PWD/$PYTHON"
+fi
 if [[ ! -x "$PYTHON" ]]; then
   echo "Virtualenv fehlt: $PYTHON" >&2
   echo "Anlegen mit: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt" >&2
