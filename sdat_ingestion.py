@@ -1,16 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Scheduled SDAT ingestion orchestration.
 
-Transport remains in :mod:`sdat_datahub`; parsing and persistence remain in the
-existing import command. This module owns scheduling, retry, locking and the
-small operational report returned to callers.
+Transport remains in :mod:`sdat_datahub`; parsing and persistence live in
+:mod:`sdat_import`, shared with the import command. This module owns
+scheduling, retry, locking and the small operational report returned to
+callers.
 """
 
 from __future__ import annotations
 
-import contextlib
-import importlib.util
-import io
 import logging
 import os
 import re
@@ -20,6 +18,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import sdat_datahub
+import sdat_import
 
 logger = logging.getLogger(__name__)
 DEFAULT_LOCAL_DIR = "data/sdat"
@@ -94,40 +93,19 @@ def resolve_tenant_directory(territory: str, configured: str | None = None) -> s
 
 
 def _default_import(directory: str) -> dict:
-    """Run the established importer while keeping private output out of logs."""
-    import database
+    """Import one tenant directory through the shared SDAT import.
 
-    script = Path(__file__).with_name("scripts") / "import_sdat.py"
-    spec = importlib.util.spec_from_file_location("scheduled_import_sdat", script)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-
-    class RunningDatabase:
-        """Use the app's live pool; the CLI normally initializes its own."""
-
-        @staticmethod
-        def init_db():
-            return True
-
-        def __getattr__(self, name):
-            return getattr(database, name)
-
-    module.db = RunningDatabase()
-    output = io.StringIO()
-    with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
-        exit_code = module.main([directory, "--quiet"])
-    text = output.getvalue()
-    files = re.search(r"Dateien: (\d+) verarbeitet, (\d+) bereits importiert", text)
-    readings = re.search(r"Zeilen: neu (\d+), korrigiert (\d+)", text)
-    if not files or not readings:
-        raise IngestionError("import_report_unavailable")
+    Reuses the application's live pool and reads only structured counts, so
+    command wording and file diagnostics never reach scheduler reports or logs.
+    """
+    report = sdat_import.import_paths([directory])
+    readings = report.readings
     counts = {
-        "files_imported": int(files.group(1)),
-        "files_existing": int(files.group(2)),
-        "readings_imported": int(readings.group(1)) + int(readings.group(2)),
+        "files_imported": report.count(sdat_import.IMPORTED),
+        "files_existing": report.count(sdat_import.ALREADY),
+        "readings_imported": readings.new + readings.corrected,
     }
-    if exit_code:
+    if not report.succeeded:
         raise IngestionError("import_failed", counts)
     return counts
 

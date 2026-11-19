@@ -1,11 +1,24 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Scheduled SDAT ingestion behaviour at its public module interface."""
 
+import builtins
+import importlib.util
+import sys
+import threading
 from datetime import UTC, datetime
 from pathlib import Path
 from shutil import copyfile
 
+import pytest
+
 import sdat_ingestion
+from tests.sdat_import_helpers import (
+    FIXTURE_READINGS,
+    MemoryLedger,
+    broken_delivery,
+    delivery,
+    use_storage,
+)
 
 
 class MemoryStore:
@@ -233,3 +246,133 @@ def test_due_tenants_continue_after_one_unexpected_failure():
         runner=runner,
     )
     assert result == {"due": 2, "succeeded": 1, "failed": 1, "locked": 0}
+
+
+_ENGLISH = (
+    ("Dateien:", "Files:"),
+    ("verarbeitet", "processed"),
+    ("bereits importiert", "already imported"),
+    ("Zeilen:", "Rows:"),
+    ("neu", "new"),
+    ("korrigiert", "corrected"),
+)
+
+
+@pytest.mark.parametrize("files", [0, 1])
+def test_presentation_wording_cannot_change_scheduled_counts(
+    monkeypatch, tmp_path, files
+):
+    """Rewording the command's printed summary once broke empty scheduled runs."""
+    use_storage(monkeypatch, MemoryLedger())
+    if files:
+        delivery(tmp_path)
+    real_print = builtins.print
+
+    def english_print(*args, **kwargs):
+        translated = []
+        for value in args:
+            text = str(value)
+            for german, english in _ENGLISH:
+                text = text.replace(german, english)
+            translated.append(text)
+        real_print(*translated, **kwargs)
+
+    monkeypatch.setattr(builtins, "print", english_print)
+
+    assert sdat_ingestion._default_import(str(tmp_path)) == {
+        "files_imported": files,
+        "files_existing": 0,
+        "readings_imported": files * FIXTURE_READINGS,
+    }
+
+
+def test_scheduled_import_does_not_load_the_command_script(monkeypatch, tmp_path):
+    use_storage(monkeypatch, MemoryLedger())
+    delivery(tmp_path)
+
+    def refuse(*_args, **_kwargs):
+        raise AssertionError("scheduled import loaded the command script")
+
+    monkeypatch.setattr(importlib.util, "spec_from_file_location", refuse)
+
+    assert sdat_ingestion._default_import(str(tmp_path))["files_imported"] == 1
+
+
+def test_scheduled_import_leaves_other_threads_output_alone(
+    monkeypatch, tmp_path, capsys
+):
+    """A running import must not capture what another thread prints."""
+    storage = use_storage(monkeypatch, MemoryLedger())
+    delivery(tmp_path)
+    saving = threading.Event()
+    finish = threading.Event()
+    real_save = storage.save_metering_point_readings
+
+    def held_save(rows, **kwargs):
+        saving.set()
+        assert finish.wait(10), "test did not release the import"
+        return real_save(rows, **kwargs)
+
+    monkeypatch.setattr(
+        sys.modules["database"], "save_metering_point_readings", held_save
+    )
+    results = []
+    worker = threading.Thread(
+        target=lambda: results.append(sdat_ingestion._default_import(str(tmp_path)))
+    )
+    worker.start()
+    try:
+        assert saving.wait(10), "import never reached storage"
+        streams_while_importing = (sys.stdout, sys.stderr)
+        print("another request's output")
+        print("another request's warning", file=sys.stderr)
+    finally:
+        finish.set()
+        worker.join(10)
+
+    assert results, "scheduled import did not finish"
+    assert results[0]["files_imported"] == 1
+    assert streams_while_importing == (sys.stdout, sys.stderr)
+    captured = capsys.readouterr()
+    assert "another request's output" in captured.out
+    assert "another request's warning" in captured.err
+
+
+def test_retries_keep_counts_from_every_attempt_of_the_shared_import(
+    monkeypatch, tmp_path
+):
+    """A partial import counts its good file even when a later attempt succeeds."""
+    monkeypatch.setenv("SWISSELDEX_SDAT_DIR", str(tmp_path))
+    storage = use_storage(monkeypatch, MemoryLedger())
+    attempts = []
+
+    def fetch(directory):
+        Path(directory).mkdir(exist_ok=True)
+        attempts.append(directory)
+        if len(attempts) == 1:
+            delivery(directory, "20260807_120000_good.xml")
+            broken_delivery(directory, "20260807_130000_late.xml")
+        else:
+            delivery(
+                directory,
+                "20260807_130000_late.xml",
+                document_id="TESTDOC-2",
+                corrected=True,
+            )
+        return {"downloaded": ["delivery"], "skipped": [], "failed": []}
+
+    result = sdat_ingestion.run(
+        "dietikon",
+        {"max_attempts": 2, "retry_seconds": 0},
+        store=MemoryStore(),
+        fetcher=fetch,
+        sleeper=lambda _seconds: None,
+    )
+
+    assert result["status"] == "success"
+    assert result["attempts"] == 2
+    assert result["imported_files"] == 2
+    assert result["existing_files"] == 1
+    assert result["imported_readings"] == FIXTURE_READINGS + 1
+    assert storage.saved == ["TESTDOC-1", "TESTDOC-2"]
+    assert "20260807" not in str(result), "file names stay out of scheduler reports"
