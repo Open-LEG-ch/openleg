@@ -22,6 +22,7 @@ import gzip
 import os
 import secrets
 import shutil
+import zlib
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -56,8 +57,9 @@ LEDGER_NOT_RECORDED = "ledger_not_recorded"
 VERACITY_FLAGS_NOT_RECORDED = "veracity_flags_not_recorded"
 COMPRESSION_FAILED = "compression_failed"
 
-_READ_ERRORS = (OSError, EOFError, gzip.BadGzipFile, UnicodeDecodeError)
-_PACK_ERRORS = (OSError, EOFError, gzip.BadGzipFile)
+# zlib.error is what a broken deflate stream raises; it is not an OSError.
+_READ_ERRORS = (OSError, EOFError, gzip.BadGzipFile, zlib.error, UnicodeDecodeError)
+_PACK_ERRORS = (OSError, EOFError, gzip.BadGzipFile, zlib.error)
 
 
 @dataclass(frozen=True)

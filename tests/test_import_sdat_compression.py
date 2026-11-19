@@ -15,6 +15,7 @@ because the file is the only local copy of that delivery.
 import errno
 import gzip
 import shutil
+import zlib
 from pathlib import Path
 
 import pytest
@@ -315,6 +316,26 @@ def test_a_stored_document_is_compressed(tmp_path, monkeypatch):
     assert fake.saved, "the rows must reach the database before compression"
     assert not path.exists()
     assert (tmp_path / "sample.xml.gz").exists()
+
+
+def test_a_failed_archive_check_is_only_a_warning(tmp_path, monkeypatch):
+    """A readback that hits a broken deflate stream keeps the delivery plain."""
+    use_storage(monkeypatch, _FakeDb())
+    path = _staged(tmp_path)
+
+    def _corrupt(*args, **kwargs):
+        raise zlib.error("Error -3 while decompressing data: invalid block type")
+
+    monkeypatch.setattr(sdat_import.gzip, "open", _corrupt)
+
+    (outcome,) = sdat_import.import_paths([str(path)]).files
+
+    assert outcome.status == sdat_import.IMPORTED
+    assert {item.code for item in outcome.diagnostics} == {
+        sdat_import.COMPRESSION_FAILED
+    }
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["sample.xml"]
+    assert path.read_bytes() == FIXTURE.read_bytes()
 
 
 def test_an_already_imported_document_is_compressed_too(tmp_path, monkeypatch):

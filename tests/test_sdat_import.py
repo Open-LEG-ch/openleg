@@ -6,6 +6,7 @@ Each scenario runs the import module, the command and the scheduler adapter
 against one in-memory ledger behind the ``database`` facade.
 """
 
+import gzip
 import importlib.util
 from pathlib import Path
 
@@ -15,6 +16,7 @@ import sdat_import
 import sdat_ingestion
 from tests.sdat_import_helpers import (
     DOCUMENT_ID,
+    FIXTURE,
     FIXTURE_READINGS,
     MemoryLedger,
     broken_delivery,
@@ -170,6 +172,30 @@ def test_a_partial_failure_keeps_the_good_file_in_the_module(ledger, tmp_path):
     assert ledger.saved == [DOCUMENT_ID]
     assert (tmp_path / "20260807_120000_good.xml.gz").exists()
     assert (tmp_path / "20260807_130000_broken.xml").exists()
+
+
+@pytest.mark.parametrize(
+    "intact", [0, 2 * sdat_import.HEAD_LIMIT], ids=["head", "body"]
+)
+def test_a_corrupt_archive_fails_only_that_file(ledger, tmp_path, intact):
+    """A broken deflate stream fails its file instead of the whole batch."""
+    text = FIXTURE.read_text(encoding="utf-8").replace(DOCUMENT_ID, "CORRUPT-1")
+    # ``intact`` readable characters, then a deflate block of the reserved type.
+    readable = gzip.compress((text + "\n" * intact).encode()) if intact else b""
+    broken = gzip.compress(b"")[:10] + b"\xff" * 16
+    (tmp_path / "20260807_110000_corrupt.xml.gz").write_bytes(readable + broken)
+    delivery(tmp_path, "20260807_120000_good.xml")
+
+    report = sdat_import.import_paths([str(tmp_path)])
+
+    assert [(item.name, item.status) for item in report.files] == [
+        ("20260807_110000_corrupt.xml", sdat_import.FAILED),
+        ("20260807_120000_good.xml", sdat_import.IMPORTED),
+    ]
+    assert {item.code for item in report.files[0].diagnostics} == {
+        sdat_import.UNREADABLE
+    }
+    assert ledger.saved == [DOCUMENT_ID]
 
 
 def test_a_partial_failure_fails_the_command_after_the_good_file(
