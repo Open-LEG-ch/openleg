@@ -23,7 +23,7 @@ weasyprint==70.0
 qrcode==8.2
 
 # Optional: For production
-gunicorn==26.2.0
+gunicorn==27.0.1
 requests==2.34.2
 svix==2.10.0
 werkzeug==3.1.9
