@@ -99,14 +99,14 @@ msgstr ""
 msgid "%(kw)s kW ungenutztes Dachpotenzial"
 msgstr ""
 
-#: templates/release/homepage.html:158
+#: templates/release/homepage.html:160
 #, python-format
 msgid ""
 "%(name)s pflegt Software, Dokumentation und Austausch. Der Verein mit Sitz in %(seat)s übernimmt "
 "nicht den Betrieb des gehosteten Produkts."
 msgstr ""
 
-#: templates/release/homepage.html:158
+#: templates/release/homepage.html:160
 #, python-format
 msgid ""
 "%(name)s soll die Software, Dokumentation und den Austausch pflegen. Der Verein mit geplantem "
@@ -1287,6 +1287,10 @@ msgstr ""
 msgid "Anfrage bestätigen"
 msgstr ""
 
+#: templates/release/community.html:18
+msgid "Anfrage einreichen"
+msgstr ""
+
 #: templates/api_docs.html:115
 msgid "Anfrage fehlgeschlagen. Prüfen Sie die Angaben und versuchen Sie es erneut."
 msgstr ""
@@ -1512,12 +1516,21 @@ msgstr ""
 msgid "Architektur"
 msgstr ""
 
+#: templates/release/software.html:83
+msgid "Architektur im Detail"
+msgstr ""
+
 #: templates/open_source.html:10
 msgid "Architektur, Datenpipeline, Repo-Grenzen und Selbsthosting der freien OpenLEG-Infrastruktur."
 msgstr ""
 
 #: templates/sandbox/archive.html:27
 msgid "Archiv abgelehnt. Es wurden keine Datensätze importiert."
+msgstr ""
+
+#: templates/release/software.html:50 templates/release/software.html:74
+#: templates/release/software.html:82
+msgid "Archivieren"
 msgstr ""
 
 #: templates/fuer_gemeinden.html:77 templates/leg_gruenden.html:212
@@ -1590,18 +1603,8 @@ msgid ""
 "Gebäude behandelt."
 msgstr ""
 
-#: templates/release/community.html:6
-msgid ""
-"Auch verständlichere Texte, Übersetzungen und Rückmeldungen zu den Abläufen helfen. Ein Beitrag "
-"macht Sie nicht automatisch zum Vereinsmitglied."
-msgstr ""
-
 #: templates/leg_billing.html:152
 msgid "Audit-Verlauf"
-msgstr ""
-
-#: templates/release/homepage.html:162
-msgid "Auf GitHub mitarbeiten"
 msgstr ""
 
 #: templates/gemeinde/rangliste.html:118
@@ -1750,10 +1753,6 @@ msgstr ""
 
 #: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:45
 msgid "Aussteller:"
-msgstr ""
-
-#: templates/release/community.html:8
-msgid "Austausch und Mitgliedschaft"
 msgstr ""
 
 #: templates/leg_dashboard.html:252 templates/leg_dashboard.html:267
@@ -2038,7 +2037,7 @@ msgstr ""
 msgid "Beispiel-Dashboard öffnen"
 msgstr ""
 
-#: templates/release/community.html:9
+#: templates/release/community.html:38
 msgid "Beitrag ansehen"
 msgstr ""
 
@@ -2050,7 +2049,7 @@ msgstr ""
 msgid "Beitragsjahre"
 msgstr ""
 
-#: templates/release/community.html:6
+#: templates/release/community.html:20
 msgid "Beitragsleitfaden lesen"
 msgstr ""
 
@@ -2113,6 +2112,10 @@ msgstr ""
 msgid "Berechnet aus der OpenLEG Rangliste"
 msgstr ""
 
+#: templates/release/software.html:45 templates/release/software.html:80
+msgid "Berechtigte Person entscheidet"
+msgstr ""
+
 #: templates/release/how_it_works.html:49
 msgid "Berechtigte Personen übernehmen und prüfen die bereitgestellten Daten."
 msgstr ""
@@ -2148,6 +2151,12 @@ msgstr ""
 msgid ""
 "Bereiten Sie als Sam einen September-Entwurf vor, geben Sie ihn als Robin frei und prüfen Sie als"
 " Lea oder Noah die eigene erfundene Rechnung."
+msgstr ""
+
+#: templates/release/community.html:29
+msgid ""
+"Bereiten Sie ein Online-Treffen oder einen Anlass vor Ort vor. Schlagen Sie uns ein Thema und "
+"einen Rahmen vor."
 msgstr ""
 
 #: templates/sandbox/payments.html:10
@@ -2207,11 +2216,11 @@ msgstr ""
 msgid "Beschlossene Statuten und Aufnahmebedingungen"
 msgstr ""
 
-#: templates/release/community.html:6
+#: templates/release/community.html:17
 msgid ""
-"Beschreiben Sie auf GitHub das erwartete Verhalten, die verwendete Version und die Schritte zum "
-"Nachvollziehen. Entfernen Sie persönliche Daten, Zugangsschlüssel und echte Messdaten aus "
-"öffentlichen Berichten."
+"Beschreiben Sie, wer etwas braucht, welches Problem besteht und wie Sie es heute lösen. Angaben "
+"zur LEG oder Gemeinde sind freiwillig. Bitte keine persönlichen Daten, Zugangsschlüssel oder "
+"echten Messdaten veröffentlichen."
 msgstr ""
 
 #: sandbox_seed.py:79
@@ -2244,16 +2253,16 @@ msgstr ""
 msgid "Beschädigtes Manifest simulieren"
 msgstr ""
 
+#: templates/release/community.html:20
+msgid "Besprechen Sie die Änderung im Issue und grenzen Sie eine Aufgabe ab."
+msgstr ""
+
 #: templates/gemeinde/profil.html:132
 msgid "Bestehende LEG eintragen"
 msgstr ""
 
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
-msgstr ""
-
-#: templates/release/community.html:7
-msgid "Bestehenden Zugang öffnen"
 msgstr ""
 
 #: templates/leg_gruenden.html:160
@@ -2352,7 +2361,7 @@ msgstr ""
 msgid "Bestätigte Mitglieder"
 msgstr ""
 
-#: templates/release/community.html:8
+#: templates/release/community.html:15
 msgid "Bestätigte Treffen ansehen"
 msgstr ""
 
@@ -2401,6 +2410,11 @@ msgstr ""
 msgid "Bestätigungslink senden"
 msgstr ""
 
+#: templates/release/software.html:33 templates/release/software.html:57
+#: templates/release/software.html:76
+msgid "Beteiligte aufnehmen"
+msgstr ""
+
 #: templates/release/homepage.html:110
 msgid "Beteiligte klären"
 msgstr ""
@@ -2427,6 +2441,12 @@ msgstr ""
 
 #: templates/leg_dashboard.html:347 templates/leg_dashboard.html:381
 msgid "Betreff"
+msgstr ""
+
+#: templates/release/community.html:25
+msgid ""
+"Betreuen Sie Abrechnung und Messdaten, VNB-Schnittstellen, Website und Übersetzungen oder Betrieb"
+" und Sicherheit. Beginnen Sie mit regelmässigen Beiträgen und Reviews in einem Bereich."
 msgstr ""
 
 #: templates/fuer_gemeinden.html:95 templates/open_source.html:66 templates/pricing.html:41
@@ -2835,12 +2855,6 @@ msgstr ""
 msgid "Code auf GitHub"
 msgstr ""
 
-#: templates/release/community.html:4
-msgid ""
-"Code prüfen, Erfahrungen teilen oder eine Frage stellen. Wählen Sie den passenden Weg für Ihr "
-"Anliegen."
-msgstr ""
-
 #: templates/index.html:183
 msgid "Codebase und Install"
 msgstr ""
@@ -2855,6 +2869,10 @@ msgstr ""
 
 #: templates/index.html:395
 msgid "Community-Beiträge willkommen"
+msgstr ""
+
+#: templates/release/community.html:23
+msgid "Contributor"
 msgstr ""
 
 #: templates/api_docs.html:32
@@ -2875,7 +2893,7 @@ msgid ""
 "Nachbarn über ein privates Netzwerk ohne offene Ports."
 msgstr ""
 
-#: templates/release/community.html:9
+#: templates/release/community.html:38
 msgid "Danke für die Beiträge"
 msgstr ""
 
@@ -3254,7 +3272,7 @@ msgstr ""
 msgid "Den Verein unterstützen"
 msgstr ""
 
-#: templates/release/software.html:24
+#: templates/release/software.html:86
 msgid "Den nächsten Schritt wählen"
 msgstr ""
 
@@ -3306,6 +3324,13 @@ msgstr ""
 
 #: verein_finance.py:119
 msgid "Der Buchungsbetrag muss grösser als null sein."
+msgstr ""
+
+#: templates/release/software.html:84
+msgid ""
+"Der Code steht unter AGPL-3.0-or-later öffentlich zur Verfügung. Sie können ihn prüfen, anpassen "
+"und selbst betreiben. Beiträge verbessern die gemeinsame Grundlage; die verfügbare Zeit der "
+"Freiwilligen ist begrenzt."
 msgstr ""
 
 #: templates/release/pricing.html:6
@@ -3374,6 +3399,12 @@ msgstr ""
 msgid ""
 "Der LEG-Check zeigt öffentliche Gemeindedaten und gemeldete Gemeinschaften. Die massgeblichen "
 "Anschluss- und Netzbedingungen klären Sie mit dem Netzbetreiber."
+msgstr ""
+
+#: templates/release/software.html:75
+msgid ""
+"Der MCP-Sidecar ist standardmässig ausgeschaltet. Das Demodorf verwendet getrennte, vergängliche "
+"Sandbox-Arbeitsbereiche mit erfundenen Daten."
 msgstr ""
 
 #: billing_policy.py:243 billing_policy.py:249
@@ -3513,6 +3544,12 @@ msgstr ""
 msgid ""
 "Der Verein nimmt keine Finanzierung von Energieversorgern an, auch nicht über Dritte. Andere "
 "zulässige Beiträge, Fördermittel und Spenden kaufen keine Stimmen oder Kontrolle."
+msgstr ""
+
+#: templates/release/community.html:11
+msgid ""
+"Der Verein pflegt Software, Dokumentation und Austausch. Er betreibt nicht das gehostete Produkt."
+" Mitarbeit ist ohne Vereinsmitgliedschaft möglich."
 msgstr ""
 
 #: templates/verein/index.html:10
@@ -3860,7 +3897,7 @@ msgstr ""
 msgid "Die ElCom ist die zuständige Aufsichts- und Schlichtungsstelle für Streitfälle im Strommarkt."
 msgstr ""
 
-#: templates/release/community.html:9
+#: templates/release/community.html:38
 msgid ""
 "Die Entwicklung lebt von Code, Tests, Übersetzungen und Rückmeldungen. Die öffentliche "
 "Beitragshistorie zeigt die tatsächliche Mitarbeit. Sie ist keine Mitgliederliste und keine "
@@ -3887,6 +3924,13 @@ msgstr ""
 msgid ""
 "Die Freigabe zurückgehaltener Mittel braucht die tatsächliche Unabhängigkeitsprüfung in "
 "funding_check."
+msgstr ""
+
+#: templates/release/software.html:26
+msgid ""
+"Die Gemeinde kann den Einstieg unterstützen. Haushalte und LEG-Verwaltung vereinbaren die "
+"Teilnahme. Der VNB betreibt das Netz und liefert Messdaten; der Grundversorger liefert bei Bedarf"
+" den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht."
 msgstr ""
 
 #: templates/gemeinde/verzeichnis.html:67
@@ -3935,6 +3979,10 @@ msgstr ""
 
 #: interest_intake.py:91 registration.py:165
 msgid "Die Interessenmeldung konnte nicht gespeichert werden."
+msgstr ""
+
+#: templates/release/software.html:75
+msgid "Die Karte als Text lesen"
 msgstr ""
 
 #: payment_reconciliation.py:201
@@ -4288,7 +4336,7 @@ msgid ""
 "erneut."
 msgstr ""
 
-#: templates/release/pricing.html:14
+#: templates/release/pricing.html:14 templates/release/software.html:84
 msgid ""
 "Die Veröffentlichung der Software ist keine Zusage für kostenloses Hosting oder Support. Ein "
 "Vereinsbeitrag ist kein Betriebsvertrag für Ihre LEG."
@@ -4330,6 +4378,12 @@ msgstr ""
 
 #: billing_policy.py:217
 msgid "Die Zustellmethode der Richtlinie ist ungültig."
+msgstr ""
+
+#: templates/release/community.html:26
+msgid ""
+"Die aktiven Maintainer entscheiden über Code, Releases und technische Planung. Wachsen Sie durch "
+"öffentliche Mitarbeit in diese Verantwortung."
 msgstr ""
 
 #: templates/sandbox/operator.html:35
@@ -4789,6 +4843,10 @@ msgstr ""
 msgid "Dokumentablauf im Assistenten öffnen"
 msgstr ""
 
+#: templates/release/community.html:32
+msgid "Dokumentation schreiben"
+msgstr ""
+
 #: community_access.py:62 templates/agent_confirmation.html:13 templates/leg_dashboard.html:210
 #: templates/release/footer.html:9 templates/release/navigation.html:11
 msgid "Dokumente"
@@ -5110,6 +5168,12 @@ msgid ""
 "ergänzen."
 msgstr ""
 
+#: templates/release/software.html:25
+msgid ""
+"Ein Weg, zwei Ansichten. Links sehen Sie die Aufgaben der Beteiligten, rechts die zugehörigen "
+"Module. Jede Freigabe bleibt eine Entscheidung der verantwortlichen Person."
+msgstr ""
+
 #: templates/how-it-works.html:33 templates/how-it-works.html:111
 msgid ""
 "Ein ZEV (Zusammenschluss zum Eigenverbrauch) ist seit 2018 möglich. Haushalte in einem Gebäude "
@@ -5330,8 +5394,8 @@ msgid ""
 "Quelldokumente, bevor sie die Abrechnung freigibt."
 msgstr ""
 
-#: templates/release/community.html:7
-msgid "Eine eigene LEG vorbereiten"
+#: templates/release/community.html:12
+msgid "Eine erste Aufgabe finden"
 msgstr ""
 
 #: dashboard.py:673
@@ -5441,6 +5505,10 @@ msgstr ""
 
 #: templates/admin/login.html:8 templates/utility/register.html:111
 msgid "Einloggen"
+msgstr ""
+
+#: templates/release/community.html:13
+msgid "Einmal im Monat online. Einmal im Quartal vor Ort."
 msgstr ""
 
 #: templates/sandbox/operator.html:22
@@ -5694,6 +5762,13 @@ msgstr ""
 msgid "Entscheidung"
 msgstr ""
 
+#: templates/release/community.html:36
+msgid ""
+"Entscheidungen werden öffentlich in Issues, Pull Requests und freigegebenen Notizen "
+"nachvollziehbar. Ohne begründeten Einwand gilt ein Vorschlag als angenommen; bei Streit "
+"entscheidet die Mehrheit der Maintainer. Diese legen ihre Zugehörigkeiten offen."
+msgstr ""
+
 #: templates/sandbox/telemetry.html:22
 msgid "Entwarnung senden"
 msgstr ""
@@ -5714,7 +5789,8 @@ msgstr ""
 msgid "Entwurf bereit"
 msgstr ""
 
-#: templates/release/software.html:8
+#: templates/release/software.html:8 templates/release/software.html:42
+#: templates/release/software.html:66 templates/release/software.html:79
 msgid "Entwurf kontrollieren"
 msgstr ""
 
@@ -5840,6 +5916,12 @@ msgstr ""
 
 #: templates/verein/dues.html:3
 msgid "Erinnerung tatsächlich versendet am"
+msgstr ""
+
+#: templates/release/community.html:32
+msgid ""
+"Erklären Sie einen Ablauf so, dass andere ihn nachvollziehen können. Beginnen Sie mit einer "
+"unklaren Anleitung."
 msgstr ""
 
 #: templates/oauth_consent.html:19
@@ -5970,6 +6052,13 @@ msgstr ""
 
 #: templates/self_host.html:44
 msgid "Es erstellt lokale Zugangsschlüssel und startet App, PostgreSQL und Redis."
+msgstr ""
+
+#: templates/release/software.html:84
+msgid ""
+"Es gibt keine Support-SLA und keine zugesagte Antwortzeit. OpenLEG bietet keine Rechts- oder "
+"Steuerberatung und liefert keinen Strom. Anmeldung und Datenlieferung müssen für jeden VNB "
+"eingerichtet werden."
 msgstr ""
 
 #: templates/advisories.html:27
@@ -6110,10 +6199,6 @@ msgstr ""
 msgid "Fehler beim vorgelagerten Dienst"
 msgstr ""
 
-#: templates/release/community.html:6
-msgid "Fehler und Vorschläge auf GitHub"
-msgstr ""
-
 #: templates/meter_upload.html:115
 msgid "Fehler:"
 msgstr ""
@@ -6200,6 +6285,13 @@ msgstr ""
 msgid "Firmwareversion"
 msgstr ""
 
+#: templates/release/software.html:75
+msgid ""
+"Flask und templates/ bilden die Oberfläche. PostgreSQL und store/ halten die Daten. "
+"vnb_exchange.py verwaltet VNB-Fälle. Öffentliche API und operator_api.py haben getrennte Zugänge;"
+" i18n.py übersetzt die Oberfläche."
+msgstr ""
+
 #: templates/open_source.html:78
 msgid "Flask-App und öffentliche API"
 msgstr ""
@@ -6250,6 +6342,10 @@ msgstr ""
 
 #: templates/leg_gruenden.html:239
 msgid "Fragen ausserhalb der Gründungsschritte"
+msgstr ""
+
+#: templates/release/community.html:19
+msgid "Fragen in Discussions stellen"
 msgstr ""
 
 #: templates/pricing.html:153
@@ -6406,13 +6502,6 @@ msgstr ""
 
 #: templates/datenschutz.html:78
 msgid "Für Anfragen wenden Sie sich bitte an:"
-msgstr ""
-
-#: templates/release/community.html:7
-msgid ""
-"Für Anschlüsse und Messdaten ist Ihr Verteilnetzbetreiber der passende Ansprechpartner. Für Ihren"
-" bestehenden Zugang verwenden Sie die Anmeldung. Die Gemeinde entscheidet nicht automatisch über "
-"den Betrieb Ihrer LEG."
 msgstr ""
 
 #: templates/fuer_bewohner.html:24 templates/pricing.html:50
@@ -6749,9 +6838,9 @@ msgstr ""
 msgid "Gegenstelle"
 msgstr ""
 
-#: templates/release/homepage.html:159
+#: templates/release/community.html:10 templates/release/homepage.html:161
 #, python-format
-msgid "Gegründet am %(date)s in %(seat)s."
+msgid "Gegründet am %(date)s. Sitz: %(seat)s."
 msgstr ""
 
 #: templates/meter_upload.html:50
@@ -6841,6 +6930,10 @@ msgstr ""
 
 #: templates/gemeinde/verzeichnis.html:31
 msgid "Gemeinde suchen..."
+msgstr ""
+
+#: templates/release/software.html:30 templates/release/software.html:75
+msgid "Gemeinde und LEG-Verwaltung"
 msgstr ""
 
 #: templates/sandbox/account_choices.html:4
@@ -6992,13 +7085,6 @@ msgstr ""
 
 #: templates/dashboard.html:169
 msgid "Geplant"
-msgstr ""
-
-#: templates/release/community.html:8
-msgid ""
-"Geplant ist ein dreimonatiger Versuch mit einem monatlichen Online-Treffen und freigegebenen "
-"Notizen. Die Treffen werden nicht aufgezeichnet. Termine und Gastgeber werden erst nach ihrer "
-"Bestätigung veröffentlicht."
 msgstr ""
 
 #: templates/release/events.html:9
@@ -7284,6 +7370,10 @@ msgstr ""
 msgid "Globalstrahlung, Stundenmittel"
 msgstr ""
 
+#: templates/release/community.html:38 templates/release/footer.html:8
+msgid "Governance lesen"
+msgstr ""
+
 #: templates/utility/register.html:53
 msgid "Graubünden"
 msgstr ""
@@ -7437,10 +7527,6 @@ msgstr ""
 msgid "Gründungsassistent öffnen"
 msgstr ""
 
-#: templates/release/community.html:7
-msgid "Gründungsleitfaden"
-msgstr ""
-
 #: templates/release/knowledge.html:22
 msgid "Gründungsleitfaden und Dokumentenvorbereitung"
 msgstr ""
@@ -7565,6 +7651,10 @@ msgstr ""
 msgid "Haushalte in der Nähe"
 msgstr ""
 
+#: templates/release/software.html:33 templates/release/software.html:76
+msgid "Haushalte und LEG-Verwaltung"
+msgstr ""
+
 #: templates/verein/recipient_edit.html:7
 msgid "Hausnummer"
 msgstr ""
@@ -7659,6 +7749,10 @@ msgstr ""
 msgid ""
 "Hier stehen bestätigte Treffen mit Termin, Sprache und Teilnahmeweg. Die monatlichen Online-"
 "Treffen werden nicht aufgezeichnet."
+msgstr ""
+
+#: templates/release/community.html:12
+msgid "Hier wird Hilfe gesucht"
 msgstr ""
 
 #: advisories.py:51 equipment.py:18 templates/equipment_form.html:19
@@ -7971,7 +8065,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/release/software.html:24
+#: templates/release/software.html:86
 msgid ""
 "Ihre Gemeinschaft bestimmt die Vertretung, die internen Regeln und den Betreiber. OpenLEG "
 "übernimmt keine automatische Anmeldung beim Netzbetreiber und verspricht keine Anbindung an jeden"
@@ -7982,7 +8076,7 @@ msgstr ""
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr ""
 
-#: templates/release/software.html:24
+#: templates/release/software.html:86
 msgid "Ihre LEG bleibt verantwortlich"
 msgstr ""
 
@@ -8176,6 +8270,10 @@ msgstr ""
 
 #: templates/index.html:392
 msgid "In einer Zeile selbst installieren, auf einem Raspberry Pi oder Mini-PC"
+msgstr ""
+
+#: templates/release/community.html:19
+msgid "In fünf Schritten zum Pull Request"
 msgstr ""
 
 #: templates/index.html:316
@@ -8882,7 +8980,7 @@ msgstr ""
 msgid "Kennzahlen der Startseite"
 msgstr ""
 
-#: templates/release/community.html:9
+#: templates/release/community.html:38
 msgid "Kevin-Nexio hat die französische Übersetzung und die Internationalisierung beigetragen."
 msgstr ""
 
@@ -9057,7 +9155,7 @@ msgstr ""
 msgid "Kosten und Betrieb"
 msgstr ""
 
-#: templates/release/software.html:24
+#: templates/release/software.html:86
 msgid "Kosten und Betriebsaufgaben ansehen"
 msgstr ""
 
@@ -9256,7 +9354,8 @@ msgid "LEG value-gap analysis"
 msgstr ""
 
 #: templates/release/footer.html:10 templates/release/homepage.html:13
-#: templates/release/homepage.html:136
+#: templates/release/homepage.html:136 templates/release/software.html:30
+#: templates/release/software.html:54 templates/release/software.html:75
 msgid "LEG vorbereiten"
 msgstr ""
 
@@ -9351,6 +9450,10 @@ msgstr ""
 msgid "LEG-Potenzial für %(profile_name)s"
 msgstr ""
 
+#: templates/release/community.html:31
+msgid "LEG-Praxis teilen"
+msgstr ""
+
 #: templates/admin/abrechnungen.html:74 templates/dashboard.html:215
 msgid "LEG-Preis"
 msgstr ""
@@ -9369,6 +9472,10 @@ msgstr ""
 
 #: templates/release/how_it_works.html:49
 msgid "LEG-Vertretung und gewählter Betriebsdienst"
+msgstr ""
+
+#: templates/release/software.html:42 templates/release/software.html:79
+msgid "LEG-Verwaltung prüft die Grundlagen"
 msgstr ""
 
 #: templates/admin/ops.html:36 templates/api_docs.html:50 templates/fuer_gemeinden.html:107
@@ -9701,6 +9808,10 @@ msgstr ""
 msgid "Lokale Elektrizitätsgemeinschaften in der Schweiz"
 msgstr ""
 
+#: templates/release/software.html:39 templates/release/software.html:78
+msgid "Lokale Energie und Reststrom"
+msgstr ""
+
 #: templates/equipment_form.html:73
 msgid ""
 "Lokale Messwerte deaktivieren keinen Fernzugriff. Diese Prüfung ist unabhängig von der lokalen "
@@ -9768,6 +9879,14 @@ msgid ""
 "Die vorhandene Quelle und ihre Messreihen werden beim erneuten Abruf wiedererkannt."
 msgstr ""
 
+#: templates/release/community.html:38
+msgid "Maintainer kennenlernen"
+msgstr ""
+
+#: templates/release/community.html:25
+msgid "Maintainer pro Bereich"
+msgstr ""
+
 #: equipment.py:75
 msgid "Manuell geprüft"
 msgstr ""
@@ -9786,6 +9905,16 @@ msgstr ""
 
 #: templates/api_docs.html:89
 msgid "Max number of results"
+msgstr ""
+
+#: templates/release/homepage.html:158
+msgid ""
+"Mehr funktionierende LEGs in der Schweiz brauchen Menschen, die Code prüfen, Erfahrungen teilen "
+"und Treffen organisieren. Machen Sie mit."
+msgstr ""
+
+#: templates/release/community.html:7
+msgid "Mehr funktionierende LEGs in der Schweiz."
 msgstr ""
 
 #: templates/leg_kalkulator.html:498
@@ -9947,6 +10076,10 @@ msgstr ""
 msgid "Menschen in einem Schweizer Stadtquartier"
 msgstr ""
 
+#: templates/release/software.html:27
+msgid "Menschen und Aufgaben"
+msgstr ""
+
 #: templates/index.html:100
 msgid "Menschen und öffentlicher Verkehr in einer Schweizer Stadt"
 msgstr ""
@@ -9968,8 +10101,10 @@ msgstr ""
 msgid "Messdaten einlesen"
 msgstr ""
 
-#: templates/release/homepage.html:59 templates/release/software.html:8 templates/sandbox/home.html:22
-#: templates/sandbox/metering.html:2 templates/sandbox/metering.html:8
+#: templates/release/homepage.html:59 templates/release/software.html:8
+#: templates/release/software.html:36 templates/release/software.html:60
+#: templates/release/software.html:77 templates/sandbox/home.html:22 templates/sandbox/metering.html:2
+#: templates/sandbox/metering.html:8
 msgid "Messdaten importieren"
 msgstr ""
 
@@ -10075,7 +10210,7 @@ msgstr ""
 msgid "Mindestens 2 Gebäude sind erforderlich."
 msgstr ""
 
-#: templates/release/software.html:24
+#: templates/release/software.html:86
 msgid "Mit Beispieldaten ausprobieren"
 msgstr ""
 
@@ -10104,6 +10239,12 @@ msgstr ""
 msgid ""
 "Mit OpenLEG verwaltet Ihre lokale Elektrizitätsgemeinschaft (LEG) ihre Mitglieder und bereitet "
 "die Abrechnung vor. Die Software ist kostenlos."
+msgstr ""
+
+#: templates/release/community.html:8
+msgid ""
+"Mit Software, die alle prüfen und selbst betreiben können. Bringen Sie Code, Erfahrung aus Ihrer "
+"LEG oder Zeit für den Verein ein."
 msgstr ""
 
 #: templates/leg_kalkulator.html:157
@@ -10227,6 +10368,7 @@ msgid "Mithelfen, auch ohne Mitgliedschaft"
 msgstr ""
 
 #: templates/release/community.html:3 templates/release/footer.html:8
+#: templates/release/homepage.html:164 templates/release/navigation.html:9
 #: templates/release/navigation.html:12
 msgid "Mitmachen"
 msgstr ""
@@ -10281,6 +10423,10 @@ msgstr ""
 
 #: templates/partials/registry_trust.html:13
 msgid "Moderierte Selbstauskunft"
+msgstr ""
+
+#: templates/release/software.html:51
+msgid "Module und Prüfpunkte"
 msgstr ""
 
 #: templates/index.html:216
@@ -11126,7 +11272,7 @@ msgstr ""
 msgid "Offene Schweizer Energiedaten API | OpenLEG"
 msgstr ""
 
-#: templates/release/homepage.html:157
+#: templates/release/community.html:4 templates/release/homepage.html:157
 msgid "Offene Software braucht Menschen."
 msgstr ""
 
@@ -11148,6 +11294,12 @@ msgstr ""
 msgid ""
 "Offline-Beispiele: Alle Adressen und Energiewerte sind erfunden. Verwenden Sie eine erfundene E"
 "-Mail-Adresse. Es wird keine Nachricht versendet."
+msgstr ""
+
+#: templates/release/community.html:18
+msgid ""
+"Ohne GitHub-Konto schreiben Sie an hallo@openleg.ch. Das Projekt nimmt Ihre Anfrage als Issue "
+"auf. Die gemeinsame Sichtung ist keine Zusage zur Umsetzung oder zu einer Antwortfrist."
 msgstr ""
 
 #: templates/leg_kalkulator.html:206
@@ -11302,10 +11454,6 @@ msgid ""
 "Betriebsmodell wählen."
 msgstr ""
 
-#: templates/release/community.html:3
-msgid "OpenLEG gemeinsam weiterentwickeln"
-msgstr ""
-
 #: templates/partials/registry_trust.html:14
 msgid "OpenLEG hat den Eintrag freigeschaltet. Kein Betreiber hat ihn beansprucht."
 msgstr ""
@@ -11329,6 +11477,14 @@ msgid ""
 "OpenLEG ist das öffentliche App-Repo für Schweizer Lokale Elektrizitätsgemeinschaften. Der Code "
 "ist offen, die Datenquellen sind nachvollziehbar, und produktive Secrets bleiben ausserhalb des "
 "öffentlichen Repos."
+msgstr ""
+
+#: templates/release/community.html:9
+msgid "OpenLEG ist ein Open-Source-Projekt. Der Verein openLEG Schweiz trägt es."
+msgstr ""
+
+#: templates/release/community.html:9
+msgid "OpenLEG ist ein Open-Source-Projekt. Verein openLEG Schweiz soll es tragen."
 msgstr ""
 
 #: templates/pricing.html:35
@@ -11934,10 +12090,6 @@ msgstr ""
 msgid "Projekt"
 msgstr ""
 
-#: templates/release/community.html:7
-msgid "Projekt oder Verein kontaktieren"
-msgstr ""
-
 #: templates/fuer_gemeinden.html:120
 msgid "Projektsupport anfragen"
 msgstr ""
@@ -12029,6 +12181,10 @@ msgid ""
 "doppelt erfasster Beleg darf nicht als unbezahlte Verpflichtung erscheinen."
 msgstr ""
 
+#: templates/release/community.html:28
+msgid "Prüfen Sie Rechnung und Belege unabhängig. Schreiben Sie uns mit Ihrer Erfahrung."
+msgstr ""
+
 #: templates/sandbox/formation.html:17
 msgid ""
 "Prüfen Sie alle Dokumente im LEG-Dashboard. Bestätigen Sie danach als jeder der drei Haushalte "
@@ -12107,6 +12263,12 @@ msgid ""
 "Netzbetreiber."
 msgstr ""
 
+#: templates/release/community.html:30
+msgid ""
+"Prüfen Sie französische, italienische oder englische Texte und Fachbegriffe. Beginnen Sie mit "
+"einer Seite."
+msgstr ""
+
 #: templates/fuer_bewohner.html:8
 msgid ""
 "Prüfen Sie kostenlos, ob sich eine Lokale Elektrizitätsgemeinschaft (LEG) an Ihrer Adresse lohnt:"
@@ -12114,8 +12276,18 @@ msgid ""
 "Abschlag auf dem Netznutzungsentgelt. Ohne Datenverkauf."
 msgstr ""
 
+#: templates/release/community.html:20
+msgid ""
+"Prüfen Sie mit scripts/tdd_cycle.sh gate. Wir empfehlen, die Herkunft Ihrer Beiträge mit git "
+"commit -s zu bestätigen."
+msgstr ""
+
 #: templates/fuer_gemeinden.html:107
 msgid "Prüfen Sie zuerst die Solarnutzung oder bestehende Gemeinschaften im"
+msgstr ""
+
+#: templates/release/community.html:24
+msgid "Prüfen Sie Änderungen und erklären Sie Ihre Einwände. Beginnen Sie mit einem offenen Pull Request."
 msgstr ""
 
 #: templates/telemetry_dashboard.html:33
@@ -12130,6 +12302,10 @@ msgstr ""
 msgid ""
 "Prüfen Sie, was heute über eine LEG in Ihrer Gemeinde bekannt ist: Netzbetreiber laut ElCom, "
 "Solarpotenzial und bestehende Stromgemeinschaften. Aus offenen Daten, ohne Anmeldung."
+msgstr ""
+
+#: templates/release/software.html:84
+msgid "Prüfen, anpassen, selbst betreiben"
 msgstr ""
 
 #: templates/admin/abrechnungen.html:12
@@ -12190,7 +12366,7 @@ msgstr ""
 msgid "Quellcode auf GitHub"
 msgstr ""
 
-#: templates/release/navigation.html:9 templates/release/software.html:24
+#: templates/release/navigation.html:9 templates/release/software.html:86
 msgid "Quellcode und Lizenz"
 msgstr ""
 
@@ -12410,6 +12586,8 @@ msgid "Rechnung nicht gefunden."
 msgstr ""
 
 #: templates/leg_billing.html:74 templates/release/homepage.html:69 templates/release/software.html:8
+#: templates/release/software.html:45 templates/release/software.html:69
+#: templates/release/software.html:80
 msgid "Rechnungen freigeben"
 msgstr ""
 
@@ -12454,6 +12632,10 @@ msgstr ""
 msgid ""
 "Rechnungspräfix: 2 bis 16 Zeichen, nur Grossbuchstaben, Ziffern und Bindestrich, beginnend mit "
 "Buchstabe oder Ziffer."
+msgstr ""
+
+#: templates/release/community.html:28
+msgid "Rechnungsprüfung"
 msgstr ""
 
 #: templates/oauth_consent.html:14
@@ -12589,8 +12771,16 @@ msgstr ""
 msgid "Reserve"
 msgstr ""
 
+#: templates/release/community.html:24
+msgid "Reviewer"
+msgstr ""
+
 #: formation_wizard.py:377
 msgid "Richten Sie die Abrechnung ein."
+msgstr ""
+
+#: templates/release/community.html:20
+msgid "Richten Sie mit scripts/contribute Ihre Arbeitsumgebung und einen eigenen Branch ein."
 msgstr ""
 
 #: templates/sandbox/billing.html:12
@@ -12795,14 +12985,6 @@ msgstr ""
 msgid "Schnellstart, manuelle Installation und privates Netzwerk"
 msgstr ""
 
-#: templates/release/community.html:7
-#, python-format
-msgid ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit an "
-"%(contact)s. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie keine Passwörter "
-"oder privaten Messdaten."
-msgstr ""
-
 #: templates/gemeinde/dashboard.html:122
 msgid "Schritt für Schritt zur Stromgemeinschaft"
 msgstr ""
@@ -12940,7 +13122,7 @@ msgstr ""
 #: templates/partials/site_nav.html:41 templates/pricing.html:41 templates/pricing.html:122
 #: templates/release/footer.html:10 templates/release/how_it_works.html:64
 #: templates/release/navigation.html:9 templates/release/pricing.html:10
-#: templates/release/software.html:24 templates/self_host.html:57
+#: templates/release/software.html:86 templates/self_host.html:57
 msgid "Selbst betreiben"
 msgstr ""
 
@@ -13012,6 +13194,12 @@ msgstr ""
 
 #: templates/release/pricing.html:11
 msgid "Sie benennen Personen für Technik, Daten und Abrechnung."
+msgstr ""
+
+#: templates/release/community.html:31
+msgid ""
+"Sie betreiben bereits eine LEG? Begleiten Sie andere bei praktischen Fragen. Bringen Sie einen "
+"Fall zum Treffen mit."
 msgstr ""
 
 #: templates/release/homepage.html:43
@@ -13316,16 +13504,6 @@ msgstr ""
 
 #: templates/release/homepage.html:17
 msgid "Software ansehen"
-msgstr ""
-
-#: templates/release/community.html:8
-msgid ""
-"Software nutzen, mitarbeiten und an einem Treffen teilnehmen ist auch ohne Vereinsmitgliedschaft "
-"möglich. Eine Spende verleiht kein Stimmrecht."
-msgstr ""
-
-#: templates/release/community.html:6
-msgid "Software und Dokumentation verbessern"
 msgstr ""
 
 #: templates/release/footer.html:10
@@ -13838,6 +14016,10 @@ msgstr ""
 msgid "Technische Betriebsdokumentation"
 msgstr ""
 
+#: templates/release/community.html:26
+msgid "Technische Leitung"
+msgstr ""
+
 #: templates/partials/address_intake.html:90
 msgid "Teilen Sie Ihren Einladungslink"
 msgstr ""
@@ -13983,6 +14165,10 @@ msgstr ""
 
 #: templates/release/navigation.html:12
 msgid "Treffen"
+msgstr ""
+
+#: templates/release/community.html:29
+msgid "Treffen organisieren"
 msgstr ""
 
 #: templates/release/events.html:2
@@ -14175,6 +14361,10 @@ msgstr ""
 msgid "Unlesbar"
 msgstr ""
 
+#: templates/release/software.html:50 templates/release/software.html:82
+msgid "Unterlagen geschützt aufbewahren"
+msgstr ""
+
 #: templates/release/knowledge.html:22
 msgid "Unterlagen gezielt verwenden"
 msgstr ""
@@ -14330,8 +14520,16 @@ msgstr ""
 msgid "Verantwortung"
 msgstr ""
 
+#: templates/release/software.html:84
+msgid "Verantwortung bleibt vor Ort"
+msgstr ""
+
 #: templates/self_host.html:52
 msgid "Verantwortung wählen"
+msgstr ""
+
+#: templates/release/community.html:23
+msgid "Verbessern Sie Code, Tests oder Texte. Beginnen Sie mit einem Issue."
 msgstr ""
 
 #: templates/verein/application.html:9
@@ -14383,7 +14581,7 @@ msgstr ""
 msgid "Verein"
 msgstr ""
 
-#: templates/release/homepage.html:161
+#: templates/release/homepage.html:163
 msgid "Verein und Mitgliedschaft"
 msgstr ""
 
@@ -14475,6 +14673,10 @@ msgstr ""
 msgid "Vergrössern"
 msgstr ""
 
+#: templates/release/community.html:38
+msgid "Verhaltenskodex"
+msgstr ""
+
 #: municipality.py:103
 msgid "Verifiziert"
 msgstr ""
@@ -14532,6 +14734,7 @@ msgid "Verteilnetzbetreiber"
 msgstr ""
 
 #: templates/release/how_it_works.html:24 templates/release/how_it_works.html:48
+#: templates/release/software.html:36 templates/release/software.html:77
 msgid "Verteilnetzbetreiber (VNB)"
 msgstr ""
 
@@ -14688,6 +14891,11 @@ msgid ""
 "unabhängiger zweiter Prüfung."
 msgstr ""
 
+#: templates/release/software.html:39 templates/release/software.html:63
+#: templates/release/software.html:78
+msgid "Viertelstunden verteilen"
+msgstr ""
+
 #: templates/release/software.html:17
 msgid "Viertelstunden verteilen, Tarifversionen verwenden und Entwürfe prüfen."
 msgstr ""
@@ -14718,6 +14926,13 @@ msgstr ""
 
 #: templates/partials/registry_trust.html:7
 msgid "Vom Betreiber bestätigt"
+msgstr ""
+
+#: templates/release/community.html:33
+msgid ""
+"Vom Contributor zum Reviewer und Maintainer führt anhaltende öffentliche Mitarbeit. Ein "
+"Maintainer schlägt Sie vor; ohne begründeten Einwand stimmt die Gruppe zu. Nach sechs Monaten "
+"ohne Aktivität wechselt ein Maintainer in den Emeritus-Status."
 msgstr ""
 
 #: templates/open_source.html:54
@@ -14874,6 +15089,17 @@ msgstr ""
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr ""
 
+#: templates/release/community.html:27
+msgid "Vorstand"
+msgstr ""
+
+#: templates/release/community.html:35
+msgid ""
+"Vorstand und Mitgliederversammlung verantworten Geld, Treffen, Mitgliedschaft und rechtliche "
+"Fragen. Die aktiven Maintainer entscheiden über die Technik. Der Vorstand überstimmt keine "
+"einzelnen technischen Entscheidungen."
+msgstr ""
+
 #: app.py:163 formation_guide.py:86
 msgid ""
 "Vorträge, Workshops und Projektunterstützung bieten wir nach vorgängiger Vereinbarung gegen "
@@ -14920,12 +15146,20 @@ msgstr ""
 msgid "Was Ihre Gemeinde kostenlos erhält"
 msgstr ""
 
+#: templates/release/software.html:75
+msgid "Was alle Schritte verbindet"
+msgstr ""
+
 #: templates/leg_kalkulator.html:298
 msgid "Was bedeutet \"lokal verbrauchbar\"?"
 msgstr ""
 
 #: templates/release/pricing.html:2
 msgid "Was beim Betrieb Kosten verursacht."
+msgstr ""
+
+#: templates/release/community.html:16
+msgid "Was brauchen Sie?"
 msgstr ""
 
 #: templates/how-it-works.html:41 templates/how-it-works.html:119
@@ -14944,6 +15178,10 @@ msgstr ""
 msgid "Was dieser Eintrag bedeutet"
 msgstr ""
 
+#: templates/release/software.html:84
+msgid "Was ein Open-Source-Projekt leisten kann, und was nicht"
+msgstr ""
+
 #: templates/release/homepage.html:92
 msgid "Was eine LEG bringt, hängt von Ihren Tarifen und Anschlüssen ab. Das rechnen Sie selbst nach."
 msgstr ""
@@ -14954,6 +15192,10 @@ msgstr ""
 
 #: templates/release/software.html:12
 msgid "Was heute im Code vorhanden ist"
+msgstr ""
+
+#: templates/release/software.html:24
+msgid "Was im Code steckt"
 msgstr ""
 
 #: templates/gemeinde/pilotgemeinde.html:19
@@ -15087,6 +15329,10 @@ msgstr ""
 msgid "Weiteren Haushalt aufnehmen"
 msgstr ""
 
+#: templates/release/community.html:21
+msgid "Welche Aufgabe passt zu Ihnen?"
+msgstr ""
+
 #: templates/datenschutz.html:12
 #, python-format
 msgid "Welche Daten %(platform)s nutzt und wie Sie die Kontrolle behalten."
@@ -15145,6 +15391,10 @@ msgstr ""
 
 #: templates/open_source.html:122
 msgid "Wer einen Fehler verfolgt oder einen Pull Request plant, findet hier den passenden Einstieg."
+msgstr ""
+
+#: templates/release/community.html:34
+msgid "Wer entscheidet?"
 msgstr ""
 
 #: templates/sandbox/operator.html:14
@@ -15396,6 +15646,19 @@ msgid ""
 "hinterlegt ist. Nur wer Zugriff auf diese Adresse hat, kann den Eintrag beanspruchen."
 msgstr ""
 
+#: templates/release/community.html:22
+msgid ""
+"Wir suchen Mitwirkende am Code und Freiwillige für den Verein. Wählen Sie eine Aufgabe auf GitHub"
+" oder schreiben Sie uns, wo Sie anfangen möchten."
+msgstr ""
+
+#: templates/release/community.html:14
+msgid ""
+"Wir treffen uns zum Austausch über die LEG-Praxis und zur Entwicklung. Neue Anfragen besprechen "
+"wir beim monatlichen Online-Treffen. Termine, Orte und Gastgeber erscheinen erst nach ihrer "
+"Bestätigung."
+msgstr ""
+
 #: templates/datenschutz.html:51
 msgid ""
 "Wir verarbeiten Ihre Daten, um den von Ihnen angefragten Dienst zu erbringen, und auf Basis Ihrer"
@@ -15579,6 +15842,11 @@ msgstr ""
 msgid "Zahlungen"
 msgstr ""
 
+#: templates/release/software.html:48 templates/release/software.html:72
+#: templates/release/software.html:81
+msgid "Zahlungen abgleichen"
+msgstr ""
+
 #: templates/leg_billing.html:40
 msgid "Zahlungsabgleich prüfen"
 msgstr ""
@@ -15601,6 +15869,10 @@ msgstr ""
 
 #: templates/verein/dues.html:5
 msgid "Zahlungseingang speichern"
+msgstr ""
+
+#: templates/release/software.html:48 templates/release/software.html:81
+msgid "Zahlungseingänge prüfen"
 msgstr ""
 
 #: templates/verein/queue.html:3 templates/verein/recipient_edit.html:2
@@ -15699,6 +15971,13 @@ msgstr ""
 msgid ""
 "Ziehen Sie zuerst die angenommene Originalquelle ausdrücklich zurück. Importieren Sie danach die "
 "Korrektur."
+msgstr ""
+
+#: templates/release/community.html:37
+msgid ""
+"Ziel ist, dass der Verein den Namen, openleg.ch und die GitHub-Organisation hält. Das ist noch "
+"nicht umgesetzt. Für den Umgang miteinander gilt der Contributor Covenant 2.1; Meldungen gehen an"
+" hallo@openleg.ch."
 msgstr ""
 
 #: templates/sandbox/archive.html:36
@@ -15957,7 +16236,7 @@ msgstr ""
 msgid "Zweck und Mitgliedschaft"
 msgstr ""
 
-#: templates/release/community.html:8
+#: templates/release/community.html:38
 msgid "Zweck, Unabhängigkeit und Mitgliedschaft"
 msgstr ""
 
@@ -16531,6 +16810,10 @@ msgstr ""
 msgid "Ändern Sie Verbrauch oder PV-Leistung im Energieprofil."
 msgstr ""
 
+#: templates/release/community.html:20
+msgid "Ändern Sie den Code, ergänzen Sie passende Tests und übersetzen Sie neue Texte."
+msgstr ""
+
 #: sandbox_seed.py:30
 msgid "Ändern Sie den Jahresverbrauch im Energieprofil und speichern Sie."
 msgstr ""
@@ -16571,7 +16854,7 @@ msgstr ""
 msgid "Öffentliche Begründung einer neuen Version"
 msgstr ""
 
-#: templates/release/community.html:9
+#: templates/release/community.html:38
 msgid "Öffentliche Beitragshistorie ansehen"
 msgstr ""
 
@@ -16673,6 +16956,10 @@ msgid ""
 "Zugangslink und laden Sie das Formular erneut."
 msgstr ""
 
+#: templates/release/community.html:20
+msgid "Öffnen Sie den Pull Request, verlinken Sie das Issue und bearbeiten Sie die Rückmeldungen."
+msgstr ""
+
 #: templates/sandbox/telemetry.html:12
 msgid ""
 "Öffnen Sie die gewöhnliche Geräteliste. Erfassen Sie Hersteller SIMULATION und Modell SONNWIL, "
@@ -16684,7 +16971,7 @@ msgstr ""
 msgid "Über den VNB-Adapter senden"
 msgstr ""
 
-#: templates/release/homepage.html:161
+#: templates/release/homepage.html:163
 msgid "Über den geplanten Verein"
 msgstr ""
 
@@ -16708,8 +16995,18 @@ msgstr ""
 msgid "Übermittlung vorbereitet"
 msgstr ""
 
+#: templates/release/community.html:27
+msgid ""
+"Übernehmen Sie Software und Dokumentation, Finanzen und Administration oder Community und "
+"Treffen. Melden Sie Ihr Interesse per E-Mail; die Mitgliederversammlung wählt den Vorstand."
+msgstr ""
+
 #: templates/admin/abrechnungen.html:60
 msgid "Überschuss"
+msgstr ""
+
+#: templates/release/community.html:30
+msgid "Übersetzen"
 msgstr ""
 
 #: templates/how-it-works.html:151
