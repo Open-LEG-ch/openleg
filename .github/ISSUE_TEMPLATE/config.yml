@@ -1,1 +1,11 @@
 blank_issues_enabled: true
+contact_links:
+  - name: Fragen / Questions
+    url: https://github.com/Open-LEG-ch/openleg/discussions
+    about: Stellen Sie Fragen in Discussions. / Ask questions in Discussions.
+  - name: Ohne GitHub-Konto / Without a GitHub account
+    url: mailto:hallo@openleg.ch
+    about: Senden Sie Ihre Anfrage per E-Mail. / Send your request by email.
+  - name: Sicherheit / Security
+    url: https://github.com/Open-LEG-ch/openleg/blob/main/SECURITY.md#vulnerability-reporting
+    about: Melden Sie Sicherheitslücken privat. / Report vulnerabilities privately.
