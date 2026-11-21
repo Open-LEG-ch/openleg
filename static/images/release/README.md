@@ -7,7 +7,7 @@ supplied. The transparent source was exported to WebP at quality 86, alpha 100,
 and establishes no network eligibility. The HTML caption and role descriptions
 carry the information when the image is unavailable.
 
-`favicon.svg` uses the existing openLEG letter identity and static coral baseline.
+`favicon.svg` uses the existing openLEG letter identity and static roof-coloured baseline.
 Both assets are distributed under the repository's AGPL-3.0-or-later license.
 
 The language-specific `og-image.svg` sources are built from

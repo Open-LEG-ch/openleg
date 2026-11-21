@@ -2,11 +2,11 @@
 {% set page_title = _('Wer übernimmt welche Aufgabe?') %}
 {% set page_description = _('Eine Lokale Elektrizitätsgemeinschaft (LEG) organisiert den Austausch lokal erzeugter Elektrizität. Ihre Gruppe vereinbart die Teilnahme, bestellt ihre Vertretung und wählt, wer die Verwaltung und den Softwarebetrieb übernimmt.') %}
 {% macro role_icon(kind) %}<svg class="release-role-icon" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-{% if kind in ['producer','consumer'] %}<path d="M16 42 55 12 94 42M26 36v42h58V36"/><path fill="#f5d4ca" d="M43 78V54h22v24"/>{% if kind == 'producer' %}<path fill="#edf1f9" d="m38 26 18-14 19 15-18 14z"/><path d="m47 20 19 15m-20-2 18-14"/>{% else %}<path d="M94 55v9m10-9v9m-14 0h18v5a9 9 0 0 1-18 0zm9 14v8"/>{% endif %}
-{% elif kind == 'representation' %}<circle cx="38" cy="27" r="11"/><circle cx="82" cy="27" r="11"/><path d="M20 65V53a18 18 0 0 1 36 0m8 0a18 18 0 0 1 36 0v12M14 65h92M30 65v17m60-17v17"/><path stroke="#ee8d7c" d="M50 57h20"/>
-{% elif kind == 'network' %}<path d="M31 10 18 81m13-71 13 71M20 25h24M16 40h32M90 10 77 81m13-71 13 71M79 25h24M75 40h32M44 25q23 15 35 0M48 40q15 15 27 0"/><path stroke="#ee8d7c" d="m25 58 13 15m-15 0 13-15m49 0 13 15m-15 0 13-15"/>
-{% elif kind == 'operator' %}<rect x="23" y="10" width="74" height="71" rx="5"/><path d="M23 30h74M47 30v51M60 45h24M60 59h24M60 72h15"/><path stroke="#ee8d7c" d="m31 45 4 4 6-8m-10 20 4 4 6-8"/>
-{% else %}<rect x="15" y="13" width="90" height="58" rx="5"/><path d="M8 79h104M27 27h25v27H27zm38 0h27M65 40h27M65 53h15"/><path stroke="#ee8d7c" d="M38 61h45"/>{% endif %}
+{% if kind in ['producer','consumer'] %}<path d="M16 42 55 12 94 42M26 36v42h58V36"/><path fill="var(--roof-wash)" d="M43 78V54h22v24"/>{% if kind == 'producer' %}<path fill="#edf1f9" d="m38 26 18-14 19 15-18 14z"/><path d="m47 20 19 15m-20-2 18-14"/>{% else %}<path d="M94 55v9m10-9v9m-14 0h18v5a9 9 0 0 1-18 0zm9 14v8"/>{% endif %}
+{% elif kind == 'representation' %}<circle cx="38" cy="27" r="11"/><circle cx="82" cy="27" r="11"/><path d="M20 65V53a18 18 0 0 1 36 0m8 0a18 18 0 0 1 36 0v12M14 65h92M30 65v17m60-17v17"/><path stroke="var(--roof)" d="M50 57h20"/>
+{% elif kind == 'network' %}<path d="M31 10 18 81m13-71 13 71M20 25h24M16 40h32M90 10 77 81m13-71 13 71M79 25h24M75 40h32M44 25q23 15 35 0M48 40q15 15 27 0"/><path stroke="var(--roof)" d="m25 58 13 15m-15 0 13-15m49 0 13 15m-15 0 13-15"/>
+{% elif kind == 'operator' %}<rect x="23" y="10" width="74" height="71" rx="5"/><path d="M23 30h74M47 30v51M60 45h24M60 59h24M60 72h15"/><path stroke="var(--roof)" d="m31 45 4 4 6-8m-10 20 4 4 6-8"/>
+{% else %}<rect x="15" y="13" width="90" height="58" rx="5"/><path d="M8 79h104M27 27h25v27H27zm38 0h27M65 40h27M65 53h15"/><path stroke="var(--roof)" d="M38 61h45"/>{% endif %}
 </svg>{% endmacro %}
 {% set roles = [
 ('producer', _('Erzeugende Teilnehmende'), _('Sie bringen lokale Erzeugung ein und vereinbaren, zu welchen Bedingungen ihre Strommengen in der LEG abgerechnet werden.'), [
