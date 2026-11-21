@@ -108,7 +108,7 @@
 .site-release .sandbox-entry-lead { max-width: 52ch; font-size: clamp(18px, 1.6vw, 21px); line-height: 1.6; }
 .site-release .sandbox-entry-facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
 .site-release .sandbox-entry-facts li { padding: 6px 14px; border: 1px solid #bcc3d0; border-radius: 999px; background: #fffdf8; font-size: 14px; font-weight: 600; color: #26324b; }
-.site-release .sandbox-entry-alert { padding: 16px 20px; border-left: 4px solid #982f40; border-radius: 8px; background: #fae9ec; font-weight: 600; }
+.site-release .sandbox-entry-alert { padding: 16px 20px; border-left: 4px solid #982f40; border-radius: 8px; background: var(--color-accent-light); font-weight: 600; }
 .site-release .sandbox-entry-form { margin-top: clamp(40px, 5vw, 72px); }
 .site-release .sandbox-accounts legend { margin-bottom: 20px; font: 400 clamp(26px, 2.6vw, 34px)/1.2 Georgia, 'Times New Roman', serif; color: #26324b; }
 .site-release .sandbox-accounts { border: 0; padding: 0; }
@@ -118,7 +118,7 @@
 .site-release .sandbox-account { position: relative; align-items: flex-start; gap: 14px; min-height: 100%; margin: 0 !important; padding: 20px 22px; border: 1px solid #bcc3d0; border-radius: 16px; background: #fffdf8; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease; }
 .site-release .sandbox-account:hover { border-color: #3b55a2; background: #fff; }
 .site-release .sandbox-account:has(input:checked) { border-color: #243b85; background: #fff; box-shadow: 0 0 0 1px #243b85, 0 10px 24px -14px rgba(36, 59, 133, .45); }
-.site-release .sandbox-account:has(input:focus-visible) { outline: 3px solid var(--color-brand); outline-offset: 3px; }
+.site-release .sandbox-account:has(input:focus-visible) { outline: 3px solid var(--color-accent); outline-offset: 3px; }
 .site-release .sandbox-account input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: #243b85; }
 .site-release .sandbox-account-role { color: #982f40; font-weight: 600; letter-spacing: .01em; }
 .site-release .sandbox-account-task { color: #243b85; font-size: 18px; font-weight: 600; line-height: 1.35; }
@@ -126,7 +126,7 @@
 .site-release .sandbox-entry-submit { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: auto; justify-content: start; margin-top: 32px; padding-block: 20px; border-top: 1px solid #bcc3d0; background: rgba(246, 242, 234, .96); backdrop-filter: blur(6px); }
 .site-release .sandbox-entry-submit button { min-height: 52px; padding-inline: 28px; border-radius: 999px; background: #243b85; color: #fffdf8; }
 .site-release .sandbox-entry-submit button:hover { background: #1b2f6a; }
-.site-release .sandbox-entry-submit button:focus-visible { outline: 3px solid var(--color-brand); outline-offset: 3px; }
+.site-release .sandbox-entry-submit button:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
 .site-release .sandbox-entry-note { margin-top: 16px; max-width: 72ch; color: #505869; }
 @media (prefers-reduced-motion: reduce) { .site-release .sandbox-account { transition: none; } }
 @media (max-width: 900px) and (min-width: 768px) { .site-release .sandbox-account-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

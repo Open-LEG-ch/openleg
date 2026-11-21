@@ -83,18 +83,18 @@
 .release-button-primary:hover { background: #1b2f6a; }
 .release-button:active { background: #3b55a2; color: #fffdf8; }
 .site-release:not(.product-shell) main a.underline,
-.release-prose a,
-.release-hero-address a,
-.release-faq a,
-.release-document a:not(.release-button),
-.release-finance a { color: var(--color-brand); font-weight: 600; text-decoration: underline var(--roof) 2px; }
+.site-release:not(.product-shell) .release-prose a,
+.site-release:not(.product-shell) .release-hero-address a,
+.site-release:not(.product-shell) .release-faq a,
+.site-release:not(.product-shell) .release-document a:not(.release-button),
+.site-release:not(.product-shell) .release-finance a { color: var(--color-brand); font-weight: 600; text-decoration: underline var(--roof) 2px; }
 .site-release:not(.product-shell) main a.underline:hover,
-.release-prose a:hover,
-.release-hero-address a:hover,
-.release-faq a:hover,
-.release-document a:not(.release-button):hover,
-.release-finance a:hover { text-decoration-color: currentColor; }
-.release-prose a { text-underline-offset: 3px; }
+.site-release:not(.product-shell) .release-prose a:hover,
+.site-release:not(.product-shell) .release-hero-address a:hover,
+.site-release:not(.product-shell) .release-faq a:hover,
+.site-release:not(.product-shell) .release-document a:not(.release-button):hover,
+.site-release:not(.product-shell) .release-finance a:hover { text-decoration-color: currentColor; }
+.release-prose a { color: #243b85; text-decoration: underline; text-underline-offset: 3px; }
 .release-hero { background: #edf1f9; padding-bottom: 48px; }
 .release-hero-intro { display: grid; grid-template-columns: 1.1fr 1fr; align-items: start; gap: 64px; }
 .release-hero h1 { font-size: clamp(42px, 5.6vw, 80px); line-height: 1.05; letter-spacing: -.04em; }
@@ -108,7 +108,7 @@
 .release-scene-roles summary { padding: 12px 16px; min-height: 48px; cursor: pointer; font-weight: 600; }
 .release-scene-roles p { padding: 0 16px 16px; }
 .release-hero-address { margin-top: 28px; }
-.release-hero-address a { text-underline-offset: 4px; }
+.release-hero-address a { color: #243b85; text-decoration: underline; text-underline-offset: 4px; }
 .release-two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: start; }
 .release-steps { padding-left: 24px; list-style: decimal; }
 .release-steps li::marker { color: var(--roof-deep); }
@@ -122,7 +122,7 @@
 .release-faq h2 { margin-bottom: 16px; }
 .release-faq summary { min-height: 44px; font-size: 20px; cursor: pointer; font-weight: 600; }
 .release-faq p { margin-top: 12px; }
-.release-faq a { display: inline-block; margin-top: 12px; text-underline-offset: 4px; }
+.release-faq a { display: inline-block; margin-top: 12px; color: #243b85; text-decoration: underline; text-underline-offset: 4px; }
 .site-release #bewohner { background: #f6f2ea; }
 .site-release #registrieren { scroll-margin-top: 110px; }
 .release-document { padding-block: 64px 80px; }
@@ -134,7 +134,7 @@
 .release-document-section h2 { margin-bottom: 24px; }
 .release-document-section p { max-width: 76ch; margin-block: 16px; }
 .release-document-section h3 { font-size: 22px; }
-.release-document a:not(.release-button) { text-underline-offset: 4px; overflow-wrap: anywhere; }
+.release-document a:not(.release-button) { color: #243b85; text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
 .release-source { color: #505869; font-size: 14px; }
 .release-table-scroll { overflow-x: auto; margin-block: 24px; }
 .release-table { width: 100%; min-width: 580px; border-collapse: collapse; text-align: left; }
@@ -215,7 +215,7 @@
 .release-finance-funds article{padding:1.5rem;border:1px solid var(--color-line);border-radius:.75rem;background:#fffdf8}
 .release-finance h3{font:600 1.375rem/1.4 system-ui,sans-serif;margin-bottom:.5rem}
 .release-finance-bookings article>p{margin-block:.5rem}
-.release-finance a{text-underline-offset:3px}
+.release-finance a{color:var(--color-brand);text-decoration:underline;text-underline-offset:3px}
 
 .release-finance-edit [aria-invalid="true"]{border:2px solid #982f40}
 
