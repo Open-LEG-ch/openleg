@@ -261,6 +261,19 @@ def test_ctl_release_checks_installed_version(tmp_path, tag):
         assert "--help" not in completed.stdout
 
 
+def test_external_actions_are_pinned_to_full_commit_shas():
+    """A truncated or mistyped pin only fails when the workflow runs, so check it here."""
+    pin = re.compile(r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$")
+    bad = []
+    for path in sorted(WORKFLOWS_DIR.glob("*.yml")):
+        for job in (yaml.safe_load(path.read_text(encoding="utf-8")).get("jobs") or {}).values():
+            for step in job.get("steps") or []:
+                uses = step.get("uses")
+                if uses and not uses.startswith(("./", "docker://")) and not pin.match(uses):
+                    bad.append(f"{path.name}: {uses}")
+    assert bad == []
+
+
 def test_release_announcement_is_manual_or_release_driven():
     path = WORKFLOWS_DIR / "announce-release.yml"
     text = path.read_text(encoding="utf-8")
