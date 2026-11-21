@@ -22375,11 +22375,6 @@ msgstr ""
 "you need and how we can reach you. Do not send passwords or private meter data."
 
 #. Draft translation; native language and domain review pending.
-#: templates/release/donations.html:8
-msgid "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind."
-msgstr "Verified payment details will appear here once approved for publication."
-
-#. Draft translation; native language and domain review pending.
 #: templates/release/homepage.html:158
 #, python-format
 msgid ""
@@ -22393,3 +22388,11 @@ msgstr ""
 #: templates/verein/index.html:12
 msgid "Fragen zur Mitgliedschaft stellen"
 msgstr "Ask about membership"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/donations.html:8
+msgid ""
+"Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
+" an vermutete oder ältere Kontodaten."
+msgstr ""
+"Verified payment details will appear here once approved for publication. Do not send money using guessed or older account details."

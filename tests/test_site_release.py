@@ -236,3 +236,28 @@ def test_public_pages_omit_pending_verein_formation(
             assert story in text
         if path == "/verein/beitreten":
             assert closed in text
+
+
+@pytest.mark.parametrize(
+    "locale,warning",
+    [
+        ("de-CH", "Bitte senden Sie kein Geld an vermutete oder ältere Kontodaten."),
+        (
+            "fr-CH",
+            "N’envoyez pas d’argent sur la base de coordonnées supposées ou anciennes.",
+        ),
+        ("en", "Do not send money using guessed or older account details."),
+        (
+            "it-CH",
+            "Non inviare denaro sulla base di dati di conto ipotizzati o precedenti.",
+        ),
+    ],
+)
+def test_donations_keep_the_payment_fraud_warning(web, monkeypatch, locale, warning):
+    """Removing the founding status must not remove the warning about old account details."""
+    client = _release_home(web, monkeypatch)
+    response = client.get(
+        "/verein/spenden", query_string={"lang": locale}, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert warning in unescape(response.text)

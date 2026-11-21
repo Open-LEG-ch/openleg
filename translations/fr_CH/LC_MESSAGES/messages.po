@@ -19968,11 +19968,6 @@ msgstr ""
 " mesure privées."
 
 #. Draft translation; native language and domain review pending.
-#: templates/release/donations.html:8
-msgid "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind."
-msgstr "Les coordonnées de paiement vérifiées seront publiées ici dès leur autorisation."
-
-#. Draft translation; native language and domain review pending.
 #: templates/release/homepage.html:158
 #, python-format
 msgid ""
@@ -19986,3 +19981,11 @@ msgstr ""
 #: templates/verein/index.html:12
 msgid "Fragen zur Mitgliedschaft stellen"
 msgstr "Poser une question sur l’adhésion"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/donations.html:8
+msgid ""
+"Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
+" an vermutete oder ältere Kontodaten."
+msgstr ""
+"Les coordonnées de paiement vérifiées seront publiées ici dès leur autorisation. N’envoyez pas d’argent sur la base de coordonnées supposées ou anciennes."

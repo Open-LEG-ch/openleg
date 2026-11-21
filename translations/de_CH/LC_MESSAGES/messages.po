@@ -19018,10 +19018,6 @@ msgstr ""
 "Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie keine Passwörter oder privaten "
 "Messdaten."
 
-#: templates/release/donations.html:8
-msgid "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind."
-msgstr "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind."
-
 #: templates/release/homepage.html:158
 #, python-format
 msgid ""
@@ -19034,3 +19030,11 @@ msgstr ""
 #: templates/verein/index.html:12
 msgid "Fragen zur Mitgliedschaft stellen"
 msgstr "Fragen zur Mitgliedschaft stellen"
+
+#: templates/release/donations.html:8
+msgid ""
+"Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
+" an vermutete oder ältere Kontodaten."
+msgstr ""
+"Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
+" an vermutete oder ältere Kontodaten."

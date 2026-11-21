@@ -7613,7 +7613,9 @@ msgid "Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten En
 msgstr ""
 
 #: templates/release/donations.html:8
-msgid "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind."
+msgid ""
+"Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
+" an vermutete oder ältere Kontodaten."
 msgstr ""
 
 #: templates/unsubscribe.html:10
