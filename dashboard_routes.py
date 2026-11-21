@@ -942,16 +942,13 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(result.get("error_status", 409))
         return _leg_dashboard_redirect(community_id, "members")
 
-    @bp.route("/leg/community/<community_id>/billing")
-    def leg_billing_workspace(community_id):
-        building_id = _require_dashboard_session()
+    def render_billing_workspace(community_id, building_id, *, status=200, **extra):
         try:
             view = dashboard_module.leg_billing_workspace_view(
                 community_id,
                 building_id,
                 include_statement_entries=True,
-                billing_approved=request.args.get("approved") == "1",
-                statement_status=request.args.get("statement"),
+                **extra,
             )
         except db.BillingStoreError:
             abort(503)
@@ -961,6 +958,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             "leg_billing.html",
             csrf_token=_dashboard_csrf_token(),
             **view,
+        ), status
+
+    @bp.route("/leg/community/<community_id>/billing")
+    def leg_billing_workspace(community_id):
+        building_id = _require_dashboard_session()
+        return render_billing_workspace(
+            community_id,
+            building_id,
+            billing_approved=request.args.get("approved") == "1",
+            statement_status=request.args.get("statement"),
         )
 
     @bp.route("/leg/community/<community_id>/billing/statements", methods=["POST"])
@@ -988,6 +995,41 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         return redirect(
             dashboard_module.leg_billing_workspace_location(community_id) + suffix
+        )
+
+    @bp.post("/leg/community/<community_id>/billing/statements/<int:entry_id>/assign")
+    def leg_billing_statement_assign(community_id, entry_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        try:
+            result = dashboard_module.leg_assign_bank_payment(
+                community_id,
+                building_id,
+                entry_id,
+                request.form.get("invoice_id", type=int),
+                request.form.get("confirm") == "yes",
+            )
+        except (db.BillingStoreError, psycopg2.Error):
+            abort(503)
+        if result["error_status"] == 403:
+            abort(403)
+        workspace_location = dashboard_module.leg_billing_workspace_location(
+            community_id
+        )
+        if result["error_status"]:
+            return render_billing_workspace(
+                community_id,
+                building_id,
+                status=result["error_status"],
+                assignment_error=result["error"],
+                assignment_recovery=result.get("recovery"),
+                language_switch_url=lambda locale: localized_url(
+                    workspace_location + "#statement-assignments", locale
+                ),
+            )
+        return redirect(
+            workspace_location + f"#statement-{entry_id}",
+            code=303,
         )
 
     @bp.route(
