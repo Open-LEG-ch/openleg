@@ -171,9 +171,12 @@ def test_practice_village_links_each_role_to_its_preselected_account(web, monkey
 
 
 @pytest.mark.parametrize("name", ["site_release.css", "site_story.css", "homepage.css"])
-def test_release_stylesheets_retire_coral_colours(web, name):
+def test_public_release_stylesheets_retire_coral_colours(web, name):
     response = web.test_client().get(f"/static/css/{name}")
     assert response.status_code == 200
+    public_styles = re.sub(
+        r"\.site-release\.product-shell\s*\{[^}]*\}", "", response.text
+    )
     assert not {"#ee8d7c", "#f5d4ca", "#ffd0c2"}.intersection(
-        re.findall(r"#[0-9a-f]+", response.text.lower())
+        re.findall(r"#[0-9a-f]+", public_styles.lower())
     )

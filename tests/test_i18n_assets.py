@@ -70,3 +70,16 @@ def test_localized_svg_build_check_rejects_stale_output(tmp_path, monkeypatch):
     french.write_text("stale")
     with pytest.raises(ValueError, match="asset is stale"):
         translations.build_svg_assets(check=True)
+
+
+@pytest.mark.parametrize("locale_dir", ["", "en", "fr-CH", "it-CH"])
+def test_release_social_card_uses_roof_wordmark(locale_dir):
+    from PIL import Image
+
+    path = ROOT / "static/images/release" / locale_dir / "og-image.png"
+    with Image.open(path) as image:
+        assert image.size == (1200, 630)
+        rgb = image.convert("RGB")
+        assert (203, 129, 92) in rgb.crop((140, 89, 198, 93)).get_flattened_data()
+        colours = set(rgb.get_flattened_data())
+        assert colours.isdisjoint({(238, 141, 124), (245, 212, 202), (255, 208, 194)})
