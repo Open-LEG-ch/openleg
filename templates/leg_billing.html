@@ -1,5 +1,7 @@
-{% extends "product_base.html" %}
-{% block content %}
+{% extends "leg_workspace_base.html" %}
+{% set workspace_page = "billing" %}
+{% set workspace_billing = true %}
+{% block workspace_content %}
 {% set query_categories = {'amount': _('amount'), 'metering': _('metering'), 'payment': _('payment'), 'other': _('other')} %}
 {% set query_states = {'open': _('open'), 'acknowledged': _('acknowledged'), 'resolved': _('resolved')} %}
 {% set can_prepare_billing = can_prepare_billing|default(false) %}

@@ -1,0 +1,170 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""HTTP contracts for the LEG administration workspace."""
+
+import pytest
+
+from tests.test_dashboard_access_routes import _set_session, app_module  # noqa: F401
+from tests.test_leg_dashboard import STATUS
+
+ROOT = "/leg/community/c0ffee"
+OVERVIEW = "/leg/dashboard?cid=c0ffee"
+
+
+@pytest.fixture
+def workspace(app_module, monkeypatch):  # noqa: F811
+    status = {
+        **STATUS,
+        "status": "active",
+        "members": [
+            *STATUS["members"],
+            {"building_id": "reader", "role": "member", "status": "confirmed"},
+            {
+                "building_id": "auditor",
+                "role": "member",
+                "status": "confirmed",
+                "access_roles": ["auditor"],
+            },
+        ],
+    }
+    monkeypatch.setattr(
+        app_module.dashboard_module.formation_wizard,
+        "get_community_status",
+        lambda cid, _bid: status if cid == "c0ffee" else None,
+    )
+    for operation in (
+        "list_leg_documents",
+        "list_correspondence",
+        "list_community_billing_periods",
+        "list_community_invoices",
+        "list_bank_statement_entries",
+        "list_billing_policies",
+    ):
+        monkeypatch.setattr(app_module.db, operation, lambda _cid: [])
+    monkeypatch.setattr(app_module.db, "get_battery", lambda _cid: None)
+    return app_module.web.test_client(), status
+
+
+def test_member_list_has_its_own_page(workspace):
+    client, _ = workspace
+    _set_session(client, "b-admin")
+    response = client.get(ROOT + "/members")
+    assert response.status_code == 200
+    assert b"Mitglieder dieser Stromgemeinschaft" in response.data
+    assert b'aria-current="page"' in response.data
+    assert b"Mitglieder dieser Stromgemeinschaft" not in client.get(OVERVIEW).data
+
+
+@pytest.mark.parametrize(
+    ("page", "marker"),
+    [
+        ("correspondence", "Eintrag hinzufügen"),
+        ("formation", "Anmeldung beim Netzbetreiber"),
+        ("settings", "Quartierakku speichern"),
+        ("payments", "Bankzahlungen in der Abrechnung öffnen"),
+        ("invoices", "Rechnungen in der Abrechnung öffnen"),
+        ("billing", "Freigegebene Rechnungen"),
+        ("billing-policy", "Neue Version erfassen"),
+    ],
+)
+def test_workspace_pages_show_their_own_content(workspace, page, marker):
+    client, _ = workspace
+    _set_session(client, "b-admin")
+    response = client.get(f"{ROOT}/{page}")
+    assert response.status_code == 200
+    assert marker in response.text
+    assert 'aria-label="LEG-Verwaltung"' in response.text
+    assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_formation_moves_at_operating_start(workspace):
+    client, status = workspace
+    _set_session(client, "b-admin")
+    marker = "Anmeldung beim Netzbetreiber"
+    assert marker not in client.get(OVERVIEW).text
+    assert marker in client.get(ROOT + "/formation").text
+    status["status"] = "dso_approved"
+    assert marker in client.get(OVERVIEW).text
+    assert marker not in client.get(ROOT + "/formation").text
+
+
+@pytest.mark.parametrize(
+    "page", ["billing", "payments", "invoices", "settings", "billing-policy"]
+)
+def test_plain_member_cannot_open_billing_or_admin_pages(workspace, page):
+    client, _ = workspace
+    _set_session(client, "reader")
+    assert f'href="{ROOT}/{page}"' not in client.get(OVERVIEW).text
+    assert client.get(f"{ROOT}/{page}").status_code == 403
+
+
+@pytest.mark.parametrize(
+    "page",
+    [
+        "members",
+        "correspondence",
+        "formation",
+        "settings",
+        "payments",
+        "invoices",
+        "billing",
+        "billing-policy",
+    ],
+)
+def test_workspace_pages_require_confirmed_membership(workspace, page):
+    client, _ = workspace
+    assert client.get(f"{ROOT}/{page}").status_code == 401
+    for building_id in ("b-guest", "outsider"):
+        _set_session(client, building_id)
+        assert client.get(f"{ROOT}/{page}").status_code == 403
+
+
+def test_auditor_can_open_billing_links_but_cannot_change_policy(workspace):
+    client, _ = workspace
+    _set_session(client, "auditor")
+    response = client.get(OVERVIEW)
+    for page in ("billing", "payments", "invoices"):
+        assert f'href="{ROOT}/{page}"' in response.text
+        assert client.get(f"{ROOT}/{page}").status_code == 200
+    assert 'name="statement"' not in client.get(ROOT + "/billing").text
+    assert f'href="{ROOT}/billing-policy"' not in client.get(ROOT + "/settings").text
+    assert client.get(ROOT + "/billing-policy").status_code == 403
+
+
+def test_leg_switcher_lists_confirmed_memberships_only(workspace, monkeypatch):
+    from dashboard import formation_wizard
+
+    client, _ = workspace
+    _set_session(client, "b-admin")
+    monkeypatch.setattr(
+        formation_wizard,
+        "get_user_communities",
+        lambda _bid: [
+            {
+                "community_id": "c0ffee",
+                "name": "Current LEG",
+                "member_status": "confirmed",
+            },
+            {
+                "community_id": "second",
+                "name": "Second LEG",
+                "member_status": "confirmed",
+            },
+            {
+                "community_id": "invited",
+                "name": "Invitation",
+                "member_status": "invited",
+            },
+            {
+                "community_id": "rejected",
+                "name": "Rejected LEG",
+                "member_status": "rejected",
+            },
+        ],
+    )
+
+    response = client.get(OVERVIEW)
+    assert response.status_code == 200
+    assert 'href="/leg/dashboard?cid=c0ffee" aria-current="true"' in response.text
+    assert 'href="/leg/dashboard?cid=second"' in response.text
+    assert 'href="/leg/dashboard?cid=invited"' not in response.text
+    assert "Rejected LEG" not in response.text

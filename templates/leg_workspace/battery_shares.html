@@ -1,0 +1,41 @@
+{% if battery_unavailable|default(false) %}
+<section class="bg-white rounded-xl border border-accent p-6 mb-8" aria-labelledby="battery-unavailable-title">
+  <h2 id="battery-unavailable-title" class="font-bold mb-2">{{ _('Quartierakku') }}</h2>
+  <p class="text-sm text-ink-muted" role="status">{{ _('Die Quartierakku-Daten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.') }}</p>
+</section>
+{% elif battery %}
+<section class="mb-10" aria-labelledby="battery-title">
+  <h2 id="battery-title" class="font-bold mb-2">{{ _('Quartierakku') }}</h2>
+  <p class="text-sm text-ink-muted mb-4">{{ _('Ein gemeinsamer Speicher für die ganze LEG. Jeder Anteil zeigt, wer welchen Teil der Jahreskosten trägt.') }}</p>
+  {% if battery and battery.invalid %}
+  <p class="rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm mb-4" role="alert">{{ _('Die gespeicherten Angaben sind unvollständig. Prüfen Sie Kapazität, Jahreskosten und Anteile.') }}</p>
+  {% endif %}
+  {% if battery and not battery.invalid %}
+  <dl class="grid gap-2 text-sm sm:grid-cols-2 mb-4">
+    <div><dt class="font-semibold text-ink inline">{{ _('Speicherkapazität:') }}</dt> <dd class="inline">{{ battery.capacity_display }}</dd></div>
+    <div><dt class="font-semibold text-ink inline">{{ _('Jahreskosten:') }}</dt> <dd class="inline">CHF {{ _(battery.annual_cost_display) }}</dd></div>
+  </dl>
+  {% endif %}
+  {% if battery and battery.shares %}
+  <div class="overflow-x-auto"><table class="w-full min-w-xl text-sm">
+    <caption class="sr-only">{{ _('Kostenanteile am Quartierakku') }}</caption>
+    <thead class="border-y border-line">
+      <tr>
+        <th scope="col" class="px-3 py-2 text-left">{{ _('Teilnehmer') }}</th>
+        <th scope="col" class="px-3 py-2 text-right">{{ _('Anteil') }}</th>
+        <th scope="col" class="px-3 py-2 text-right">{{ _('Kostenanteil pro Jahr') }}</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-line">
+      {% for share in battery.shares %}
+      <tr>
+        <td class="px-3 py-2 wrap-break-word">{{ share.address }}{% if share.building_id == viewer_building_id %} <span class="text-xs text-brand">{{ _('(Sie)') }}</span>{% endif %}</td>
+        <td class="px-3 py-2 text-right tabular-nums">{{ share.share_display }}</td>
+        <td class="px-3 py-2 text-right font-mono tabular-nums">CHF {{ _(share.cost_display) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+</section>
+{% endif %}

@@ -283,7 +283,10 @@ def test_leg_readiness_uses_a_complete_french_sentence_and_capitalized_heading(
         "Au moins 2 membres confirment leur participation (30 points de pourcentage)."
         in body
     )
-    assert ">Correspondance</h2>" in body
+    correspondence = web.test_client().get(
+        "/leg/dashboard/demo?page=correspondence&lang=fr-CH"
+    )
+    assert ">Correspondance</h1>" in correspondence.text
 
 
 def test_dashboard_errors_are_translatable_without_mutating_domain_results(

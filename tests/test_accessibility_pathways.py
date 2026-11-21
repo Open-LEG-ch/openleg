@@ -77,7 +77,17 @@ def test_owner_dashboard_announces_state_changes():
 
 
 def test_operator_dashboard_tables_carry_scoped_headers_and_names():
-    text = _read("leg_dashboard.html")
+    text = "\n".join(
+        _read(path)
+        for path in (
+            "leg_workspace_base.html",
+            "leg_dashboard.html",
+            "leg_workspace/members.html",
+            "leg_workspace/correspondence.html",
+            "leg_workspace/formation.html",
+            "leg_workspace/settings.html",
+        )
+    )
     _assert_focus_style(text, "operator dashboard")
     _assert_named_controls(text, "operator dashboard")
     for label in re.findall(r"<label\b[^>]*for=\"([^\"]+)\"", text):

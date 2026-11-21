@@ -69,8 +69,9 @@ def test_admin_to_resident_switch_preserves_data_and_denies_stale_privileged_for
     village,
 ):
     client = village.test_client()
-    prefix, admin = _start(client, "administrator")
-    old_csrf = _csrf(admin)
+    prefix, _admin = _start(client, "administrator")
+    settings = client.get(prefix + "/leg/community/sonnwil-operating-leg/settings")
+    old_csrf = _csrf(settings)
     policy_path = prefix + "/leg/community/sonnwil-operating-leg/access-policy"
     assert (
         client.post(
@@ -100,7 +101,8 @@ def test_admin_to_resident_switch_preserves_data_and_denies_stale_privileged_for
     assert (
         client.get(prefix + "/dashboard/export").json["annual_consumption_kwh"] == 4500
     )
-    restored = _switch(client, prefix, "administrator")
+    _switch(client, prefix, "administrator")
+    restored = client.get(prefix + "/leg/community/sonnwil-operating-leg/settings")
     assert 'name="require_dual_control" value="yes" checked' in restored.text
     assert (
         client.get(prefix + "/dashboard/export").json["annual_consumption_kwh"] == 7900
@@ -217,9 +219,9 @@ def test_limited_operator_can_prepare_battery_but_not_change_access_or_foreign_l
     village,
 ):
     client = village.test_client()
-    prefix, operator = _start(client, "operator")
-    token = _csrf(operator)
+    prefix, _operator = _start(client, "operator")
     community = prefix + "/leg/community/sonnwil-operating-leg"
+    token = _csrf(client.get(community + "/settings"))
     battery = {
         "csrf_token": token,
         "participant_id": "sonnwil-battery",
@@ -338,7 +340,7 @@ def test_real_foreign_invoice_equipment_attachment_and_community_stay_private(vi
         "municipality",
         "utility",
     ):
-        active = _switch(client, prefix, persona)
+        _switch(client, prefix, persona)
         assert client.get(invoice_path).status_code in (401, 404)
         assert client.get(invoice_path + "/pdf").status_code in (401, 404)
         assert client.get(
@@ -346,7 +348,7 @@ def test_real_foreign_invoice_equipment_attachment_and_community_stay_private(vi
         ).status_code in (401, 404)
         assert client.get(foreign_attachment).status_code == 404
         if persona not in ("municipality", "utility"):
-            token = _csrf(active)
+            token = _csrf(client.get(prefix + "/dashboard"))
             record_path = prefix + "/api/equipment/v1/records/" + equipment_id
             assert (
                 client.put(
@@ -500,9 +502,10 @@ def test_copied_pre_downgrade_cookie_never_restores_admin_authority_even_after_r
     village,
 ):
     client = village.test_client()
-    prefix, admin = _start(client, "administrator")
+    prefix, _admin = _start(client, "administrator")
     cookie = client.get_cookie("openleg_product", path=prefix).value
-    csrf = _csrf(admin)
+    settings = client.get(prefix + "/leg/community/sonnwil-operating-leg/settings")
+    csrf = _csrf(settings)
     resident = _switch(client, prefix, "resident")
     current_cookie = client.get_cookie("openleg_product", path=prefix).value
     policy = prefix + "/leg/community/sonnwil-operating-leg/access-policy"
@@ -516,7 +519,7 @@ def test_copied_pre_downgrade_cookie_never_restores_admin_authority_even_after_r
             401,
             403,
         )
-        denied = client.get(prefix + "/leg/dashboard?cid=sonnwil-operating-leg")
+        denied = client.get(prefix + "/leg/community/sonnwil-operating-leg/settings")
         assert 'name="require_dual_control"' not in denied.text
         client.set_cookie("openleg_product", current_cookie, path=prefix)
         assert "Lea Muster" in client.get(prefix + "/sandbox/home").text
@@ -566,14 +569,15 @@ def test_ordinary_captured_magic_login_retires_the_prior_persona_cookie(village)
 
 def test_missing_server_binding_refuses_writes_without_changing_community(village):
     client = village.test_client()
-    prefix, admin = _start(client, "administrator")
+    prefix, _admin = _start(client, "administrator")
     manager = village.extensions["villages"]
     workspace = manager.workspaces[prefix.rsplit("/", 1)[1]]
+    settings = client.get(prefix + "/leg/community/sonnwil-operating-leg/settings")
     (workspace["directory"] / ".session-generation").unlink()
     assert (
         client.post(
             prefix + "/leg/community/sonnwil-operating-leg/access-policy",
-            data={"csrf_token": _csrf(admin), "require_dual_control": "yes"},
+            data={"csrf_token": _csrf(settings), "require_dual_control": "yes"},
         ).status_code
         == 503
     )

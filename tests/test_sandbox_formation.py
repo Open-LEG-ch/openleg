@@ -46,7 +46,7 @@ def _create_ready(client):
         ("resident", "sonnwil-resident@example.org"),
         ("producer", "sonnwil-producer@example.org"),
     ):
-        page = client.get(prefix + "/leg/dashboard?cid=" + cid)
+        page = client.get(prefix + f"/leg/community/{cid}/members")
         assert (
             client.post(
                 prefix + f"/leg/community/{cid}/invite",
@@ -90,7 +90,7 @@ def test_ordinary_invitations_are_captured_once_inside_the_village(village):
     assert "sonnwil-resident@example.org" in inbox.text
     assert "sonnwil-producer@example.org" in inbox.text
     assert prefix + "/leg/dashboard?cid=" + cid in inbox.text
-    page = client.get(prefix + "/leg/dashboard?cid=" + cid)
+    page = client.get(prefix + f"/leg/community/{cid}/members")
     for email in ("sonnwil-resident@example.org", "nobody@example.org"):
         assert (
             client.post(
@@ -367,7 +367,7 @@ def test_roles_and_private_documents_keep_ordinary_authority(village):
         r'name="bundle" value="([a-f0-9]{64})"',
         client.get(prefix + "/sandbox/formation?cid=" + cid).text,
     ).group(1)
-    page = client.get(prefix + "/leg/dashboard?cid=" + cid)
+    page = client.get(prefix + f"/leg/community/{cid}/members")
     fields = {"csrf_token": _csrf(page)}
     roles = prefix + f"/leg/community/{cid}/members/sonnwil-resident/roles"
     assert (
@@ -411,7 +411,8 @@ def test_roles_and_private_documents_keep_ordinary_authority(village):
         client.post(prefix + f"/leg/community/{cid}/activate", data=fields).status_code
         == 403
     )
-    page = _switch(client, prefix, "operator")
+    _switch(client, prefix, "operator")
+    page = client.get(prefix + "/dashboard")
     assert client.get(prefix + "/sandbox/formation?cid=" + cid).status_code == 404
     assert (
         client.post(
@@ -550,7 +551,7 @@ def test_changed_signer_set_cannot_reuse_a_completed_bundle(village):
 
     client = village.test_client()
     prefix, cid = _signed(client)
-    dashboard = client.get(prefix + "/leg/dashboard?cid=" + cid)
+    dashboard = client.get(prefix + f"/leg/community/{cid}/members")
     assert (
         client.post(
             prefix + f"/leg/community/{cid}/invite",
@@ -640,7 +641,7 @@ def test_join_proposal_replays_after_separate_membership_confirmation(village):
 
     client = village.test_client()
     prefix, cid = _activate(village, client)
-    dashboard = client.get(prefix + "/leg/dashboard?cid=" + cid)
+    dashboard = client.get(prefix + f"/leg/community/{cid}/members")
     fields = {"csrf_token": _csrf(dashboard)}
     assert (
         client.post(
@@ -747,7 +748,7 @@ def test_join_proposal_replays_after_separate_membership_confirmation(village):
         == 302
     )
     _switch(client, prefix, "founder")
-    dashboard = client.get(prefix + "/leg/dashboard?cid=" + cid)
+    dashboard = client.get(prefix + f"/leg/community/{cid}/members")
     assert (
         client.post(path, data={**proposal, "csrf_token": _csrf(dashboard)}).status_code
         == 302

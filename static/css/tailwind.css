@@ -24,6 +24,7 @@
   --color-ink-soft: #3a362c;
   --color-ink-muted: #6b6555;
 
+  --font-serif: Georgia, "Times New Roman", serif;
   --font-mono: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -184,15 +185,10 @@
 }
 
 @layer components {
-  /* Legacy focus ring. The release theme (html[data-site-release]) uses the
-     3 px cobalt ring from site_release.css; a layered !important here would
-     override it. */
-  html:not([data-site-release]) a:focus-visible,
-  html:not([data-site-release]) button:focus-visible,
-  html:not([data-site-release]) input:focus-visible,
-  html:not([data-site-release]) select:focus-visible,
-  html:not([data-site-release]) textarea:focus-visible,
-  html:not([data-site-release]) summary:focus-visible {
+  /* Keep the legacy ring on existing pages. The LEG workspace and release
+     theme provide their own focus utilities. */
+  html:not([data-site-release])
+    :is(a, button, input, select, textarea, summary):not([data-leg-workspace] *):focus-visible {
     outline: 2px solid #2563eb !important;
     outline-offset: 2px !important;
   }

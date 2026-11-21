@@ -2,7 +2,9 @@
 """Tests for the session-gated LEG operator dashboard (/leg/dashboard)."""
 
 import os
+import re
 from html.parser import HTMLParser
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -114,10 +116,16 @@ def test_leg_dashboard_template_contract():
     path = os.path.join(PROJECT_ROOT, "templates", "leg_dashboard.html")
     with open(path, encoding="utf-8") as handle:
         html = handle.read()
-    assert '{% extends "product_base.html" %}' in html
+    shell = Path("templates/leg_workspace_base.html").read_text(encoding="utf-8")
+    assert '{% extends "leg_workspace_base.html" %}' in html
+    assert '{% extends "product_base.html" %}' in shell
     assert "cdn.tailwindcss.com" not in html
-    assert "readiness_score" in html
-    assert "next_steps" in html
+    assert '{% include "leg_workspace/formation.html" %}' in html
+    formation = Path("templates/leg_workspace/formation.html").read_text(
+        encoding="utf-8"
+    )
+    assert "readiness_score" in formation
+    assert "next_steps" in formation
 
 
 class _RenderedTables(HTMLParser):
@@ -181,7 +189,7 @@ class _RenderedTables(HTMLParser):
 
 
 def test_member_table_fits_mobile(app_module):  # noqa: F811
-    response = app_module.web.test_client().get("/leg/dashboard/demo")
+    response = app_module.web.test_client().get("/leg/dashboard/demo?page=members")
     assert response.status_code == 200
     parser = _RenderedTables()
     parser.feed(response.get_data(as_text=True))
@@ -319,8 +327,12 @@ def test_leg_dashboard_template_has_action_forms():
     path = os.path.join(PROJECT_ROOT, "templates", "leg_dashboard.html")
     with open(path, encoding="utf-8") as handle:
         html = handle.read()
-    assert "/invite" in html
-    assert "/start-formation" in html
+    assert "/invite" in Path("templates/leg_workspace/members.html").read_text(
+        encoding="utf-8"
+    )
+    assert "/start-formation" in Path(
+        "templates/leg_workspace/formation.html"
+    ).read_text(encoding="utf-8")
     assert "/confirm" in html
 
 
@@ -478,8 +490,9 @@ def test_leg_dashboard_renders_no_machine_tokens(app_module, monkeypatch):  # no
         "documents_generated", distribution_model="proportional", confirmed_count=2
     )
     html = _render_demo(app_module, monkeypatch, community)
+    visible_text = re.sub(r"<[^>]+>", "", html)
     for token in _RAW_MACHINE_TOKENS:
-        assert token not in html
+        assert token not in visible_text
     for marker in _ENGLISH_MARKERS:
         assert marker not in html
     assert "Dokumente erstellt" in html

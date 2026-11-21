@@ -61,7 +61,7 @@ PUBLIC_SITE_RULES = {
 
 PRODUCT_TEMPLATES = {
     "dashboard.html",
-    "leg_dashboard.html",
+    "leg_workspace_base.html",
     "meter_upload.html",
     "registry_verify.html",
     "gemeinde/dashboard.html",
@@ -144,6 +144,16 @@ def test_product_templates_use_dashboard_shell_without_public_navigation():
     for relative_path in PRODUCT_TEMPLATES:
         source = (ROOT / "templates" / relative_path).read_text(encoding="utf-8")
         assert '{% extends "product_base.html" %}' in source, relative_path
+        assert "partials/site_nav.html" not in source, relative_path
+        assert "partials/site_footer.html" not in source, relative_path
+
+    for relative_path in (
+        "leg_dashboard.html",
+        "leg_billing.html",
+        "leg_billing_policy.html",
+    ):
+        source = (ROOT / "templates" / relative_path).read_text(encoding="utf-8")
+        assert '{% extends "leg_workspace_base.html" %}' in source, relative_path
         assert "partials/site_nav.html" not in source, relative_path
         assert "partials/site_footer.html" not in source, relative_path
 
