@@ -6935,11 +6935,6 @@ msgid "Entladen"
 msgstr "Unload"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:45
-msgid "Entscheid:"
-msgstr "Decision:"
-
-#. Draft translation; native language and domain review pending.
 #: templates/fuer_bewohner.html:89
 msgid "Entscheiden"
 msgstr "Deciding"
@@ -13418,11 +13413,6 @@ msgid "Ohne Spannungstransformation"
 msgstr "Without voltage transformation"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:44
-msgid "Ohne Zahlungsreferenz"
-msgstr "Without payment reference"
-
-#. Draft translation; native language and domain review pending.
 #: templates/pricing.html:133
 msgid ""
 "Ohne eigenen Betrieb, wir übernehmen Wartung und Verfügbarkeit. Kostenlos für "
@@ -19779,11 +19769,6 @@ msgid "· %(format_b_population_int_replace)s Einwohner"
 msgstr "· %(format_b_population_int_replace)s Population"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:45
-msgid "· Akteur:"
-msgstr "· Actor:"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:174 templates/member_invoice_detail.html:204
 msgid "· Antwort bis"
 msgstr "· Answer until"
@@ -19807,11 +19792,6 @@ msgstr "· Firmware"
 #: templates/advisories.html:23 templates/equipment_form.html:54
 msgid "· Firmware:"
 msgstr "· Firmware:"
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:45
-msgid "· Import:"
-msgstr "· Import:"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:109
@@ -22418,3 +22398,190 @@ msgstr "Revoke agent access"
 #: templates/operator_credentials.html:26
 msgid "Keine OAuth-Freigaben vorhanden."
 msgstr "No OAuth grants available."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:638
+msgid "Bestätigen Sie die Prüfung mit dem Kontrollkästchen und senden Sie die Zuordnung erneut."
+msgstr "Tick the checkbox to confirm your review, then submit the assignment again."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:645
+msgid "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestellte Rechnung."
+msgstr "The invoice selection is missing or invalid. Choose a delivered invoice."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:665
+msgid "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
+msgstr "Check the bank statement or choose another delivered invoice from this LEG."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:674
+msgid ""
+"Dieser Eintrag ist nicht mehr zur Zuordnung verfügbar. Prüfen Sie den aktuellen Zahlungsabgleich "
+"unten."
+msgstr "This entry is no longer available for assignment. Check the updated payment reconciliation below."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:55
+msgid "Gutschrift"
+msgstr "Credit"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:55
+msgid "Belastung"
+msgstr "Debit"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:73
+msgid "Rechnung auswählen"
+msgstr "Select an invoice"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:85
+msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu."
+msgstr "There are no delivered invoices to choose from. Deliver the relevant invoice first."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:464
+msgid "Das ist eine Belastung, keine Gutschrift."
+msgstr "This entry is a debit."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:465
+msgid "Gleichen Sie die Belastung separat mit der Bank ab."
+msgstr "Reconcile the debit separately with the bank."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:468
+msgid "Die Bank hat die Zahlung zurückgebucht."
+msgstr "The bank reversed the payment."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:470
+msgid "Prüfen Sie die ursprüngliche Zahlung und klären Sie die Rückbuchung mit der Bank."
+msgstr "Check the original payment and clarify the reversal with the bank."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:474
+msgid "Die Währung ist nicht CHF."
+msgstr "The payment is in a currency other than CHF."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:475
+msgid "Klären Sie die Währung mit der zahlenden Person."
+msgstr "Confirm the currency with the payer."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:478
+msgid "Der Betrag ist zu tief."
+msgstr "The amount is too low."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:480
+msgid "Teilzahlungen bleiben unverbucht. Klären Sie den offenen Betrag mit der zahlenden Person."
+msgstr "Partial payments remain unrecorded. Follow up with the payer about the outstanding amount."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:484
+msgid "Der Betrag ist zu hoch."
+msgstr "The amount is too high."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:486
+msgid "Überzahlungen bleiben unverbucht. Klären Sie den überschüssigen Betrag mit der zahlenden Person."
+msgstr "Overpayments remain unrecorded. Contact the payer about the excess amount."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:490
+msgid "Der Auszug weist keine definitive Buchung aus."
+msgstr "The statement shows a provisional entry."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:491
+msgid "Importieren Sie den definitiven Kontoauszug."
+msgstr "Import the final bank statement."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:494
+msgid "Der Auszug belegt den Betrag für diesen Eintrag nicht eindeutig."
+msgstr "The statement does not clearly establish the amount for this entry."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:495
+msgid "Fordern Sie einen Kontoauszug mit Einzelbeträgen an."
+msgstr "Request a statement with individual amounts."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:498
+msgid "Die Rechnung ist aktuell nicht zur Zahlung offen."
+msgstr "This invoice is currently unavailable for payment."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:500
+msgid "Stellen Sie die Rechnung zuerst zu oder wählen Sie eine andere zugestellte Rechnung."
+msgstr "Deliver it first or choose another delivered invoice."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:505
+msgid "Die Referenz passt zu keiner Rechnung."
+msgstr "The reference matches no invoice."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:506
+msgid "Die Referenz passt zu mehreren Rechnungen."
+msgstr "The reference matches multiple invoices."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:507
+msgid "Die Angaben zur Zahlung passen nicht zur Rechnung."
+msgstr "The payment details differ from the invoice."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:508
+msgid "Die Zahlung ist verbucht."
+msgstr "The payment has been recorded."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:527
+msgid "Die Zahlung hat keine Referenz."
+msgstr "The payment has no reference."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:529
+msgid "Fordern Sie bei der Bank einen Kontoauszug mit Zahlungsreferenz an."
+msgstr "Ask the bank for a statement with the payment reference."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:532
+msgid "Zahlung zugeordnet"
+msgstr "Payment assigned"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:56
+msgid "Von"
+msgstr "From"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:65
+msgid "Referenz gehört zu"
+msgstr "Reference matches"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:70
+msgid "Es fehlen"
+msgstr "Outstanding amount"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:73
+msgid "Importiert am"
+msgstr "Imported on"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:74
+msgid "Importiert von"
+msgstr "Imported by"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:93
+msgid "Zahlung zuordnen"
+msgstr "Assign payment"

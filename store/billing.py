@@ -32,6 +32,7 @@ from store.invoice_identity import (
     lock_original_registrations,
 )
 from store.operator_api import enqueue_event
+from translation_markers import gettext_noop as _N
 
 logger = logging.getLogger(__name__)
 
@@ -726,7 +727,7 @@ def _locked_invoice(cur, invoice_id, community_id, *, locking=True):
     )
     row = cur.fetchone()
     if not row:
-        raise billing_lifecycle.InvoiceLifecycleError("Rechnung nicht gefunden.")
+        raise billing_lifecycle.InvoiceLifecycleError(_N("Rechnung nicht gefunden."))
     return dict(row)
 
 
@@ -755,14 +756,15 @@ def _append_invoice_event(
     reason=None,
     reference=None,
     effective_date=None,
+    payment_match=None,
 ):
     cur.execute(
         """
         INSERT INTO invoice_lifecycle_events (
             invoice_id, community_id, actor_id, event_type,
             previous_state, new_state, reason, reference, effective_date,
-            idempotency_key, actor
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            idempotency_key, actor, payment_match
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (invoice_id, idempotency_key) DO NOTHING
         """,
         (
@@ -777,6 +779,7 @@ def _append_invoice_event(
             effective_date,
             idempotency_key,
             Json(operator_actor.snapshot()),
+            Json(payment_match) if payment_match is not None else None,
         ),
     )
     if cur.rowcount > 0:
@@ -1104,7 +1107,9 @@ def record_invoice_payment(invoice_id, community_id, actor_id, paid_date, refere
         raise BillingStoreError("Could not record invoice payment") from e
 
 
-def _finalize_bank_payment(cur, invoice, entry, community_id, actor_id, key):
+def _finalize_bank_payment(
+    cur, invoice, entry, community_id, actor_id, key, *, payment_match=None
+):
     new_state = billing_lifecycle.next_state(
         invoice["lifecycle_state"],
         "pay",
@@ -1122,6 +1127,7 @@ def _finalize_bank_payment(cur, invoice, entry, community_id, actor_id, key):
         reference=entry["payment_reference"],
         effective_date=entry["booking_date"],
         idempotency_key=key,
+        payment_match=payment_match,
     )
     invoice["lifecycle_state"] = new_state
 
@@ -1155,19 +1161,21 @@ def confirm_payment(
             (entry_id, community_id),
         )
         entry = cur.fetchone()
-        if not entry or entry["match_decision"] not in {
-            "unmatched",
-            "ambiguous",
-            "mismatch",
-        }:
+        if (
+            not entry
+            or entry["match_decision"]
+            not in payment_reconciliation.REVIEWABLE_DECISIONS
+        ):
             return None
         invoice = _locked_invoice(cur, invoice_id, community_id, locking=not dry_run)
         # Real confirmations see lifecycle commits made while the lock waited.
         # Previews read all validation inputs from the same non-locking snapshot.
         invoice["lifecycle_state"] = _current_invoice_state(cur, invoice_id)
-        if payment_reconciliation.payment_eligibility(entry, invoice) != "matched":
-            raise billing_lifecycle.InvoiceLifecycleError(
-                "Die Zahlung passt nicht exakt zur Rechnung."
+        decision = payment_reconciliation.payment_eligibility(entry, invoice)
+        if decision != "matched":
+            raise payment_reconciliation.PaymentMatchRefused(
+                payment_reconciliation.payment_entry_refusal(entry)
+                or ("invoice_state" if decision == "mismatch" else decision)
             )
         if dry_run:
             return {
@@ -1188,7 +1196,13 @@ def confirm_payment(
         # Invoice identity is shared with dashboard payment transitions.
         lifecycle_key = "paid"
         _finalize_bank_payment(
-            cur, invoice, entry, community_id, actor_id, lifecycle_key
+            cur,
+            invoice,
+            entry,
+            community_id,
+            actor_id,
+            lifecycle_key,
+            payment_match={"entry_id": entry_id, "decision": "matched"},
         )
         cur.execute(
             "SELECT id FROM invoice_lifecycle_events WHERE invoice_id=%s AND idempotency_key=%s",
@@ -1324,8 +1338,9 @@ def reconcile_bank_statement(
                         statement_import_id, community_id, invoice_id,
                         entry_reference, booking_date, amount, currency,
                         payment_reference, is_reversal, credit_debit_indicator,
-                        match_decision, amount_basis, booking_status
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        match_decision, amount_basis, booking_status,
+                        debtor_name, remittance_information
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         import_id,
@@ -1341,6 +1356,8 @@ def reconcile_bank_statement(
                         decision,
                         entry.get("amount_basis"),
                         entry.get("booking_status"),
+                        entry.get("debtor_name"),
+                        entry.get("remittance_information"),
                     ),
                 )
             return _statement_import_result(cur, import_id, duplicate=False)
@@ -1527,7 +1544,7 @@ def list_community_invoice_events(community_id):
                 """
                 SELECT e.invoice_id, e.event_type, e.actor_id,
                        e.previous_state, e.new_state, e.reason, e.reference,
-                       e.effective_date, e.created_at
+                       e.effective_date, e.created_at, e.actor, e.payment_match
                 FROM invoice_lifecycle_events e
                 JOIN invoices i ON i.id = e.invoice_id
                 WHERE e.community_id = %s AND i.community_id = %s

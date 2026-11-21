@@ -8,11 +8,20 @@ from hashlib import sha256
 
 from defusedxml import ElementTree
 
+from billing_lifecycle import InvoiceLifecycleError
 from translation_markers import gettext_noop as _N
 
 
 class StatementError(ValueError):
     """The uploaded document is not a supported, valid bank statement."""
+
+
+class PaymentMatchRefused(InvoiceLifecycleError):
+    """A review failed shared payment eligibility."""
+
+    def __init__(self, detail):
+        super().__init__("Die Zahlung passt nicht exakt zur Rechnung.")
+        self.detail = detail
 
 
 DECISION_LABELS = {
@@ -24,6 +33,7 @@ DECISION_LABELS = {
     "reversal": _N("Rückbuchung"),
     "mismatch": _N("Angaben stimmen nicht überein"),
 }
+REVIEWABLE_DECISIONS = frozenset({"unmatched", "ambiguous", "mismatch"})
 
 
 @dataclass(frozen=True)
@@ -37,6 +47,8 @@ class PaymentEntry:
     credit_debit_indicator: str
     booking_status: str | None = None
     amount_basis: str | None = None
+    debtor_name: str | None = None
+    remittance_information: str | None = None
 
 
 @dataclass(frozen=True)
@@ -284,6 +296,14 @@ def parse_statement(content: bytes) -> Statement:
             else:
                 amount, currency = _amount(transaction)
             payment_reference = _text(transaction, "Ref", "Ustrd", "EndToEndId")
+            debtor = transaction.find("./{*}RltdPties/{*}Dbtr")
+            remittance_lines = transaction.findall("./{*}RmtInf/{*}Ustrd")
+            remittance_lines.extend(
+                transaction.findall("./{*}RmtInf/{*}Strd/{*}AddtlRmtInf")
+            )
+            remittance = "\n".join(
+                line for item in remittance_lines if (line := (item.text or "").strip())
+            )
             entry_reference = _text(transaction, "AcctSvcrRef", "NtryRef")
             if not entry_reference:
                 entry_reference = f"{statement_reference or 'statement'}:{entry_number}:{transaction_number}"
@@ -300,6 +320,10 @@ def parse_statement(content: bytes) -> Statement:
                     credit_debit_indicator=credit_debit_indicator,
                     booking_status=_booking_status(entry),
                     amount_basis="reconciled_batch" if is_batch else "entry",
+                    debtor_name=(_text(debtor, "Nm") or None)
+                    if debtor is not None
+                    else None,
+                    remittance_information=remittance or None,
                 )
             )
     if not entries:
@@ -345,18 +369,28 @@ def match_payment(entry, invoices):
     return MatchDecision(payment_eligibility(entry, candidates[0]), invoice_id)
 
 
-def payment_eligibility(entry, invoice):
-    """Classify acceptance rules shared by automatic and reviewed selection."""
+def payment_entry_refusal(entry):
+    """Explain restrictions that apply before an invoice is selected."""
     if entry["is_reversal"]:
         return "reversal"
+    if entry.get("booking_status") != "BOOK":
+        return "booking_status"
+    if entry.get("amount_basis") not in {"entry", "reconciled_batch"}:
+        return "amount_basis"
+    if entry["credit_debit_indicator"] != "CRDT":
+        return "debit"
+    if entry["currency"] != "CHF":
+        return "currency"
+    return None
+
+
+def payment_eligibility(entry, invoice):
+    """Classify acceptance rules shared by automatic and reviewed selection."""
+    refusal = payment_entry_refusal(entry)
+    if refusal:
+        return "reversal" if refusal == "reversal" else "mismatch"
     invoice_amount = Decimal(str(invoice["gross_chf"]))
     entry_amount = Decimal(str(entry["amount"]))
-    if entry.get("booking_status") != "BOOK":
-        return "mismatch"
-    if entry.get("amount_basis") not in {"entry", "reconciled_batch"}:
-        return "mismatch"
-    if entry["credit_debit_indicator"] != "CRDT" or entry["currency"] != "CHF":
-        return "mismatch"
     if entry_amount < invoice_amount:
         return "split_payment"
     if entry_amount > invoice_amount:
