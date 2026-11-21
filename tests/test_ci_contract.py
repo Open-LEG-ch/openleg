@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -214,8 +215,50 @@ def test_workflow_set_changes_require_contract_review():
         "lint.yml",
         "announce-release.yml",
         "release-announcement-watchdog.yml",
+        "release-ctl.yml",
         "secret-scan.yml",
     }
+
+
+@pytest.mark.parametrize("tag", ["v0.2.0", "v0.2.1", "0.2.0"])
+def test_ctl_release_checks_installed_version(tmp_path, tag):
+    workflow = yaml.safe_load((WORKFLOWS_DIR / "release-ctl.yml").read_text())
+    check = next(
+        step
+        for step in workflow["jobs"]["build"]["steps"]
+        if step.get("name") == "Verify wheel version and CLI"
+    )
+    venv_bin = tmp_path / "ctl-smoke" / "bin"
+    venv_bin.mkdir(parents=True)
+    (venv_bin / "python").symlink_to(sys.executable)
+    help_command = venv_bin / "openleg-ctl"
+    help_command.write_text('#!/bin/bash\nprintf "%s\\n" "$1"\n')
+    help_command.chmod(0o755)
+    metadata = tmp_path / "openleg_ctl-0.2.0.dist-info"
+    metadata.mkdir()
+    (metadata / "METADATA").write_text("Name: openleg-ctl\nVersion: 0.2.0\n")
+
+    completed = subprocess.run(
+        ["bash", "-e", "-c", check["run"]],
+        env={
+            **os.environ,
+            "PYTHONPATH": str(tmp_path),
+            "RELEASE_TAG": tag,
+            "RUNNER_TEMP": str(tmp_path),
+        },
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    if tag == "v0.2.0":
+        assert completed.returncode == 0, completed.stderr
+        assert completed.stdout.strip() == "--help"
+    else:
+        assert completed.returncode == 1, completed.stderr
+        assert "::error::" in completed.stdout
+        assert "--help" not in completed.stdout
 
 
 def test_release_announcement_is_manual_or_release_driven():
