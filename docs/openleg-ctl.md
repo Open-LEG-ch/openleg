@@ -3,11 +3,33 @@
 `openleg-ctl` reads the operator API and previews every write that supports a
 dry run. It cannot submit business writes. `scripts/openleg` remains the self-host lifecycle tool.
 
-Install with Python 3.11 or later:
+## Installation
+
+Use Python 3.11 or later. On the [GitHub Releases page](https://github.com/Open-LEG-ch/openleg/releases),
+copy the wheel's download URL. For example, to install version 0.2.0:
+
+```sh
+python -m pip install https://github.com/Open-LEG-ch/openleg/releases/download/v0.2.0/openleg_ctl-0.2.0-py3-none-any.whl
+```
+
+To verify the download before installing, save the wheel, source distribution
+and `SHA256SUMS` from the same Release to one directory:
+
+```sh
+sha256sum --check SHA256SUMS && python -m pip install ./openleg_ctl-0.2.0-py3-none-any.whl
+```
+
+From a source checkout, run:
 
 ```sh
 python -m pip install .
 ```
+
+Before tagging a release, set `[project].version` in `pyproject.toml` to the
+tag's version without the leading `v`. Wait for the asset upload to finish
+before publishing the draft Release.
+
+## Usage
 
 The CLI uses the standard library HTTP client, PyYAML and jsonschema. It does not
 install or import the MCP SDK. The wheel includes the authoritative operator
