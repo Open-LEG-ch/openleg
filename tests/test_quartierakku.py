@@ -431,6 +431,7 @@ from tests.test_dashboard_access_routes import (  # noqa: F401
 
 BATTERY_COMMUNITY = "c0ffee"
 DASHBOARD_URL = "/leg/dashboard?cid=" + BATTERY_COMMUNITY
+SETTINGS_URL = f"/leg/community/{BATTERY_COMMUNITY}/settings"
 
 
 def _battery_status():
@@ -510,6 +511,13 @@ def test_dashboard_shows_the_battery_with_its_shares(app_module, monkeypatch):  
     assert "45 kWh" in html
     assert "CHF 960.00" in html
     assert "50 %" in html
+    assert 'name="capacity_kwh"' not in html
+    _set_session(client, building_id="b-member")
+    assert "50 %" in client.get(DASHBOARD_URL).text
+    _set_session(client, building_id="b-admin")
+    response = client.get(SETTINGS_URL)
+    assert response.status_code == 200
+    html = response.text
     assert 'name="capacity_kwh" required value="45"' in html
     assert 'name="annual_cost_chf" required value="960"' in html
     assert 'name="participant_id"' in html
@@ -534,7 +542,7 @@ def test_dashboard_shows_battery_form_before_an_asset_exists(app_module, monkeyp
     client = app_module.web.test_client()
     _set_session(client, building_id="b-admin")
 
-    response = client.get(DASHBOARD_URL)
+    response = client.get(SETTINGS_URL)
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200

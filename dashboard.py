@@ -97,6 +97,16 @@ def leg_dashboard_location(community_id: str) -> str:
     return "/leg/dashboard?" + urlencode({"cid": community_id})
 
 
+def leg_workspace_location(community_id: str, page: str) -> str:
+    return "/leg/community/" + quote(community_id, safe="") + "/" + page
+
+
+def leg_formation_page(community: dict | None) -> str:
+    return (
+        "formation" if community and community.get("status") == "active" else "overview"
+    )
+
+
 def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict:
     """Compute readiness view for one building.
 
@@ -380,7 +390,7 @@ def _require_capability(community_id: str, building_id: str, capability: str):
 
 def leg_billing_workspace_location(community_id: str) -> str:
     """Build the billing workspace path; quote keeps it a relative path."""
-    return "/leg/community/" + quote(community_id, safe="") + "/billing"
+    return leg_workspace_location(community_id, "billing")
 
 
 _BILLING_STATUS_LABELS = {
@@ -732,7 +742,7 @@ def leg_prepare_billing_period(
 
 def leg_billing_policy_location(community_id: str) -> str:
     """Build the billing policy path; quote keeps it a relative path."""
-    return "/leg/community/" + quote(community_id, safe="") + "/billing-policy"
+    return leg_workspace_location(community_id, "billing-policy")
 
 
 def _internal_price_band(community_id: str, building_id: str) -> dict | None:

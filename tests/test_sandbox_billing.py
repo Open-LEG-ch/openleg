@@ -358,7 +358,7 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
                 "UPDATE metering_point_readings SET total_kwh=total_kwh+1 WHERE metering_point_id='SONNWIL-SIM-C1'"
             )
     elif fault == "battery":
-        page = client.get(prefix + "/leg/dashboard?cid=sonnwil-operating-leg")
+        page = client.get(prefix + COMMUNITY + "/settings")
         assert (
             client.post(
                 prefix + COMMUNITY + "/battery",

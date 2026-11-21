@@ -1,0 +1,28 @@
+{% set memberships = workspace_communities|default([]) %}
+{% set selected = memberships|selectattr("community_id", "equalto", workspace_id)|first %}
+{% set current_name = community.name if community else selected.name if selected else _("LEG") %}
+{% set account = sandbox_account.name if sandbox_account else workspace_account %}
+<header data-leg-workspace class="relative border-b border-line bg-white {{ workspace_focus }}">
+  <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+    {% set brand_class = "text-2xl" %}
+    {% include "partials/brand_wordmark.html" %}
+    <details class="min-w-0 min-[480px]:relative">
+      <summary class="flex min-h-12 max-w-full cursor-pointer list-none items-center gap-3 rounded-lg border border-ink-muted px-3 py-2 font-semibold [&::-webkit-details-marker]:hidden">
+        <span class="sr-only">{{ _('LEG wechseln') }}</span>
+        <span class="wrap-anywhere">{{ current_name }}</span>
+        <span aria-hidden="true" class="size-2 shrink-0 -translate-y-0.5 rotate-45 border-r-2 border-b-2 border-current"></span>
+      </summary>
+      <div class="absolute start-4 z-10 min-[480px]:start-0 mt-1 w-56 max-w-[calc(100vw-2rem)] rounded-lg border border-line bg-white p-2">
+        <ul class="list-none">
+          {% for membership in memberships %}
+          <li><a class="flex min-h-12 items-center rounded-lg px-2 py-2 wrap-anywhere hover:bg-paper-deep" href="/leg/dashboard?{{ {'cid': membership.community_id}|urlencode }}"{% if membership.community_id == workspace_id %} aria-current="true"{% endif %}>{{ membership.name }}</a></li>
+          {% else %}
+          <li><a class="flex min-h-12 items-center rounded-lg px-2 py-2 wrap-anywhere hover:bg-paper-deep" href="{{ workspace_overview }}">{{ current_name }}</a></li>
+          {% endfor %}
+        </ul>
+        <div class="border-t border-line pt-1 [&_nav]:flex-wrap [&_nav_a]:inline-flex [&_nav_a]:min-h-12 [&_nav_a]:items-center">{% include "partials/language_switcher.html" %}</div>
+      </div>
+    </details>
+    {% if account %}<span class="ms-auto hidden max-w-72 wrap-anywhere text-ink-muted min-[480px]:inline">{{ account }}</span>{% endif %}
+  </div>
+</header>

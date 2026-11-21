@@ -378,4 +378,4 @@ def test_start_confirmation_and_original_attachment_survive_archive_restore(subm
     assert after["dso_approved_at"] == before["dso_approved_at"]
     assert after["activated_at"] == before["activated_at"]
     assert client.post(f"/leg/community/{cid}/activate", data=fields).status_code == 302
-    assert "SYNTHETIC-START-1" in client.get(f"/leg/dashboard?cid={cid}").text
+    assert "SYNTHETIC-START-1" in client.get(f"/leg/community/{cid}/formation").text

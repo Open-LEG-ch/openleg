@@ -642,7 +642,9 @@ def test_correspondence_post_success_is_private_and_redirects(app_module, monkey
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/leg/dashboard?cid=community-1")
+    assert response.headers["Location"].endswith(
+        "/leg/community/community-1/correspondence"
+    )
     assert "bid=" not in response.headers["Location"]
     assert "no-store" in response.headers["Cache-Control"]
     assert response.headers["Referrer-Policy"] == "no-referrer"
@@ -699,7 +701,11 @@ def test_public_dashboard_response_stays_public_with_blank_session(app_module):
 
 
 def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch):
-    source = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
+    templates = [
+        Path("templates/leg_dashboard.html"),
+        *Path("templates/leg_workspace").glob("*.html"),
+    ]
+    source = "\n".join(path.read_text(encoding="utf-8") for path in templates)
 
     assert 'name="bid"' not in source
     assert source.count('name="csrf_token"') >= 5
@@ -725,7 +731,7 @@ def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch
 
     assert "Nächster Schritt: Ablehnung prüfen" in html
     assert "Nächster Schritt: Einleitung erneut möglich" in html
-    assert "Nächster Schritt: An VNB eskalieren" in html
+    assert "Nächster Schritt: An den Netzbetreiber eskalieren" in html
     assert "Nächster Schritt: download_package" not in html
     assert "Paket bereit" in html
 

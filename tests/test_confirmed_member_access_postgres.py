@@ -51,8 +51,14 @@ def test_only_confirmed_members_can_read_private_pages_and_files(community, stat
         )
     page = client.get(f"/leg/dashboard?cid={cid}")
     assert page.status_code == 200
-    assert ("Privateweg 1" in page.text) is (status == "confirmed")
-    assert ("Private subject" in page.text) is (status == "confirmed")
+    assert ('aria-label="LEG-Verwaltung"' in page.text) is (status == "confirmed")
+    for view, private_text in (
+        ("members", "Privateweg 1"),
+        ("correspondence", "Private subject"),
+    ):
+        response = client.get(f"/leg/community/{cid}/{view}")
+        assert response.status_code == (200 if status == "confirmed" else 403)
+        assert (private_text in response.text) is (status == "confirmed")
     for path in (
         f"/leg/document/{doc}",
         f"/leg/community/{cid}/correspondence/{entry}/attachment",
@@ -71,7 +77,9 @@ def test_invitee_can_accept_without_access_to_private_community_records(communit
         f"/leg/community/{cid}/confirm", data={"csrf_token": "csrf-secret"}
     )
     assert response.status_code == 302
-    assert "Privateweg 1" in client.get(response.location).text
+    members = f"/leg/community/{cid}/members"
+    assert f'href="{members}"' in client.get(response.location).text
+    assert "Privateweg 1" in client.get(members).text
 
 
 def test_invitee_cannot_append_to_private_correspondence(community):
