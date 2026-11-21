@@ -86,13 +86,13 @@
 .site-release:not(.product-shell) .release-prose a,
 .site-release:not(.product-shell) .release-hero-address a,
 .site-release:not(.product-shell) .release-faq a,
-.site-release:not(.product-shell) .release-document a:not(.release-button),
+.site-release:not(.product-shell) .release-document a:not(.release-button):not(.release-practice-roles a),
 .site-release:not(.product-shell) .release-finance a { color: var(--color-brand); font-weight: 600; text-decoration: underline var(--roof) 2px; }
 .site-release:not(.product-shell) main a.underline:hover,
 .site-release:not(.product-shell) .release-prose a:hover,
 .site-release:not(.product-shell) .release-hero-address a:hover,
 .site-release:not(.product-shell) .release-faq a:hover,
-.site-release:not(.product-shell) .release-document a:not(.release-button):hover,
+.site-release:not(.product-shell) .release-document a:not(.release-button):not(.release-practice-roles a):hover,
 .site-release:not(.product-shell) .release-finance a:hover { text-decoration-color: currentColor; }
 .release-prose a { color: #243b85; text-decoration: underline; text-underline-offset: 3px; }
 .release-hero { background: #edf1f9; padding-bottom: 48px; }
