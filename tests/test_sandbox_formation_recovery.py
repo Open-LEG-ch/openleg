@@ -40,7 +40,7 @@ def _native_factory(village, prefix):
 
 def _add_operator(client, prefix, cid):
     """Confirm another fictional participant through the ordinary controls."""
-    page = client.get(prefix + "/leg/dashboard?cid=" + cid)
+    page = client.get(prefix + f"/leg/community/{cid}/members")
     assert (
         client.post(
             prefix + f"/leg/community/{cid}/invite",

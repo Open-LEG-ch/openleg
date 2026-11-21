@@ -45,11 +45,22 @@ def test_approval_only_operator_sees_the_approval_action(template_app):
     assert "/billing/period/1/approve" in rendered
 
 
-def test_approval_only_operator_can_reach_billing_workspace():
-    source = (TEMPLATES / "leg_dashboard.html").read_text(encoding="utf-8")
+def test_approval_only_operator_can_reach_billing_workspace(template_app):
+    with template_app.test_request_context("/leg/dashboard?cid=c1"):
+        rendered = render_template(
+            "leg_dashboard.html",
+            community={
+                "community_id": "c1",
+                "status": "active",
+                "status_label": "Aktiv",
+                "distribution_model_label": "Gleichmässig",
+            },
+            viewer_has_session=True,
+            can_manage_members=False,
+            can_prepare_billing=False,
+            can_approve_billing=True,
+            can_audit_billing=True,
+        )
 
-    assert (
-        "can_manage_members or can_prepare_billing or can_approve_billing "
-        "or can_audit_billing"
-    ) in source
-    assert "can_prepare_billing or can_approve_billing or can_audit_billing" in source
+    assert 'href="/leg/community/c1/billing"' in rendered
+    assert 'href="/leg/community/c1/billing-policy"' not in rendered

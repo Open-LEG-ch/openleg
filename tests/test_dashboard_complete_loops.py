@@ -98,7 +98,7 @@ def test_invite_route_renders_validation_error(
     monkeypatch.setattr(
         dashboard_app_module.dashboard_module,
         "leg_overview",
-        lambda *_args: overview,
+        lambda *_args, **_kwargs: overview,
     )
     client = dashboard_app_module.web.test_client()
     _set_session(client)
@@ -176,7 +176,10 @@ def test_profile_export_omits_non_finite_numbers(monkeypatch):
 
 
 def test_dashboard_templates_expose_human_controls_and_progress():
-    leg = (ROOT / "templates/leg_dashboard.html").read_text(encoding="utf-8")
+    leg = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (ROOT / "templates/leg_workspace").glob("*.html")
+    )
     resident = (ROOT / "templates/dashboard.html").read_text(encoding="utf-8")
 
     assert 'name="invite_email"' in leg

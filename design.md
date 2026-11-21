@@ -261,6 +261,33 @@ persistent labels and valid submitted values. Errors belong beside the affected
 field and in a linked summary. Use links for destinations and buttons for actions.
 Keep the checkbox purposes for email, map visibility and membership separate.
 
+## LEG administration workspace
+
+The header shows the OpenLEG wordmark, a LEG switcher with a chevron and the
+signed-in account. Hide the account below 480 px. Use a list of links with
+`aria-current="page"` for the current page. Show the list beside the content on
+desktop and let it scroll horizontally on narrow screens. Counts, when present,
+are plain numbers. Use Georgia for page titles and the system sans for other
+text. The shared tokens, 48 px controls and 3 px focus outline apply in both
+themes. In the release theme, use the roof colour for the 6 px header edge,
+the wordmark baseline and 2 px link underlines. Link text stays cobalt. Use the
+status colours for status words. Keep lists and tables on paper. Use a surface
+for a form or an item that needs a decision.
+
+The overview keeps the LEG status, shared measurements and Quartierakku shares.
+Keep readiness, next steps, documents, registration with the grid operator and
+start confirmation on the overview until the LEG starts operating. Then move
+those records to Gründung. Mitglieder holds the member list, roles, invitations
+and membership changes with the grid operator. Korrespondenz holds the journal.
+Einstellungen holds billing policy, dual control, Quartierakku entry and
+integration accounts. Billing roles see Abrechnung, Zahlungen and Rechnungen.
+Zahlungen and Rechnungen link to the current controls in Abrechnung.
+
+Use words such as Aktiv, Entwurf and Freigegeben for state. Colour may reinforce
+the meaning. Use Netzbetreiber in German and give each fact its own sentence or
+label. Keep the action name consistent from the link to the form and show
+feedback where the action is available.
+
 ## Graphics and evidence
 
 Write the text explanation before drawing. Raster scenes show place; HTML/SVG

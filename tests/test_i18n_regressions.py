@@ -231,7 +231,7 @@ def test_battery_errors_translate_the_participant_without_trusting_its_markup(
     original = deepcopy(result)
     monkeypatch.setattr(dashboard, "leg_save_battery", lambda *args: result)
     monkeypatch.setattr(
-        dashboard, "leg_overview", lambda *args: dashboard.leg_demo_overview()
+        dashboard, "leg_overview", lambda *args, **kwargs: dashboard.leg_demo_overview()
     )
     client = web.test_client()
     _set_session(client)
@@ -256,7 +256,7 @@ def test_invalid_role_is_localized_at_route_boundary_and_keeps_canonical_error(
         dashboard, "leg_set_member_roles", lambda *args: {"error": original}
     )
     monkeypatch.setattr(
-        dashboard, "leg_overview", lambda *args: dashboard.leg_demo_overview()
+        dashboard, "leg_overview", lambda *args, **kwargs: dashboard.leg_demo_overview()
     )
     client = web.test_client()
     _set_session(client)
@@ -283,7 +283,10 @@ def test_leg_readiness_uses_a_complete_french_sentence_and_capitalized_heading(
         "Au moins 2 membres confirment leur participation (30 points de pourcentage)."
         in body
     )
-    assert ">Correspondance</h2>" in body
+    correspondence = web.test_client().get(
+        "/leg/dashboard/demo?page=correspondence&lang=fr-CH"
+    )
+    assert ">Correspondance</h1>" in correspondence.text
 
 
 def test_dashboard_errors_are_translatable_without_mutating_domain_results(

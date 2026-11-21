@@ -119,8 +119,19 @@ def _dashboard_public_context(**extra):
     return context
 
 
-def _leg_dashboard_redirect(community_id):
-    return redirect(dashboard_module.leg_dashboard_location(community_id))
+def _leg_dashboard_redirect(community_id, page="overview"):
+    if page == "overview":
+        return redirect(dashboard_module.leg_dashboard_location(community_id))
+    return redirect(dashboard_module.leg_workspace_location(community_id, page))
+
+
+def _leg_formation_redirect(community_id, building_id):
+    community = dashboard_module.formation_wizard.get_community_status(
+        community_id, building_id
+    )
+    return _leg_dashboard_redirect(
+        community_id, dashboard_module.leg_formation_page(community)
+    )
 
 
 def _rate_limit(limiter, limit_string):
@@ -527,22 +538,67 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             download_name=f"rechnung-{invoice['invoice_number']}.pdf",
         )
 
+    def render_leg_workspace(template, **view):
+        community = view.get("community") or {}
+        community_id = community.get("community_id") or view.get("community_id")
+        building_id = (
+            _dashboard_session_building_id()
+            if community_id and not view.get("workspace_demo")
+            else ""
+        )
+        if building_id:
+            memberships = dashboard_module.formation_wizard.get_user_communities(
+                building_id
+            )
+            view["workspace_communities"] = [
+                member
+                for member in memberships
+                if member["member_status"] == "confirmed"
+            ]
+            profile = db.get_building(building_id) or {}
+            view["workspace_account"] = profile.get("email")
+        return render_city_template(template, **view)
+
     @bp.route("/leg/dashboard")
     def leg_dashboard():
         community_id = request.args.get("cid", "").strip()
         session_building_id = _dashboard_session_building_id()
-        return render_city_template(
+        return render_leg_workspace(
             "leg_dashboard.html",
             **dashboard_module.leg_overview(community_id, session_building_id),
             viewer_has_session=bool(session_building_id),
             csrf_token=_dashboard_csrf_token(),
         )
 
+    @bp.get(
+        "/leg/community/<community_id>/"
+        "<any(members,correspondence,formation,settings,payments,invoices):page>"
+    )
+    def leg_workspace_page(community_id, page):
+        building_id = _require_dashboard_session()
+        view = dashboard_module.leg_overview(
+            community_id, building_id, workspace_page=page
+        )
+        if not view.get("community"):
+            abort(403)
+        return render_leg_workspace(
+            "leg_dashboard.html",
+            **view,
+            workspace_page=page,
+            viewer_has_session=True,
+            csrf_token=_dashboard_csrf_token(),
+        )
+
     @bp.route("/leg/dashboard/demo")
     def leg_dashboard_demo():
-        return render_city_template(
+        page = request.args.get("page", "overview")
+        if page not in ("overview", "members", "correspondence", "formation"):
+            abort(404)
+        return render_leg_workspace(
             "leg_dashboard.html",
             **dashboard_module.leg_demo_overview(),
+            workspace_page=page,
+            workspace_demo=True,
             viewer_has_session=False,
             csrf_token="",
         )
@@ -585,16 +641,19 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             return (
-                render_city_template(
+                render_leg_workspace(
                     "leg_dashboard.html",
-                    **dashboard_module.leg_overview(community_id, building_id),
+                    **dashboard_module.leg_overview(
+                        community_id, building_id, workspace_page="members"
+                    ),
                     viewer_has_session=True,
+                    workspace_page="members",
                     csrf_token=_dashboard_csrf_token(),
                     invite_error=result["error"],
                 ),
                 400,
             )
-        return _leg_dashboard_redirect(community_id)
+        return _leg_dashboard_redirect(community_id, "members")
 
     @bp.route(
         "/leg/community/<community_id>/members/<member_building_id>/roles",
@@ -611,16 +670,19 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             return (
-                render_city_template(
+                render_leg_workspace(
                     "leg_dashboard.html",
-                    **dashboard_module.leg_overview(community_id, building_id),
+                    **dashboard_module.leg_overview(
+                        community_id, building_id, workspace_page="members"
+                    ),
                     viewer_has_session=True,
+                    workspace_page="members",
                     csrf_token=_dashboard_csrf_token(),
                     roles_error=community_access.localize_role_error(result["error"]),
                 ),
                 400,
             )
-        return _leg_dashboard_redirect(community_id)
+        return _leg_dashboard_redirect(community_id, "members")
 
     @bp.route("/leg/community/<community_id>/battery", methods=["POST"])
     def leg_community_battery(community_id):
@@ -635,19 +697,22 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if result["error"]:
             abort(403)
         if result["errors"]:
-            view = dashboard_module.leg_overview(community_id, building_id)
+            view = dashboard_module.leg_overview(
+                community_id, building_id, workspace_page="settings"
+            )
             view["battery_form_values"] = request.form
             return (
-                render_city_template(
+                render_leg_workspace(
                     "leg_dashboard.html",
                     **view,
                     viewer_has_session=True,
+                    workspace_page="settings",
                     csrf_token=_dashboard_csrf_token(),
                     battery_errors=quartierakku.localize_form_errors(result["errors"]),
                 ),
                 400,
             )
-        return _leg_dashboard_redirect(community_id)
+        return _leg_dashboard_redirect(community_id, "settings")
 
     @bp.route("/leg/community/<community_id>/access-policy", methods=["POST"])
     def leg_community_access_policy(community_id):
@@ -660,7 +725,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             abort(403)
-        return _leg_dashboard_redirect(community_id)
+        return _leg_dashboard_redirect(community_id, "settings")
 
     @bp.route("/leg/community/<community_id>/confirm", methods=["POST"])
     def leg_community_confirm(community_id):
@@ -674,14 +739,14 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         dashboard_module.leg_start_formation(community_id, building_id)
-        return _leg_dashboard_redirect(community_id)
+        return _leg_formation_redirect(community_id, building_id)
 
     @bp.route("/leg/community/<community_id>/documents", methods=["POST"])
     def leg_community_documents(community_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         dashboard_module.leg_generate_documents(community_id, building_id)
-        return _leg_dashboard_redirect(community_id)
+        return _leg_formation_redirect(community_id, building_id)
 
     @bp.route("/leg/community/<community_id>/archive")
     def leg_community_archive_export(community_id):
@@ -722,7 +787,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_archive_restore(community_id):
         return _restore_archive_response(community_id, dry_run=False)
 
-    def activation_response(community_id, operation, *args):
+    def activation_response(community_id, operation, *args, success_page="overview"):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         try:
@@ -733,16 +798,19 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             context = dashboard_module.leg_overview(community_id, building_id)
             if context.get("error"):
                 abort(403)
-            return render_city_template(
+            return render_leg_workspace(
                 "leg_dashboard.html",
                 **context,
                 viewer_has_session=True,
+                workspace_page=dashboard_module.leg_formation_page(
+                    context["community"]
+                ),
                 csrf_token=_dashboard_csrf_token(),
                 activation_error=str(error),
             ), (400 if isinstance(error, ValueError) else 409)
         except psycopg2.Error:
             abort(503)
-        return _leg_dashboard_redirect(community_id)
+        return _leg_dashboard_redirect(community_id, success_page)
 
     @bp.route("/leg/community/<community_id>/vnb-start-confirmation", methods=["POST"])
     def leg_community_start_confirmation(community_id):
@@ -760,7 +828,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
 
     @bp.route("/leg/community/<community_id>/activate", methods=["POST"])
     def leg_community_activate(community_id):
-        return activation_response(community_id, db.activate_community)
+        return activation_response(
+            community_id, db.activate_community, success_page="formation"
+        )
 
     @bp.route("/leg/community/<community_id>/vnb-submissions", methods=["POST"])
     def leg_community_vnb_submission(community_id):
@@ -769,7 +839,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         result = dashboard_module.leg_submit_vnb_formation(community_id, building_id)
         if result["error"]:
             abort(result.get("error_status", 409))
-        return _leg_dashboard_redirect(community_id)
+        return _leg_formation_redirect(community_id, building_id)
 
     @bp.route("/leg/community/<community_id>/vnb-submissions/<case_id>/handover")
     def leg_community_vnb_handover(community_id, case_id):
@@ -798,7 +868,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             abort(result.get("error_status", 409))
-        return _leg_dashboard_redirect(community_id)
+        return _leg_formation_redirect(community_id, building_id)
 
     @bp.route("/leg/community/<community_id>/vnb-mutations", methods=["POST"])
     def leg_community_vnb_mutation(community_id):
@@ -826,7 +896,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             abort(result.get("error_status", 409))
-        return _leg_dashboard_redirect(community_id)
+        return _leg_dashboard_redirect(community_id, "members")
 
     @bp.route("/leg/community/<community_id>/vnb-mutations/<case_id>/handover")
     def leg_community_vnb_mutation_handover(community_id, case_id):
@@ -855,7 +925,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             abort(result.get("error_status", 409))
-        return _leg_dashboard_redirect(community_id)
+        return _leg_dashboard_redirect(community_id, "members")
 
     @bp.route("/leg/community/<community_id>/billing")
     def leg_billing_workspace(community_id):
@@ -872,7 +942,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if view["error"]:
             abort(403)
-        return render_city_template(
+        return render_leg_workspace(
             "leg_billing.html",
             csrf_token=_dashboard_csrf_token(),
             **view,
@@ -955,7 +1025,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 "Sie es erneut."
             )
             return (
-                render_city_template(
+                render_leg_workspace(
                     "leg_billing.html",
                     csrf_token=_dashboard_csrf_token(),
                     **view,
@@ -987,7 +1057,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
             )
             return (
-                render_city_template(
+                render_leg_workspace(
                     "leg_billing.html",
                     csrf_token=_dashboard_csrf_token(),
                     **view,
@@ -1007,7 +1077,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 abort(503)
             view["lifecycle_error"] = result["error"]
             return (
-                render_city_template(
+                render_leg_workspace(
                     "leg_billing.html",
                     csrf_token=_dashboard_csrf_token(),
                     **view,
@@ -1127,7 +1197,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if view["error"]:
             abort(403)
-        return render_city_template(
+        return render_leg_workspace(
             "leg_billing_policy.html",
             csrf_token=_dashboard_csrf_token(),
             **view,
@@ -1158,7 +1228,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 for field in billing_policy.FORM_FIELDS
             }
             return (
-                render_city_template(
+                render_leg_workspace(
                     "leg_billing_policy.html",
                     csrf_token=_dashboard_csrf_token(),
                     **view,
@@ -1194,16 +1264,19 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         if result["error"]:
             return (
-                render_city_template(
+                render_leg_workspace(
                     "leg_dashboard.html",
-                    **dashboard_module.leg_overview(community_id, building_id),
+                    **dashboard_module.leg_overview(
+                        community_id, building_id, workspace_page="correspondence"
+                    ),
                     viewer_has_session=True,
+                    workspace_page="correspondence",
                     csrf_token=_dashboard_csrf_token(),
                     correspondence_error=result["error"],
                 ),
                 400,
             )
-        return _leg_dashboard_redirect(community_id)
+        return _leg_dashboard_redirect(community_id, "correspondence")
 
     @bp.route("/leg/community/<community_id>/correspondence/<int:entry_id>/attachment")
     def leg_correspondence_attachment(community_id, entry_id):

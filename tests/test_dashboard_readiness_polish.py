@@ -82,7 +82,7 @@ def test_dashboards_keep_distinct_structures(client):
         )
 
 
-def test_dashboard_statistics_use_mono_tabular_numerals(client):
+def test_dashboard_statistics_use_tabular_numerals(client):
     for path in (
         "/dashboard/demo",
         "/gemeinde/dashboard/demo",
@@ -91,8 +91,9 @@ def test_dashboard_statistics_use_mono_tabular_numerals(client):
         html = _html(client, path)
         statistics = re.findall(r'<[^>]+data-statistic(?!-)[^>]*class="([^"]+)"', html)
         assert statistics
+        assert all("tabular-nums" in classes for classes in statistics)
         assert all(
-            "font-mono" in classes and "tabular-nums" in classes
+            ("font-mono" in classes) == (path != "/leg/dashboard/demo")
             for classes in statistics
         )
         assert "data-statistic-unit" in html
@@ -136,11 +137,12 @@ def test_community_readiness_score_explains_weighted_steps(client):
 
 
 def test_read_only_controls_describe_dashboard_access_request(client):
-    html = _html(client, "/leg/dashboard/demo")
-    labels = re.findall(r'<a href="/dashboard"[^>]*>(.*?)</a>', html, re.DOTALL)
-    assert labels.count("Vollzugriff im persönlichen Dashboard anfordern") == 2
-    assert "Eintrag hinzufügen" not in labels
-    assert "Gründung starten" not in labels
+    for path in ("/leg/dashboard/demo", "/leg/dashboard/demo?page=correspondence"):
+        html = _html(client, path)
+        labels = re.findall(r'<a href="/dashboard"[^>]*>(.*?)</a>', html, re.DOTALL)
+        assert labels.count("Vollzugriff im persönlichen Dashboard anfordern") == 1
+        assert "Eintrag hinzufügen" not in labels
+        assert "Gründung starten" not in labels
 
 
 def test_profilstatus_tile_is_removed(client):

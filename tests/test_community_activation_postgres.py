@@ -108,6 +108,7 @@ def test_record_start_confirmation_then_explicitly_activate(founder):
     response = client.post(f"/leg/community/{cid}/vnb-start-confirmation", data=fields)
 
     assert response.status_code == 302
+    assert response.location == f"/leg/dashboard?cid={cid}"
     row = db.fetch_community_with_members(cid, "founder")
     assert row["status"] == "dso_approved"
     assert row["activated_at"] is None
@@ -123,6 +124,7 @@ def test_record_start_confirmation_then_explicitly_activate(founder):
         f"/leg/community/{cid}/activate", data={"csrf_token": "csrf-secret"}
     )
     assert response.status_code == 302
+    assert response.location == f"/leg/community/{cid}/formation"
     row = db.fetch_community_with_members(cid, "founder")
     assert row["status"] == "active"
     assert row["activated_at"] is not None
@@ -378,4 +380,4 @@ def test_start_confirmation_and_original_attachment_survive_archive_restore(subm
     assert after["dso_approved_at"] == before["dso_approved_at"]
     assert after["activated_at"] == before["activated_at"]
     assert client.post(f"/leg/community/{cid}/activate", data=fields).status_code == 302
-    assert "SYNTHETIC-START-1" in client.get(f"/leg/dashboard?cid={cid}").text
+    assert "SYNTHETIC-START-1" in client.get(f"/leg/community/{cid}/formation").text

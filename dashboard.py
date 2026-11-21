@@ -97,6 +97,16 @@ def leg_dashboard_location(community_id: str) -> str:
     return "/leg/dashboard?" + urlencode({"cid": community_id})
 
 
+def leg_workspace_location(community_id: str, page: str) -> str:
+    return "/leg/community/" + quote(community_id, safe="") + "/" + page
+
+
+def leg_formation_page(community: dict | None) -> str:
+    return (
+        "formation" if community and community.get("status") == "active" else "overview"
+    )
+
+
 def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict:
     """Compute readiness view for one building.
 
@@ -215,7 +225,9 @@ def _money_display(value) -> str:
         return _N("Unlesbar")
 
 
-def leg_overview(community_id: str, building_id: str) -> dict:
+def leg_overview(
+    community_id: str, building_id: str, *, workspace_page: str = "overview"
+) -> dict:
     """Operator view of one community, gated on membership.
 
     Same capability-URL model as the resident dashboard: the caller must
@@ -245,6 +257,21 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     if member.get("status") != "confirmed":
         return {"error": _N("Kein Zugriff."), "community": None}
 
+    capabilities = community_access.capabilities_for(member)
+    can_audit_billing = community_access.AUDIT_BILLING in capabilities
+    if workspace_page in ("settings", "payments", "invoices") and not can_audit_billing:
+        return {"error": _N("Kein Zugriff."), "community": None}
+
+    needs_start_evidence = (
+        workspace_page == "overview"
+        and status["status"] == "dso_submitted"
+        and community_access.is_administrator(member)
+    )
+    correspondence = (
+        db.list_correspondence(community_id)
+        if workspace_page == "correspondence" or needs_start_evidence
+        else []
+    )
     vnb_exchange_available = db.is_db_available()
     if vnb_exchange_available:
         try:
@@ -257,7 +284,6 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     else:
         vnb_submissions = []
         vnb_mutations = []
-    capabilities = community_access.capabilities_for(member)
     battery_unavailable = False
     try:
         battery = db.get_battery(community_id)
@@ -301,10 +327,10 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "can_manage_documents": community_access.MANAGE_DOCUMENTS in capabilities,
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
-        "can_audit_billing": community_access.AUDIT_BILLING in capabilities,
+        "can_audit_billing": can_audit_billing,
         "access_role_labels": community_access.ROLE_LABELS,
         "leg_documents": db.list_leg_documents(community_id),
-        "correspondence": db.list_correspondence(community_id),
+        "correspondence": correspondence,
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
@@ -380,7 +406,7 @@ def _require_capability(community_id: str, building_id: str, capability: str):
 
 def leg_billing_workspace_location(community_id: str) -> str:
     """Build the billing workspace path; quote keeps it a relative path."""
-    return "/leg/community/" + quote(community_id, safe="") + "/billing"
+    return leg_workspace_location(community_id, "billing")
 
 
 _BILLING_STATUS_LABELS = {
@@ -732,7 +758,7 @@ def leg_prepare_billing_period(
 
 def leg_billing_policy_location(community_id: str) -> str:
     """Build the billing policy path; quote keeps it a relative path."""
-    return "/leg/community/" + quote(community_id, safe="") + "/billing-policy"
+    return leg_workspace_location(community_id, "billing-policy")
 
 
 def _internal_price_band(community_id: str, building_id: str) -> dict | None:
