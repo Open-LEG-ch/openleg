@@ -269,8 +269,10 @@ signed-in account. Hide the account below 480 px. Use a list of links with
 desktop and let it scroll horizontally on narrow screens. Counts, when present,
 are plain numbers. Use Georgia for page titles and the system sans for other
 text. The shared tokens, 48 px controls and 3 px focus outline apply in both
-themes. Keep lists and tables on paper. Use a surface for a form or an item
-that needs a decision.
+themes. In the release theme, use the roof colour for the 6 px header edge,
+the wordmark baseline and 2 px link underlines. Link text stays cobalt. Use the
+status colours for status words. Keep lists and tables on paper. Use a surface
+for a form or an item that needs a decision.
 
 The overview keeps the LEG status, shared measurements and Quartierakku shares.
 Keep readiness, next steps, documents, registration with the grid operator and

@@ -225,7 +225,9 @@ def _money_display(value) -> str:
         return _N("Unlesbar")
 
 
-def leg_overview(community_id: str, building_id: str) -> dict:
+def leg_overview(
+    community_id: str, building_id: str, *, workspace_page: str = "overview"
+) -> dict:
     """Operator view of one community, gated on membership.
 
     Same capability-URL model as the resident dashboard: the caller must
@@ -255,6 +257,21 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     if member.get("status") != "confirmed":
         return {"error": _N("Kein Zugriff."), "community": None}
 
+    capabilities = community_access.capabilities_for(member)
+    can_audit_billing = community_access.AUDIT_BILLING in capabilities
+    if workspace_page in ("settings", "payments", "invoices") and not can_audit_billing:
+        return {"error": _N("Kein Zugriff."), "community": None}
+
+    needs_start_evidence = (
+        workspace_page == "overview"
+        and status["status"] == "dso_submitted"
+        and community_access.is_administrator(member)
+    )
+    correspondence = (
+        db.list_correspondence(community_id)
+        if workspace_page == "correspondence" or needs_start_evidence
+        else []
+    )
     vnb_exchange_available = db.is_db_available()
     if vnb_exchange_available:
         try:
@@ -267,7 +284,6 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     else:
         vnb_submissions = []
         vnb_mutations = []
-    capabilities = community_access.capabilities_for(member)
     battery_unavailable = False
     try:
         battery = db.get_battery(community_id)
@@ -311,10 +327,10 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         "can_manage_documents": community_access.MANAGE_DOCUMENTS in capabilities,
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
-        "can_audit_billing": community_access.AUDIT_BILLING in capabilities,
+        "can_audit_billing": can_audit_billing,
         "access_role_labels": community_access.ROLE_LABELS,
         "leg_documents": db.list_leg_documents(community_id),
-        "correspondence": db.list_correspondence(community_id),
+        "correspondence": correspondence,
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,

@@ -81,9 +81,13 @@ def test_formation_moves_at_operating_start(workspace):
     _set_session(client, "b-admin")
     marker = "Anmeldung beim Netzbetreiber"
     assert marker not in client.get(OVERVIEW).text
-    assert marker in client.get(ROOT + "/formation").text
+    active_formation = client.get(ROOT + "/formation").text
+    assert marker in active_formation
+    assert f'action="{ROOT}/start-formation"' not in active_formation
     status["status"] = "dso_approved"
-    assert marker in client.get(OVERVIEW).text
+    pending_formation = client.get(OVERVIEW).text
+    assert marker in pending_formation
+    assert f'action="{ROOT}/start-formation"' in pending_formation
     assert marker not in client.get(ROOT + "/formation").text
 
 
@@ -168,3 +172,40 @@ def test_leg_switcher_lists_confirmed_memberships_only(workspace, monkeypatch):
     assert 'href="/leg/dashboard?cid=second"' in response.text
     assert 'href="/leg/dashboard?cid=invited"' not in response.text
     assert "Rejected LEG" not in response.text
+
+
+def test_only_workspace_pages_that_need_correspondence_load_it(workspace, monkeypatch):
+    import dashboard
+
+    client, status = workspace
+    journal_reads = []
+
+    def list_correspondence(community_id):
+        journal_reads.append(community_id)
+        return []
+
+    monkeypatch.setattr(dashboard.db, "list_correspondence", list_correspondence)
+    _set_session(client, "reader")
+    assert client.get(ROOT + "/payments").status_code == 403
+    _set_session(client, "b-admin")
+    for path in (OVERVIEW, ROOT + "/members", ROOT + "/formation", ROOT + "/payments"):
+        assert client.get(path).status_code == 200
+    assert journal_reads == []
+
+    assert client.get(ROOT + "/correspondence").status_code == 200
+    assert journal_reads == ["c0ffee"]
+    status["status"] = "dso_submitted"
+    assert client.get(OVERVIEW).status_code == 200
+    assert journal_reads == ["c0ffee", "c0ffee"]
+
+
+def test_billing_policy_marks_settings_as_its_parent_section(workspace):
+    client, _ = workspace
+    _set_session(client, "b-admin")
+    response = client.get(ROOT + "/billing-policy")
+    assert response.status_code == 200
+    assert 'aria-current="page"' not in response.text
+    settings_link = response.text.split(f'href="{ROOT}/settings"', 1)[1].split(">", 1)[
+        0
+    ]
+    assert 'aria-current="true"' in settings_link

@@ -96,3 +96,13 @@ def test_invitee_cannot_append_to_private_correspondence(community):
     )
     assert response.status_code == 400
     assert db.list_correspondence(cid) == before
+
+
+def test_journal_lists_attachment_metadata_without_pdf_bytes(community):
+    _client, db, cid, _doc, entry = community
+    row = db.list_correspondence(cid)[0]
+    assert row["attachment_filename"] == "private.pdf"
+    assert "attachment_data" not in row
+    assert bytes(db.get_correspondence_attachment(entry, cid)["attachment_data"]) == (
+        b"%PDF-private-record"
+    )

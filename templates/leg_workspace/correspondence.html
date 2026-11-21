@@ -21,7 +21,7 @@
         <td class="px-3 py-2">{{ entry.subject }}</td>
         <td class="px-3 py-2 text-right text-xs text-ink-muted">{{ entry.created_at }}</td>
       </tr>
-      {% if entry.attachment_filename %}<tr><td colspan="5" class="px-3 pb-3 text-right"><a class="text-sm font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/correspondence/{{ entry.id }}/attachment">{{ entry.attachment_filename }} {{ _('herunterladen') }}</a></td></tr>{% endif %}
+      {% if entry.attachment_filename %}<tr><td colspan="5" class="px-3 pb-3 text-right"><a class="inline-flex items-center text-sm font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/correspondence/{{ entry.id }}/attachment">{{ entry.attachment_filename }} {{ _('herunterladen') }}</a></td></tr>{% endif %}
       {% endfor %}
     </tbody>
   </table></div>

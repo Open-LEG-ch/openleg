@@ -98,7 +98,7 @@ def test_invite_route_renders_validation_error(
     monkeypatch.setattr(
         dashboard_app_module.dashboard_module,
         "leg_overview",
-        lambda *_args: overview,
+        lambda *_args, **_kwargs: overview,
     )
     client = dashboard_app_module.web.test_client()
     _set_session(client)

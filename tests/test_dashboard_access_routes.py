@@ -660,7 +660,9 @@ def test_correspondence_post_validation_failure_is_private(app_module, monkeypat
         app_module.dashboard_module,
         "leg_overview",
         MagicMock(
-            side_effect=lambda community_id, building_id: _correspondence_overview()
+            side_effect=lambda community_id, building_id, **_kwargs: (
+                _correspondence_overview()
+            )
         ),
     )
     client = app_module.web.test_client()
