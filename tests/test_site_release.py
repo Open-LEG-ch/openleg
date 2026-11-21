@@ -2,6 +2,7 @@
 """The complete site is opt-in; drafting does not invent a founded Verein."""
 
 import re
+from html import unescape
 
 import pytest
 
@@ -62,13 +63,14 @@ def test_new_verein_surface_is_not_published_by_default(web):
     assert web.test_client().get("/verein").status_code == 404
 
 
-def test_private_release_preview_explains_pending_formation(web):
+def test_release_verein_keeps_story_without_inventing_formation(web):
     web.config["SITE_RELEASE_ENABLED"] = True
     response = web.test_client().get("/verein")
     assert response.status_code == 200
     assert "Verein openLEG Schweiz" in response.text
-    assert "Obersiggenthal" in response.text
-    assert "noch nicht gegründet" in response.text
+    assert "Warum dieser Verein entstehen soll" in response.text
+    assert "Der Verein wurde am" not in response.text
+    assert "Verabschiedete Statuten lesen" not in response.text
     assert "20. Oktober 2026" not in response.text
     assert "CHF 50" in response.text
     assert 'name="email"' not in response.text
@@ -113,7 +115,7 @@ def test_release_home_explains_tasks_and_keeps_real_address_intake(web, monkeypa
     ):
         assert response.text.count('id="' + identifier + '"') == 1
     assert "Fiktives Quartier" in response.text
-    assert "noch nicht gegründet" in response.text
+    assert "Zum Verein" in response.text
     with client.session_transaction() as session:
         session["dashboard_building_id"] = "existing-resident"
     assert client.get("/").headers["Location"] == "/dashboard"
@@ -168,3 +170,94 @@ def test_practice_village_links_each_role_to_its_preselected_account(web, monkey
         'href="https://sonnwil.example.org/sandbox?konto=founder&amp;lang=fr-CH#konto-founder"'
         in french
     )
+
+
+@pytest.mark.parametrize(
+    "locale,story,closed,pending",
+    [
+        (
+            "de-CH",
+            "Warum dieser Verein entstehen soll",
+            "Mitgliedsanträge sind noch nicht geöffnet.",
+            (
+                r"noch nicht gegründet|geplant\w* (?:sitz|verein|mitgliedschaft)"
+                r"|nach (?:der (?:tatsächlichen )?)?gründung|tatsächlicher gründungsstand"
+            ),
+        ),
+        (
+            "fr-CH",
+            "Pourquoi cette association doit-elle naître?",
+            "Les demandes d’adhésion ne sont pas encore ouvertes.",
+            (
+                r"pas encore constituée|siège (?:est )?prévu|après la constitution"
+                r"|état réel de la constitution|adhésion prévue|association prévue"
+            ),
+        ),
+        (
+            "en",
+            "Why this association should be established",
+            "Membership applications are not yet open.",
+            (
+                r"not yet (?:been )?formed|planned (?:seat|membership|association)"
+                r"|after (?:the )?(?:actual creation|founding|formation)|actual status"
+            ),
+        ),
+        (
+            "it-CH",
+            "Perché questa associazione dovrebbe nascere",
+            "Le domande di adesione non sono ancora aperte.",
+            (
+                r"non è ancora costituita|sede è prevista|dopo (?:la|l'effettiva) costituzione"
+                r"|stato effettivo della costituzione|adesione prevista|associazione prevista"
+            ),
+        ),
+    ],
+)
+def test_public_pages_omit_pending_verein_formation(
+    web, monkeypatch, locale, story, closed, pending
+):
+    client = _release_home(web, monkeypatch)
+    for path in (
+        "/",
+        "/verein",
+        "/verein/beitreten",
+        "/verein/spenden",
+        "/community",
+        "/llms.txt",
+    ):
+        response = client.get(
+            path, query_string={"lang": locale}, follow_redirects=True
+        )
+        assert response.status_code == (503 if path == "/verein/beitreten" else 200)
+        assert response.headers["Content-Language"] == locale
+        text = unescape(response.text)
+        assert not re.search(pending, text, re.IGNORECASE), path
+        if path == "/verein":
+            assert story in text
+        if path == "/verein/beitreten":
+            assert closed in text
+
+
+@pytest.mark.parametrize(
+    "locale,warning",
+    [
+        ("de-CH", "Bitte senden Sie kein Geld an vermutete oder ältere Kontodaten."),
+        (
+            "fr-CH",
+            "N’envoyez pas d’argent sur la base de coordonnées supposées ou anciennes.",
+        ),
+        ("en", "Do not send money using guessed or older account details."),
+        (
+            "it-CH",
+            "Non inviare denaro sulla base di dati di conto ipotizzati o precedenti.",
+        ),
+    ],
+)
+def test_donations_keep_the_payment_fraud_warning(web, monkeypatch, locale, warning):
+    """Removing the founding status must not remove the warning about old account details."""
+    client = _release_home(web, monkeypatch)
+    response = client.get(
+        "/verein/spenden", query_string={"lang": locale}, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert warning in unescape(response.text)
