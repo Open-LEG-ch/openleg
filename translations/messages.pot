@@ -69,7 +69,7 @@ msgstr[1] ""
 msgid "%(count)s interessierte Person in derselben Gemeinde."
 msgstr ""
 
-#: verein_routes.py:439
+#: verein_routes.py:437
 #, python-format
 msgid "%(count)s neue Beitragsjahre erfasst. Benachrichtigungen werden erst über den Versand ausgelöst."
 msgstr ""
@@ -109,9 +109,8 @@ msgstr ""
 #: templates/release/homepage.html:158
 #, python-format
 msgid ""
-"%(name)s soll die Software, Dokumentation und den Austausch pflegen. Der Verein mit geplantem "
-"Sitz in %(seat)s ist noch nicht gegründet. Der Betrieb des gehosteten Produkts gehört nicht zu "
-"seinem vorgesehenen Auftrag."
+"%(name)s soll Software, Dokumentation und Austausch pflegen. Den Betrieb des gehosteten Produkts "
+"übernimmt der Verein nicht."
 msgstr ""
 
 #: templates/gemeinde/profil.html:9
@@ -374,7 +373,7 @@ msgstr ""
 
 #: templates/llms.txt:8
 #, python-format
-msgid "- [Verein](%(url)s): Zweck, tatsächlicher Gründungsstand und geplante Mitgliedschaft"
+msgid "- [Verein](%(url)s): Zweck und Mitgliedschaft"
 msgstr ""
 
 #: templates/llms.txt:7
@@ -2270,7 +2269,7 @@ msgstr ""
 msgid "Bestätigen"
 msgstr ""
 
-#: verein_routes.py:267
+#: verein_routes.py:265
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre E-Mail für den Mitgliedsantrag:\n"
@@ -2645,7 +2644,7 @@ msgid ""
 "Suchparameter oder Fragmente sein."
 msgstr ""
 
-#: verein_routes.py:244
+#: verein_routes.py:242
 msgid "Bitte prüfen Sie Name, E-Mail und die Aufnahmebedingungen."
 msgstr ""
 
@@ -3278,7 +3277,7 @@ msgstr ""
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr ""
 
-#: verein_routes.py:275
+#: verein_routes.py:273
 msgid "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
 msgstr ""
 
@@ -3314,7 +3313,7 @@ msgid ""
 "veränderte Version über ein Netzwerk anbieten."
 msgstr ""
 
-#: verein_routes.py:248
+#: verein_routes.py:246
 msgid "Der E-Mail-Versand ist derzeit nicht verfügbar."
 msgstr ""
 
@@ -3502,13 +3501,6 @@ msgstr ""
 msgid "Der VNB-Austausch ist derzeit nicht verfügbar."
 msgstr ""
 
-#: templates/verein/index.html:7
-#, python-format
-msgid ""
-"Der Verein mit geplantem Sitz in %(seat)s ist noch nicht gegründet. Statuten und Vorstand werden "
-"an der tatsächlichen Gründung beschlossen."
-msgstr ""
-
 #: templates/verein/index.html:11
 msgid ""
 "Der Verein nimmt keine Finanzierung von Energieversorgern an, auch nicht über Dritte. Andere "
@@ -3551,7 +3543,7 @@ msgid ""
 " der Gemeinschaft ausgetauschten Strom ab."
 msgstr ""
 
-#: verein_routes.py:376
+#: verein_routes.py:374
 #, python-format
 msgid ""
 "Der Vorstand hat Ihre Mitgliedschaft beendet. Begründung: %(reason)s\n"
@@ -3759,10 +3751,6 @@ msgstr ""
 
 #: quartierakku.py:44
 msgid "Die Anteile müssen zusammen 100 Prozent ergeben."
-msgstr ""
-
-#: templates/verein/index.html:12 verein_routes.py:225
-msgid "Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der Datenschutzangaben."
 msgstr ""
 
 #: templates/gemeinde/pilotgemeinde.html:18
@@ -4869,7 +4857,7 @@ msgstr ""
 msgid "E-Mail"
 msgstr ""
 
-#: dashboard.py:118 dashboard.py:120 dashboard.py:1388 verein_routes.py:298
+#: dashboard.py:118 dashboard.py:120 dashboard.py:1388 verein_routes.py:296
 msgid "E-Mail bestätigt"
 msgstr ""
 
@@ -6268,6 +6256,10 @@ msgstr ""
 msgid "Fragen zum Verzeichnis"
 msgstr ""
 
+#: templates/verein/index.html:12
+msgid "Fragen zur Mitgliedschaft stellen"
+msgstr ""
+
 #: templates/emails/day_14_formation.html:82
 msgid "Fragen? Antworten Sie direkt auf diese E-Mail oder schreiben Sie uns:"
 msgstr ""
@@ -6456,7 +6448,7 @@ msgstr ""
 msgid "Für Gemeinden: Potenzial sehen, Einstieg schaffen."
 msgstr ""
 
-#: verein_routes.py:359
+#: verein_routes.py:357
 #, python-format
 msgid ""
 "Für Ihr Beitragsjahr ab %(period)s beträgt der Jahresbeitrag CHF %(amount)s und ist am %(due_on)s"
@@ -6498,7 +6490,7 @@ msgid ""
 " Anmeldung ein."
 msgstr ""
 
-#: verein_routes.py:348
+#: verein_routes.py:346
 #, python-format
 msgid ""
 "Für das Beitragsjahr ab %(period)s sind CHF %(amount)s offen. Bitte zahlen Sie innerhalb von "
@@ -7622,9 +7614,8 @@ msgstr ""
 
 #: templates/release/donations.html:8
 msgid ""
-"Hier erscheinen erst tatsächlich geprüfte Empfängerangaben nach Gründung und Datenschutzfreigabe."
-" Eine geplante Anfangseinlage ist kein Nachweis einer Einzahlung. Bitte senden Sie kein Geld an "
-"vermutete oder ältere Kontodaten."
+"Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
+" an vermutete oder ältere Kontodaten."
 msgstr ""
 
 #: templates/unsubscribe.html:10
@@ -7812,7 +7803,7 @@ msgstr ""
 msgid "Identische Wiederholung"
 msgstr ""
 
-#: verein_routes.py:300
+#: verein_routes.py:298
 msgid "Ihr Antrag wartet auf die Prüfung durch den Vorstand. Sie sind noch kein Mitglied."
 msgstr ""
 
@@ -7846,7 +7837,7 @@ msgstr ""
 msgid "Ihr LEG-Eintrag im offenen Verzeichnis wurde erfolgreich beansprucht."
 msgstr ""
 
-#: verein_routes.py:341
+#: verein_routes.py:339
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde abgelehnt. Begründung: %(reason)s\n"
@@ -7854,7 +7845,7 @@ msgid ""
 "Sie können bei der Mitgliederversammlung Beschwerde einlegen. Kontakt: %(contact)s."
 msgstr ""
 
-#: verein_routes.py:331
+#: verein_routes.py:329
 #, python-format
 msgid ""
 "Ihr Mitgliedsantrag wurde angenommen. Die Mitgliedschaft beginnt mit der Aufnahme. Der "
@@ -7920,7 +7911,7 @@ msgstr ""
 msgid "Ihre Aufgabe"
 msgstr ""
 
-#: verein_routes.py:370
+#: verein_routes.py:368
 #, python-format
 msgid ""
 "Ihre Austrittserklärung ist eingegangen. Der Austritt ist mit Eingang wirksam und benötigt keine "
@@ -10202,6 +10193,10 @@ msgstr ""
 msgid "Mitgliedsanträge"
 msgstr ""
 
+#: templates/verein/index.html:12 verein_routes.py:224
+msgid "Mitgliedsanträge sind noch nicht geöffnet."
+msgstr ""
+
 #: verein_finance_routes.py:70
 msgid "Mitgliedsbeitrag"
 msgstr ""
@@ -11982,7 +11977,7 @@ msgstr ""
 msgid "Prüfen Sie Entwürfe gegen Tarif, VNB-Abgleich und Quelldokumente."
 msgstr ""
 
-#: verein_routes.py:281
+#: verein_routes.py:279
 msgid "Prüfen Sie Ihr E-Mail-Postfach."
 msgstr ""
 
@@ -12798,9 +12793,9 @@ msgstr ""
 #: templates/release/community.html:7
 #, python-format
 msgid ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit an "
-"%(contact)s. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie keine Passwörter "
-"oder privaten Messdaten."
+"Schreiben Sie bei Fragen zum Projekt, zur Mitgliedschaft oder zur Mitarbeit an %(contact)s. "
+"Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie keine Passwörter oder privaten "
+"Messdaten."
 msgstr ""
 
 #: templates/gemeinde/dashboard.html:122
@@ -14391,11 +14386,11 @@ msgstr ""
 msgid "Verein und Unabhängigkeitsregeln"
 msgstr ""
 
-#: verein_routes.py:265
+#: verein_routes.py:263
 msgid "Verein: E-Mail bestätigen"
 msgstr ""
 
-#: verein_routes.py:402
+#: verein_routes.py:400
 msgid "Verein: Mitgliedschaft und Jahresbeitrag"
 msgstr ""
 
@@ -15713,7 +15708,7 @@ msgstr ""
 msgid "Zielgruppe"
 msgstr ""
 
-#: verein_routes.py:388
+#: verein_routes.py:386
 #, python-format
 msgid ""
 "Zu Ihrem Gesuch wurde ein Entscheid erfasst: %(reason)s. Den aktuellen Status, die Beitragsfrist "
@@ -15819,7 +15814,7 @@ msgstr ""
 msgid "Zum Schnellstart"
 msgstr ""
 
-#: templates/verein/message.html:6
+#: templates/release/homepage.html:161 templates/verein/message.html:6
 msgid "Zum Verein"
 msgstr ""
 
@@ -15865,10 +15860,6 @@ msgstr ""
 #: templates/verein/events.html:11 templates/verein/finance_edit.html:13
 #: templates/verein/recipient_edit.html:10
 msgid "Zur Vereinsverwaltung"
-msgstr ""
-
-#: templates/verein/index.html:12
-msgid "Zur geplanten Mitgliedschaft fragen"
 msgstr ""
 
 #: templates/release/event.html:6
@@ -16682,10 +16673,6 @@ msgstr ""
 
 #: templates/agent_confirmation.html:8
 msgid "Über den VNB-Adapter senden"
-msgstr ""
-
-#: templates/release/homepage.html:161
-msgid "Über den geplanten Verein"
 msgstr ""
 
 #: templates/equipment_form.html:104

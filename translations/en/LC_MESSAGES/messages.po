@@ -448,12 +448,6 @@ msgid ""
 msgstr "- [Solar use ranking](%(url)s): all Swiss municipalities with verifiable solar use"
 
 #. Draft translation; native language and domain review pending.
-#: templates/llms.txt:8
-#, python-format
-msgid "- [Verein](%(url)s): Zweck, tatsächlicher Gründungsstand und geplante Mitgliedschaft"
-msgstr "- [Society](%(url)s): purpose, actual status and planned membership"
-
-#. Draft translation; native language and domain review pending.
 #: templates/llms.txt:7
 #, python-format
 msgid "- [Wissen](%(url)s): Erklärungen, Begriffe und Quellen"
@@ -4452,15 +4446,6 @@ msgstr "The shares contain unknown participants."
 #: quartierakku.py:41
 msgid "Die Anteile müssen zusammen 100 Prozent ergeben."
 msgstr "The shares must be 100 percent."
-
-#. Draft translation; native language and domain review pending.
-#: verein_routes.py:221
-msgid ""
-"Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der "
-"Datenschutzangaben."
-msgstr ""
-"The recording opens after the actual creation and release of the data protection "
-"information."
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/pilotgemeinde.html:18
@@ -9159,17 +9144,6 @@ msgstr "Here are letters and e-mails of your LEG. Add the first entry."
 #: templates/leg_dashboard.html:224
 msgid "Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf."
 msgstr "Here your draft contracts appear. Create the first draft now."
-
-#. Draft checked against source; native language and domain review pending.
-#: templates/release/donations.html:8
-msgid ""
-"Hier erscheinen erst tatsächlich geprüfte Empfängerangaben nach Gründung und "
-"Datenschutzfreigabe. Eine geplante Anfangseinlage ist kein Nachweis einer Einzahlung."
-" Bitte senden Sie kein Geld an vermutete oder ältere Kontodaten."
-msgstr ""
-"Verified recipient details appear here only after formation and privacy approval. A "
-"planned starting contribution is not evidence of a deposit. Do not send money using "
-"guessed or older account details."
 
 #. Draft translation; native language and domain review pending.
 #: templates/unsubscribe.html:10
@@ -19052,11 +19026,6 @@ msgid "Zur Vereinsverwaltung"
 msgstr "To the Association Administration"
 
 #. Draft translation; native language and domain review pending.
-#: templates/verein/index.html:11
-msgid "Zur geplanten Mitgliedschaft fragen"
-msgstr "Asking about planned membership"
-
-#. Draft translation; native language and domain review pending.
 #: templates/release/event.html:6
 msgid "Zur öffentlichen Anmeldung"
 msgstr "The public notification"
@@ -20422,15 +20391,6 @@ msgstr ""
 #. Draft translation; native language and domain review pending.
 #, python-format
 msgid ""
-"Der Verein mit geplantem Sitz in %(seat)s ist noch nicht gegründet. Statuten und "
-"Vorstand werden an der tatsächlichen Gründung beschlossen."
-msgstr ""
-"The association, with its planned seat in %(seat)s, has not yet been formed. Its "
-"statutes will be adopted and its board elected at the actual founding meeting."
-
-#. Draft translation; native language and domain review pending.
-#, python-format
-msgid ""
 "Der Jahresbeitrag beträgt CHF %(amount)s und ist innert %(payment_days)s Tagen nach "
 "der Aufnahme fällig. Ein Beitragserlass ist nicht vorgesehen. Eine tatsächlich "
 "versendete Mahnung gewährt weitere %(reminder_days)s Tage. Erst danach ist eine "
@@ -20459,28 +20419,6 @@ msgid ""
 msgstr ""
 "%(name)s maintains software, documentation and exchange. The association based in "
 "%(seat)s does not take over the operation of the hosted product."
-
-#. Draft translation; native language and domain review pending.
-#, python-format
-msgid ""
-"%(name)s soll die Software, Dokumentation und den Austausch pflegen. Der Verein mit "
-"geplantem Sitz in %(seat)s ist noch nicht gegründet. Der Betrieb des gehosteten "
-"Produkts gehört nicht zu seinem vorgesehenen Auftrag."
-msgstr ""
-"%(name)s is intended to maintain the software, documentation and community exchange. "
-"The association, with its planned seat in %(seat)s, has not yet been formed. "
-"Operating the hosted product is outside its intended remit."
-
-#. Draft translation; native language and domain review pending.
-#, python-format
-msgid ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
-" an %(contact)s. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie "
-"keine Passwörter oder privaten Messdaten."
-msgstr ""
-"Write to %(contact)s if you have any questions about the project, the planned "
-"membership or your cooperation. Name your request and a questioning option. Don't "
-"send passwords or private measurement data."
 
 #. Draft translation; native language and domain review pending.
 #, python-format
@@ -20766,11 +20704,6 @@ msgstr ""
 #, python-format
 msgid "Gegründet am %(date)s in %(seat)s."
 msgstr "Founded on %(date)s in %(seat)s."
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/homepage.html:153
-msgid "Über den geplanten Verein"
-msgstr "About the planned association"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/homepage.html:57
@@ -22418,3 +22351,48 @@ msgstr "Revoke agent access"
 #: templates/operator_credentials.html:26
 msgid "Keine OAuth-Freigaben vorhanden."
 msgstr "No OAuth grants available."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/index.html:12 verein_routes.py:224
+msgid "Mitgliedsanträge sind noch nicht geöffnet."
+msgstr "Membership applications are not yet open."
+
+#. Draft translation; native language and domain review pending.
+#: templates/llms.txt:8
+#, python-format
+msgid "- [Verein](%(url)s): Zweck und Mitgliedschaft"
+msgstr "- [Association](%(url)s): purpose and membership"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/community.html:7
+#, python-format
+msgid ""
+"Schreiben Sie bei Fragen zum Projekt, zur Mitgliedschaft oder zur Mitarbeit an %(contact)s. "
+"Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie keine Passwörter oder privaten "
+"Messdaten."
+msgstr ""
+"Email %(contact)s with questions about the project, membership or getting involved. Tell us what "
+"you need and how we can reach you. Do not send passwords or private meter data."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/homepage.html:158
+#, python-format
+msgid ""
+"%(name)s soll Software, Dokumentation und Austausch pflegen. Den Betrieb des gehosteten Produkts "
+"übernimmt der Verein nicht."
+msgstr ""
+"%(name)s is intended to maintain the software and documentation and support discussion. The "
+"association does not operate the hosted product."
+
+#. Draft translation; native language and domain review pending.
+#: templates/verein/index.html:12
+msgid "Fragen zur Mitgliedschaft stellen"
+msgstr "Ask about membership"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/donations.html:8
+msgid ""
+"Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
+" an vermutete oder ältere Kontodaten."
+msgstr ""
+"Verified payment details will appear here once approved for publication. Do not send money using guessed or older account details."
