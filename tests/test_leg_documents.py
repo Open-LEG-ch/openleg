@@ -298,7 +298,9 @@ def test_leg_overview_includes_correspondence(monkeypatch):
         "list_vnb_submission_cases",
         MagicMock(return_value=[]),
     )
-    result = dashboard_module.leg_overview("c0ffee", "b-admin")
+    result = dashboard_module.leg_overview(
+        "c0ffee", "b-admin", workspace_page="correspondence"
+    )
     assert result["correspondence"] == [{"id": 1, "subject": "Antwort VNB"}]
 
 

@@ -108,6 +108,7 @@ def test_record_start_confirmation_then_explicitly_activate(founder):
     response = client.post(f"/leg/community/{cid}/vnb-start-confirmation", data=fields)
 
     assert response.status_code == 302
+    assert response.location == f"/leg/dashboard?cid={cid}"
     row = db.fetch_community_with_members(cid, "founder")
     assert row["status"] == "dso_approved"
     assert row["activated_at"] is None
@@ -123,6 +124,7 @@ def test_record_start_confirmation_then_explicitly_activate(founder):
         f"/leg/community/{cid}/activate", data={"csrf_token": "csrf-secret"}
     )
     assert response.status_code == 302
+    assert response.location == f"/leg/community/{cid}/formation"
     row = db.fetch_community_with_members(cid, "founder")
     assert row["status"] == "active"
     assert row["activated_at"] is not None

@@ -231,7 +231,7 @@ def test_battery_errors_translate_the_participant_without_trusting_its_markup(
     original = deepcopy(result)
     monkeypatch.setattr(dashboard, "leg_save_battery", lambda *args: result)
     monkeypatch.setattr(
-        dashboard, "leg_overview", lambda *args: dashboard.leg_demo_overview()
+        dashboard, "leg_overview", lambda *args, **kwargs: dashboard.leg_demo_overview()
     )
     client = web.test_client()
     _set_session(client)
@@ -256,7 +256,7 @@ def test_invalid_role_is_localized_at_route_boundary_and_keeps_canonical_error(
         dashboard, "leg_set_member_roles", lambda *args: {"error": original}
     )
     monkeypatch.setattr(
-        dashboard, "leg_overview", lambda *args: dashboard.leg_demo_overview()
+        dashboard, "leg_overview", lambda *args, **kwargs: dashboard.leg_demo_overview()
     )
     client = web.test_client()
     _set_session(client)

@@ -188,7 +188,8 @@
   /* Keep the legacy ring on existing pages. The LEG workspace and release
      theme provide their own focus utilities. */
   html:not([data-site-release])
-    :is(a, button, input, select, textarea, summary):not([data-leg-workspace] *):focus-visible {
+    :is(a:focus-visible, button:focus-visible, input:focus-visible,
+        select:focus-visible, textarea:focus-visible, summary:focus-visible):not([data-leg-workspace] *) {
     outline: 2px solid #2563eb !important;
     outline-offset: 2px !important;
   }

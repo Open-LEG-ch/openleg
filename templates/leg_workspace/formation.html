@@ -117,7 +117,7 @@
   </form>
   {% endif %}
 </section>
-{% if can_manage_members and viewer_has_session %}
+{% if community.status != "active" and can_manage_members and viewer_has_session %}
 <section class="mb-10">
   <h2 class="font-bold mb-2">{{ _('Gründung starten') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.') }}</p>
@@ -126,7 +126,7 @@
     <button type="submit" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">{{ _('Gründung starten') }}</button>
   </form>
 </section>
-{% elif is_admin and not viewer_has_session %}
+{% elif community.status != "active" and is_admin and not viewer_has_session %}
 <section class="mb-10">
   <h2 class="font-bold mb-2">{{ _('Gründung starten') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen.') }}</p>

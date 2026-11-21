@@ -77,7 +77,10 @@ def list_correspondence(community_id: str, limit: int = 100) -> list[dict]:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                    SELECT * FROM correspondence_log
+                    SELECT id, community_id, direction, channel, counterparty, subject,
+                           notes, logged_by, attachment_filename, attachment_mime,
+                           created_at
+                    FROM correspondence_log
                     WHERE community_id = %s
                     ORDER BY created_at DESC
                     LIMIT %s

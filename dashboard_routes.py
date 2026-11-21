@@ -576,13 +576,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     )
     def leg_workspace_page(community_id, page):
         building_id = _require_dashboard_session()
-        view = dashboard_module.leg_overview(community_id, building_id)
+        view = dashboard_module.leg_overview(
+            community_id, building_id, workspace_page=page
+        )
         if not view.get("community"):
-            abort(403)
-        can_bill = view["can_audit_billing"]
-        if page in ("payments", "invoices") and not can_bill:
-            abort(403)
-        if page == "settings" and not (can_bill or view["is_admin"]):
             abort(403)
         return render_leg_workspace(
             "leg_dashboard.html",
@@ -646,7 +643,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             return (
                 render_leg_workspace(
                     "leg_dashboard.html",
-                    **dashboard_module.leg_overview(community_id, building_id),
+                    **dashboard_module.leg_overview(
+                        community_id, building_id, workspace_page="members"
+                    ),
                     viewer_has_session=True,
                     workspace_page="members",
                     csrf_token=_dashboard_csrf_token(),
@@ -673,7 +672,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             return (
                 render_leg_workspace(
                     "leg_dashboard.html",
-                    **dashboard_module.leg_overview(community_id, building_id),
+                    **dashboard_module.leg_overview(
+                        community_id, building_id, workspace_page="members"
+                    ),
                     viewer_has_session=True,
                     workspace_page="members",
                     csrf_token=_dashboard_csrf_token(),
@@ -696,7 +697,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if result["error"]:
             abort(403)
         if result["errors"]:
-            view = dashboard_module.leg_overview(community_id, building_id)
+            view = dashboard_module.leg_overview(
+                community_id, building_id, workspace_page="settings"
+            )
             view["battery_form_values"] = request.form
             return (
                 render_leg_workspace(
@@ -784,7 +787,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_archive_restore(community_id):
         return _restore_archive_response(community_id, dry_run=False)
 
-    def activation_response(community_id, operation, *args):
+    def activation_response(community_id, operation, *args, success_page="overview"):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         try:
@@ -807,7 +810,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             ), (400 if isinstance(error, ValueError) else 409)
         except psycopg2.Error:
             abort(503)
-        return _leg_formation_redirect(community_id, building_id)
+        return _leg_dashboard_redirect(community_id, success_page)
 
     @bp.route("/leg/community/<community_id>/vnb-start-confirmation", methods=["POST"])
     def leg_community_start_confirmation(community_id):
@@ -825,7 +828,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
 
     @bp.route("/leg/community/<community_id>/activate", methods=["POST"])
     def leg_community_activate(community_id):
-        return activation_response(community_id, db.activate_community)
+        return activation_response(
+            community_id, db.activate_community, success_page="formation"
+        )
 
     @bp.route("/leg/community/<community_id>/vnb-submissions", methods=["POST"])
     def leg_community_vnb_submission(community_id):
@@ -1261,7 +1266,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             return (
                 render_leg_workspace(
                     "leg_dashboard.html",
-                    **dashboard_module.leg_overview(community_id, building_id),
+                    **dashboard_module.leg_overview(
+                        community_id, building_id, workspace_page="correspondence"
+                    ),
                     viewer_has_session=True,
                     workspace_page="correspondence",
                     csrf_token=_dashboard_csrf_token(),
