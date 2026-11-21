@@ -1119,6 +1119,10 @@ def create_tables():
             """)
 
             cur.execute("""
+                ALTER TABLE invoice_lifecycle_events
+                ADD COLUMN IF NOT EXISTS payment_match JSONB
+            """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS invoice_queries (
                     id BIGSERIAL PRIMARY KEY,
                     invoice_id INTEGER NOT NULL REFERENCES invoices(id),
@@ -1266,7 +1270,9 @@ def create_tables():
             """)
             cur.execute("""
                 ALTER TABLE bank_statement_entries
-                ADD COLUMN IF NOT EXISTS booking_status TEXT
+                ADD COLUMN IF NOT EXISTS booking_status TEXT,
+                ADD COLUMN IF NOT EXISTS debtor_name TEXT,
+                ADD COLUMN IF NOT EXISTS remittance_information TEXT
             """)
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_community_id

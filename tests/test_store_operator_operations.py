@@ -248,8 +248,9 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         for query, params in cursor.executed
         if "INSERT INTO invoice_lifecycle_events" in query
     )
-    assert lifecycle_params[-1].adapted is None
-    assert lifecycle_params[:-1] == (
+    assert lifecycle_params[-2].adapted is None
+    assert lifecycle_params[-1].adapted == {"entry_id": 12, "decision": "matched"}
+    assert lifecycle_params[:-2] == (
         3,
         COMMUNITY,
         "operator-a",
