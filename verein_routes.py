@@ -221,9 +221,7 @@ def join():
         return render_template(
             "verein/message.html",
             title=_("Mitgliedschaft"),
-            message=_(
-                "Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der Datenschutzangaben."
-            ),
+            message=_("Mitgliedsanträge sind noch nicht geöffnet."),
         ), 503
     if request.method == "GET":
         return render_template("verein/join.html", csrf_token=csrf_token())

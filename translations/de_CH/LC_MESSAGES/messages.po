@@ -387,11 +387,6 @@ msgstr ""
 "- [Solarnutzungs-Rangliste](%(url)s): alle Schweizer Gemeinden mit prüfbarer "
 "Solarnutzung"
 
-#: templates/llms.txt:8
-#, python-format
-msgid "- [Verein](%(url)s): Zweck, tatsächlicher Gründungsstand und geplante Mitgliedschaft"
-msgstr "- [Verein](%(url)s): Zweck, tatsächlicher Gründungsstand und geplante Mitgliedschaft"
-
 #: templates/llms.txt:7
 #, python-format
 msgid "- [Wissen](%(url)s): Erklärungen, Begriffe und Quellen"
@@ -3798,15 +3793,6 @@ msgstr "Die Anteile enthalten unbekannte Teilnehmer."
 #: quartierakku.py:41
 msgid "Die Anteile müssen zusammen 100 Prozent ergeben."
 msgstr "Die Anteile müssen zusammen 100 Prozent ergeben."
-
-#: templates/verein/index.html:11 verein_routes.py:198 verein_routes.py:215
-#: verein_routes.py:221 verein_routes.py:224
-msgid ""
-"Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der "
-"Datenschutzangaben."
-msgstr ""
-"Die Aufnahme öffnet nach der tatsächlichen Gründung und der Freigabe der "
-"Datenschutzangaben."
 
 #: templates/gemeinde/pilotgemeinde.html:18
 msgid "Die Ausgangslage"
@@ -7846,16 +7832,6 @@ msgstr "Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eint
 #: templates/leg_dashboard.html:224
 msgid "Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf."
 msgstr "Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf."
-
-#: templates/release/donations.html:8
-msgid ""
-"Hier erscheinen erst tatsächlich geprüfte Empfängerangaben nach Gründung und "
-"Datenschutzfreigabe. Eine geplante Anfangseinlage ist kein Nachweis einer Einzahlung."
-" Bitte senden Sie kein Geld an vermutete oder ältere Kontodaten."
-msgstr ""
-"Hier erscheinen erst tatsächlich geprüfte Empfängerangaben nach Gründung und "
-"Datenschutzfreigabe. Eine geplante Anfangseinlage ist kein Nachweis einer Einzahlung."
-" Bitte senden Sie kein Geld an vermutete oder ältere Kontodaten."
 
 #: templates/unsubscribe.html:10
 #, python-format
@@ -16165,10 +16141,6 @@ msgstr "Zur Unterstützung Kontakt aufnehmen"
 msgid "Zur Vereinsverwaltung"
 msgstr "Zur Vereinsverwaltung"
 
-#: templates/verein/index.html:11
-msgid "Zur geplanten Mitgliedschaft fragen"
-msgstr "Zur geplanten Mitgliedschaft fragen"
-
 #: templates/release/event.html:6
 msgid "Zur öffentlichen Anmeldung"
 msgstr "Zur öffentlichen Anmeldung"
@@ -17313,14 +17285,6 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Der Verein mit geplantem Sitz in %(seat)s ist noch nicht gegründet. Statuten und "
-"Vorstand werden an der tatsächlichen Gründung beschlossen."
-msgstr ""
-"Der Verein mit geplantem Sitz in %(seat)s ist noch nicht gegründet. Statuten und "
-"Vorstand werden an der tatsächlichen Gründung beschlossen."
-
-#, python-format
-msgid ""
 "Der Jahresbeitrag beträgt CHF %(amount)s und ist innert %(payment_days)s Tagen nach "
 "der Aufnahme fällig. Ein Beitragserlass ist nicht vorgesehen. Eine tatsächlich "
 "versendete Mahnung gewährt weitere %(reminder_days)s Tage. Erst danach ist eine "
@@ -17348,26 +17312,6 @@ msgid ""
 msgstr ""
 "%(name)s pflegt Software, Dokumentation und Austausch. Der Verein mit Sitz in "
 "%(seat)s übernimmt nicht den Betrieb des gehosteten Produkts."
-
-#, python-format
-msgid ""
-"%(name)s soll die Software, Dokumentation und den Austausch pflegen. Der Verein mit "
-"geplantem Sitz in %(seat)s ist noch nicht gegründet. Der Betrieb des gehosteten "
-"Produkts gehört nicht zu seinem vorgesehenen Auftrag."
-msgstr ""
-"%(name)s soll die Software, Dokumentation und den Austausch pflegen. Der Verein mit "
-"geplantem Sitz in %(seat)s ist noch nicht gegründet. Der Betrieb des gehosteten "
-"Produkts gehört nicht zu seinem vorgesehenen Auftrag."
-
-#, python-format
-msgid ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
-" an %(contact)s. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie "
-"keine Passwörter oder privaten Messdaten."
-msgstr ""
-"Schreiben Sie bei Fragen zum Projekt, zur geplanten Mitgliedschaft oder zur Mitarbeit"
-" an %(contact)s. Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie "
-"keine Passwörter oder privaten Messdaten."
 
 #, python-format
 msgid "Dieses Treffen ist ausgebucht. Fragen zu weiteren Terminen: %(contact)s."
@@ -17612,10 +17556,6 @@ msgstr ""
 #, python-format
 msgid "Gegründet am %(date)s in %(seat)s."
 msgstr "Gegründet am %(date)s in %(seat)s."
-
-#: templates/release/homepage.html:153
-msgid "Über den geplanten Verein"
-msgstr "Über den geplanten Verein"
 
 #: templates/release/homepage.html:57
 msgid "Statische Auszüge aus dem Demodorf Sonnwil, erfundene Daten."
@@ -19057,3 +18997,40 @@ msgstr "Agentenzugriff widerrufen"
 #: templates/operator_credentials.html:1
 msgid "Keine OAuth-Freigaben vorhanden."
 msgstr "Keine OAuth-Freigaben vorhanden."
+
+#: templates/verein/index.html:12 verein_routes.py:224
+msgid "Mitgliedsanträge sind noch nicht geöffnet."
+msgstr "Mitgliedsanträge sind noch nicht geöffnet."
+
+#: templates/llms.txt:8
+#, python-format
+msgid "- [Verein](%(url)s): Zweck und Mitgliedschaft"
+msgstr "- [Verein](%(url)s): Zweck und Mitgliedschaft"
+
+#: templates/release/community.html:7
+#, python-format
+msgid ""
+"Schreiben Sie bei Fragen zum Projekt, zur Mitgliedschaft oder zur Mitarbeit an %(contact)s. "
+"Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie keine Passwörter oder privaten "
+"Messdaten."
+msgstr ""
+"Schreiben Sie bei Fragen zum Projekt, zur Mitgliedschaft oder zur Mitarbeit an %(contact)s. "
+"Nennen Sie Ihr Anliegen und eine Rückfragemöglichkeit. Senden Sie keine Passwörter oder privaten "
+"Messdaten."
+
+#: templates/release/donations.html:8
+msgid "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind."
+msgstr "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind."
+
+#: templates/release/homepage.html:158
+#, python-format
+msgid ""
+"%(name)s soll Software, Dokumentation und Austausch pflegen. Den Betrieb des gehosteten Produkts "
+"übernimmt der Verein nicht."
+msgstr ""
+"%(name)s soll Software, Dokumentation und Austausch pflegen. Den Betrieb des gehosteten Produkts "
+"übernimmt der Verein nicht."
+
+#: templates/verein/index.html:12
+msgid "Fragen zur Mitgliedschaft stellen"
+msgstr "Fragen zur Mitgliedschaft stellen"

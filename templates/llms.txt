@@ -5,7 +5,7 @@
 {{ _('OpenLEG unterstützt Beteiligte, Dokumente, Messdatenimport und die Prüfung und Freigabe von Rechnungen. Jede LEG bestimmt ihre Vertretung und ihren Betreiber. Datenzugang und VNB-Anbindung müssen konkret vereinbart und getestet werden. Die Veröffentlichung des Codes ist keine Zusage für kostenloses Hosting oder Support.') }}
 {{ _('- [Software](%(url)s): Funktionsumfang und Voraussetzungen', url=(site_url ~ '/software')|localized_url) }}
 {{ _('- [Wissen](%(url)s): Erklärungen, Begriffe und Quellen', url=(site_url ~ '/wissen')|localized_url) }}
-{{ _('- [Verein](%(url)s): Zweck, tatsächlicher Gründungsstand und geplante Mitgliedschaft', url=(site_url ~ '/verein')|localized_url) }}
+{{ _('- [Verein](%(url)s): Zweck und Mitgliedschaft', url=(site_url ~ '/verein')|localized_url) }}
 {{ _('- [Mitmachen](%(url)s): Code, Dokumentation und Kontakt', url=(site_url ~ '/mitmachen')|localized_url) }}
 {% else %}
 {{ _("> Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften (LEG), %(site_url)s. Code: https://github.com/Open-LEG-ch/openleg, Lizenz AGPL-3.0-or-later, Betrieb in der Schweiz.", site_url=site_url) }}
