@@ -4,9 +4,7 @@
   --color-brand: #243b85; --color-brand-light: #3b55a2; --color-brand-dark: #1b2f6a;
   --color-ink: #26324b; --color-ink-soft: #505869; --color-ink-muted: #505869;
   --color-paper: #f6f2ea; --color-paper-deep: #edf1f9; --color-line: #bcc3d0;
-  --roof-sun: #e5a07a; --roof: #cb815c; --roof-deep: #a65a3b;
-  --roof-wash: #f2d3bf; --plaster-warm: #f5e3d6;
-  --color-accent: var(--roof-deep); --color-accent-light: var(--roof-wash); --color-accent-dark: #982f40;
+  --color-accent-dark: #982f40;
   --focus-inverse: #fffdf8;
   --color-sage-light: #edf1f9; --color-sage-dark: #245546;
   --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
@@ -14,8 +12,13 @@
   font-size: 16px; line-height: 1.65; color: var(--color-ink); background: var(--color-paper);
   overflow-wrap: break-word;
 }
-.product-shell.site-release [aria-labelledby='readiness-title'] { --color-accent: var(--roof-sun); }
-.site-release ::selection { background: var(--roof-wash); color: var(--color-ink); }
+.site-release.product-shell { --color-accent: #ee8d7c; --color-accent-light: #f5d4ca; }
+.site-release:not(.product-shell) {
+  --roof-sun: #e5a07a; --roof: #cb815c; --roof-deep: #a65a3b;
+  --roof-wash: #f2d3bf; --plaster-warm: #f5e3d6;
+}
+.site-release:not(.product-shell) [data-install-console] { --color-accent: var(--roof-sun); --color-accent-light: var(--roof-wash); }
+.site-release:not(.product-shell) ::selection { background: var(--roof-wash); color: var(--color-ink); }
 .site-release :where(input, select, textarea, button) { font: inherit; }
 .site-release :where(input:not([type='checkbox']):not([type='radio']):not([type='hidden']), select, textarea) { min-height: 48px; border-color: #70798d; background: #fffdf8; }
 .site-release :where(button, input, select, textarea, a, summary):focus-visible { outline: 3px solid #243b85; outline-offset: 3px; }
@@ -29,7 +32,7 @@
 .site-release:not(.product-shell) :where(h1, h2) { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; line-height: 1.15; letter-spacing: -.025em; }
 .site-release .ol-logo { font-family: var(--font-mono); font-weight: 500; letter-spacing: -.04em; display: inline-flex; align-items: baseline; line-height: 1.2; white-space: nowrap; text-decoration: none; }
 .site-release .ol-word { color: #26324b; }
-.site-release .ol-leg { color: #243b85; font-weight: 700; border-bottom: 2px solid var(--roof); padding-bottom: 3px; }
+.site-release .ol-leg { color: #243b85; font-weight: 700; border-bottom: 2px solid var(--roof, var(--color-accent)); padding-bottom: 3px; }
 .site-release .ol-logo--inverse .ol-word, .site-release .ol-logo--inverse .ol-leg { color: #fffdf8; }
 .release-container { max-width: 1280px; padding-inline: 48px; margin-inline: auto; }
 .release-nav { position: sticky; top: 0; z-index: 50; background: #f6f2ea; border-bottom: 1px solid #bcc3d0; }
