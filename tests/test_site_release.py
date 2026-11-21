@@ -261,3 +261,12 @@ def test_donations_keep_the_payment_fraud_warning(web, monkeypatch, locale, warn
     )
     assert response.status_code == 200
     assert warning in unescape(response.text)
+
+
+@pytest.mark.parametrize("name", ["site_release.css", "site_story.css", "homepage.css"])
+def test_release_stylesheets_retire_coral_colours(web, name):
+    response = web.test_client().get(f"/static/css/{name}")
+    assert response.status_code == 200
+    assert not {"#ee8d7c", "#f5d4ca", "#ffd0c2"}.intersection(
+        re.findall(r"#[0-9a-f]+", response.text.lower())
+    )

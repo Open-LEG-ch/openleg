@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: OpenLEG
-description: Selected ivory, cobalt and coral website and product design. Activation is controlled by SITE_RELEASE_ENABLED.
+description: Ivory, cobalt and roof tones for the website and product. Activation is controlled by SITE_RELEASE_ENABLED.
 colors:
   primary: "#243B85"
   primary-hover: "#1B2F6A"
@@ -12,13 +12,15 @@ colors:
   white: "#FFFDF8"
   sky: "#EDF1F9"
   line: "#BCC3D0"
-  coral: "#EE8D7C"
-  coral-surface: "#F5D4CA"
+  roof-sun: "#E5A07A"
+  roof: "#CB815C"
+  roof-deep: "#A65A3B"
+  roof-wash: "#F2D3BF"
+  plaster-warm: "#F5E3D6"
   on-primary: "#FFFDF8"
   on-primary-secondary: "#DDE4F5"
-  on-primary-link: "#FFD0C2"
   focus: "#243B85"
-  focus-inverse: "#FFC8B8"
+  focus-inverse: "#FFFDF8"
   success: "#245546"
   success-surface: "#E8F1EC"
   warning: "#775127"
@@ -140,7 +142,7 @@ components:
     rounded: "{rounded.panel}"
     padding: "{spacing.xl}"
   association-panel:
-    backgroundColor: "{colors.coral-surface}"
+    backgroundColor: "{colors.roof-wash}"
     textColor: "{colors.ink}"
     rounded: "{rounded.panel}"
     padding: "{spacing.xl}"
@@ -184,7 +186,7 @@ for new release illustrations or components. Legacy primary buttons use
 
 ## Identity and type
 
-Keep the text wordmark `openLEG`, with a static coral baseline under LEG. The
+Keep the text wordmark `openLEG`, with a static roof-coloured baseline under LEG. The
 favicon uses the same letters and baseline. No caret, roof, pulsing dot or
 animated wordmark. The neighbourhood illustrations are static. Interaction motion
 follows the Motion section.
@@ -212,15 +214,22 @@ YAML contains the semantic tokens. `static/css/site_release.css` applies them
 only to the opt-in theme. `static/css/site_story.css` adds public page spacing,
 illustration compositions. Product forms retain their existing task layout. The
 existing Tailwind utility names remain compatible.
-Cobalt identifies actions, selection and explanatory panels. Ink is body text on
-paper, sky and coral surfaces. Coral adds illustration detail and the association
-panel; it is unsuitable for small text on paper. Use labeled success, warning and
-error states rather than color alone.
+Cobalt identifies actions, links and focus on light surfaces. Ink is body text
+on paper, sky and warm surfaces. Pair status colours with labels.
 
-Normal text needs 4.5:1 contrast; large text and essential controls need 3:1.
-Check actual foreground/background pairs. The quiet line token alone does not
-identify an input; use the stronger control boundary. On cobalt, use on-primary
-text, underlined on-primary-link links and inverse focus outlines.
+| Token | Illustration source | Use and contrast |
+| --- | --- | --- |
+| `roof-sun` | Sunlit roof tiles | Workflow marks and secondary text on cobalt, 4.73:1. |
+| `roof` | Shaded roof tiles | Cobalt band edges, manifesto rules, link underlines and the wordmark baseline. The edge has 3.35:1 against cobalt. Use this colour only for graphics. It has 2.75:1 against paper. |
+| `roof-deep` | Darkest roof edge | Numerals and short text on paper at 4.54:1 and ivory at 4.98:1. |
+| `roof-wash` | Roof seen in daylight | Association surfaces and text selection. Ink has 9.05:1 against this surface. |
+| `plaster-warm` | Plaster and ground in warm light | Homepage hero fade and the band headed “OpenLEG ist kein Stromanbieter.” Ink has 10.27:1 against this surface. |
+
+Text needs 4.5:1 contrast and essential graphics need 3:1. Use semibold links
+and bold current navigation labels so they are distinguishable alongside the
+roof underline. Use a 2 px underline, with cobalt on hover on light surfaces.
+On cobalt, use ivory text and inverse focus outlines. The quiet line token
+needs a stronger control boundary when it identifies an input.
 
 Public containers are 1280 px; reading columns are 720 px. Gutters are 48 px on
 large screens, 32 px on tablets and 20 px below 768 px. Public sections use fluid
@@ -285,7 +294,7 @@ Do not crop the old neighbourhood image to simulate a separate building.
 
 | Asset | Role | Material and shape |
 | --- | --- | --- |
-| `house.webp` | Individual homes and participants | Two-storey ivory house, coral pitched roof, cobalt solar panels. |
+| `house.webp` | Individual homes and participants | Two-storey ivory house, terracotta pitched roof, cobalt solar panels. |
 | `apartments.webp` | Shared housing and municipalities | Four-storey ivory apartment building, balconies and a flat solar roof. |
 | `workshop.webp` | Businesses and practical operating work | Low timber building, glazed entrance and a broad solar roof. |
 | `bungalow.webp` | Smaller participants and foreground variation | Single-storey ivory home with a flat solar roof and terrace. |
@@ -349,13 +358,13 @@ split or a row of boxed cards throughout the page:
 2. A clear definition: a narrow question heading and a wider answer, followed by
    four expandable role explanations with a simple cobalt rule.
 3. A practical sequence: a composition of complete houses beside three numbered steps.
-4. A cobalt software section: four stages, light text and coral step numbers.
+4. A cobalt software section: four stages, light text and sunlit roof step numbers.
    When `OPENLEG_SANDBOX_URL` names the separate Demodorf, an inset ivory
    panel follows the stages: one primary action to open the village and five
    role rows that preselect a fictional account. Without that setting the panel,
    its links and the `/software` copy are absent and the demo dashboard remains.
 5. A municipality section: apartment illustration opposite text and actions.
-6. An inset coral Verein panel: contribution and membership information, with the
+6. An inset Verein panel in roof wash: contribution and membership information, with the
    familiar building components in a smaller arrangement.
 7. Questions: a narrow introductory heading beside a wider list of answers.
 
@@ -396,8 +405,8 @@ control is needed.
 
 Selected hover symbols:
 
-- Text link with arrow: one short coral pulse runs along the underline to the
-  arrow, and the arrow moves forward by 3 px. On cobalt the pulse is ivory.
+- Text link with arrow: a gradient from roof to sunlit roof runs along the underline
+  to the arrow, and the arrow moves forward by 3 px.
 
 The neighbourhood illustrations stay still. Ordinary navigation and disclosure
 controls remain interactive.
