@@ -1107,9 +1107,41 @@ def record_invoice_payment(invoice_id, community_id, actor_id, paid_date, refere
         raise BillingStoreError("Could not record invoice payment") from e
 
 
+def _lock_bank_reference(cur, community_id, reference_key):
+    # Statements that omit the account still overlap known accounts. Lock that
+    # whole reference group before any invoice lock, then scope the read by account.
+    cur.execute(
+        "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+        (f"bank-payment:{community_id}:{reference_key}",),
+    )
+
+
+def _require_unbooked_bank_payment(cur, community_id, entry):
+    reference_key = entry.get("bank_servicer_key")
+    if not reference_key:
+        return
+    account_key = entry["bank_account_key"]
+    cur.execute(
+        """
+        SELECT i.invoice_number
+        FROM bank_statement_entries e
+        JOIN invoices i ON i.id = e.invoice_id AND i.community_id = e.community_id
+        WHERE e.community_id = %s AND e.bank_servicer_key = %s
+          AND e.match_decision = 'matched'
+          AND (e.bank_account_key = %s OR e.bank_account_key = '' OR %s = '')
+        ORDER BY e.id LIMIT 1
+        """,
+        (community_id, reference_key, account_key, account_key),
+    )
+    booked = cur.fetchone()
+    if booked:
+        raise payment_reconciliation.BankPaymentAlreadyBooked(booked["invoice_number"])
+
+
 def _finalize_bank_payment(
     cur, invoice, entry, community_id, actor_id, key, *, payment_match=None
 ):
+    _require_unbooked_bank_payment(cur, community_id, entry)
     new_state = billing_lifecycle.next_state(
         invoice["lifecycle_state"],
         "pay",
@@ -1167,6 +1199,9 @@ def confirm_payment(
             not in payment_reconciliation.REVIEWABLE_DECISIONS
         ):
             return None
+        reference_key = entry.get("bank_servicer_key")
+        if reference_key and not dry_run:
+            _lock_bank_reference(cur, community_id, reference_key)
         invoice = _locked_invoice(cur, invoice_id, community_id, locking=not dry_run)
         # Real confirmations see lifecycle commits made while the lock waited.
         # Previews read all validation inputs from the same non-locking snapshot.
@@ -1178,6 +1213,7 @@ def confirm_payment(
                 or ("invoice_state" if decision == "mismatch" else decision)
             )
         if dry_run:
+            _require_unbooked_bank_payment(cur, community_id, entry)
             return {
                 "dry_run": True,
                 "eligible": True,
@@ -1189,10 +1225,6 @@ def confirm_payment(
                     effective_date=entry["booking_date"],
                 ),
             }
-        cur.execute(
-            "UPDATE bank_statement_entries SET invoice_id=%s,match_decision='matched' WHERE id=%s",
-            (invoice_id, entry_id),
-        )
         # Invoice identity is shared with dashboard payment transitions.
         lifecycle_key = "paid"
         _finalize_bank_payment(
@@ -1203,6 +1235,10 @@ def confirm_payment(
             actor_id,
             lifecycle_key,
             payment_match={"entry_id": entry_id, "decision": "matched"},
+        )
+        cur.execute(
+            "UPDATE bank_statement_entries SET invoice_id=%s,match_decision='matched' WHERE id=%s",
+            (invoice_id, entry_id),
         )
         cur.execute(
             "SELECT id FROM invoice_lifecycle_events WHERE invoice_id=%s AND idempotency_key=%s",
@@ -1297,11 +1333,22 @@ def reconcile_bank_statement(
                     cur, cur.fetchone()["id"], duplicate=True
                 )
             import_id = imported["id"]
+            # Acquire all reference locks in a stable order before locking
+            # invoices. A concurrent import or review must recheck after waiting.
+            for reference_key in sorted(
+                {
+                    entry["bank_servicer_key"]
+                    for entry in entries
+                    if entry.get("bank_servicer_key")
+                }
+            ):
+                _lock_bank_reference(cur, community_id, reference_key)
             cur.execute(
                 """
                 SELECT i.id, i.invoice_number, i.gross_chf
                 FROM invoices i
                 WHERE i.community_id = %s AND i.status = 'issued'
+                ORDER BY i.id
                 FOR UPDATE OF i
                 """,
                 (community_id,),
@@ -1324,14 +1371,17 @@ def reconcile_bank_statement(
                     invoice = next(
                         invoice for invoice in invoices if invoice["id"] == invoice_id
                     )
-                    _finalize_bank_payment(
-                        cur,
-                        invoice,
-                        entry,
-                        community_id,
-                        actor_id,
-                        f"bank:{import_id}:{entry['entry_reference']}",
-                    )
+                    try:
+                        _finalize_bank_payment(
+                            cur,
+                            invoice,
+                            entry,
+                            community_id,
+                            actor_id,
+                            f"bank:{import_id}:{entry['entry_reference']}",
+                        )
+                    except payment_reconciliation.BankPaymentAlreadyBooked:
+                        decision, invoice_id = "mismatch", None
                 cur.execute(
                     """
                     INSERT INTO bank_statement_entries (
@@ -1339,8 +1389,8 @@ def reconcile_bank_statement(
                         entry_reference, booking_date, amount, currency,
                         payment_reference, is_reversal, credit_debit_indicator,
                         match_decision, amount_basis, booking_status,
-                        debtor_name, remittance_information
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        debtor_name, remittance_information, bank_servicer_key, bank_account_key
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         import_id,
@@ -1358,6 +1408,8 @@ def reconcile_bank_statement(
                         entry.get("booking_status"),
                         entry.get("debtor_name"),
                         entry.get("remittance_information"),
+                        entry.get("bank_servicer_key"),
+                        entry.get("bank_account_key", ""),
                     ),
                 )
             return _statement_import_result(cur, import_id, duplicate=False)
@@ -1367,7 +1419,12 @@ def reconcile_bank_statement(
 
 
 def list_bank_statement_entries(
-    community_id, limit=200, *, confirmation_key_prefix=None
+    community_id,
+    limit=200,
+    *,
+    confirmation_key_prefix=None,
+    reviewable=None,
+    before=None,
 ):
     """Return scoped decisions with replay availability for the caller's key namespace."""
     bounded_limit = max(1, min(int(limit), 500))
@@ -1388,10 +1445,22 @@ def list_bank_statement_entries(
                 FROM bank_statement_entries e
                 JOIN bank_statement_imports s ON s.id = e.statement_import_id
                 WHERE e.community_id = %s AND s.community_id = %s
+                  AND (%s IS NULL OR (e.match_decision = ANY(%s)) = %s)
+                  AND (%s IS NULL OR e.id < %s)
                 ORDER BY e.id DESC
                 LIMIT %s
                 """,
-                (confirmation_key_prefix, community_id, community_id, bounded_limit),
+                (
+                    confirmation_key_prefix,
+                    community_id,
+                    community_id,
+                    reviewable,
+                    sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
+                    reviewable,
+                    before,
+                    before,
+                    bounded_limit,
+                ),
             )
             return [dict(row) for row in cur.fetchall()]
     except Exception as error:

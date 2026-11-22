@@ -270,7 +270,7 @@ def test_duplicate_statement_replay_returns_duplicate_without_second_paid_event(
         for entry in payment_reconciliation.parse_statement(CAMT_053).entries
     ]
     cursor = _ReconcileCursor(
-        ones=[{"id": 7}, None, {"id": 7}],
+        ones=[{"id": 7}, None, None, {"id": 7}],
         rows=[
             [_delivered_invoice()],
             [{"invoice_id": 42, "new_state": "delivered"}],

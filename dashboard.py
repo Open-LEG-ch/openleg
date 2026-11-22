@@ -27,6 +27,7 @@ import security_utils
 import telemetry
 import vnb_exchange
 from email_localization import gettext
+from i18n import gettext as _
 from i18n import localized_url
 from locale_policy import resolve_locale
 from money_display import InvalidMoneyAmount, finite_decimal, format_amount
@@ -582,6 +583,7 @@ def leg_billing_workspace_view(
     building_id: str,
     *,
     include_statement_entries: bool = False,
+    statement_before: int | None = None,
     **extra,
 ) -> dict:
     """Capability-gated view model for the billing approval workspace."""
@@ -664,6 +666,22 @@ def leg_billing_workspace_view(
         if include_statement_entries
         else {}
     )
+    statement_entries = []
+    next_statement_before = None
+    if include_statement_entries:
+        open_entries = db.list_bank_statement_entries(
+            community_id, limit=201, reviewable=True, before=statement_before
+        )
+        if len(open_entries) > 200:
+            open_entries = open_entries[:200]
+            next_statement_before = open_entries[-1]["id"]
+        statement_entries = open_entries
+        if statement_before is None:
+            statement_entries += db.list_bank_statement_entries(
+                community_id,
+                reviewable=False,
+                confirmation_key_prefix=_DASHBOARD_PAYMENT_KEY_PREFIX,
+            )
     view = {
         "error": None,
         "community_id": community_id,
@@ -682,14 +700,10 @@ def leg_billing_workspace_view(
         "statement_entries_loaded": include_statement_entries,
         "statement_entries": [
             _billing_statement_entry(entry, statement_invoices)
-            for entry in (
-                db.list_bank_statement_entries(
-                    community_id, confirmation_key_prefix=_DASHBOARD_PAYMENT_KEY_PREFIX
-                )
-                if include_statement_entries
-                else []
-            )
+            for entry in statement_entries
         ],
+        "statement_before": statement_before,
+        "next_statement_before": next_statement_before,
         "billing_approved": False,
         "approval_error": None,
         "viewer_building_id": building_id,
@@ -746,6 +760,17 @@ def leg_assign_bank_payment(community_id, building_id, entry_id, invoice_id, con
                 building_id,
                 f"{_DASHBOARD_PAYMENT_KEY_PREFIX}{entry_id}",
             )
+    except payment_reconciliation.BankPaymentAlreadyBooked as exc:
+        return {
+            "error_status": 409,
+            "error": _(
+                "Diese Zahlung ist bereits auf Rechnung %(invoice)s verbucht.",
+                invoice=exc.invoice_number,
+            ),
+            "recovery": _N(
+                "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
+            ),
+        }
     except payment_reconciliation.PaymentMatchRefused as exc:
         error, recovery = _PAYMENT_REFUSALS[exc.detail]
         return {"error_status": 409, "error": error, "recovery": recovery}

@@ -943,11 +943,15 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         return _leg_dashboard_redirect(community_id, "members")
 
     def render_billing_workspace(community_id, building_id, *, status=200, **extra):
+        statement_before = request.args.get("statement_before", type=int)
         try:
             view = dashboard_module.leg_billing_workspace_view(
                 community_id,
                 building_id,
                 include_statement_entries=True,
+                statement_before=statement_before
+                if statement_before and statement_before > 0
+                else None,
                 **extra,
             )
         except db.BillingStoreError:

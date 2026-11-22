@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Parse ISO 20022 statements and submit canonical payments for reconciliation."""
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -22,6 +23,14 @@ class PaymentMatchRefused(InvoiceLifecycleError):
     def __init__(self, detail):
         super().__init__("Die Zahlung passt nicht exakt zur Rechnung.")
         self.detail = detail
+
+
+class BankPaymentAlreadyBooked(InvoiceLifecycleError):
+    """A statement repeats a bank transaction that has already paid an invoice."""
+
+    def __init__(self, invoice_number):
+        super().__init__("Bank transaction already booked")
+        self.invoice_number = invoice_number
 
 
 DECISION_LABELS = {
@@ -49,6 +58,8 @@ class PaymentEntry:
     amount_basis: str | None = None
     debtor_name: str | None = None
     remittance_information: str | None = None
+    bank_servicer_key: str | None = None
+    bank_account_key: str = ""
 
 
 @dataclass(frozen=True)
@@ -119,6 +130,36 @@ def _account_currency(container):
     ):
         raise StatementError(_N("Der Zahlungseintrag enthält keine gültige Währung."))
     return value
+
+
+def _bank_account_key(container):
+    """Scope a servicer reference without saving the bank account identifier."""
+    iban = container.findtext("./{*}Acct/{*}Id/{*}IBAN", default="")
+    if iban.strip() and iban.strip() != "NOTPROVIDED":
+        identity = "IBAN:" + "".join(iban.split()).upper()
+    else:
+        other = container.find("./{*}Acct/{*}Id/{*}Othr")
+        if other is None:
+            return ""
+        identifier = other.findtext("./{*}Id", default="").strip()
+        if not identifier or identifier == "NOTPROVIDED":
+            return ""
+        scheme = other.findtext("./{*}SchmeNm/{*}Cd") or other.findtext(
+            "./{*}SchmeNm/{*}Prtry", default=""
+        )
+        issuer = other.findtext("./{*}Issr", default="")
+        identity = json.dumps(["Othr", scheme, issuer, identifier])
+    return sha256(identity.encode()).hexdigest()
+
+
+def _debtor_name(transaction):
+    debtor = transaction.find("./{*}RltdPties/{*}Dbtr")
+    if debtor is not None:
+        for path in ("./{*}Nm", "./{*}Pty/{*}Nm"):
+            name = debtor.findtext(path, default="").strip()
+            if name and name != "NOTPROVIDED":
+                return name
+    return None
 
 
 def _validate_batch_details(entry, entry_direction):
@@ -227,10 +268,15 @@ def parse_statement(content: bytes) -> Statement:
     scoped_entries = []
     for container in containers:
         account_currency = _account_currency(container)
+        account_key = _bank_account_key(container)
         scoped_entries.extend(
-            (entry, account_currency) for entry in container if _local(entry) == "Ntry"
+            (entry, account_currency, account_key)
+            for entry in container
+            if _local(entry) == "Ntry"
         )
-    for entry_number, (entry, account_currency) in enumerate(scoped_entries, start=1):
+    for entry_number, (entry, account_currency, account_key) in enumerate(
+        scoped_entries, start=1
+    ):
         booking_elements = _children(entry, "BookgDt")
         if not booking_elements:
             raise StatementError(
@@ -243,7 +289,7 @@ def parse_statement(content: bytes) -> Statement:
             raise StatementError(
                 _N("Der Zahlungseintrag enthält kein gültiges Buchungsdatum.")
             ) from error
-        reversal = _text(entry, "RvslInd").lower() == "true"
+        reversal = _text(entry, "RvslInd").lower() in {"true", "1"}
         credit_debit_indicator = _text(entry, "CdtDbtInd").upper()
         if credit_debit_indicator not in {"CRDT", "DBIT"}:
             raise StatementError(
@@ -296,7 +342,11 @@ def parse_statement(content: bytes) -> Statement:
             else:
                 amount, currency = _amount(transaction)
             payment_reference = _text(transaction, "Ref", "Ustrd", "EndToEndId")
-            debtor = transaction.find("./{*}RltdPties/{*}Dbtr")
+            bank_reference = transaction.findtext(
+                "./{*}Refs/{*}AcctSvcrRef", default=""
+            ).strip()
+            if bank_reference in {"", "NOTPROVIDED"} and not is_batch:
+                bank_reference = entry.findtext("./{*}AcctSvcrRef", default="").strip()
             remittance_lines = transaction.findall("./{*}RmtInf/{*}Ustrd")
             remittance_lines.extend(
                 transaction.findall("./{*}RmtInf/{*}Strd/{*}AddtlRmtInf")
@@ -320,10 +370,12 @@ def parse_statement(content: bytes) -> Statement:
                     credit_debit_indicator=credit_debit_indicator,
                     booking_status=_booking_status(entry),
                     amount_basis="reconciled_batch" if is_batch else "entry",
-                    debtor_name=(_text(debtor, "Nm") or None)
-                    if debtor is not None
-                    else None,
+                    debtor_name=_debtor_name(transaction),
                     remittance_information=remittance or None,
+                    bank_servicer_key=sha256(bank_reference.encode()).hexdigest()
+                    if bank_reference and bank_reference != "NOTPROVIDED"
+                    else None,
+                    bank_account_key=account_key,
                 )
             )
     if not entries:

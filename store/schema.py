@@ -1272,7 +1272,14 @@ def create_tables():
                 ALTER TABLE bank_statement_entries
                 ADD COLUMN IF NOT EXISTS booking_status TEXT,
                 ADD COLUMN IF NOT EXISTS debtor_name TEXT,
-                ADD COLUMN IF NOT EXISTS remittance_information TEXT
+                ADD COLUMN IF NOT EXISTS remittance_information TEXT,
+                ADD COLUMN IF NOT EXISTS bank_account_key TEXT NOT NULL DEFAULT '',
+                ADD COLUMN IF NOT EXISTS bank_servicer_key TEXT
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS ix_bank_statement_booked_servicer
+                ON bank_statement_entries (community_id, bank_servicer_key)
+                WHERE match_decision = 'matched' AND bank_servicer_key IS NOT NULL
             """)
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_community_id

@@ -520,6 +520,7 @@ def test_reconciled_chf_batch_pays_each_invoice_once(payment_client):
     amount.text = "9.67"
     transaction.insert(1, amount)
     second = deepcopy(transaction)
+    second.find(".//" + ns + "AcctSvcrRef").text = "second-bank-transaction"
     second.find(".//" + ns + "EndToEndId").text = "LEG-PAYMENT-2"
     second.find(".//" + ns + "Ustrd").text = "LEG-PAYMENT-2"
     details.append(second)

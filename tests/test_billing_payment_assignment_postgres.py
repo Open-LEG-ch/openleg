@@ -326,3 +326,217 @@ def test_workspace_renders_imported_bank_details_and_only_delivered_leg_invoices
     ):
         assert value in unescape(page.text)
     assert "Not the debtor" not in page.text
+
+
+def _upload_xml(workspace, *bodies):
+    from io import BytesIO
+
+    _set_session(workspace, ADMIN)
+    for body in bodies:
+        assert (
+            workspace.post(
+                f"{BILLING}/statements",
+                data={
+                    "csrf_token": "csrf-secret",
+                    "statement": (BytesIO(body), "fictional.xml"),
+                },
+            ).status_code
+            == 302
+        )
+    _set_session(workspace, ACTOR)
+
+
+def _statement_xml(
+    *,
+    statement="statement-1",
+    reference="LEG-2026-000042",
+    servicer="bank-entry-1",
+    account="fictional-account",
+    details=b"",
+    reversal=b"",
+):
+    from tests.test_payment_reconciliation import CAMT_053
+
+    account_xml = (
+        f"<Acct><Id><Othr><Id>{account}</Id></Othr></Id></Acct>" if account else ""
+    )
+    return (
+        CAMT_053.replace(b"statement-1</Id>", f"{statement}</Id>{account_xml}".encode())
+        .replace(b"120.50", b"9.67")
+        .replace(b"LEG-2026-000042", reference.encode())
+        .replace(
+            b"<AcctSvcrRef>bank-entry-1</AcctSvcrRef>",
+            f"<AcctSvcrRef>{servicer}</AcctSvcrRef>".encode() if servicer else b"",
+        )
+        .replace(b"<Sts>", reversal + b"<Sts>")
+        .replace(b"<RmtInf>", details + b"<RmtInf>")
+    )
+
+
+@pytest.mark.parametrize("second_match", ["reviewed", "automatic"])
+def test_same_bank_credit_cannot_pay_another_invoice(workspace, second_match):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(reference="FIRST-INVOICE"),
+        _statement_xml(
+            statement="statement-2",
+            reference="FIRST-INVOICE"
+            if second_match == "reviewed"
+            else "SECOND-INVOICE",
+        ),
+    )
+    duplicate, original = db.list_bank_statement_entries(COMMUNITY)
+    assert original["invoice_id"] == first
+    if second_match == "reviewed":
+        response = _assign(workspace, duplicate["id"], second)
+        assert response.status_code == 409
+        assert "bereits auf Rechnung FIRST-INVOICE verbucht" in response.text
+    assert not any(
+        event["event_type"] == "paid"
+        for event in db.list_invoice_events(second, COMMUNITY)
+    )
+    assert (
+        len(db.list_community_operator_events(COMMUNITY, event_types=("invoice.paid",)))
+        == 1
+    )
+
+
+@pytest.mark.parametrize("automatic", [False, True])
+def test_camt_numeric_reversal_cannot_book_a_payment(workspace, automatic):
+    invoice = _invoice("DELIVERED-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(
+            reference="DELIVERED-INVOICE" if automatic else "unknown",
+            reversal=b"<RvslInd>1</RvslInd>",
+        ),
+    )
+    (entry,) = db.list_bank_statement_entries(COMMUNITY)
+    if not automatic:
+        assert _assign(workspace, entry["id"], invoice).status_code == 409
+    assert entry["match_decision"] == "reversal"
+    assert not any(
+        event["event_type"] == "paid"
+        for event in db.list_invoice_events(invoice, COMMUNITY)
+    )
+
+
+def test_newer_history_cannot_hide_an_unresolved_entry(workspace):
+    _invoice("DELIVERED-INVOICE")
+    _upload_xml(workspace, _statement_xml(reference="old unresolved reference"))
+    (older,) = db.list_bank_statement_entries(COMMUNITY)
+    statement = _statement_xml(statement="history", reversal=b"<RvslInd>true</RvslInd>")
+    start = statement.index(b"<Ntry>")
+    end = statement.index(b"</Ntry>") + len(b"</Ntry>")
+    history = b"".join(
+        statement[start:end].replace(b"bank-entry-1", f"reversal-{index}".encode())
+        for index in range(200)
+    )
+    _upload_xml(workspace, statement[:start] + history + statement[end:])
+    page = workspace.get(BILLING)
+    assert page.status_code == 200
+    assert "old unresolved reference" in page.text
+    assert f"/statements/{older['id']}/assign#" in page.text
+
+
+def test_debtor_contact_name_is_not_a_party_name(workspace):
+    _invoice()
+    _upload_xml(
+        workspace,
+        _statement_xml(
+            details=b"<RltdPties><Dbtr><Pty><CtctDtls><Nm>Fictional contact only</Nm>"
+            b"</CtctDtls></Pty></Dbtr></RltdPties>",
+        ),
+    )
+    (entry,) = db.list_bank_statement_entries(COMMUNITY)
+    assert entry["debtor_name"] is None
+    assert "Fictional contact only" not in workspace.get(BILLING).text
+
+
+@pytest.mark.parametrize(
+    "case", ["different-account", "generated-reference", "missing-account"]
+)
+def test_bank_credit_identity_uses_account_and_servicer_reference(workspace, case):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(
+            reference="FIRST-INVOICE",
+            servicer="" if case == "generated-reference" else "bank-entry-1",
+            reversal=b"<RvslInd>0</RvslInd>",
+        ),
+        _statement_xml(
+            statement="statement-1" if case == "generated-reference" else "statement-2",
+            reference="unknown",
+            account={
+                "missing-account": "",
+                "different-account": "another-account",
+                "generated-reference": "fictional-account",
+            }[case],
+            servicer="" if case == "generated-reference" else "bank-entry-1",
+            reversal=b"<RvslInd>false</RvslInd>",
+        ),
+    )
+    newest, original = db.list_bank_statement_entries(COMMUNITY)
+    assert original["invoice_id"] == first
+    if case == "generated-reference":
+        assert newest["entry_reference"] == original["entry_reference"]
+    response = _assign(workspace, newest["id"], second)
+    assert response.status_code == (409 if case == "missing-account" else 303)
+
+
+def test_concurrent_review_of_repeated_bank_credit_only_books_once(
+    workspace, app_module
+):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    invoices = [_invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")]
+    _upload_xml(workspace, _statement_xml(), _statement_xml(statement="statement-2"))
+    entries = db.list_bank_statement_entries(COMMUNITY)
+    barrier = Barrier(2)
+
+    def assign(entry, invoice):
+        with app_module.web.test_client() as client:
+            _set_session(client, ACTOR)
+            barrier.wait(timeout=10)
+            return _assign(client, entry, invoice).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(assign, (entry["id"] for entry in entries), invoices))
+    assert sorted(outcomes) == [303, 409]
+    assert (
+        len(
+            db.list_community_operator_events(
+                COMMUNITY, event_types=("invoice.paid", "payment.match.confirmed")
+            )
+        )
+        == 2
+    )
+
+
+def test_older_unresolved_entries_have_a_link_when_review_queue_is_full(workspace):
+    _invoice()
+    _upload_xml(workspace, _statement_xml(reference="old unresolved reference"))
+    (older,) = db.list_bank_statement_entries(COMMUNITY)
+    statement = _statement_xml(
+        statement="newer", reference="newer unresolved reference"
+    )
+    start = statement.index(b"<Ntry>")
+    end = statement.index(b"</Ntry>") + len(b"</Ntry>")
+    newer = b"".join(
+        statement[start:end].replace(b"bank-entry-1", f"newer-{index}".encode())
+        for index in range(200)
+    )
+    _upload_xml(workspace, statement[:start] + newer + statement[end:])
+    first_page = workspace.get(BILLING)
+    assert "old unresolved reference" not in first_page.text
+    assert "Ältere offene Buchungen" in first_page.text
+    older_path = f"{BILLING}?statement_before={older['id'] + 1}#statement-assignments"
+    assert f'href="{older_path}"' in first_page.text
+    next_page = workspace.get(older_path)
+    assert "old unresolved reference" in next_page.text
+    assert "Neueste offene Buchungen" in next_page.text
