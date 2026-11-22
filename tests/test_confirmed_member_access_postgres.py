@@ -73,6 +73,7 @@ def test_invitee_can_accept_without_access_to_private_community_records(communit
     page = client.get(f"/leg/dashboard?cid={cid}")
     assert f'action="/leg/community/{cid}/confirm"' in page.text
     assert "Privateweg 1" not in page.text
+    assert "Private subject" not in page.text
     response = client.post(
         f"/leg/community/{cid}/confirm", data={"csrf_token": "csrf-secret"}
     )

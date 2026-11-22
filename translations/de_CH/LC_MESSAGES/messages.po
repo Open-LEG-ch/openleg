@@ -19066,14 +19066,6 @@ msgstr "LEG-Verwaltung"
 msgid "Integrationskonten öffnen"
 msgstr "Integrationskonten öffnen"
 
-#: dashboard.py:1122
-msgid ""
-"Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
-"starten."
-msgstr ""
-"Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
-"starten."
-
 #: store/formation_documents.py:118
 msgid "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
 msgstr "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
@@ -19089,3 +19081,15 @@ msgstr "Noch keine Bankzahlungen abgeglichen."
 #: templates/leg_billing.html:57
 msgid "Diese Ansicht lädt keine Zahlungsdaten."
 msgstr "Diese Ansicht lädt keine Zahlungsdaten."
+
+#: dashboard.py:1119
+msgid ""
+"Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
+"Mitgliedern starten."
+msgstr ""
+"Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
+"Mitgliedern starten."
+
+#: templates/leg_dashboard.html:45
+msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
+msgstr "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."

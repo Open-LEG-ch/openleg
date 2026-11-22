@@ -15,10 +15,10 @@ import community_access
 
 logger = logging.getLogger(__name__)
 
+FORMATION_START_STATUSES = ("interested", "invited", "confirmed")
+
 PRE_ACTIVATION_STATUSES = (
-    "interested",
-    "invited",
-    "confirmed",
+    *FORMATION_START_STATUSES,
     "formation_started",
     "documents_generated",
     "signatures_pending",
@@ -189,7 +189,7 @@ def mark_formation_started(community_id: str) -> bool:
                     SET status = %s, formation_started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
                     WHERE community_id = %s AND status IN %s AND activated_at IS NULL
                 """,
-                    ("formation_started", community_id, PRE_ACTIVATION_STATUSES),
+                    ("formation_started", community_id, FORMATION_START_STATUSES),
                 )
                 if cur.rowcount == 0:
                     return False

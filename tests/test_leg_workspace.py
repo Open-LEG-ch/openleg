@@ -87,7 +87,9 @@ def test_formation_moves_at_operating_start(workspace):
     status["status"] = "dso_approved"
     pending_formation = client.get(OVERVIEW).text
     assert marker in pending_formation
-    assert f'action="{ROOT}/start-formation"' in pending_formation
+    assert f'action="{ROOT}/start-formation"' not in pending_formation
+    status["status"] = "interested"
+    assert f'action="{ROOT}/start-formation"' in client.get(OVERVIEW).text
     assert marker not in client.get(ROOT + "/formation").text
 
 
@@ -222,7 +224,7 @@ def test_other_leg_overview_does_not_consume_formation_feedback(workspace, monke
         "get_community_status",
         lambda cid, _bid: {"c0ffee": status, "other": other_status}.get(cid),
     )
-    message = "Die Gründung lässt sich nur vor dem Betriebsstart"
+    message = "Die Gründung lässt sich nur einmal"
     monkeypatch.setattr(
         dashboard,
         "leg_start_formation",

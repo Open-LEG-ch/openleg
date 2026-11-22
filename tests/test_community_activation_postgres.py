@@ -384,21 +384,19 @@ def test_start_confirmation_and_original_attachment_survive_archive_restore(subm
 
 
 @pytest.mark.parametrize(
-    ("action", "actor", "message"),
+    ("action", "actor", "status"),
     [
-        (
-            "start-formation",
-            "founder",
-            "Die Gründung lässt sich nur vor dem Betriebsstart",
-        ),
-        (
-            "documents",
-            "document-manager",
-            "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen.",
-        ),
+        ("start-formation", "founder", "formation_started"),
+        ("start-formation", "founder", "documents_generated"),
+        ("start-formation", "founder", "signatures_pending"),
+        ("start-formation", "founder", "dso_submitted"),
+        ("start-formation", "founder", "dso_approved"),
+        ("start-formation", "founder", "active"),
+        ("start-formation", "founder", "rejected"),
+        ("documents", "document-manager", "active"),
     ],
 )
-def test_stale_formation_post_preserves_active_leg(submitted, action, actor, message):
+def test_stale_formation_post_preserves_leg_progress(submitted, action, actor, status):
     client, db, cid, fields = submitted
     for bid in ("document-manager", "participant"):
         assert db.save_building(
@@ -425,34 +423,66 @@ def test_stale_formation_post_preserves_active_leg(submitted, action, actor, mes
         cid, "gemeinschaftsvereinbarung", b"%PDF", "original.pdf"
     )
     assert original_id
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET status = 'interested' WHERE community_id = %s",
+            (cid,),
+        )
     _set_session(client, actor)
     form = f'action="/leg/community/{cid}/{action}"'
     assert form in client.get(f"/leg/dashboard?cid={cid}").text
 
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE communities SET status = %s, formation_started_at = '2020-01-01'
+               WHERE community_id = %s""",
+            ("dso_submitted" if status in {"active", "dso_approved"} else status, cid),
+        )
     _set_session(client, "founder")
-    assert (
-        client.post(
-            f"/leg/community/{cid}/vnb-start-confirmation", data=fields
-        ).status_code
-        == 302
-    )
-    assert client.post(f"/leg/community/{cid}/activate", data=fields).status_code == 302
+    if status in {"active", "dso_approved"}:
+        assert (
+            client.post(
+                f"/leg/community/{cid}/vnb-start-confirmation", data=fields
+            ).status_code
+            == 302
+        )
+    if status == "active":
+        assert (
+            client.post(f"/leg/community/{cid}/activate", data=fields).status_code
+            == 302
+        )
     before = db.fetch_community_with_members(cid, "founder")
     documents = db.list_leg_documents(cid)
-    assert any(row["community_id"] == cid for row in db.get_active_communities())
+    billing_eligible = any(
+        row["community_id"] == cid for row in db.get_active_communities()
+    )
+    assert billing_eligible is (status == "active")
 
     _set_session(client, actor)
     response = client.post(f"/leg/community/{cid}/{action}", data=fields)
     after = db.fetch_community_with_members(cid, "founder")
-    assert after["status"] == "active"
+    assert after["status"] == status
     assert after["activated_at"] == before["activated_at"]
     assert after["formation_started_at"] == before["formation_started_at"]
     assert after["vnb_start_confirmation"] == before["vnb_start_confirmation"]
     assert db.list_leg_documents(cid) == documents
     assert bytes(db.get_leg_document(original_id)["pdf_data"]) == b"%PDF"
-    assert any(row["community_id"] == cid for row in db.get_active_communities())
+    assert (
+        any(row["community_id"] == cid for row in db.get_active_communities())
+        is billing_eligible
+    )
     assert response.status_code == 302
-    assert response.location == f"/leg/community/{cid}/formation"
+    expected_url = (
+        f"/leg/community/{cid}/formation"
+        if status == "active"
+        else f"/leg/dashboard?cid={cid}"
+    )
+    assert response.location == expected_url
     page = client.get(response.location)
+    message = (
+        "Die Gründung lässt sich nur einmal"
+        if action == "start-formation"
+        else "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
+    )
     assert message in page.text
     assert form not in page.text

@@ -7,7 +7,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
     {% set brand_class = "min-h-12 items-center text-2xl" %}
     {% include "partials/brand_wordmark.html" %}
-    <details class="min-w-0 min-[480px]:relative">
+    <details class="min-w-0 min-[480px]:relative" data-language-menu>
       <summary class="flex min-h-12 max-w-full cursor-pointer list-none items-center gap-3 rounded-lg border border-ink-muted px-3 py-2 font-semibold [&::-webkit-details-marker]:hidden">
         <span class="sr-only">{{ _('LEG wechseln') }}</span>
         <span class="wrap-anywhere">{{ current_name }}</span>

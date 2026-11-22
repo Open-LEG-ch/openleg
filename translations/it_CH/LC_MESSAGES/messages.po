@@ -22701,15 +22701,6 @@ msgid "Integrationskonten öffnen"
 msgstr "Apri i conti di integrazione"
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:1122
-msgid ""
-"Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
-"starten."
-msgstr ""
-"La costituzione può iniziare solo prima dell’avvio dell’attività e dopo la conferma "
-"di un numero sufficiente di membri."
-
-#. Draft translation; native language and domain review pending.
 #: store/formation_documents.py:118
 msgid "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
 msgstr "Puoi creare bozze di contratto solo prima dell’avvio dell’attività."
@@ -22728,3 +22719,17 @@ msgstr "Non è ancora stato riconciliato alcun pagamento bancario."
 #: templates/leg_billing.html:57
 msgid "Diese Ansicht lädt keine Zahlungsdaten."
 msgstr "Questa vista non carica i dati di pagamento."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:1119
+msgid ""
+"Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
+"Mitgliedern starten."
+msgstr ""
+"Puoi avviare la costituzione una sola volta, solo prima dell’avvio dell’attività e dopo la "
+"conferma di un numero sufficiente di membri."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_dashboard.html:45
+msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
+msgstr "Qui trovi la registrazione presso il gestore di rete e la conferma dell’avvio dell’attività."

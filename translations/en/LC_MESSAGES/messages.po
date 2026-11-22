@@ -22432,13 +22432,6 @@ msgid "Integrationskonten öffnen"
 msgstr "Open integration accounts"
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:1122
-msgid ""
-"Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
-"starten."
-msgstr "Formation can only start before operations begin and once enough members have confirmed."
-
-#. Draft translation; native language and domain review pending.
 #: store/formation_documents.py:118
 msgid "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
 msgstr "You can create draft agreements only before operations begin."
@@ -22457,3 +22450,17 @@ msgstr "No bank payments have been reconciled yet."
 #: templates/leg_billing.html:57
 msgid "Diese Ansicht lädt keine Zahlungsdaten."
 msgstr "This view does not load payment data."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:1119
+msgid ""
+"Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
+"Mitgliedern starten."
+msgstr ""
+"You can start formation only once, before operations begin and after enough members have "
+"confirmed."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_dashboard.html:45
+msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
+msgstr "Find the grid operator registration and confirmation of the operating start here."

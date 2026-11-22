@@ -120,7 +120,7 @@
   </form>
   {% endif %}
 </section>
-{% if formation_editable and can_manage_members and viewer_has_session %}
+{% if can_start_formation and can_manage_members and viewer_has_session %}
 <section class="mb-10">
   <h2 class="font-bold mb-2">{{ _('Gründung starten') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.') }}</p>

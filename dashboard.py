@@ -29,6 +29,7 @@ from email_localization import gettext
 from i18n import localized_url
 from locale_policy import resolve_locale
 from money_display import InvalidMoneyAmount, format_amount
+from store.formation import FORMATION_START_STATUSES
 from translation_markers import gettext_noop as _N
 
 logger = logging.getLogger(__name__)
@@ -323,6 +324,7 @@ def leg_overview(
         ],
         "viewer_building_id": building_id,
         "is_admin": community_access.is_administrator(member),
+        "can_start_formation": status["status"] in FORMATION_START_STATUSES,
         "can_manage_members": community_access.MANAGE_MEMBERS in capabilities,
         "can_manage_documents": community_access.MANAGE_DOCUMENTS in capabilities,
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
@@ -1114,7 +1116,7 @@ def leg_start_formation(community_id: str, building_id: str) -> dict:
     if not ok:
         return {
             "error": _N(
-                "Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern starten."
+                "Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten Mitgliedern starten."
             )
         }
     return {"error": None}

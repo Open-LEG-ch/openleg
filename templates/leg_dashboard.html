@@ -41,6 +41,9 @@
   {% endif %}
   {% else %}
   <h1 class="text-4xl tracking-tight">{{ workspace_labels[page] }}</h1>
+  {% if page == "formation" and community.status == "active" %}
+  <p class="mt-3 text-ink-muted">{{ _('Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts.') }}</p>
+  {% endif %}
   {% endif %}
 </header>
 

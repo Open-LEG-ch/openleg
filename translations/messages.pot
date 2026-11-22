@@ -816,7 +816,7 @@ msgstr ""
 msgid "Abrechnung vorbereiten"
 msgstr ""
 
-#: dashboard.py:741
+#: dashboard.py:743
 msgid "Abrechnung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -861,7 +861,7 @@ msgstr ""
 msgid "Abrechnungsentwurf"
 msgstr ""
 
-#: dashboard.py:747
+#: dashboard.py:749
 msgid "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
 msgstr ""
 
@@ -1335,7 +1335,7 @@ msgstr ""
 msgid "Angenommen"
 msgstr ""
 
-#: dashboard.py:1294
+#: dashboard.py:1296
 msgid "Anhänge müssen PDF-Dateien sein."
 msgstr ""
 
@@ -1472,7 +1472,7 @@ msgstr ""
 msgid "Antwort auf Beitritt simulieren"
 msgstr ""
 
-#: dashboard.py:950
+#: dashboard.py:952
 msgid "Antwort oder Status ist erforderlich."
 msgstr ""
 
@@ -1891,7 +1891,7 @@ msgstr ""
 msgid "Bankzahlungen ausprobieren"
 msgstr ""
 
-#: templates/leg_dashboard.html:64
+#: templates/leg_dashboard.html:67
 msgid "Bankzahlungen in der Abrechnung öffnen"
 msgstr ""
 
@@ -2595,7 +2595,7 @@ msgstr ""
 msgid "Bitte geben Sie eine E-Mail an."
 msgstr ""
 
-#: dashboard.py:1026 templates/partials/form_validation.html:3
+#: dashboard.py:1028 templates/partials/form_validation.html:3
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr ""
 
@@ -2603,7 +2603,7 @@ msgstr ""
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr ""
 
-#: dashboard.py:1456 dashboard.py:1459
+#: dashboard.py:1458 dashboard.py:1461
 msgid "Bitte geben Sie eine gültige Solarleistung ein."
 msgstr ""
 
@@ -2619,7 +2619,7 @@ msgstr ""
 msgid "Bitte geben Sie einen Wert im zulässigen Schrittintervall ein."
 msgstr ""
 
-#: dashboard.py:1443 dashboard.py:1451
+#: dashboard.py:1445 dashboard.py:1453
 msgid "Bitte geben Sie einen gültigen Jahresverbrauch ein."
 msgstr ""
 
@@ -2945,7 +2945,7 @@ msgid ""
 "später."
 msgstr ""
 
-#: dashboard.py:1471
+#: dashboard.py:1473
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
 msgstr ""
 
@@ -2995,7 +2995,7 @@ msgid ""
 "über die Eignung einer Adresse aus."
 msgstr ""
 
-#: dashboard.py:1074
+#: dashboard.py:1076
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr ""
 
@@ -3278,7 +3278,7 @@ msgstr ""
 msgid "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
 msgstr ""
 
-#: dashboard.py:1296
+#: dashboard.py:1298
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr ""
 
@@ -3431,7 +3431,7 @@ msgid ""
 "Verzeichniseintrag ersetzt diese Prüfung nicht."
 msgstr ""
 
-#: dashboard.py:1298
+#: dashboard.py:1300
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr ""
 
@@ -3913,10 +3913,10 @@ msgstr ""
 msgid "Die Gruppenbildung ist fehlgeschlagen."
 msgstr ""
 
-#: dashboard.py:1117
+#: dashboard.py:1119
 msgid ""
-"Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
-"starten."
+"Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
+"Mitgliedern starten."
 msgstr ""
 
 #: templates/verein/index.html:8
@@ -4215,7 +4215,7 @@ msgstr ""
 msgid "Die Richtlinien-Kopie ist unvollständig: "
 msgstr ""
 
-#: dashboard.py:1056
+#: dashboard.py:1058
 msgid "Die Rollen konnten nicht geändert werden. Mindestens eine Administration muss bestehen bleiben."
 msgstr ""
 
@@ -4873,7 +4873,7 @@ msgstr ""
 msgid "E-Mail"
 msgstr ""
 
-#: dashboard.py:128 dashboard.py:130 dashboard.py:1411 verein_routes.py:296
+#: dashboard.py:129 dashboard.py:131 dashboard.py:1413 verein_routes.py:296
 msgid "E-Mail bestätigt"
 msgstr ""
 
@@ -4960,7 +4960,7 @@ msgstr ""
 msgid "EVU Registrierung"
 msgstr ""
 
-#: dashboard.py:138 dashboard.py:140 dashboard.py:1413
+#: dashboard.py:139 dashboard.py:141 dashboard.py:1415
 msgid "EVU-Einwilligung erteilt"
 msgstr ""
 
@@ -5153,7 +5153,7 @@ msgid ""
 " trägt."
 msgstr ""
 
-#: billing_lifecycle.py:53 dashboard.py:666
+#: billing_lifecycle.py:53 dashboard.py:668
 msgid "Ein gültiges Zahlungsdatum ist erforderlich."
 msgstr ""
 
@@ -5339,7 +5339,7 @@ msgstr ""
 msgid "Eine eigene LEG vorbereiten"
 msgstr ""
 
-#: dashboard.py:694
+#: dashboard.py:696
 msgid "Eine gültige Ersatzrechnung ist erforderlich."
 msgstr ""
 
@@ -5420,7 +5420,7 @@ msgid_plural "Einladungen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dashboard.py:1009
+#: dashboard.py:1011
 msgid "Einladung nicht möglich (bereits Mitglied?)."
 msgstr ""
 
@@ -5520,7 +5520,7 @@ msgstr ""
 msgid "Eintrag und Checkliste öffnen"
 msgstr ""
 
-#: dashboard.py:1313
+#: dashboard.py:1315
 msgid "Eintrag ungültig (Richtung oder Kanal unbekannt)."
 msgstr ""
 
@@ -5727,7 +5727,7 @@ msgstr ""
 msgid "Entwurf prüfen"
 msgstr ""
 
-#: billing_workspace.py:149 dashboard.py:408
+#: billing_workspace.py:149 dashboard.py:410
 msgid "Entwurf ungültig"
 msgstr ""
 
@@ -6572,7 +6572,7 @@ msgstr ""
 msgid "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung mit einer anderen E-Mail-Adresse."
 msgstr ""
 
-#: dashboard.py:875
+#: dashboard.py:877
 msgid "Für dieses Gültig-ab-Datum existiert bereits eine Version."
 msgstr ""
 
@@ -7458,7 +7458,7 @@ msgstr ""
 msgid "Gründungsschritte ansehen"
 msgstr ""
 
-#: templates/leg_dashboard.html:60
+#: templates/leg_dashboard.html:63
 msgid "Gründungsstand auf der Übersicht öffnen"
 msgstr ""
 
@@ -7637,6 +7637,10 @@ msgstr ""
 msgid ""
 "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
 " an vermutete oder ältere Kontodaten."
+msgstr ""
+
+#: templates/leg_dashboard.html:45
+msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
 msgstr ""
 
 #: templates/unsubscribe.html:10
@@ -8032,7 +8036,7 @@ msgstr ""
 msgid "Ihre Nachbarn bestätigen die Teilnahme. Wir koordinieren die Kontaktaufnahme."
 msgstr ""
 
-#: dashboard.py:625
+#: dashboard.py:627
 #, python-format
 msgid "Ihre Rechnung %(invoice_number)s"
 msgstr ""
@@ -8069,7 +8073,7 @@ msgstr ""
 msgid "Ihre letzte Stromrechnung von %(utility_name)s enthält die nötigen Angaben."
 msgstr ""
 
-#: dashboard.py:630
+#: dashboard.py:632
 #, python-format
 msgid "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
 msgstr ""
@@ -8599,11 +8603,11 @@ msgstr ""
 msgid "Kein H4-Tarif gefunden. Aktualisieren Sie zuerst die Daten."
 msgstr ""
 
-#: dashboard.py:118
+#: dashboard.py:119
 msgid "Kein Profil angegeben."
 msgstr ""
 
-#: dashboard.py:1006
+#: dashboard.py:1008
 msgid "Kein Profil zum Einladen angegeben."
 msgstr ""
 
@@ -8623,10 +8627,10 @@ msgstr ""
 msgid "Kein Zugang angegeben"
 msgstr ""
 
-#: dashboard.py:238 dashboard.py:249 dashboard.py:258 dashboard.py:263 dashboard.py:490
-#: dashboard.py:597 dashboard.py:650 dashboard.py:661 dashboard.py:678 dashboard.py:689
-#: dashboard.py:707 dashboard.py:734 dashboard.py:814 dashboard.py:843 dashboard.py:864
-#: dashboard.py:933 dashboard.py:948 dashboard.py:959 dashboard.py:1100 dashboard.py:1290
+#: dashboard.py:239 dashboard.py:250 dashboard.py:259 dashboard.py:264 dashboard.py:492
+#: dashboard.py:599 dashboard.py:652 dashboard.py:663 dashboard.py:680 dashboard.py:691
+#: dashboard.py:709 dashboard.py:736 dashboard.py:816 dashboard.py:845 dashboard.py:866
+#: dashboard.py:935 dashboard.py:950 dashboard.py:961 dashboard.py:1102 dashboard.py:1292
 msgid "Kein Zugriff."
 msgstr ""
 
@@ -8672,15 +8676,15 @@ msgstr ""
 msgid "Keine Anmeldung"
 msgstr ""
 
-#: dashboard.py:1182
+#: dashboard.py:1184
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1136 store/vnb_exchange.py:470
+#: dashboard.py:1138 store/vnb_exchange.py:470
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
-#: dashboard.py:1218
+#: dashboard.py:1220
 msgid "Keine Berechtigung."
 msgstr ""
 
@@ -8858,7 +8862,7 @@ msgstr ""
 msgid "Keine neue Kollektor-Lieferung"
 msgstr ""
 
-#: dashboard.py:1103
+#: dashboard.py:1105
 msgid "Keine offene Einladung gefunden."
 msgstr ""
 
@@ -9252,11 +9256,11 @@ msgstr ""
 msgid "LEG gründen: so geht es"
 msgstr ""
 
-#: dashboard.py:993
+#: dashboard.py:995
 msgid "LEG konnte nicht erstellt werden."
 msgstr ""
 
-#: dashboard.py:242 dashboard.py:846
+#: dashboard.py:243 dashboard.py:848
 msgid "LEG nicht gefunden."
 msgstr ""
 
@@ -9798,7 +9802,7 @@ msgstr ""
 msgid "Manuell geprüft"
 msgstr ""
 
-#: dashboard.py:1248
+#: dashboard.py:1250
 msgid "Manuelle Zustellung fehlgeschlagen."
 msgstr ""
 
@@ -10398,7 +10402,7 @@ msgid ""
 "liefert sie Messdaten als CSV oder S-DAT."
 msgstr ""
 
-#: dashboard.py:143 dashboard.py:145 dashboard.py:1414
+#: dashboard.py:144 dashboard.py:146 dashboard.py:1416
 msgid "Nachbar-Einwilligung erteilt"
 msgstr ""
 
@@ -10466,7 +10470,7 @@ msgstr ""
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr ""
 
-#: dashboard.py:987
+#: dashboard.py:989
 msgid "Name und Profil sind erforderlich."
 msgstr ""
 
@@ -10558,7 +10562,7 @@ msgid ""
 " Vereinbarungen ab."
 msgstr ""
 
-#: dashboard.py:1145
+#: dashboard.py:1147
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -10719,7 +10723,7 @@ msgid "Neuer Haushalt"
 msgstr ""
 
 #: billing_workspace.py:269 billing_workspace.py:276 billing_workspace.py:323 billing_workspace.py:328
-#: dashboard.py:524 templates/utility/dashboard.html:64 templates/utility/dashboard.html:133
+#: dashboard.py:526 templates/utility/dashboard.html:64 templates/utility/dashboard.html:133
 #: templates/utility/dashboard.html:141
 msgid "Nicht angegeben"
 msgstr ""
@@ -11016,19 +11020,19 @@ msgid ""
 "Adressen."
 msgstr ""
 
-#: dashboard.py:1045
+#: dashboard.py:1047
 msgid "Nur die Administration kann Rollen ändern."
 msgstr ""
 
-#: dashboard.py:1071
+#: dashboard.py:1073
 msgid "Nur die Administration kann das Vier-Augen-Prinzip ändern."
 msgstr ""
 
-#: dashboard.py:1112
+#: dashboard.py:1114
 msgid "Nur die Administration kann die Gründung starten."
 msgstr ""
 
-#: dashboard.py:1004 dashboard.py:1022
+#: dashboard.py:1006 dashboard.py:1024
 msgid "Nur die Administration kann einladen."
 msgstr ""
 
@@ -11945,7 +11949,7 @@ msgstr ""
 msgid "Profil löschen"
 msgstr ""
 
-#: dashboard.py:122
+#: dashboard.py:123
 msgid "Profil nicht gefunden."
 msgstr ""
 
@@ -12445,7 +12449,7 @@ msgstr ""
 msgid "Rechnung für die Übungsdateien"
 msgstr ""
 
-#: dashboard.py:921
+#: dashboard.py:923
 msgid "Rechnung nicht gefunden."
 msgstr ""
 
@@ -12461,7 +12465,7 @@ msgstr ""
 msgid "Rechnungen freigeben, zustellen, korrigieren und Zahlungseingänge zuordnen."
 msgstr ""
 
-#: templates/leg_dashboard.html:64
+#: templates/leg_dashboard.html:67
 msgid "Rechnungen in der Abrechnung öffnen"
 msgstr ""
 
@@ -12666,7 +12670,7 @@ msgstr ""
 msgid "Rolle"
 msgstr ""
 
-#: dashboard.py:187
+#: dashboard.py:188
 msgid "Rolle wird geprüft"
 msgstr ""
 
@@ -13650,7 +13654,7 @@ msgstr ""
 msgid "Status im Dashboard angeben"
 msgstr ""
 
-#: dashboard.py:175 dashboard.py:190 templates/leg_workspace/formation.html:44
+#: dashboard.py:176 dashboard.py:191 templates/leg_workspace/formation.html:44
 msgid "Status wird geprüft"
 msgstr ""
 
@@ -14224,7 +14228,7 @@ msgstr ""
 msgid "Ungültiges Token-Format"
 msgstr ""
 
-#: billing_workspace.py:65 dashboard.py:225 dashboard.py:475
+#: billing_workspace.py:65 dashboard.py:226 dashboard.py:477
 msgid "Unlesbar"
 msgstr ""
 
@@ -14276,7 +14280,7 @@ msgstr ""
 msgid "Unveränderter Export"
 msgstr ""
 
-#: dashboard.py:302 dashboard.py:303
+#: dashboard.py:303 dashboard.py:304
 msgid "Unvollständig"
 msgstr ""
 
@@ -14316,7 +14320,7 @@ msgstr ""
 msgid "VNB-Abgleich"
 msgstr ""
 
-#: dashboard.py:1193
+#: dashboard.py:1195
 msgid "VNB-Mutation vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -14411,7 +14415,7 @@ msgstr ""
 msgid "Verbrauchsdaten ergänzen"
 msgstr ""
 
-#: dashboard.py:133 dashboard.py:135 dashboard.py:1412
+#: dashboard.py:134 dashboard.py:136 dashboard.py:1414
 msgid "Verbrauchsdaten hinterlegt"
 msgstr ""
 
@@ -14563,7 +14567,7 @@ msgstr ""
 msgid "Verteilmodell"
 msgstr ""
 
-#: dashboard.py:180
+#: dashboard.py:181
 msgid "Verteilmodell wird geprüft"
 msgstr ""
 
@@ -14858,7 +14862,7 @@ msgstr ""
 msgid "Vorbereitete Berichte"
 msgstr ""
 
-#: dashboard.py:715
+#: dashboard.py:717
 msgid "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr ""
 
