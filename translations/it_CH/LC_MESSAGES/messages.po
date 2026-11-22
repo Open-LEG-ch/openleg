@@ -22635,11 +22635,6 @@ msgstr ""
 "tariffe, misure e ripartizioni complete del gestore di rete."
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_workspace/header.html:11
-msgid "LEG wechseln"
-msgstr "Cambia CLE"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_workspace/members.html:54
 msgid "Mitgliedschaft und Netzbetreiber"
 msgstr "Partecipazione e gestore di rete"
@@ -22722,3 +22717,8 @@ msgstr ""
 #: templates/leg_dashboard.html:45
 msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
 msgstr "Qui trovi la registrazione presso il gestore di rete e la conferma dell’avvio dell’attività."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/header.html:14
+msgid "LEG und Sprache wechseln"
+msgstr "Cambia CLE o lingua"

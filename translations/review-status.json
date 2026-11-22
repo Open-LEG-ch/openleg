@@ -1,34 +1,34 @@
 {
   "schema": "openleg-translation-review/1",
-  "source_digest": "4d3544180330ddb5e04ed8aa5ee0339b53afddd9f982c264ef15dcb8605402fa",
+  "source_digest": "8a74eab708bd1a54d7bd2498ca2595d32843b4fc114a112b197f9f99437719a6",
   "source_messages": 3750,
   "status": "draft",
   "native_approval": false,
   "legal_approval": false,
   "locales": {
     "de_CH": {
-      "catalog_digest": "0a20e33f22fe743a81353046f99d4a68e0fcc03ae82d4340e9596c9c833f95d0",
+      "catalog_digest": "e6ed05b72c80f4be8b951f0f1da17704ce7175ef84cf4c2598cc937ee6adad64",
       "native_review_status": "pending",
       "reviewer": null,
       "reviewed_at": null,
       "evidence_reference": null
     },
     "en": {
-      "catalog_digest": "660b6295172c6a8ce73be0fc525b797b49ec13ca9b72f6b17d63259fd7981dfc",
+      "catalog_digest": "8276bfd2c51e4e0624fdfc7906a0e860fb699d10ecb445c641acde779dae5b06",
       "native_review_status": "pending",
       "reviewer": null,
       "reviewed_at": null,
       "evidence_reference": null
     },
     "fr_CH": {
-      "catalog_digest": "5a05de53547fc23b515759a1a702a7394b4c47a3c4027cfe2800629fb02f3ea1",
+      "catalog_digest": "d388bb51be38242ca54e8a5aad1c290d34562bcfd1785d3bc87f73f8f0fff49e",
       "native_review_status": "pending",
       "reviewer": null,
       "reviewed_at": null,
       "evidence_reference": null
     },
     "it_CH": {
-      "catalog_digest": "ad4c7e106aa7543cfa9112cbcdccf6522bb5227d5348a7b26cf14619da7d465b",
+      "catalog_digest": "659628f117280880cab93502c0f819ec5c50bc7f2f49b27aed8a483690256886",
       "native_review_status": "pending",
       "reviewer": null,
       "reviewed_at": null,

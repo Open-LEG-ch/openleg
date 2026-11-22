@@ -19012,10 +19012,6 @@ msgstr ""
 "Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
 "weiterhin vollständige Tarife, Messwerte und Zuteilungen des Netzbetreibers."
 
-#: templates/leg_workspace/header.html:11
-msgid "LEG wechseln"
-msgstr "LEG wechseln"
-
 #: templates/leg_workspace/members.html:54
 msgid "Mitgliedschaft und Netzbetreiber"
 msgstr "Mitgliedschaft und Netzbetreiber"
@@ -19084,3 +19080,7 @@ msgstr ""
 #: templates/leg_dashboard.html:45
 msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
 msgstr "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
+
+#: templates/leg_workspace/header.html:14
+msgid "LEG und Sprache wechseln"
+msgstr "LEG und Sprache wechseln"

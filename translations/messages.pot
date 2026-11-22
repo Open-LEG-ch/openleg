@@ -9264,6 +9264,10 @@ msgstr ""
 msgid "LEG prüfen"
 msgstr ""
 
+#: templates/leg_workspace/header.html:14
+msgid "LEG und Sprache wechseln"
+msgstr ""
+
 #: templates/release/how_it_works.html:55
 msgid "LEG und beauftragter Betriebsdienst"
 msgstr ""
@@ -9275,10 +9279,6 @@ msgstr ""
 #: templates/release/footer.html:10 templates/release/homepage.html:13
 #: templates/release/homepage.html:136
 msgid "LEG vorbereiten"
-msgstr ""
-
-#: templates/leg_workspace/header.html:12
-msgid "LEG wechseln"
 msgstr ""
 
 #: templates/release/how_it_works.html:62 templates/release/knowledge.html:3

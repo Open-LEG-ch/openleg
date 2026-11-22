@@ -22366,11 +22366,6 @@ msgstr ""
 "meter readings and allocations from the grid operator."
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_workspace/header.html:11
-msgid "LEG wechseln"
-msgstr "Switch LEG"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_workspace/members.html:54
 msgid "Mitgliedschaft und Netzbetreiber"
 msgstr "Membership and grid operator"
@@ -22453,3 +22448,8 @@ msgstr ""
 #: templates/leg_dashboard.html:45
 msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
 msgstr "Find the grid operator registration and confirmation of the operating start here."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/header.html:14
+msgid "LEG und Sprache wechseln"
+msgstr "Switch LEG or language"

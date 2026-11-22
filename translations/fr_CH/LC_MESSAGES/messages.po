@@ -19971,11 +19971,6 @@ msgstr ""
 "tarifs, des relevés et des répartitions du gestionnaire de réseau complets."
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_workspace/header.html:11
-msgid "LEG wechseln"
-msgstr "Changer de CEL"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_workspace/members.html:54
 msgid "Mitgliedschaft und Netzbetreiber"
 msgstr "Participation et gestionnaire de réseau"
@@ -20058,3 +20053,8 @@ msgstr ""
 #: templates/leg_dashboard.html:45
 msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
 msgstr "Consultez ici l’annonce au gestionnaire de réseau et la confirmation de mise en service."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/header.html:14
+msgid "LEG und Sprache wechseln"
+msgstr "Changer de CEL ou de langue"
