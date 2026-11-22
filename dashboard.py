@@ -340,27 +340,26 @@ def leg_overview(
     }
 
 
-def _require_role(community_id: str, building_id: str, role: str):
-    """Return the member row if building_id has the given role, else None."""
+def _community_member(community_id: str, building_id: str):
     status = formation_wizard.get_community_status(community_id, building_id)
     if not status:
         return None
     return next(
-        (
-            m
-            for m in status["members"] or []
-            if m["building_id"] == building_id and m.get("role") == role
-        ),
+        (m for m in status["members"] or [] if m["building_id"] == building_id),
         None,
+    )
+
+
+def _is_confirmed_admin(member) -> bool:
+    return bool(
+        member and member.get("role") == "admin" and member.get("status") == "confirmed"
     )
 
 
 def _require_confirmed_admin(community_id: str, building_id: str):
     """Return the member row for a confirmed community admin, else None."""
-    member = _require_role(community_id, building_id, "admin")
-    if not member or member.get("status") != "confirmed":
-        return None
-    return member
+    member = _community_member(community_id, building_id)
+    return member if _is_confirmed_admin(member) else None
 
 
 def leg_export_archive(community_id: str, building_id: str) -> bytes | None:
@@ -394,13 +393,7 @@ def leg_restore_archive(
 
 def _require_capability(community_id: str, building_id: str, capability: str):
     """Return a confirmed member when the central access policy permits it."""
-    status = formation_wizard.get_community_status(community_id, building_id)
-    if not status:
-        return None
-    member = next(
-        (m for m in status["members"] or [] if m["building_id"] == building_id),
-        None,
-    )
+    member = _community_member(community_id, building_id)
     return member if community_access.allows(member, capability) else None
 
 
@@ -591,6 +584,7 @@ def leg_billing_workspace_view(
         ),
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
+        "can_import_bank_statement": _is_confirmed_admin(member),
     }
     view.update(extra)
     return view

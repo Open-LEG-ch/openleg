@@ -20040,8 +20040,8 @@ msgid ""
 "Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
 "starten."
 msgstr ""
-"La création peut commencer avant la mise en service, dès qu’un nombre suffisant de membres a "
-"confirmé sa participation."
+"La création peut commencer uniquement avant la mise en service et après confirmation "
+"d’un nombre suffisant de membres."
 
 #. Draft translation; native language and domain review pending.
 #: store/formation_documents.py:118
@@ -20052,3 +20052,8 @@ msgstr "Vous pouvez créer des projets de contrat uniquement avant la mise en se
 #: templates/leg_workspace/formation.html:55
 msgid "Für diese LEG liegen keine Vertragsdokumente vor."
 msgstr "Aucun document contractuel n’est disponible pour cette CEL."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:55
+msgid "Noch keine Bankzahlungen abgeglichen."
+msgstr "Aucun paiement bancaire n’a encore été rapproché."

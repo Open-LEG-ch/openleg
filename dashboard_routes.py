@@ -17,7 +17,6 @@ from flask import (
     abort,
     after_this_request,
     current_app,
-    flash,
     g,
     redirect,
     request,
@@ -127,11 +126,11 @@ def _leg_dashboard_redirect(community_id, page="overview"):
 
 
 def _leg_formation_redirect(community_id, building_id, *, error=None):
-    if error:
-        flash(error, f"leg-formation:{community_id}")
     community = dashboard_module.formation_wizard.get_community_status(
         community_id, building_id
     )
+    if error and community:
+        session[f"leg-formation:{community_id}"] = error
     return _leg_dashboard_redirect(
         community_id, dashboard_module.leg_formation_page(community)
     )
@@ -550,6 +549,14 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             else ""
         )
         if building_id:
+            if (
+                template == "leg_dashboard.html"
+                and community
+                and view.get("workspace_page", "overview") in ("overview", "formation")
+            ):
+                view["formation_error"] = session.pop(
+                    f"leg-formation:{community_id}", None
+                )
             memberships = dashboard_module.formation_wizard.get_user_communities(
                 building_id
             )

@@ -209,3 +209,56 @@ def test_billing_policy_marks_settings_as_its_parent_section(workspace):
         0
     ]
     assert 'aria-current="true"' in settings_link
+
+
+def test_other_leg_overview_does_not_consume_formation_feedback(workspace, monkeypatch):
+    import dashboard
+
+    client, status = workspace
+    _set_session(client, "b-admin")
+    other_status = {**status, "community_id": "other", "name": "Other LEG"}
+    monkeypatch.setattr(
+        dashboard.formation_wizard,
+        "get_community_status",
+        lambda cid, _bid: {"c0ffee": status, "other": other_status}.get(cid),
+    )
+    message = "Die Gründung lässt sich nur vor dem Betriebsstart"
+    monkeypatch.setattr(
+        dashboard,
+        "leg_start_formation",
+        lambda _cid, _bid: {"error": message},
+    )
+    result = client.post(ROOT + "/start-formation", data={"csrf_token": "csrf-secret"})
+    assert result.location == ROOT + "/formation"
+    assert message not in client.get("/leg/dashboard?cid=other").text
+    assert message in client.get(result.location).text
+    assert message not in client.get(result.location).text
+
+
+@pytest.mark.parametrize("section", ["payments", "invoices"])
+def test_billing_shortcuts_jump_to_a_visible_section(workspace, section):
+    client, _ = workspace
+    _set_session(client, "auditor")
+    assert f'href="{ROOT}/billing#{section}"' in client.get(ROOT + f"/{section}").text
+    assert f'id="{section}"' in client.get(ROOT + "/billing").text
+
+
+@pytest.mark.parametrize(
+    ("actor", "may_import"), [("preparer", False), ("b-admin", True)]
+)
+def test_statement_import_form_is_reserved_for_confirmed_admins(
+    workspace, actor, may_import
+):
+    client, status = workspace
+    status["members"].append(
+        {
+            "building_id": "preparer",
+            "role": "member",
+            "status": "confirmed",
+            "access_roles": ["billing_preparer"],
+        }
+    )
+    _set_session(client, actor)
+    response = client.get(ROOT + "/billing")
+    assert response.status_code == 200
+    assert ('name="statement"' in response.text) is may_import

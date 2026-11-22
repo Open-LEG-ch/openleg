@@ -44,10 +44,8 @@
   {% endif %}
 </header>
 
-{% if viewer_has_session and page in ("overview", "formation") %}
-  {% for message in get_flashed_messages(category_filter=["leg-formation:" ~ community.community_id]) %}
-  <p class="mb-6 text-accent-dark" role="alert">{{ _(message) }}</p>
-  {% endfor %}
+{% if formation_error %}
+<p class="mb-6 text-accent-dark" role="alert">{{ _(formation_error) }}</p>
 {% endif %}
 
 {% if page == "overview" %}
@@ -62,7 +60,7 @@
   <a href="{{ workspace_overview }}" class="inline-flex items-center rounded-full border border-brand px-4 py-2 font-semibold text-brand hover:bg-brand/10">{{ _('Gründungsstand auf der Übersicht öffnen') }}</a>
   {% endif %}
 {% elif page in ("payments", "invoices") %}
-  <a href="{{ workspace_root }}/billing" class="inline-flex items-center rounded-full bg-brand px-5 py-2 font-semibold text-white hover:bg-brand-dark">
+  <a href="{{ workspace_root }}/billing#{{ page }}" class="inline-flex items-center rounded-full bg-brand px-5 py-2 font-semibold text-white hover:bg-brand-dark">
     {% if page == "payments" %}{{ _('Bankzahlungen in der Abrechnung öffnen') }}{% else %}{{ _('Rechnungen in der Abrechnung öffnen') }}{% endif %}
   </a>
 {% elif page == "members" %}

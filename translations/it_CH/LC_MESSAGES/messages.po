@@ -22706,8 +22706,8 @@ msgid ""
 "Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
 "starten."
 msgstr ""
-"La costituzione può iniziare prima dell’avvio dell’attività, quando un numero sufficiente di "
-"membri ha confermato la partecipazione."
+"La costituzione può iniziare solo prima dell’avvio dell’attività e dopo la conferma "
+"di un numero sufficiente di membri."
 
 #. Draft translation; native language and domain review pending.
 #: store/formation_documents.py:118
@@ -22718,3 +22718,8 @@ msgstr "Puoi creare bozze di contratto solo prima dell’avvio dell’attività.
 #: templates/leg_workspace/formation.html:55
 msgid "Für diese LEG liegen keine Vertragsdokumente vor."
 msgstr "Per questa CLE non sono disponibili documenti contrattuali."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:55
+msgid "Noch keine Bankzahlungen abgeglichen."
+msgstr "Non è ancora stato riconciliato alcun pagamento bancario."
