@@ -8985,11 +8985,6 @@ msgid "Gründung gestartet"
 msgstr "Creazione avviata"
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:1088
-msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
-msgstr "Creazione non ancora possibile (membri sufficientemente confermati?)."
-
-#. Draft translation; native language and domain review pending.
 #: templates/emails/day_14_formation.html:71 templates/leg_dashboard.html:423
 #: templates/leg_dashboard.html:427 templates/leg_dashboard.html:433
 msgid "Gründung starten"
@@ -22704,3 +22699,22 @@ msgstr "Gestione della CLE"
 #: templates/leg_workspace/settings.html:15
 msgid "Integrationskonten öffnen"
 msgstr "Apri i conti di integrazione"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:1122
+msgid ""
+"Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
+"starten."
+msgstr ""
+"La costituzione può iniziare prima dell’avvio dell’attività, quando un numero sufficiente di "
+"membri ha confermato la partecipazione."
+
+#. Draft translation; native language and domain review pending.
+#: store/formation_documents.py:118
+msgid "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
+msgstr "Puoi creare bozze di contratto solo prima dell’avvio dell’attività."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/formation.html:55
+msgid "Für diese LEG liegen keine Vertragsdokumente vor."
+msgstr "Per questa CLE non sono disponibili documenti contrattuali."

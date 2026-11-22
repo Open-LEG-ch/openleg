@@ -1118,7 +1118,9 @@ def leg_start_formation(community_id: str, building_id: str) -> dict:
     ok = formation_wizard.start_formation(community_id)
     if not ok:
         return {
-            "error": _N("Gründung noch nicht möglich (genug bestätigte Mitglieder?).")
+            "error": _N(
+                "Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern starten."
+            )
         }
     return {"error": None}
 

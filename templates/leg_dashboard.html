@@ -44,6 +44,12 @@
   {% endif %}
 </header>
 
+{% if viewer_has_session and page in ("overview", "formation") %}
+  {% for message in get_flashed_messages(category_filter=["leg-formation:" ~ community.community_id]) %}
+  <p class="mb-6 text-accent-dark" role="alert">{{ _(message) }}</p>
+  {% endfor %}
+{% endif %}
+
 {% if page == "overview" %}
   {% if community.status != "active" %}
   {% include "leg_workspace/formation.html" %}

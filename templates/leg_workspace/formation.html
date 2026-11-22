@@ -25,6 +25,7 @@
     {% endif %}
   </ul>
 </section>
+{% set formation_editable = community.status not in ("active", "rejected") %}
 <section class="mb-10">
   <h2 class="font-bold mb-2">{{ _('Dokumente') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('Diese Vorlagen sind automatisch erstellte Entwürfe und keine Rechtsberatung. Lassen Sie die Dokumente vor der Unterzeichnung juristisch prüfen.') }}</p>
@@ -48,10 +49,12 @@
     </li>
     {% endfor %}
   </ul>
-  {% else %}
+  {% elif formation_editable %}
   <p class="text-sm text-ink-muted mb-4">{{ _('Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf.') }}</p>
+  {% else %}
+  <p class="text-sm text-ink-muted mb-4">{{ _('Für diese LEG liegen keine Vertragsdokumente vor.') }}</p>
   {% endif %}
-  {% if can_manage_documents and viewer_has_session %}
+  {% if formation_editable and can_manage_documents and viewer_has_session %}
   <form method="post" action="/leg/community/{{ community.community_id }}/documents">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Vertragsentwürfe erstellen') }}</button>
@@ -117,7 +120,7 @@
   </form>
   {% endif %}
 </section>
-{% if community.status != "active" and can_manage_members and viewer_has_session %}
+{% if formation_editable and can_manage_members and viewer_has_session %}
 <section class="mb-10">
   <h2 class="font-bold mb-2">{{ _('Gründung starten') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess.') }}</p>
@@ -126,7 +129,7 @@
     <button type="submit" class="border border-ink/20 text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">{{ _('Gründung starten') }}</button>
   </form>
 </section>
-{% elif community.status != "active" and is_admin and not viewer_has_session %}
+{% elif formation_editable and is_admin and not viewer_has_session %}
 <section class="mb-10">
   <h2 class="font-bold mb-2">{{ _('Gründung starten') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen.') }}</p>

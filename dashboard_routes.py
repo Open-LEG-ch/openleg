@@ -17,6 +17,7 @@ from flask import (
     abort,
     after_this_request,
     current_app,
+    flash,
     g,
     redirect,
     request,
@@ -125,7 +126,9 @@ def _leg_dashboard_redirect(community_id, page="overview"):
     return redirect(dashboard_module.leg_workspace_location(community_id, page))
 
 
-def _leg_formation_redirect(community_id, building_id):
+def _leg_formation_redirect(community_id, building_id, *, error=None):
+    if error:
+        flash(error, f"leg-formation:{community_id}")
     community = dashboard_module.formation_wizard.get_community_status(
         community_id, building_id
     )
@@ -738,15 +741,15 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_community_start_formation(community_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
-        dashboard_module.leg_start_formation(community_id, building_id)
-        return _leg_formation_redirect(community_id, building_id)
+        result = dashboard_module.leg_start_formation(community_id, building_id)
+        return _leg_formation_redirect(community_id, building_id, error=result["error"])
 
     @bp.route("/leg/community/<community_id>/documents", methods=["POST"])
     def leg_community_documents(community_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
-        dashboard_module.leg_generate_documents(community_id, building_id)
-        return _leg_formation_redirect(community_id, building_id)
+        result = dashboard_module.leg_generate_documents(community_id, building_id)
+        return _leg_formation_redirect(community_id, building_id, error=result["error"])
 
     @bp.route("/leg/community/<community_id>/archive")
     def leg_community_archive_export(community_id):

@@ -5,7 +5,7 @@
 <header data-leg-workspace class="relative border-b border-line bg-white {{ workspace_focus }}
        {% if site_release_enabled %}{{ workspace_roof }} border-t-[6px] border-t-[color:var(--workspace-roof)] [&_.ol-leg]:border-b-[color:var(--workspace-roof)]!{% endif %}">
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-    {% set brand_class = "text-2xl" %}
+    {% set brand_class = "min-h-12 items-center text-2xl" %}
     {% include "partials/brand_wordmark.html" %}
     <details class="min-w-0 min-[480px]:relative">
       <summary class="flex min-h-12 max-w-full cursor-pointer list-none items-center gap-3 rounded-lg border border-ink-muted px-3 py-2 font-semibold [&::-webkit-details-marker]:hidden">

@@ -213,7 +213,9 @@ def test_replace_document_bundle_uses_one_transaction(monkeypatch):
 
     import store.formation_documents as repository
 
-    cur = _DictCursor(one={"has_signed": False})
+    cur = _DictCursor(
+        one={"status": "formation_started", "activated_at": None, "has_signed": False}
+    )
 
     @contextmanager
     def _conn():

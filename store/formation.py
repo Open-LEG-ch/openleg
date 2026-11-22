@@ -15,6 +15,17 @@ import community_access
 
 logger = logging.getLogger(__name__)
 
+PRE_ACTIVATION_STATUSES = (
+    "interested",
+    "invited",
+    "confirmed",
+    "formation_started",
+    "documents_generated",
+    "signatures_pending",
+    "dso_submitted",
+    "dso_approved",
+)
+
 
 def _get_connection():
     import database
@@ -176,10 +187,12 @@ def mark_formation_started(community_id: str) -> bool:
                     """
                     UPDATE communities
                     SET status = %s, formation_started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-                    WHERE community_id = %s
+                    WHERE community_id = %s AND status IN %s AND activated_at IS NULL
                 """,
-                    ("formation_started", community_id),
+                    ("formation_started", community_id, PRE_ACTIVATION_STATUSES),
                 )
+                if cur.rowcount == 0:
+                    return False
                 _track_event("formation_started", None, {"community_id": community_id})
                 logger.info(
                     f"[FORMATION] Started formation for community {community_id}"
