@@ -267,8 +267,20 @@ def test_mark_formation_started_updates_the_community(monkeypatch, caplog):
 
     assert formation.mark_formation_started("c1") is True
     query, params = cur.executed[0]
-    assert "UPDATE communities" in query
-    assert "formation_started" in params
+    normalized = " ".join(query.split())
+    assert normalized.startswith(
+        "UPDATE communities SET status = CASE WHEN status IN %s "
+        "THEN 'formation_started' ELSE status END, formation_started_at = CURRENT_TIMESTAMP,"
+    )
+    assert (
+        "WHERE community_id = %s AND status IN %s "
+        "AND activated_at IS NULL AND formation_started_at IS NULL" in normalized
+    )
+    assert params == (
+        formation.BEFORE_FORMATION_STATUSES,
+        "c1",
+        formation.PRE_ACTIVATION_STATUSES,
+    )
     events.assert_called_once_with("formation_started", None, {"community_id": "c1"})
     assert caplog.messages == ["[FORMATION] Started formation for community c1"]
 
