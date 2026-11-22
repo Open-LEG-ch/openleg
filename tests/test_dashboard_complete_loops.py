@@ -176,6 +176,7 @@ def test_profile_export_omits_non_finite_numbers(monkeypatch):
 
 
 def test_dashboard_templates_expose_human_controls_and_progress():
+    overview = (ROOT / "templates/leg_dashboard.html").read_text(encoding="utf-8")
     leg = "\n".join(
         path.read_text(encoding="utf-8")
         for path in (ROOT / "templates/leg_workspace").glob("*.html")
@@ -183,6 +184,7 @@ def test_dashboard_templates_expose_human_controls_and_progress():
     resident = (ROOT / "templates/dashboard.html").read_text(encoding="utf-8")
 
     assert 'name="invite_email"' in leg
+    assert 'name="invite_building_id"' not in overview
     assert 'name="invite_building_id"' not in leg
     assert "Profil-ID des Nachbarn" not in leg
     assert "Verantwortlich" in leg

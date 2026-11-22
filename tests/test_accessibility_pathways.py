@@ -92,14 +92,22 @@ def test_operator_dashboard_tables_carry_scoped_headers_and_names():
     _assert_named_controls(text, "operator dashboard")
     for label in re.findall(r"<label\b[^>]*for=\"([^\"]+)\"", text):
         assert f'id="{label}"' in text, f"label targets missing id #{label}"
-    table_count = text.count("<table")
-    assert table_count >= 2, "members and correspondence tables must stay tables"
-    headers = re.findall(r"<th\b[^>]*>", text)
-    assert len(headers) >= 7, "both tables must have header cells"
-    assert all('scope="col"' in header for header in headers), (
-        "every table header must declare scope for screen readers"
-    )
-    assert text.count("<caption") >= 2, "each table needs an accessible name (caption)"
+    for template, count in (("members.html", 2), ("correspondence.html", 1)):
+        tables = re.findall(
+            r"<table\b[^>]*>(.*?)</table>",
+            _read("leg_workspace", template),
+            flags=re.DOTALL,
+        )
+        assert len(tables) >= count, f"{template}: expected at least {count} tables"
+        for index, table in enumerate(tables, 1):
+            caption = re.search(r"<caption\b[^>]*>(.*?)</caption>", table, re.DOTALL)
+            assert caption and caption.group(1).strip(), (
+                f"{template}: table {index} needs a caption"
+            )
+            headers = re.findall(r"<th\b[^>]*>", table)
+            assert headers and all('scope="col"' in header for header in headers), (
+                f"{template}: table {index} needs scoped column headers"
+            )
 
 
 def test_gemeinde_dashboard_announces_copy_and_names_its_controls():

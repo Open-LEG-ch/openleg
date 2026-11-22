@@ -624,8 +624,13 @@ def _correspondence_overview():
 
 
 def test_correspondence_post_success_is_private_and_redirects(app_module, monkeypatch):
-    log = MagicMock(return_value={"error": None, "entry_id": 5})
-    monkeypatch.setattr(app_module.dashboard_module, "leg_log_correspondence", log)
+    log = MagicMock(return_value=5)
+    monkeypatch.setattr(app_module.db, "log_correspondence", log)
+    monkeypatch.setattr(
+        app_module.dashboard_module.formation_wizard,
+        "get_community_status",
+        lambda _cid, _bid: _correspondence_overview()["community"],
+    )
     client = app_module.web.test_client()
     _set_session(client)
 
@@ -633,7 +638,7 @@ def test_correspondence_post_success_is_private_and_redirects(app_module, monkey
         "/leg/community/community-1/correspondence",
         data={
             "csrf_token": "csrf-secret",
-            "direction": "outbound",
+            "direction": "out",
             "channel": "email",
             "counterparty": "VNB",
             "subject": "Netzanschluss",
@@ -641,6 +646,10 @@ def test_correspondence_post_success_is_private_and_redirects(app_module, monkey
         },
     )
 
+    log.assert_called_once()
+    assert log.call_args.kwargs["direction"] == "out"
+    assert log.call_args.kwargs["community_id"] == "community-1"
+    assert log.call_args.kwargs["logged_by"] == "building-session"
     assert response.status_code == 302
     assert response.headers["Location"].endswith(
         "/leg/community/community-1/correspondence"
@@ -648,7 +657,6 @@ def test_correspondence_post_success_is_private_and_redirects(app_module, monkey
     assert "bid=" not in response.headers["Location"]
     assert "no-store" in response.headers["Cache-Control"]
     assert response.headers["Referrer-Policy"] == "no-referrer"
-    assert log.call_args.args[:2] == ("community-1", "building-session")
 
 
 def test_correspondence_post_validation_failure_is_private(app_module, monkeypatch):
