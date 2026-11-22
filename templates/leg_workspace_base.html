@@ -17,7 +17,6 @@
   ("settings", _("Einstellungen")),
 ]) %}
 {% set workspace_focus = "[&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-solid! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-3! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-offset-3! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-brand!" %}
-{% set workspace_roof = "[--workspace-roof:var(--color-roof,#cb815c)]" %}
 {% block product_header %}
   {% if workspace_id %}
     {% include "leg_workspace/header.html" %}
@@ -30,7 +29,7 @@
      class="mx-auto max-w-7xl
        [&_h1]:font-serif [&_h1]:font-normal
        {{ workspace_focus }}
-       {% if site_release_enabled %}{{ workspace_roof }}
+       {% if site_release_enabled %}
        [&_a.text-brand:not(.rounded-full,.bg-brand)]:underline [&_a.text-brand:not(.rounded-full,.bg-brand)]:underline-offset-4
        [&_a]:decoration-2 [&_a]:decoration-[color:var(--workspace-roof)]
        {% endif %}

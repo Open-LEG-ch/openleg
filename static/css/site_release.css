@@ -12,7 +12,7 @@
   font-size: 16px; line-height: 1.65; color: var(--color-ink); background: var(--color-paper);
   overflow-wrap: break-word;
 }
-.site-release.product-shell { --color-accent: #ee8d7c; --color-accent-light: #f5d4ca; }
+.site-release.product-shell { --color-accent: #ee8d7c; --color-accent-light: #f5d4ca; --workspace-roof: #cb815c; }
 .site-release:not(.product-shell) {
   --roof-sun: #e5a07a; --roof: #cb815c; --roof-deep: #a65a3b;
   --roof-wash: #f2d3bf; --plaster-warm: #f5e3d6;
