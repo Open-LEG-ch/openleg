@@ -22452,3 +22452,8 @@ msgstr "There are no agreement documents for this LEG."
 #: templates/leg_billing.html:55
 msgid "Noch keine Bankzahlungen abgeglichen."
 msgstr "No bank payments have been reconciled yet."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:57
+msgid "Diese Ansicht lädt keine Zahlungsdaten."
+msgstr "This view does not load payment data."

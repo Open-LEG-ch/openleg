@@ -51,8 +51,10 @@
         {% endfor %}
       </div>
     </section>
-    {% else %}
+    {% elif statement_entries_loaded %}
     <p class="text-sm text-ink-muted">{{ _('Noch keine Bankzahlungen abgeglichen.') }}</p>
+    {% else %}
+    <p class="text-sm text-ink-muted">{{ _('Diese Ansicht lädt keine Zahlungsdaten.') }}</p>
     {% endif %}
   </section>
 

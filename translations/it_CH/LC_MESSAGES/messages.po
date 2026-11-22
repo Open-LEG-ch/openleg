@@ -22723,3 +22723,8 @@ msgstr "Per questa CLE non sono disponibili documenti contrattuali."
 #: templates/leg_billing.html:55
 msgid "Noch keine Bankzahlungen abgeglichen."
 msgstr "Non è ancora stato riconciliato alcun pagamento bancario."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:57
+msgid "Diese Ansicht lädt keine Zahlungsdaten."
+msgstr "Questa vista non carica i dati di pagamento."

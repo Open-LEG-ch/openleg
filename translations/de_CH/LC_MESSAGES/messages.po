@@ -19085,3 +19085,7 @@ msgstr "Für diese LEG liegen keine Vertragsdokumente vor."
 #: templates/leg_billing.html:55
 msgid "Noch keine Bankzahlungen abgeglichen."
 msgstr "Noch keine Bankzahlungen abgeglichen."
+
+#: templates/leg_billing.html:57
+msgid "Diese Ansicht lädt keine Zahlungsdaten."
+msgstr "Diese Ansicht lädt keine Zahlungsdaten."

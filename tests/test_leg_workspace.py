@@ -262,3 +262,35 @@ def test_statement_import_form_is_reserved_for_confirmed_admins(
     response = client.get(ROOT + "/billing")
     assert response.status_code == 200
     assert ('name="statement"' in response.text) is may_import
+
+
+def test_billing_approval_error_distinguishes_unloaded_payments(workspace, monkeypatch):
+    import billing_approval
+    import dashboard
+
+    client, _ = workspace
+    _set_session(client, "b-admin")
+    monkeypatch.setattr(
+        dashboard.db,
+        "list_bank_statement_entries",
+        lambda _cid: [
+            {
+                "payment_reference": "SYNTHETIC-PAID",
+                "amount": "10.00",
+                "currency": "CHF",
+            }
+        ],
+    )
+
+    def reject_approval(*_args):
+        raise billing_approval.BillingApprovalError("synthetic refusal")
+
+    monkeypatch.setattr(dashboard, "leg_approve_billing_period", reject_approval)
+    assert "SYNTHETIC-PAID" in client.get(ROOT + "/billing").text
+    response = client.post(
+        ROOT + "/billing/period/1/approve",
+        data={"csrf_token": "csrf-secret", "confirm_approval": "yes"},
+    )
+    assert response.status_code == 409
+    assert "Diese Ansicht lädt keine Zahlungsdaten." in response.text
+    assert "Noch keine Bankzahlungen abgeglichen." not in response.text

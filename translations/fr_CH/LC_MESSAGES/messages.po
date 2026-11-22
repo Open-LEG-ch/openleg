@@ -20057,3 +20057,8 @@ msgstr "Aucun document contractuel n’est disponible pour cette CEL."
 #: templates/leg_billing.html:55
 msgid "Noch keine Bankzahlungen abgeglichen."
 msgstr "Aucun paiement bancaire n’a encore été rapproché."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:57
+msgid "Diese Ansicht lädt keine Zahlungsdaten."
+msgstr "Cette vue ne charge pas les données de paiement."

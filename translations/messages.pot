@@ -224,7 +224,7 @@ msgstr ""
 msgid "%(value_1f_format_value_gap_savings_rp_kwh)s Rp/kWh"
 msgstr ""
 
-#: templates/leg_billing.html:69
+#: templates/leg_billing.html:71
 msgid "(Plausibilität, kein Fehler; Import und Freigabe bleiben möglich.)"
 msgstr ""
 
@@ -741,15 +741,15 @@ msgstr ""
 msgid "Abgewiesen"
 msgstr ""
 
-#: templates/leg_billing.html:66
+#: templates/leg_billing.html:68
 msgid "Abgleich mit dem VNB: Abweichung prüfen."
 msgstr ""
 
-#: templates/leg_billing.html:66
+#: templates/leg_billing.html:68
 msgid "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
 msgstr ""
 
-#: templates/leg_billing.html:66
+#: templates/leg_billing.html:68
 msgid "Abgleich mit dem VNB: vollständig abgeglichen."
 msgstr ""
 
@@ -816,7 +816,7 @@ msgstr ""
 msgid "Abrechnung vorbereiten"
 msgstr ""
 
-#: dashboard.py:740
+#: dashboard.py:741
 msgid "Abrechnung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -861,7 +861,7 @@ msgstr ""
 msgid "Abrechnungsentwurf"
 msgstr ""
 
-#: dashboard.py:746
+#: dashboard.py:747
 msgid "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
 msgstr ""
 
@@ -1335,7 +1335,7 @@ msgstr ""
 msgid "Angenommen"
 msgstr ""
 
-#: dashboard.py:1293
+#: dashboard.py:1294
 msgid "Anhänge müssen PDF-Dateien sein."
 msgstr ""
 
@@ -1463,7 +1463,7 @@ msgstr ""
 msgid "Anträge und Mitglieder filtern"
 msgstr ""
 
-#: templates/api_docs.html:110 templates/leg_billing.html:189 templates/leg_workspace/members.html:60
+#: templates/api_docs.html:110 templates/leg_billing.html:191 templates/leg_workspace/members.html:60
 #: templates/member_invoice_detail.html:213 templates/sandbox/questions.html:27
 msgid "Antwort"
 msgstr ""
@@ -1472,7 +1472,7 @@ msgstr ""
 msgid "Antwort auf Beitritt simulieren"
 msgstr ""
 
-#: dashboard.py:949
+#: dashboard.py:950
 msgid "Antwort oder Status ist erforderlich."
 msgstr ""
 
@@ -1596,7 +1596,7 @@ msgid ""
 "macht Sie nicht automatisch zum Vereinsmitglied."
 msgstr ""
 
-#: templates/leg_billing.html:159
+#: templates/leg_billing.html:161
 msgid "Audit-Verlauf"
 msgstr ""
 
@@ -1620,7 +1620,7 @@ msgstr ""
 msgid "Auf eigener Infrastruktur"
 msgstr ""
 
-#: templates/leg_billing.html:69
+#: templates/leg_billing.html:71
 msgid "Auffällige Messfenster:"
 msgstr ""
 
@@ -2270,7 +2270,7 @@ msgstr ""
 msgid "Bestimmt eine Ansprechperson."
 msgstr ""
 
-#: templates/leg_billing.html:190 templates/sandbox/questions.html:28
+#: templates/leg_billing.html:192 templates/sandbox/questions.html:28
 msgid "Bestätigen"
 msgstr ""
 
@@ -2595,7 +2595,7 @@ msgstr ""
 msgid "Bitte geben Sie eine E-Mail an."
 msgstr ""
 
-#: dashboard.py:1025 templates/partials/form_validation.html:3
+#: dashboard.py:1026 templates/partials/form_validation.html:3
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr ""
 
@@ -2603,7 +2603,7 @@ msgstr ""
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr ""
 
-#: dashboard.py:1455 dashboard.py:1458
+#: dashboard.py:1456 dashboard.py:1459
 msgid "Bitte geben Sie eine gültige Solarleistung ein."
 msgstr ""
 
@@ -2619,7 +2619,7 @@ msgstr ""
 msgid "Bitte geben Sie einen Wert im zulässigen Schrittintervall ein."
 msgstr ""
 
-#: dashboard.py:1442 dashboard.py:1450
+#: dashboard.py:1443 dashboard.py:1451
 msgid "Bitte geben Sie einen gültigen Jahresverbrauch ein."
 msgstr ""
 
@@ -2945,7 +2945,7 @@ msgid ""
 "später."
 msgstr ""
 
-#: dashboard.py:1470
+#: dashboard.py:1471
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
 msgstr ""
 
@@ -2995,7 +2995,7 @@ msgid ""
 "über die Eignung einer Adresse aus."
 msgstr ""
 
-#: dashboard.py:1073
+#: dashboard.py:1074
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr ""
 
@@ -3205,7 +3205,7 @@ msgstr ""
 
 #: templates/documents/community_agreement.html:15 templates/documents/dso_registration.html:15
 #: templates/documents/participant_contract.html:12 templates/documents/participant_contract.html:34
-#: templates/documents/participant_contract.html:36 templates/leg_billing.html:168
+#: templates/documents/participant_contract.html:36 templates/leg_billing.html:170
 msgid "Datum:"
 msgstr ""
 
@@ -3278,7 +3278,7 @@ msgstr ""
 msgid "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
 msgstr ""
 
-#: dashboard.py:1295
+#: dashboard.py:1296
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr ""
 
@@ -3431,7 +3431,7 @@ msgid ""
 "Verzeichniseintrag ersetzt diese Prüfung nicht."
 msgstr ""
 
-#: dashboard.py:1297
+#: dashboard.py:1298
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr ""
 
@@ -3636,7 +3636,7 @@ msgid ""
 "Standardtarif des Verteilnetzbetreibers nicht übersteigen."
 msgstr ""
 
-#: templates/leg_billing.html:125
+#: templates/leg_billing.html:127
 msgid ""
 "Der letzte Zustellversuch ist unklar. OpenLEG sendet nicht automatisch erneut, damit das Mitglied"
 " keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung "
@@ -3913,7 +3913,7 @@ msgstr ""
 msgid "Die Gruppenbildung ist fehlgeschlagen."
 msgstr ""
 
-#: dashboard.py:1116
+#: dashboard.py:1117
 msgid ""
 "Die Gründung lässt sich nur vor dem Betriebsstart und mit genügend bestätigten Mitgliedern "
 "starten."
@@ -4215,7 +4215,7 @@ msgstr ""
 msgid "Die Richtlinien-Kopie ist unvollständig: "
 msgstr ""
 
-#: dashboard.py:1055
+#: dashboard.py:1056
 msgid "Die Rollen konnten nicht geändert werden. Mindestens eine Administration muss bestehen bleiben."
 msgstr ""
 
@@ -4521,6 +4521,10 @@ msgid ""
 " LEG bilden können, geben Ihnen Ihre Nachbarn und Ihr Netzbetreiber."
 msgstr ""
 
+#: templates/leg_billing.html:57
+msgid "Diese Ansicht lädt keine Zahlungsdaten."
+msgstr ""
+
 #: templates/open_source.html:55
 msgid ""
 "Diese Aufnahme stammt aus der echten Demo. Öffnen Sie den Ablauf, prüfen Sie das Verhalten und "
@@ -4666,7 +4670,7 @@ msgstr ""
 msgid "Dieser Eintrag fehlt oder kann nicht bestätigt werden. Prüfen Sie Rechnung, Status und Auszug."
 msgstr ""
 
-#: templates/leg_billing.html:96
+#: templates/leg_billing.html:98
 msgid ""
 "Dieser Entwurf ist nicht freigabebereit: Der Abgleich weicht ab oder Quelldokumente fehlen. Die "
 "Freigabe ist erst nach einem vollständigen Abgleich möglich."
@@ -4869,7 +4873,7 @@ msgstr ""
 msgid "E-Mail"
 msgstr ""
 
-#: dashboard.py:128 dashboard.py:130 dashboard.py:1410 verein_routes.py:296
+#: dashboard.py:128 dashboard.py:130 dashboard.py:1411 verein_routes.py:296
 msgid "E-Mail bestätigt"
 msgstr ""
 
@@ -4956,7 +4960,7 @@ msgstr ""
 msgid "EVU Registrierung"
 msgstr ""
 
-#: dashboard.py:138 dashboard.py:140 dashboard.py:1412
+#: dashboard.py:138 dashboard.py:140 dashboard.py:1413
 msgid "EVU-Einwilligung erteilt"
 msgstr ""
 
@@ -5149,7 +5153,7 @@ msgid ""
 " trägt."
 msgstr ""
 
-#: billing_lifecycle.py:53 dashboard.py:665
+#: billing_lifecycle.py:53 dashboard.py:666
 msgid "Ein gültiges Zahlungsdatum ist erforderlich."
 msgstr ""
 
@@ -5335,7 +5339,7 @@ msgstr ""
 msgid "Eine eigene LEG vorbereiten"
 msgstr ""
 
-#: dashboard.py:693
+#: dashboard.py:694
 msgid "Eine gültige Ersatzrechnung ist erforderlich."
 msgstr ""
 
@@ -5416,7 +5420,7 @@ msgid_plural "Einladungen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dashboard.py:1008
+#: dashboard.py:1009
 msgid "Einladung nicht möglich (bereits Mitglied?)."
 msgstr ""
 
@@ -5516,7 +5520,7 @@ msgstr ""
 msgid "Eintrag und Checkliste öffnen"
 msgstr ""
 
-#: dashboard.py:1312
+#: dashboard.py:1313
 msgid "Eintrag ungültig (Richtung oder Kanal unbekannt)."
 msgstr ""
 
@@ -5854,7 +5858,7 @@ msgid ""
 "Freigabe. Widerrufen Sie die Freigabe und prüfen Sie die Liste erneut."
 msgstr ""
 
-#: templates/leg_billing.html:190 templates/sandbox/questions.html:28
+#: templates/leg_billing.html:192 templates/sandbox/questions.html:28
 msgid "Erledigen"
 msgstr ""
 
@@ -5870,7 +5874,7 @@ msgstr ""
 msgid "Erneut versuchen"
 msgstr ""
 
-#: templates/leg_billing.html:151
+#: templates/leg_billing.html:153
 msgid "Ersatzrechnung wählen"
 msgstr ""
 
@@ -6345,7 +6349,7 @@ msgstr ""
 msgid "Freigegebene Notizen vorhanden"
 msgstr ""
 
-#: templates/leg_billing.html:107
+#: templates/leg_billing.html:109
 msgid "Freigegebene Rechnungen"
 msgstr ""
 
@@ -6568,7 +6572,7 @@ msgstr ""
 msgid "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung mit einer anderen E-Mail-Adresse."
 msgstr ""
 
-#: dashboard.py:874
+#: dashboard.py:875
 msgid "Für dieses Gültig-ab-Datum existiert bereits eine Version."
 msgstr ""
 
@@ -7118,7 +7122,7 @@ msgstr ""
 msgid "Gesamtbetrag"
 msgstr ""
 
-#: templates/leg_billing.html:116
+#: templates/leg_billing.html:118
 msgid "Gesamtbetrag unlesbar"
 msgstr ""
 
@@ -7329,7 +7333,7 @@ msgstr ""
 msgid "Grund für das sofortige Ausblenden"
 msgstr ""
 
-#: templates/leg_billing.html:166
+#: templates/leg_billing.html:168
 msgid "Grund:"
 msgstr ""
 
@@ -7728,13 +7732,13 @@ msgstr ""
 msgid "Ich habe Betrag, Währung, Richtung, Referenz und Rechnungsstatus geprüft."
 msgstr ""
 
-#: templates/leg_billing.html:79
+#: templates/leg_billing.html:81
 msgid ""
 "Ich habe Tarif, Abgleich und Quelldokumente geprüft und gebe die Rechnungen dieser Periode "
 "verbindlich frei."
 msgstr ""
 
-#: templates/leg_billing.html:88
+#: templates/leg_billing.html:90
 msgid "Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor."
 msgstr ""
 
@@ -8028,7 +8032,7 @@ msgstr ""
 msgid "Ihre Nachbarn bestätigen die Teilnahme. Wir koordinieren die Kontaktaufnahme."
 msgstr ""
 
-#: dashboard.py:624
+#: dashboard.py:625
 #, python-format
 msgid "Ihre Rechnung %(invoice_number)s"
 msgstr ""
@@ -8065,7 +8069,7 @@ msgstr ""
 msgid "Ihre letzte Stromrechnung von %(utility_name)s enthält die nötigen Angaben."
 msgstr ""
 
-#: dashboard.py:629
+#: dashboard.py:630
 #, python-format
 msgid "Ihre neue LEG-Rechnung ist im geschützten OpenLEG-Dashboard verfügbar: %(invoice_url)s"
 msgstr ""
@@ -8599,7 +8603,7 @@ msgstr ""
 msgid "Kein Profil angegeben."
 msgstr ""
 
-#: dashboard.py:1005
+#: dashboard.py:1006
 msgid "Kein Profil zum Einladen angegeben."
 msgstr ""
 
@@ -8620,9 +8624,9 @@ msgid "Kein Zugang angegeben"
 msgstr ""
 
 #: dashboard.py:238 dashboard.py:249 dashboard.py:258 dashboard.py:263 dashboard.py:490
-#: dashboard.py:596 dashboard.py:649 dashboard.py:660 dashboard.py:677 dashboard.py:688
-#: dashboard.py:706 dashboard.py:733 dashboard.py:813 dashboard.py:842 dashboard.py:863
-#: dashboard.py:932 dashboard.py:947 dashboard.py:958 dashboard.py:1099 dashboard.py:1289
+#: dashboard.py:597 dashboard.py:650 dashboard.py:661 dashboard.py:678 dashboard.py:689
+#: dashboard.py:707 dashboard.py:734 dashboard.py:814 dashboard.py:843 dashboard.py:864
+#: dashboard.py:933 dashboard.py:948 dashboard.py:959 dashboard.py:1100 dashboard.py:1290
 msgid "Kein Zugriff."
 msgstr ""
 
@@ -8668,15 +8672,15 @@ msgstr ""
 msgid "Keine Anmeldung"
 msgstr ""
 
-#: dashboard.py:1181
+#: dashboard.py:1182
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1135 store/vnb_exchange.py:470
+#: dashboard.py:1136 store/vnb_exchange.py:470
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
-#: dashboard.py:1217
+#: dashboard.py:1218
 msgid "Keine Berechtigung."
 msgstr ""
 
@@ -8854,7 +8858,7 @@ msgstr ""
 msgid "Keine neue Kollektor-Lieferung"
 msgstr ""
 
-#: dashboard.py:1102
+#: dashboard.py:1103
 msgid "Keine offene Einladung gefunden."
 msgstr ""
 
@@ -9017,7 +9021,7 @@ msgstr ""
 msgid "Korrektur nach Rückzug"
 msgstr ""
 
-#: templates/leg_billing.html:155
+#: templates/leg_billing.html:157
 msgid "Korrektur verknüpfen"
 msgstr ""
 
@@ -9029,7 +9033,7 @@ msgstr ""
 msgid "Korrekturbegründung"
 msgstr ""
 
-#: templates/leg_billing.html:154
+#: templates/leg_billing.html:156
 msgid "Korrekturgrund"
 msgstr ""
 
@@ -9248,11 +9252,11 @@ msgstr ""
 msgid "LEG gründen: so geht es"
 msgstr ""
 
-#: dashboard.py:992
+#: dashboard.py:993
 msgid "LEG konnte nicht erstellt werden."
 msgstr ""
 
-#: dashboard.py:242 dashboard.py:845
+#: dashboard.py:242 dashboard.py:846
 msgid "LEG nicht gefunden."
 msgstr ""
 
@@ -9794,7 +9798,7 @@ msgstr ""
 msgid "Manuell geprüft"
 msgstr ""
 
-#: dashboard.py:1247
+#: dashboard.py:1248
 msgid "Manuelle Zustellung fehlgeschlagen."
 msgstr ""
 
@@ -10394,7 +10398,7 @@ msgid ""
 "liefert sie Messdaten als CSV oder S-DAT."
 msgstr ""
 
-#: dashboard.py:143 dashboard.py:145 dashboard.py:1413
+#: dashboard.py:143 dashboard.py:145 dashboard.py:1414
 msgid "Nachbar-Einwilligung erteilt"
 msgstr ""
 
@@ -10462,7 +10466,7 @@ msgstr ""
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr ""
 
-#: dashboard.py:986
+#: dashboard.py:987
 msgid "Name und Profil sind erforderlich."
 msgstr ""
 
@@ -10554,7 +10558,7 @@ msgid ""
 " Vereinbarungen ab."
 msgstr ""
 
-#: dashboard.py:1144
+#: dashboard.py:1145
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -10810,7 +10814,7 @@ msgstr ""
 msgid "Noch kein Konto?"
 msgstr ""
 
-#: templates/leg_billing.html:103
+#: templates/leg_billing.html:105
 msgid ""
 "Noch keine Abrechnungsperioden vorhanden. Der Abrechnungslauf erstellt Entwürfe, sobald eine "
 "Richtlinie gespeichert ist und Messdaten vorliegen."
@@ -10869,7 +10873,7 @@ msgstr ""
 msgid "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen aus."
 msgstr ""
 
-#: templates/leg_billing.html:173 templates/sandbox/questions.html:35
+#: templates/leg_billing.html:175 templates/sandbox/questions.html:35
 msgid "Noch keine Statusänderung protokolliert."
 msgstr ""
 
@@ -10896,7 +10900,7 @@ msgstr ""
 msgid "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
 msgstr ""
 
-#: templates/leg_billing.html:202
+#: templates/leg_billing.html:204
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr ""
 
@@ -11012,19 +11016,19 @@ msgid ""
 "Adressen."
 msgstr ""
 
-#: dashboard.py:1044
+#: dashboard.py:1045
 msgid "Nur die Administration kann Rollen ändern."
 msgstr ""
 
-#: dashboard.py:1070
+#: dashboard.py:1071
 msgid "Nur die Administration kann das Vier-Augen-Prinzip ändern."
 msgstr ""
 
-#: dashboard.py:1111
+#: dashboard.py:1112
 msgid "Nur die Administration kann die Gründung starten."
 msgstr ""
 
-#: dashboard.py:1003 dashboard.py:1021
+#: dashboard.py:1004 dashboard.py:1022
 msgid "Nur die Administration kann einladen."
 msgstr ""
 
@@ -12234,7 +12238,7 @@ msgstr ""
 msgid "Quelldokumente"
 msgstr ""
 
-#: templates/leg_billing.html:67
+#: templates/leg_billing.html:69
 msgid "Quelldokumente:"
 msgstr ""
 
@@ -12441,7 +12445,7 @@ msgstr ""
 msgid "Rechnung für die Übungsdateien"
 msgstr ""
 
-#: dashboard.py:920
+#: dashboard.py:921
 msgid "Rechnung nicht gefunden."
 msgstr ""
 
@@ -12449,7 +12453,7 @@ msgstr ""
 msgid "Rechnungen"
 msgstr ""
 
-#: templates/leg_billing.html:81 templates/release/homepage.html:69 templates/release/software.html:8
+#: templates/leg_billing.html:83 templates/release/homepage.html:69 templates/release/software.html:8
 msgid "Rechnungen freigeben"
 msgstr ""
 
@@ -12481,7 +12485,7 @@ msgstr ""
 msgid "Rechnungsfrage"
 msgstr ""
 
-#: templates/leg_billing.html:178
+#: templates/leg_billing.html:180
 msgid "Rechnungsfragen"
 msgstr ""
 
@@ -12563,7 +12567,7 @@ msgstr ""
 msgid "Referenz zur tatsächlichen Freigabe"
 msgstr ""
 
-#: templates/leg_billing.html:167
+#: templates/leg_billing.html:169
 msgid "Referenz:"
 msgstr ""
 
@@ -13526,7 +13530,7 @@ msgstr ""
 msgid "Speicherkapazität:"
 msgstr ""
 
-#: templates/leg_billing.html:191
+#: templates/leg_billing.html:193
 msgid "Speichern"
 msgstr ""
 
@@ -13634,7 +13638,7 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: templates/leg_billing.html:190
+#: templates/leg_billing.html:192
 msgid "Status behalten"
 msgstr ""
 
@@ -13650,7 +13654,7 @@ msgstr ""
 msgid "Status wird geprüft"
 msgstr ""
 
-#: templates/leg_billing.html:64 templates/leg_dashboard.html:36
+#: templates/leg_billing.html:66 templates/leg_dashboard.html:36
 #: templates/leg_workspace/formation.html:71 templates/member_invoice_detail.html:53
 msgid "Status:"
 msgstr ""
@@ -13687,7 +13691,7 @@ msgstr ""
 msgid "Stimmt ein Wert nicht? Melden Sie es uns über den Korrektur-Link auf dem Gemeindeprofil."
 msgstr ""
 
-#: templates/leg_billing.html:144
+#: templates/leg_billing.html:146
 msgid "Stornieren"
 msgstr ""
 
@@ -13695,7 +13699,7 @@ msgstr ""
 msgid "Storniert"
 msgstr ""
 
-#: templates/leg_billing.html:143
+#: templates/leg_billing.html:145
 msgid "Stornierungsgrund"
 msgstr ""
 
@@ -13930,7 +13934,7 @@ msgstr ""
 msgid "Teilnehmer-ID"
 msgstr ""
 
-#: templates/leg_billing.html:116
+#: templates/leg_billing.html:118
 msgid "Teilnehmer:"
 msgstr ""
 
@@ -14312,7 +14316,7 @@ msgstr ""
 msgid "VNB-Abgleich"
 msgstr ""
 
-#: dashboard.py:1192
+#: dashboard.py:1193
 msgid "VNB-Mutation vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -14407,7 +14411,7 @@ msgstr ""
 msgid "Verbrauchsdaten ergänzen"
 msgstr ""
 
-#: dashboard.py:133 dashboard.py:135 dashboard.py:1411
+#: dashboard.py:133 dashboard.py:135 dashboard.py:1412
 msgid "Verbrauchsdaten hinterlegt"
 msgstr ""
 
@@ -14524,7 +14528,7 @@ msgstr ""
 msgid "Verkleinern"
 msgstr ""
 
-#: templates/leg_billing.html:183 templates/member_invoice_detail.html:208
+#: templates/leg_billing.html:185 templates/member_invoice_detail.html:208
 msgid "Verknüpft mit Korrektur:"
 msgstr ""
 
@@ -14846,7 +14850,7 @@ msgstr ""
 msgid "Voraussetzungen"
 msgstr ""
 
-#: templates/leg_billing.html:73
+#: templates/leg_billing.html:75
 msgid "Vorbereitet durch:"
 msgstr ""
 
@@ -14854,7 +14858,7 @@ msgstr ""
 msgid "Vorbereitete Berichte"
 msgstr ""
 
-#: dashboard.py:714
+#: dashboard.py:715
 msgid "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
 msgstr ""
 
@@ -14946,7 +14950,7 @@ msgstr ""
 msgid "Warten Sie auf die Bewilligung durch den Netzbetreiber (bis zu 30 Tage)."
 msgstr ""
 
-#: templates/leg_billing.html:93
+#: templates/leg_billing.html:95
 msgid "Warten auf die Vorbereitung durch eine andere Person."
 msgstr ""
 
@@ -15621,7 +15625,7 @@ msgstr ""
 msgid "Zahlung"
 msgstr ""
 
-#: templates/leg_billing.html:137
+#: templates/leg_billing.html:139
 msgid "Zahlung erfassen"
 msgstr ""
 
@@ -15686,7 +15690,7 @@ msgstr ""
 msgid "Zahlungsinformationen für eine freiwillige Spende"
 msgstr ""
 
-#: templates/leg_billing.html:136
+#: templates/leg_billing.html:138
 msgid "Zahlungsreferenz"
 msgstr ""
 
@@ -15893,7 +15897,7 @@ msgstr ""
 msgid "Zur Finanzverwaltung"
 msgstr ""
 
-#: templates/leg_billing.html:90
+#: templates/leg_billing.html:92
 msgid "Zur Freigabe vorbereiten"
 msgstr ""
 
@@ -15980,7 +15984,7 @@ msgstr ""
 msgid "Zustellart"
 msgstr ""
 
-#: templates/leg_billing.html:120
+#: templates/leg_billing.html:122
 msgid "Zustellen"
 msgstr ""
 
@@ -15988,7 +15992,7 @@ msgstr ""
 msgid "Zustellung"
 msgstr ""
 
-#: templates/leg_billing.html:128
+#: templates/leg_billing.html:130
 msgid "Zustellung als erfolgt bestätigen"
 msgstr ""
 
@@ -16469,7 +16473,7 @@ msgstr ""
 msgid "zeigt das transparent, ganz ohne Anfrage."
 msgstr ""
 
-#: templates/leg_billing.html:164
+#: templates/leg_billing.html:166
 msgid "zu"
 msgstr ""
 
@@ -16505,7 +16509,7 @@ msgstr ""
 msgid "· Akteur:"
 msgstr ""
 
-#: templates/leg_billing.html:181 templates/member_invoice_detail.html:205
+#: templates/leg_billing.html:183 templates/member_invoice_detail.html:205
 msgid "· Antwort bis"
 msgstr ""
 
@@ -16529,7 +16533,7 @@ msgstr ""
 msgid "· Import:"
 msgstr ""
 
-#: templates/leg_billing.html:116
+#: templates/leg_billing.html:118
 msgid "· Interner Preis:"
 msgstr ""
 
@@ -16558,7 +16562,7 @@ msgstr ""
 msgid "· Zurückgezogen"
 msgstr ""
 
-#: templates/leg_billing.html:116
+#: templates/leg_billing.html:118
 msgid "· Zustellart:"
 msgstr ""
 

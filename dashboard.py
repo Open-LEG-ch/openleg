@@ -560,6 +560,7 @@ def leg_billing_workspace_view(
             for period in periods
         ],
         "invoices": invoices,
+        "statement_entries_loaded": include_statement_entries,
         "statement_entries": [
             {
                 **entry,
