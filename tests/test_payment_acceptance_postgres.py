@@ -515,6 +515,9 @@ def test_reconciled_chf_batch_pays_each_invoice_once(payment_client):
     entry = root.find(".//" + ns + "Ntry")
     entry.find(ns + "Amt").text = "19.34"
     details = entry.find(ns + "NtryDtls")
+    servicer = ElementTree.Element(ns + "AcctSvcrRef")
+    servicer.text = "shared-batch-reference"
+    entry.insert(list(entry).index(details), servicer)
     transaction = details.find(ns + "TxDtls")
     amount = ElementTree.Element(ns + "Amt", {"Ccy": "CHF"})
     amount.text = "9.67"

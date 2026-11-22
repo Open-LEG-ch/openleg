@@ -199,6 +199,8 @@ def test_reused_retry_key_with_a_different_payload_conflicts(monkeypatch):
 def _payment_entry(**overrides):
     entry = {
         "id": 12,
+        "entry_reference": "servicer-12",
+        "statement_import_id": 7,
         "match_decision": "unmatched",
         "currency": "CHF",
         "credit_debit_indicator": "CRDT",
@@ -219,6 +221,7 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
             _payment_entry(),
             {"id": 3, "gross_chf": Decimal("42.50")},
             {"new_state": "delivered"},
+            None,
             {"id": 77},
         ]
     )

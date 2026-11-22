@@ -1274,7 +1274,8 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS debtor_name TEXT,
                 ADD COLUMN IF NOT EXISTS remittance_information TEXT,
                 ADD COLUMN IF NOT EXISTS bank_account_key TEXT NOT NULL DEFAULT '',
-                ADD COLUMN IF NOT EXISTS bank_servicer_key TEXT
+                ADD COLUMN IF NOT EXISTS bank_servicer_key TEXT,
+                ADD COLUMN IF NOT EXISTS bank_reference_keys TEXT[]
             """)
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_booked_servicer

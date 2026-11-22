@@ -394,7 +394,7 @@ def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatc
 
     paid_invoice = {**_delivered_invoice(), "lifecycle_state": "paid"}
     cursor = _ReconcileCursor(
-        ones=[{"id": 7}, {"id": 8}],
+        ones=[{"id": 7}, None, {"id": 8}],
         rows=[
             [_delivered_invoice()],
             [{"invoice_id": 42, "new_state": "delivered"}],

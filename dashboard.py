@@ -761,6 +761,17 @@ def leg_assign_bank_payment(community_id, building_id, entry_id, invoice_id, con
                 f"{_DASHBOARD_PAYMENT_KEY_PREFIX}{entry_id}",
             )
     except payment_reconciliation.BankPaymentAlreadyBooked as exc:
+        if exc.possible:
+            return {
+                "error_status": 409,
+                "error": _(
+                    "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein.",
+                    invoice=exc.invoice_number,
+                ),
+                "recovery": _N(
+                    "Prüfen Sie die bisherige Buchung, bevor Sie den Eintrag zuordnen."
+                ),
+            }
         return {
             "error_status": 409,
             "error": _(

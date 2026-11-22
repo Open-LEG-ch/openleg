@@ -540,3 +540,128 @@ def test_older_unresolved_entries_have_a_link_when_review_queue_is_full(workspac
     next_page = workspace.get(older_path)
     assert "old unresolved reference" in next_page.text
     assert "Neueste offene Buchungen" in next_page.text
+
+
+def _as_legacy(entry):
+    """Leave exactly the bank provenance available before the upgrade."""
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE bank_statement_entries
+               SET bank_servicer_key=NULL, bank_account_key=''
+               WHERE id=%s""",
+            (entry["id"],),
+        )
+        if "bank_reference_keys" in entry:
+            cur.execute(
+                "UPDATE bank_statement_entries SET bank_reference_keys=NULL WHERE id=%s",
+                (entry["id"],),
+            )
+
+
+def _with_entry_servicer(statement):
+    return statement.replace(
+        b"</BookgDt>",
+        b"</BookgDt><AcctSvcrRef>shared-entry-reference</AcctSvcrRef>",
+    )
+
+
+@pytest.mark.parametrize("case", ("legacy", "overlap"))
+@pytest.mark.parametrize("second_match", ("reviewed", "automatic"))
+def test_export_duplicate_cannot_book_twice(workspace, case, second_match):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    original_xml = _statement_xml(reference="FIRST-INVOICE")
+    repeated_xml = _statement_xml(
+        statement="statement-2",
+        reference="SECOND-INVOICE" if second_match == "automatic" else "unknown",
+        servicer="" if case == "overlap" else "bank-entry-1",
+    )
+    if case == "overlap":
+        original_xml = _with_entry_servicer(original_xml)
+        repeated_xml = _with_entry_servicer(repeated_xml)
+    _upload_xml(workspace, original_xml)
+    (original,) = db.list_bank_statement_entries(COMMUNITY)
+    assert original["invoice_id"] == first
+    if case == "legacy":
+        (audit,) = [
+            event
+            for event in db.list_community_invoice_events(COMMUNITY)
+            if event["event_type"] == "paid"
+        ]
+        assert audit["payment_match"] is None
+        _as_legacy(original)
+    _upload_xml(workspace, repeated_xml)
+    duplicate = db.list_bank_statement_entries(COMMUNITY)[0]
+    if second_match == "reviewed":
+        refusal = _assign(workspace, duplicate["id"], second)
+        assert refusal.status_code == 409
+        if case == "legacy":
+            assert (
+                "Diese Zahlung könnte bereits auf Rechnung FIRST-INVOICE verbucht sein."
+                in refusal.text
+            )
+        else:
+            assert "bereits auf Rechnung FIRST-INVOICE verbucht" in refusal.text
+    else:
+        assert duplicate["match_decision"] == "mismatch"
+    assert not any(
+        event["event_type"] == "paid"
+        for event in db.list_invoice_events(second, COMMUNITY)
+    )
+    assert (
+        len(db.list_community_operator_events(COMMUNITY, event_types=("invoice.paid",)))
+        == 1
+    )
+
+
+@pytest.mark.parametrize("case", ("legacy", "overlap"))
+def test_concurrent_export_duplicates_only_book_once(workspace, app_module, case):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    invoices = [_invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")]
+    first_xml = _statement_xml()
+    second_xml = _statement_xml(
+        statement="statement-2", servicer="" if case == "overlap" else "bank-entry-1"
+    )
+    if case == "overlap":
+        first_xml = _with_entry_servicer(first_xml)
+        second_xml = _with_entry_servicer(second_xml)
+    _upload_xml(workspace, first_xml, second_xml)
+    newest, oldest = db.list_bank_statement_entries(COMMUNITY)
+    if case == "legacy":
+        _as_legacy(oldest)
+    barrier = Barrier(2)
+
+    def assign(entry, invoice):
+        with app_module.web.test_client() as client:
+            _set_session(client, ACTOR)
+            barrier.wait(timeout=10)
+            return _assign(client, entry["id"], invoice).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(assign, [oldest, newest], invoices))
+    assert sorted(outcomes) == [303, 409]
+    assert (
+        len(db.list_community_operator_events(COMMUNITY, event_types=("invoice.paid",)))
+        == 1
+    )
+
+
+@pytest.mark.parametrize("variant", ("different-date", "generated-reference"))
+def test_legacy_comparison_distinguishes_unrelated_credits(workspace, variant):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    generated = variant == "generated-reference"
+    servicer = "" if generated else "bank-entry-1"
+    _upload_xml(workspace, _statement_xml(reference="FIRST-INVOICE", servicer=servicer))
+    (original,) = db.list_bank_statement_entries(COMMUNITY)
+    assert original["invoice_id"] == first
+    _as_legacy(original)
+    new_xml = _statement_xml(reference="unknown", servicer=servicer)
+    if not generated:
+        new_xml = new_xml.replace(b"2026-09-14", b"2026-09-15")
+    _upload_xml(workspace, new_xml)
+    duplicate = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert duplicate["entry_reference"] == original["entry_reference"]
+    assert _assign(workspace, duplicate["id"], second).status_code == 303

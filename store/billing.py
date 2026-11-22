@@ -1107,41 +1107,84 @@ def record_invoice_payment(invoice_id, community_id, actor_id, paid_date, refere
         raise BillingStoreError("Could not record invoice payment") from e
 
 
-def _lock_bank_reference(cur, community_id, reference_key):
-    # Statements that omit the account still overlap known accounts. Lock that
-    # whole reference group before any invoice lock, then scope the read by account.
+def _lock_payment_booking(cur, community_id):
+    # Exports can describe the same payment with overlapping references or
+    # legacy facts. Lock the LEG before reading those facts or locking invoices.
     cur.execute(
         "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
-        (f"bank-payment:{community_id}:{reference_key}",),
+        (f"payment-booking:{community_id}",),
     )
 
 
-def _require_unbooked_bank_payment(cur, community_id, entry):
+def _require_unbooked_bank_payment(cur, community_id, entry, import_id):
+    keys = entry.get("bank_reference_keys")
     reference_key = entry.get("bank_servicer_key")
-    if not reference_key:
-        return
-    account_key = entry["bank_account_key"]
+    # New imports write an empty array when the XML has no trusted reference.
+    # Only older rows can lack both the array and the previous scalar key.
+    legacy = keys is None and reference_key is None
+    keys = list(keys or ([reference_key] if reference_key else []))
     cur.execute(
         """
-        SELECT i.invoice_number
+        SELECT i.invoice_number,
+               (%(legacy)s OR (e.bank_reference_keys IS NULL AND e.bank_servicer_key IS NULL))
+                   AS possible
         FROM bank_statement_entries e
         JOIN invoices i ON i.id = e.invoice_id AND i.community_id = e.community_id
-        WHERE e.community_id = %s AND e.bank_servicer_key = %s
-          AND e.match_decision = 'matched'
-          AND (e.bank_account_key = %s OR e.bank_account_key = '' OR %s = '')
-        ORDER BY e.id LIMIT 1
+        JOIN bank_statement_imports s ON s.id = e.statement_import_id
+            AND s.community_id = e.community_id
+        LEFT JOIN bank_statement_imports source ON source.id = %(import_id)s
+            AND source.community_id = e.community_id
+        WHERE e.community_id = %(community)s AND e.match_decision = 'matched'
+          AND (
+              ((e.bank_reference_keys && %(keys)s::text[]
+                OR e.bank_servicer_key = ANY(%(keys)s::text[]))
+               AND (e.bank_account_key IN ('', %(account)s) OR %(account)s = ''))
+              OR (
+                  (%(legacy)s OR (e.bank_reference_keys IS NULL AND e.bank_servicer_key IS NULL))
+                  AND e.entry_reference = %(reference)s
+                  AND e.amount = %(amount)s
+                  AND e.currency = %(currency)s
+                  AND e.credit_debit_indicator = %(direction)s
+                  AND e.booking_date = %(date)s
+                  AND NOT (
+                      e.entry_reference ~ ':[1-9][0-9]*:[1-9][0-9]*$'
+                      AND regexp_replace(e.entry_reference, ':[1-9][0-9]*:[1-9][0-9]*$', '')
+                          IN (COALESCE(NULLIF(s.statement_reference, ''), 'statement'),
+                              COALESCE(NULLIF(source.statement_reference, ''), 'statement'))
+                  )
+                  AND EXISTS (
+                      SELECT 1 FROM invoice_lifecycle_events audit
+                      WHERE audit.invoice_id = i.id AND audit.community_id = e.community_id
+                        AND audit.event_type = 'paid'
+                  )
+              )
+          )
+        ORDER BY possible, e.id LIMIT 1
         """,
-        (community_id, reference_key, account_key, account_key),
+        {
+            "community": community_id,
+            "keys": keys,
+            "account": entry.get("bank_account_key", ""),
+            "legacy": legacy,
+            "reference": entry["entry_reference"],
+            "amount": entry["amount"],
+            "currency": entry["currency"],
+            "direction": entry["credit_debit_indicator"],
+            "date": entry["booking_date"],
+            "import_id": import_id,
+        },
     )
     booked = cur.fetchone()
     if booked:
-        raise payment_reconciliation.BankPaymentAlreadyBooked(booked["invoice_number"])
+        raise payment_reconciliation.BankPaymentAlreadyBooked(
+            booked["invoice_number"], possible=booked["possible"]
+        )
 
 
 def _finalize_bank_payment(
-    cur, invoice, entry, community_id, actor_id, key, *, payment_match=None
+    cur, invoice, entry, community_id, actor_id, key, *, import_id, payment_match=None
 ):
-    _require_unbooked_bank_payment(cur, community_id, entry)
+    _require_unbooked_bank_payment(cur, community_id, entry, import_id)
     new_state = billing_lifecycle.next_state(
         invoice["lifecycle_state"],
         "pay",
@@ -1174,10 +1217,7 @@ def confirm_payment(
         if dry_run:
             cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
         else:
-            cur.execute(
-                "SELECT pg_advisory_xact_lock(hashtext(%s))",
-                (f"{community_id}:{action}:{key}",),
-            )
+            _lock_payment_booking(cur, community_id)
         replay = (
             None
             if dry_run
@@ -1199,9 +1239,6 @@ def confirm_payment(
             not in payment_reconciliation.REVIEWABLE_DECISIONS
         ):
             return None
-        reference_key = entry.get("bank_servicer_key")
-        if reference_key and not dry_run:
-            _lock_bank_reference(cur, community_id, reference_key)
         invoice = _locked_invoice(cur, invoice_id, community_id, locking=not dry_run)
         # Real confirmations see lifecycle commits made while the lock waited.
         # Previews read all validation inputs from the same non-locking snapshot.
@@ -1213,7 +1250,9 @@ def confirm_payment(
                 or ("invoice_state" if decision == "mismatch" else decision)
             )
         if dry_run:
-            _require_unbooked_bank_payment(cur, community_id, entry)
+            _require_unbooked_bank_payment(
+                cur, community_id, entry, entry.get("statement_import_id")
+            )
             return {
                 "dry_run": True,
                 "eligible": True,
@@ -1234,6 +1273,7 @@ def confirm_payment(
             community_id,
             actor_id,
             lifecycle_key,
+            import_id=entry.get("statement_import_id"),
             payment_match={"entry_id": entry_id, "decision": "matched"},
         )
         cur.execute(
@@ -1302,6 +1342,7 @@ def reconcile_bank_statement(
     """
     try:
         with _get_connection() as conn, conn.cursor() as cur:
+            _lock_payment_booking(cur, community_id)
             cur.execute(
                 """
                 INSERT INTO bank_statement_imports (
@@ -1333,16 +1374,6 @@ def reconcile_bank_statement(
                     cur, cur.fetchone()["id"], duplicate=True
                 )
             import_id = imported["id"]
-            # Acquire all reference locks in a stable order before locking
-            # invoices. A concurrent import or review must recheck after waiting.
-            for reference_key in sorted(
-                {
-                    entry["bank_servicer_key"]
-                    for entry in entries
-                    if entry.get("bank_servicer_key")
-                }
-            ):
-                _lock_bank_reference(cur, community_id, reference_key)
             cur.execute(
                 """
                 SELECT i.id, i.invoice_number, i.gross_chf
@@ -1379,6 +1410,7 @@ def reconcile_bank_statement(
                             community_id,
                             actor_id,
                             f"bank:{import_id}:{entry['entry_reference']}",
+                            import_id=import_id,
                         )
                     except payment_reconciliation.BankPaymentAlreadyBooked:
                         decision, invoice_id = "mismatch", None
@@ -1389,8 +1421,9 @@ def reconcile_bank_statement(
                         entry_reference, booking_date, amount, currency,
                         payment_reference, is_reversal, credit_debit_indicator,
                         match_decision, amount_basis, booking_status,
-                        debtor_name, remittance_information, bank_servicer_key, bank_account_key
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        debtor_name, remittance_information, bank_servicer_key, bank_account_key,
+                        bank_reference_keys
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         import_id,
@@ -1410,6 +1443,7 @@ def reconcile_bank_statement(
                         entry.get("remittance_information"),
                         entry.get("bank_servicer_key"),
                         entry.get("bank_account_key", ""),
+                        list(entry.get("bank_reference_keys", ())),
                     ),
                 )
             return _statement_import_result(cur, import_id, duplicate=False)

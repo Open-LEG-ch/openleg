@@ -28,9 +28,10 @@ class PaymentMatchRefused(InvoiceLifecycleError):
 class BankPaymentAlreadyBooked(InvoiceLifecycleError):
     """A statement repeats a bank transaction that has already paid an invoice."""
 
-    def __init__(self, invoice_number):
+    def __init__(self, invoice_number, *, possible=False):
         super().__init__("Bank transaction already booked")
         self.invoice_number = invoice_number
+        self.possible = possible
 
 
 DECISION_LABELS = {
@@ -60,6 +61,7 @@ class PaymentEntry:
     remittance_information: str | None = None
     bank_servicer_key: str | None = None
     bank_account_key: str = ""
+    bank_reference_keys: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -345,8 +347,18 @@ def parse_statement(content: bytes) -> Statement:
             bank_reference = transaction.findtext(
                 "./{*}Refs/{*}AcctSvcrRef", default=""
             ).strip()
-            if bank_reference in {"", "NOTPROVIDED"} and not is_batch:
-                bank_reference = entry.findtext("./{*}AcctSvcrRef", default="").strip()
+            references = [bank_reference]
+            if not is_batch:
+                references.append(
+                    entry.findtext("./{*}AcctSvcrRef", default="").strip()
+                )
+            reference_keys = tuple(
+                dict.fromkeys(
+                    sha256(reference.encode()).hexdigest()
+                    for reference in references
+                    if reference and reference != "NOTPROVIDED"
+                )
+            )
             remittance_lines = transaction.findall("./{*}RmtInf/{*}Ustrd")
             remittance_lines.extend(
                 transaction.findall("./{*}RmtInf/{*}Strd/{*}AddtlRmtInf")
@@ -372,10 +384,9 @@ def parse_statement(content: bytes) -> Statement:
                     amount_basis="reconciled_batch" if is_batch else "entry",
                     debtor_name=_debtor_name(transaction),
                     remittance_information=remittance or None,
-                    bank_servicer_key=sha256(bank_reference.encode()).hexdigest()
-                    if bank_reference and bank_reference != "NOTPROVIDED"
-                    else None,
+                    bank_servicer_key=reference_keys[0] if reference_keys else None,
                     bank_account_key=account_key,
+                    bank_reference_keys=reference_keys,
                 )
             )
     if not entries:
