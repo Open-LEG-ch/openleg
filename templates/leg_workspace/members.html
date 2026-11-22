@@ -37,19 +37,6 @@
   </table></div>
 </section>
 
-{% set viewer = (community.members | selectattr("building_id", "equalto", viewer_building_id) | list | first) if community.members else none %}
-{% if viewer and viewer.status == 'invited' %}
-<section class="bg-white rounded-xl border p-6 mb-8">
-  <h2 class="font-bold mb-2">{{ _('Ihre Einladung') }}</h2>
-  <p class="text-sm text-ink-muted mb-4">{{ _('Sie sind eingeladen, bei "%(community)s" mitzumachen.', community=community.name) }}</p>
-  {% if viewer_has_session %}
-  <form method="post" action="/leg/community/{{ community.community_id }}/confirm">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Teilnahme bestätigen') }}</button>
-  </form>
-  {% endif %}
-</section>
-{% endif %}
 <section class="mb-10" aria-labelledby="vnb-mutations-title">
   <h2 id="vnb-mutations-title" class="font-bold mb-2">{{ _('Mitgliedschaft und Netzbetreiber') }}</h2>
   {% if not vnb_exchange_available|default(true) %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar.') }}</p>{% endif %}

@@ -8491,10 +8491,6 @@ msgstr "Vos données restent chez vous"
 msgid "Ihre Daten, Ihre Kontrolle"
 msgstr "Vos données, votre contrôle"
 
-#: templates/leg_dashboard.html:189
-msgid "Ihre Einladung"
-msgstr "Votre invitation"
-
 #: templates/leg_kalkulator.html:72
 msgid "Ihre Gemeinde"
 msgstr "Votre commune"
@@ -13900,11 +13896,6 @@ msgstr "Vous êtes déconnecté. Reconnectez-vous avec le compte fictif."
 #: sandbox_seed.py:28
 msgid "Sie sind als Haushalt am Musterweg 1 angemeldet."
 msgstr "Vous êtes connecté comme foyer du Musterweg 1."
-
-#: templates/leg_dashboard.html:190
-#, python-format
-msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
-msgstr "Vous êtes invité à rejoindre « %(community)s »."
 
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:17
 #, python-format

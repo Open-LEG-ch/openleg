@@ -9617,11 +9617,6 @@ msgid "Ihre Daten, Ihre Kontrolle"
 msgstr "I tuoi dati, il tuo controllo"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:189
-msgid "Ihre Einladung"
-msgstr "Il vostro invito"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_kalkulator.html:72
 msgid "Ihre Gemeinde"
 msgstr "La vostra comunità"
@@ -15897,12 +15892,6 @@ msgstr "Sei fuori servizio, riattacca con il conto inventato."
 #: sandbox_seed.py:28
 msgid "Sie sind als Haushalt am Musterweg 1 angemeldet."
 msgstr "Siete iscritti come una famiglia sul modello 1."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:190
-#, python-format
-msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
-msgstr "Siete invitati a partecipare a \"%(community)s.\""
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:17

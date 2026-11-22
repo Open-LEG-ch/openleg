@@ -715,7 +715,7 @@ msgstr ""
 
 #: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:187
 #: templates/contact_requests.html:32 templates/leg_workspace/formation.html:71
-#: templates/leg_workspace/members.html:64 templates/release/homepage.html:64
+#: templates/leg_workspace/members.html:51 templates/release/homepage.html:64
 #: templates/sandbox/formation.html:37 templates/sandbox/formation.html:85
 #: templates/sandbox/metering.html:4 verein_routes.py:45
 msgid "Abgelehnt"
@@ -1463,7 +1463,7 @@ msgstr ""
 msgid "Anträge und Mitglieder filtern"
 msgstr ""
 
-#: templates/api_docs.html:110 templates/leg_billing.html:191 templates/leg_workspace/members.html:60
+#: templates/api_docs.html:110 templates/leg_billing.html:191 templates/leg_workspace/members.html:47
 #: templates/member_invoice_detail.html:213 templates/sandbox/questions.html:27
 msgid "Antwort"
 msgstr ""
@@ -1756,7 +1756,7 @@ msgstr ""
 msgid "Austausch und Mitgliedschaft"
 msgstr ""
 
-#: templates/leg_workspace/members.html:62 templates/leg_workspace/members.html:77
+#: templates/leg_workspace/members.html:49 templates/leg_workspace/members.html:64
 msgid "Austritt"
 msgstr ""
 
@@ -2028,7 +2028,7 @@ msgstr ""
 msgid "Beilagen"
 msgstr ""
 
-#: templates/leg_workspace/members.html:81
+#: templates/leg_workspace/members.html:68
 msgid "Beim Netzbetreiber einreichen"
 msgstr ""
 
@@ -2058,7 +2058,7 @@ msgstr ""
 msgid "Beitragsleitfaden lesen"
 msgstr ""
 
-#: templates/leg_workspace/members.html:62 templates/leg_workspace/members.html:77
+#: templates/leg_workspace/members.html:49 templates/leg_workspace/members.html:64
 msgid "Beitritt"
 msgstr ""
 
@@ -2336,7 +2336,7 @@ msgid "Bestätigen Sie, dass der Eintrag «"
 msgstr ""
 
 #: formation_wizard.py:51 formation_wizard.py:74 templates/leg_workspace/formation.html:71
-#: templates/leg_workspace/members.html:64 verein_routes.py:53
+#: templates/leg_workspace/members.html:51 verein_routes.py:53
 msgid "Bestätigt"
 msgstr ""
 
@@ -3286,7 +3286,7 @@ msgstr ""
 msgid "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
 msgstr ""
 
-#: templates/leg_workspace/members.html:55
+#: templates/leg_workspace/members.html:42
 msgid "Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar."
 msgstr ""
 
@@ -4087,7 +4087,7 @@ msgid ""
 "verschiedener Messkanäle."
 msgstr ""
 
-#: templates/leg_workspace/members.html:56
+#: templates/leg_workspace/members.html:43
 msgid ""
 "Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der"
 " Netzbetreiber verarbeitet. Die Antwort des Netzbetreibers ändert den LEG-Vertrag nicht."
@@ -4887,7 +4887,7 @@ msgstr ""
 
 #: templates/contact_requests.html:40 templates/dashboard.html:20 templates/dashboard.html:60
 #: templates/dashboard.html:257 templates/gemeinde/dashboard.html:158
-#: templates/leg_workspace/members.html:92 templates/sandbox/onboarding.html:15
+#: templates/leg_workspace/members.html:79 templates/sandbox/onboarding.html:15
 #: templates/unsubscribe.html:48
 msgid "E-Mail-Adresse"
 msgstr ""
@@ -5410,7 +5410,7 @@ msgstr ""
 msgid "Einhaltung der Gemeinschaftsvereinbarung"
 msgstr ""
 
-#: templates/leg_workspace/members.html:94
+#: templates/leg_workspace/members.html:81
 msgid "Einladen"
 msgstr ""
 
@@ -5890,7 +5890,7 @@ msgstr ""
 msgid "Ersatzstrom getrennt erfassen"
 msgstr ""
 
-#: templates/leg_workspace/members.html:64
+#: templates/leg_workspace/members.html:51
 msgid "Ersetzt"
 msgstr ""
 
@@ -6123,7 +6123,7 @@ msgstr ""
 msgid "Fehler:"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:71 templates/leg_workspace/members.html:64
+#: templates/leg_workspace/formation.html:71 templates/leg_workspace/members.html:51
 msgid "Fehlgeschlagen"
 msgstr ""
 
@@ -6674,7 +6674,7 @@ msgstr ""
 msgid "Geben Sie den Namen Ihrer Gemeinde ein."
 msgstr ""
 
-#: templates/leg_workspace/members.html:88
+#: templates/leg_workspace/members.html:75
 msgid ""
 "Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen"
 " nicht an, ob bereits ein Profil existiert."
@@ -7962,10 +7962,6 @@ msgstr ""
 
 #: templates/how-it-works.html:157
 msgid "Ihre Daten, Ihre Kontrolle"
-msgstr ""
-
-#: templates/leg_workspace/members.html:43
-msgid "Ihre Einladung"
 msgstr ""
 
 #: templates/leg_kalkulator.html:72
@@ -9415,7 +9411,7 @@ msgstr ""
 msgid "LEG-Verzeichniseintrag"
 msgstr ""
 
-#: templates/leg_workspace/members.html:60
+#: templates/leg_workspace/members.html:47
 msgid "LEG-Vorgang"
 msgstr ""
 
@@ -9806,7 +9802,7 @@ msgstr ""
 msgid "Manuelle Zustellung fehlgeschlagen."
 msgstr ""
 
-#: templates/leg_workspace/members.html:64
+#: templates/leg_workspace/members.html:51
 msgid "Manuelle Übergabe bereit"
 msgstr ""
 
@@ -10173,7 +10169,7 @@ msgid_plural "Mitglieder"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/leg_workspace/members.html:87
+#: templates/leg_workspace/members.html:74
 msgid "Mitglied einladen"
 msgstr ""
 
@@ -10213,7 +10209,7 @@ msgstr ""
 msgid "Mitgliedermutationen lesen"
 msgstr ""
 
-#: templates/leg_workspace/members.html:59
+#: templates/leg_workspace/members.html:46
 msgid "Mitgliedermutationen und Stand beim Netzbetreiber"
 msgstr ""
 
@@ -10249,7 +10245,7 @@ msgstr ""
 msgid "Mitgliedschaft beantragen"
 msgstr ""
 
-#: templates/leg_workspace/members.html:54
+#: templates/leg_workspace/members.html:41
 msgid "Mitgliedschaft und Netzbetreiber"
 msgstr ""
 
@@ -11701,7 +11697,7 @@ msgstr ""
 msgid "Perioden"
 msgstr ""
 
-#: templates/leg_workspace/members.html:60
+#: templates/leg_workspace/members.html:47
 msgid "Person"
 msgstr ""
 
@@ -12375,7 +12371,7 @@ msgstr ""
 msgid "Quellprüfsumme"
 msgstr ""
 
-#: templates/leg_workspace/members.html:79 templates/sandbox/formation.html:74
+#: templates/leg_workspace/members.html:66 templates/sandbox/formation.html:74
 msgid "Quellvertrag"
 msgstr ""
 
@@ -13173,11 +13169,6 @@ msgstr ""
 msgid "Sie sind als Haushalt am Musterweg 1 angemeldet."
 msgstr ""
 
-#: templates/leg_workspace/members.html:44
-#, python-format
-msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
-msgstr ""
-
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:17
 #, python-format
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
@@ -13646,7 +13637,7 @@ msgstr ""
 msgid "Status behalten"
 msgstr ""
 
-#: templates/leg_workspace/members.html:60
+#: templates/leg_workspace/members.html:47
 msgid "Status beim Netzbetreiber"
 msgstr ""
 
@@ -13905,7 +13896,7 @@ msgid ""
 "Haushalte melden sich direkt an."
 msgstr ""
 
-#: templates/leg_dashboard.html:28 templates/leg_workspace/members.html:48
+#: templates/leg_dashboard.html:28
 msgid "Teilnahme bestätigen"
 msgstr ""
 
@@ -13934,7 +13925,7 @@ msgstr ""
 msgid "Teilnehmer und Messpunkte"
 msgstr ""
 
-#: templates/leg_workspace/members.html:76
+#: templates/leg_workspace/members.html:63
 msgid "Teilnehmer-ID"
 msgstr ""
 
@@ -14598,7 +14589,7 @@ msgstr ""
 msgid "Vertrag unterzeichnen"
 msgstr ""
 
-#: templates/leg_workspace/members.html:62
+#: templates/leg_workspace/members.html:49
 #, python-format
 msgid "Vertrag: %(id)s"
 msgstr ""
@@ -14879,11 +14870,11 @@ msgstr ""
 msgid "Vorbilder in %(profile_kanton)s"
 msgstr ""
 
-#: templates/leg_workspace/members.html:77
+#: templates/leg_workspace/members.html:64
 msgid "Vorgang"
 msgstr ""
 
-#: templates/leg_workspace/members.html:75
+#: templates/leg_workspace/members.html:62
 msgid "Vorgangs-ID"
 msgstr ""
 
@@ -15494,11 +15485,11 @@ msgstr ""
 msgid "Wird vorbereitet"
 msgstr ""
 
-#: templates/leg_workspace/members.html:60
+#: templates/leg_workspace/members.html:47
 msgid "Wirksam"
 msgstr ""
 
-#: templates/agent_confirmation.html:18 templates/leg_workspace/members.html:78
+#: templates/agent_confirmation.html:18 templates/leg_workspace/members.html:65
 #: templates/sandbox/formation.html:72
 msgid "Wirksamkeitsdatum"
 msgstr ""
@@ -15829,7 +15820,7 @@ msgid "Zugangslink anfordern"
 msgstr ""
 
 #: billing_lifecycle.py:19 sandbox_formation.py:185 templates/leg_workspace/formation.html:71
-#: templates/leg_workspace/members.html:64 templates/sandbox/formation.html:36
+#: templates/leg_workspace/members.html:51 templates/sandbox/formation.html:36
 msgid "Zugestellt"
 msgstr ""
 
@@ -16000,7 +15991,7 @@ msgstr ""
 msgid "Zustellung als erfolgt bestätigen"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:80 templates/leg_workspace/members.html:69
+#: templates/leg_workspace/formation.html:80 templates/leg_workspace/members.html:56
 msgid "Zustellung bestätigen"
 msgstr ""
 
@@ -16254,7 +16245,7 @@ msgstr ""
 msgid "n/a"
 msgstr ""
 
-#: templates/leg_workspace/members.html:93
+#: templates/leg_workspace/members.html:80
 msgid "name@beispiel.ch"
 msgstr ""
 
@@ -16449,7 +16440,7 @@ msgstr ""
 msgid "z. B. batterie-1"
 msgstr ""
 
-#: templates/leg_workspace/members.html:75
+#: templates/leg_workspace/members.html:62
 msgid "z. B. mitglied-2026-001"
 msgstr ""
 
@@ -16594,7 +16585,7 @@ msgstr ""
 msgid "Ändern Sie die Regel für die gemeinsame Freigabe von Abrechnungen."
 msgstr ""
 
-#: templates/leg_workspace/members.html:62 templates/leg_workspace/members.html:77
+#: templates/leg_workspace/members.html:49 templates/leg_workspace/members.html:64
 msgid "Änderung"
 msgstr ""
 
@@ -16606,7 +16597,7 @@ msgstr ""
 msgid "Änderungen"
 msgstr ""
 
-#: templates/leg_workspace/members.html:80
+#: templates/leg_workspace/members.html:67
 msgid "Änderungsdaten (nur bei Änderung; JSON mit status, role oder access_roles)"
 msgstr ""
 
@@ -16739,7 +16730,7 @@ msgstr ""
 msgid "Übergabe an Ihren Installateur"
 msgstr ""
 
-#: templates/leg_workspace/members.html:69
+#: templates/leg_workspace/members.html:56
 msgid "Übergabepaket herunterladen"
 msgstr ""
 

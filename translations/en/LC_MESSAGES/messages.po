@@ -9482,11 +9482,6 @@ msgid "Ihre Daten, Ihre Kontrolle"
 msgstr "Your data, your control"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:189
-msgid "Ihre Einladung"
-msgstr "Your invitation"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_kalkulator.html:72
 msgid "Ihre Gemeinde"
 msgstr "Your community"
@@ -15708,12 +15703,6 @@ msgstr "You're logged out, and you're back in with the faked account."
 #: sandbox_seed.py:28
 msgid "Sie sind als Haushalt am Musterweg 1 angemeldet."
 msgstr "You are registered as a household at the model path 1."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:190
-#, python-format
-msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
-msgstr "You are invited to join \"%(community)s\"."
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:17

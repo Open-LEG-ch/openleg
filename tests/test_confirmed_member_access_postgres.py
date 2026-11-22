@@ -69,16 +69,28 @@ def test_only_confirmed_members_can_read_private_pages_and_files(community, stat
 
 
 def test_invitee_can_accept_without_access_to_private_community_records(community):
-    client, _db, cid, _, _ = community
+    client, db, cid, _, _ = community
+    members = f"/leg/community/{cid}/members"
+    assert client.get(members).status_code == 403
     page = client.get(f"/leg/dashboard?cid={cid}")
+    assert page.status_code == 200
+    assert "Einladung zur LEG" in page.text
+    assert "Teilnahme bestätigen" in page.text
     assert f'action="/leg/community/{cid}/confirm"' in page.text
+    assert 'name="csrf_token" value="csrf-secret"' in page.text
     assert "Privateweg 1" not in page.text
     assert "Private subject" not in page.text
     response = client.post(
         f"/leg/community/{cid}/confirm", data={"csrf_token": "csrf-secret"}
     )
     assert response.status_code == 302
-    members = f"/leg/community/{cid}/members"
+    assert response.location == f"/leg/dashboard?cid={cid}"
+    member = next(
+        row
+        for row in db.fetch_community_with_members(cid, "guest")["members"]
+        if row["building_id"] == "guest"
+    )
+    assert member["status"] == "confirmed"
     assert f'href="{members}"' in client.get(response.location).text
     assert "Privateweg 1" in client.get(members).text
 
