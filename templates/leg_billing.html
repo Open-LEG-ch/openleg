@@ -7,7 +7,7 @@
 {% set can_prepare_billing = can_prepare_billing|default(false) %}
 {% set can_approve_billing = can_approve_billing|default(false) %}
 <div class="max-w-3xl mx-auto px-4 py-8">
-  <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="text-brand hover:underline font-semibold">{{ _('Zurück zum LEG-Dashboard') }}</a></p>
+  <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="inline-flex items-center text-brand hover:underline font-semibold">{{ _('Zurück zum LEG-Dashboard') }}</a></p>
   <h1 class="text-2xl font-bold mb-2">{{ _('Abrechnungen') }}</h1>
   <p class="text-sm text-ink-muted mb-4">{{ _('Hier prüfen Sie Abrechnungsentwürfe und geben sie frei. Die Freigabe erstellt unveränderliche Rechnungen pro Teilnehmer mit der eingefrorenen Richtlinie, dem Abgleich und den Quelldokumenten der Periode.') }}</p>
 

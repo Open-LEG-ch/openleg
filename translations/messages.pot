@@ -714,7 +714,7 @@ msgid "Abgelaufen"
 msgstr ""
 
 #: formation_wizard.py:58 formation_wizard.py:75 sandbox_formation.py:187
-#: templates/contact_requests.html:32 templates/leg_workspace/formation.html:71
+#: templates/contact_requests.html:32 templates/leg_workspace/formation.html:73
 #: templates/leg_workspace/members.html:51 templates/release/homepage.html:64
 #: templates/sandbox/formation.html:37 templates/sandbox/formation.html:85
 #: templates/sandbox/metering.html:4 verein_routes.py:45
@@ -774,7 +774,7 @@ msgstr ""
 msgid "Ablehnen"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:74
+#: templates/leg_workspace/formation.html:76
 msgid "Ablehnung prüfen"
 msgstr ""
 
@@ -1053,7 +1053,7 @@ msgstr ""
 msgid "Aktive Mitglieder"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:108
+#: templates/leg_workspace/formation.html:110
 msgid ""
 "Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
 "weiterhin vollständige Tarife, Messwerte und Zuteilungen des Netzbetreibers."
@@ -1253,7 +1253,7 @@ msgstr ""
 msgid "An %(recipient)s"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:74
+#: templates/leg_workspace/formation.html:76
 msgid "An den Netzbetreiber eskalieren"
 msgstr ""
 
@@ -1359,11 +1359,11 @@ msgstr ""
 msgid "Anmelden"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:77
+#: templates/leg_workspace/formation.html:79
 msgid "Anmeldepaket herunterladen"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:90
+#: templates/leg_workspace/formation.html:92
 msgid "Anmeldepaket vorbereiten"
 msgstr ""
 
@@ -1480,7 +1480,7 @@ msgstr ""
 msgid "Antwort und Status speichern"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:73
+#: templates/leg_workspace/formation.html:75
 msgid "Antwort:"
 msgstr ""
 
@@ -2089,11 +2089,11 @@ msgstr ""
 msgid "Belastungen"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:115
+#: templates/leg_workspace/formation.html:117
 msgid "Beleg"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:115
+#: templates/leg_workspace/formation.html:117
 msgid "Beleg auswählen"
 msgstr ""
 
@@ -2335,7 +2335,7 @@ msgstr ""
 msgid "Bestätigen Sie, dass der Eintrag «"
 msgstr ""
 
-#: formation_wizard.py:51 formation_wizard.py:74 templates/leg_workspace/formation.html:71
+#: formation_wizard.py:51 formation_wizard.py:74 templates/leg_workspace/formation.html:73
 #: templates/leg_workspace/members.html:51 verein_routes.py:53
 msgid "Bestätigt"
 msgstr ""
@@ -2360,7 +2360,7 @@ msgstr ""
 msgid "Bestätigte Treffen ansehen"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:102
+#: templates/leg_workspace/formation.html:104
 #, python-format
 msgid "Bestätigter Start: %(date)s. Referenz: %(reference)s."
 msgstr ""
@@ -2381,7 +2381,7 @@ msgstr ""
 msgid "Bestätigtes LEG-Interesse"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:116
+#: templates/leg_workspace/formation.html:118
 msgid "Bestätigtes Startdatum"
 msgstr ""
 
@@ -2494,7 +2494,7 @@ msgstr ""
 msgid "Betriebsmodelle vergleichen"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:98
+#: templates/leg_workspace/formation.html:100
 msgid "Betriebsstart"
 msgstr ""
 
@@ -2895,7 +2895,7 @@ msgstr ""
 msgid "Das Abrechnungsentgelt der Richtlinie liegt ausserhalb des zulässigen Bereichs."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:93
+#: templates/leg_workspace/formation.html:95
 msgid "Das Anmeldepaket kann vorbereitet werden, sobald alle Unterschriften vollständig sind."
 msgstr ""
 
@@ -3246,7 +3246,7 @@ msgstr ""
 msgid "Den Messwerten fehlt ein nachvollziehbarer Importbeleg."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:103
+#: templates/leg_workspace/formation.html:105
 msgid "Den Originalbeleg finden Sie im Korrespondenzjournal."
 msgstr ""
 
@@ -3286,7 +3286,7 @@ msgstr ""
 msgid "Der Antrag ist gespeichert. Bitte versuchen Sie den E-Mail-Versand erneut."
 msgstr ""
 
-#: templates/leg_workspace/members.html:42
+#: templates/leg_workspace/formation.html:68 templates/leg_workspace/members.html:42
 msgid "Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar."
 msgstr ""
 
@@ -3402,7 +3402,7 @@ msgstr ""
 msgid "Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:99
+#: templates/leg_workspace/formation.html:101
 msgid ""
 "Der Netzbetreiber muss den Start der LEG bestätigen. Eine Empfangsbestätigung für die Anmeldung "
 "reicht dafür nicht aus."
@@ -3476,7 +3476,7 @@ msgid ""
 " sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet."
 msgstr ""
 
-#: dashboard_routes.py:171
+#: dashboard_routes.py:175
 #, python-format
 msgid ""
 "Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
@@ -3700,7 +3700,7 @@ msgstr ""
 msgid "Die Akku-Konfiguration ist unvollständig oder passt nicht zu den abgerechneten Mitgliedern."
 msgstr ""
 
-#: dashboard_routes.py:1067
+#: dashboard_routes.py:1072
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
@@ -4659,7 +4659,7 @@ msgid ""
 "Quelldokumente."
 msgstr ""
 
-#: dashboard_routes.py:1032
+#: dashboard_routes.py:1037
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -5440,7 +5440,7 @@ msgstr ""
 msgid "Einladungslink kopiert"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:74
+#: templates/leg_workspace/formation.html:76
 msgid "Einleitung erneut möglich"
 msgstr ""
 
@@ -5767,7 +5767,7 @@ msgstr ""
 msgid "Erfassen Sie zuerst die Startbestätigung des Netzbetreibers."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:112
+#: templates/leg_workspace/formation.html:114
 msgid ""
 "Erfassen Sie zuerst die tatsächliche Startbestätigung als Eingang mit Anhang im "
 "Korrespondenzjournal. Wählen Sie danach diesen Beleg aus."
@@ -6038,7 +6038,7 @@ msgstr ""
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr ""
 
-#: dashboard_routes.py:375
+#: dashboard_routes.py:379
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
@@ -6123,7 +6123,7 @@ msgstr ""
 msgid "Fehler:"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:71 templates/leg_workspace/members.html:51
+#: templates/leg_workspace/formation.html:73 templates/leg_workspace/members.html:51
 msgid "Fehlgeschlagen"
 msgstr ""
 
@@ -7405,8 +7405,8 @@ msgstr ""
 msgid "Gründung gestartet"
 msgstr ""
 
-#: templates/emails/day_14_formation.html:71 templates/leg_workspace/formation.html:125
-#: templates/leg_workspace/formation.html:129 templates/leg_workspace/formation.html:134
+#: templates/emails/day_14_formation.html:71 templates/leg_workspace/formation.html:127
+#: templates/leg_workspace/formation.html:131 templates/leg_workspace/formation.html:136
 msgid "Gründung starten"
 msgstr ""
 
@@ -7796,7 +7796,7 @@ msgstr ""
 msgid "Ich habe diese Version des Hinweises gelesen."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:118
+#: templates/leg_workspace/formation.html:120
 msgid "Ich habe geprüft, dass der Netzbetreiber den Start der LEG zu diesem Datum bestätigt."
 msgstr ""
 
@@ -7842,7 +7842,7 @@ msgid ""
 "der Vorstand muss den Austritt nicht bewilligen."
 msgstr ""
 
-#: dashboard_routes.py:414
+#: dashboard_routes.py:418
 msgid "Ihr Dashboard-Zugangslink"
 msgstr ""
 
@@ -7990,7 +7990,7 @@ msgid ""
 " Anbieter."
 msgstr ""
 
-#: dashboard_routes.py:169
+#: dashboard_routes.py:173
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr ""
 
@@ -8105,7 +8105,7 @@ msgstr ""
 msgid "Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:135
+#: templates/leg_workspace/formation.html:137
 msgid "Im Nur-Lesezugriff sehen Sie den Stand der LEG, starten aber keine Änderungen."
 msgstr ""
 
@@ -9166,7 +9166,7 @@ msgstr ""
 msgid "LEG Toolkit"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:107
+#: templates/leg_workspace/formation.html:109
 msgid "LEG aktivieren"
 msgstr ""
 
@@ -10532,7 +10532,7 @@ msgstr ""
 msgid "Netzbetreiber informiert"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:74
+#: templates/leg_workspace/formation.html:76
 msgid "Netzbetreiber kontaktieren"
 msgstr ""
 
@@ -11082,7 +11082,7 @@ msgid "Nächster Schritt für %(profile_name)s"
 msgstr ""
 
 #: templates/emails/formation_nudge.html:33 templates/fuer_gemeinden.html:37
-#: templates/leg_workspace/formation.html:74
+#: templates/leg_workspace/formation.html:76
 msgid "Nächster Schritt:"
 msgstr ""
 
@@ -11656,7 +11656,7 @@ msgid ""
 "hinterlegte Nachweis bleiben getrennt."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:71
+#: templates/leg_workspace/formation.html:73
 msgid "Paket bereit"
 msgstr ""
 
@@ -12555,7 +12555,7 @@ msgstr ""
 msgid "Referenz"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:117
+#: templates/leg_workspace/formation.html:119
 msgid "Referenz des Netzbetreibers"
 msgstr ""
 
@@ -13350,7 +13350,7 @@ msgstr ""
 msgid "Sobald es genug Leute sind, stellen wir den Kontakt her."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:126
+#: templates/leg_workspace/formation.html:128
 msgid "Sobald genug Mitglieder bestätigt haben, starten Sie hier den formellen Gründungsprozess."
 msgstr ""
 
@@ -13605,7 +13605,7 @@ msgstr ""
 msgid "Start, wenn"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:119
+#: templates/leg_workspace/formation.html:121
 msgid "Startbestätigung erfassen"
 msgstr ""
 
@@ -13650,7 +13650,7 @@ msgid "Status wird geprüft"
 msgstr ""
 
 #: templates/leg_billing.html:66 templates/leg_dashboard.html:36
-#: templates/leg_workspace/formation.html:71 templates/member_invoice_detail.html:53
+#: templates/leg_workspace/formation.html:73 templates/member_invoice_detail.html:53
 msgid "Status:"
 msgstr ""
 
@@ -14757,7 +14757,7 @@ msgstr ""
 msgid "Vollständigkeit prüfen"
 msgstr ""
 
-#: templates/leg_workspace/correspondence.html:53 templates/leg_workspace/formation.html:136
+#: templates/leg_workspace/correspondence.html:53 templates/leg_workspace/formation.html:138
 msgid "Vollzugriff im persönlichen Dashboard anfordern"
 msgstr ""
 
@@ -15481,7 +15481,7 @@ msgstr ""
 msgid "Wird nicht veröffentlicht, nur für die Prüfung und spätere Beanspruchung des Eintrags."
 msgstr ""
 
-#: templates/leg_workspace/formation.html:71
+#: templates/leg_workspace/formation.html:73
 msgid "Wird vorbereitet"
 msgstr ""
 
@@ -15819,7 +15819,7 @@ msgstr ""
 msgid "Zugangslink anfordern"
 msgstr ""
 
-#: billing_lifecycle.py:19 sandbox_formation.py:185 templates/leg_workspace/formation.html:71
+#: billing_lifecycle.py:19 sandbox_formation.py:185 templates/leg_workspace/formation.html:73
 #: templates/leg_workspace/members.html:51 templates/sandbox/formation.html:36
 msgid "Zugestellt"
 msgstr ""
@@ -15991,7 +15991,7 @@ msgstr ""
 msgid "Zustellung als erfolgt bestätigen"
 msgstr ""
 
-#: templates/leg_workspace/formation.html:80 templates/leg_workspace/members.html:56
+#: templates/leg_workspace/formation.html:82 templates/leg_workspace/members.html:56
 msgid "Zustellung bestätigen"
 msgstr ""
 
@@ -16673,7 +16673,7 @@ msgstr ""
 msgid "Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail."
 msgstr ""
 
-#: dashboard_routes.py:416
+#: dashboard_routes.py:420
 #, python-format
 msgid ""
 "Öffnen Sie Ihr Dashboard über diesen Link:\n"

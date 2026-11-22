@@ -94,6 +94,43 @@ def test_formation_moves_at_operating_start(workspace):
 
 
 @pytest.mark.parametrize(
+    ("leg_status", "page", "empty_state"),
+    [
+        ("signatures_pending", OVERVIEW, "Anmeldepaket vorbereiten"),
+        (
+            "active",
+            ROOT + "/formation",
+            "Das Anmeldepaket kann vorbereitet werden",
+        ),
+    ],
+)
+def test_formation_shows_unavailable_submission_data(
+    workspace, monkeypatch, leg_status, page, empty_state
+):
+    import dashboard
+
+    client, status = workspace
+    status["status"] = leg_status
+    _set_session(client, "b-admin")
+    monkeypatch.setattr(dashboard.db, "is_db_available", lambda: True)
+    monkeypatch.setattr(dashboard.db, "list_vnb_mutations", lambda _cid: [])
+    monkeypatch.setattr(dashboard.db, "list_vnb_submission_cases", lambda _cid: [])
+    assert empty_state in client.get(page).text
+
+    def unavailable(_cid):
+        raise dashboard.db.VnbExchangeStoreError("submission read unavailable")
+
+    monkeypatch.setattr(dashboard.db, "list_vnb_submission_cases", unavailable)
+    response = client.get(page)
+    assert response.status_code == 200
+    assert "Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar." in (
+        response.text
+    )
+    assert empty_state not in response.text
+    assert f'action="{ROOT}/vnb-submissions"' not in response.text
+
+
+@pytest.mark.parametrize(
     "page", ["billing", "payments", "invoices", "settings", "billing-policy"]
 )
 def test_plain_member_cannot_open_billing_or_admin_pages(workspace, page):
@@ -213,11 +250,21 @@ def test_billing_policy_marks_settings_as_its_parent_section(workspace):
     assert 'aria-current="true"' in settings_link
 
 
-def test_other_leg_overview_does_not_consume_formation_feedback(workspace, monkeypatch):
+@pytest.mark.parametrize(
+    ("leg_status", "destination", "other_page"),
+    [
+        ("active", ROOT + "/formation", OVERVIEW),
+        ("signatures_pending", OVERVIEW, ROOT + "/formation"),
+    ],
+)
+def test_formation_feedback_is_shown_only_on_its_destination(
+    workspace, monkeypatch, leg_status, destination, other_page
+):
     import dashboard
 
     client, status = workspace
     _set_session(client, "b-admin")
+    status["status"] = leg_status
     other_status = {**status, "community_id": "other", "name": "Other LEG"}
     monkeypatch.setattr(
         dashboard.formation_wizard,
@@ -231,8 +278,9 @@ def test_other_leg_overview_does_not_consume_formation_feedback(workspace, monke
         lambda _cid, _bid: {"error": message},
     )
     result = client.post(ROOT + "/start-formation", data={"csrf_token": "csrf-secret"})
-    assert result.location == ROOT + "/formation"
+    assert result.location == destination
     assert message not in client.get("/leg/dashboard?cid=other").text
+    assert message not in client.get(other_page).text
     assert message in client.get(result.location).text
     assert message not in client.get(result.location).text
 

@@ -129,11 +129,15 @@ def _leg_formation_redirect(community_id, building_id, *, error=None):
     community = dashboard_module.formation_wizard.get_community_status(
         community_id, building_id
     )
-    if error and community:
-        session[f"leg-formation:{community_id}"] = error
-    return _leg_dashboard_redirect(
-        community_id, dashboard_module.leg_formation_page(community)
-    )
+    if not community or not any(
+        member["building_id"] == building_id and member.get("status") == "confirmed"
+        for member in community["members"] or []
+    ):
+        return _leg_dashboard_redirect(community_id)
+    page = dashboard_module.leg_formation_page(community)
+    if error:
+        session[f"leg-formation:{community_id}:{page}"] = error
+    return _leg_dashboard_redirect(community_id, page)
 
 
 def _rate_limit(limiter, limit_string):
@@ -549,13 +553,14 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             else ""
         )
         if building_id:
+            page = view.get("workspace_page", "overview")
             if (
                 template == "leg_dashboard.html"
                 and community
-                and view.get("workspace_page", "overview") in ("overview", "formation")
+                and page in ("overview", "formation")
             ):
                 view["formation_error"] = session.pop(
-                    f"leg-formation:{community_id}", None
+                    f"leg-formation:{community_id}:{page}", None
                 )
             memberships = dashboard_module.formation_wizard.get_user_communities(
                 building_id

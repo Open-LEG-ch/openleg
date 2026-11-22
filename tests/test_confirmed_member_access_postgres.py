@@ -112,6 +112,38 @@ def test_invitee_cannot_append_to_private_correspondence(community):
     assert db.list_correspondence(cid) == before
 
 
+@pytest.mark.parametrize("member_status", ["invited", "rejected"])
+@pytest.mark.parametrize("leg_status", ["interested", "active"])
+def test_unconfirmed_member_formation_redirect_hides_leg_status(
+    community, member_status, leg_status
+):
+    client, db, cid, _, _ = community
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET status=%s WHERE community_id=%s", (leg_status, cid)
+        )
+        cur.execute(
+            "UPDATE community_members SET status=%s WHERE community_id=%s AND building_id='guest'",
+            (member_status, cid),
+        )
+
+    root = f"/leg/community/{cid}"
+    response = client.post(
+        f"{root}/start-formation", data={"csrf_token": "csrf-secret"}
+    )
+    assert response.status_code == 302
+    assert response.location == f"/leg/dashboard?cid={cid}"
+
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE community_members SET status='confirmed' WHERE community_id=%s AND building_id='guest'",
+            (cid,),
+        )
+    message = "Nur die Administration kann die Gründung starten."
+    for page in (response.location, f"{root}/formation"):
+        assert message not in client.get(page).text
+
+
 def test_journal_lists_attachment_metadata_without_pdf_bytes(community):
     _client, db, cid, _doc, entry = community
     row = db.list_correspondence(cid)[0]
