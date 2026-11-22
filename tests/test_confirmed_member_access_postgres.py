@@ -56,6 +56,7 @@ def test_only_confirmed_members_can_read_private_pages_and_files(community, stat
         ("members", "Privateweg 1"),
         ("correspondence", "Private subject"),
     ):
+        assert status == "confirmed" or private_text not in page.text
         response = client.get(f"/leg/community/{cid}/{view}")
         assert response.status_code == (200 if status == "confirmed" else 403)
         assert (private_text in response.text) is (status == "confirmed")
