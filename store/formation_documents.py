@@ -112,6 +112,7 @@ def replace_leg_document_bundle(community_id: str, documents: list[dict]) -> int
         if (
             not community
             or community["status"] not in PRE_ACTIVATION_STATUSES
+            or community["status"] == "dso_approved"
             or community["activated_at"] is not None
         ):
             raise ValueError(

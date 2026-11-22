@@ -26,6 +26,7 @@
   </ul>
 </section>
 {% set formation_editable = community.status not in ("active", "rejected") %}
+{% set drafts_editable = formation_editable and community.status != "dso_approved" %}
 <section class="mb-10">
   <h2 class="font-bold mb-2">{{ _('Dokumente') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('Diese Vorlagen sind automatisch erstellte Entwürfe und keine Rechtsberatung. Lassen Sie die Dokumente vor der Unterzeichnung juristisch prüfen.') }}</p>
@@ -49,12 +50,12 @@
     </li>
     {% endfor %}
   </ul>
-  {% elif formation_editable %}
+  {% elif drafts_editable %}
   <p class="text-sm text-ink-muted mb-4">{{ _('Hier erscheinen Ihre Vertragsentwürfe. Erstellen Sie jetzt den ersten Entwurf.') }}</p>
   {% else %}
   <p class="text-sm text-ink-muted mb-4">{{ _('Für diese LEG liegen keine Vertragsdokumente vor.') }}</p>
   {% endif %}
-  {% if formation_editable and can_manage_documents and viewer_has_session %}
+  {% if drafts_editable and can_manage_documents and viewer_has_session %}
   <form method="post" action="/leg/community/{{ community.community_id }}/documents">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Vertragsentwürfe erstellen') }}</button>

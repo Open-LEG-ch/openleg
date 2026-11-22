@@ -383,20 +383,8 @@ def test_start_confirmation_and_original_attachment_survive_archive_restore(subm
     assert "SYNTHETIC-START-1" in client.get(f"/leg/community/{cid}/formation").text
 
 
-@pytest.mark.parametrize(
-    ("action", "actor", "status"),
-    [
-        ("start-formation", "founder", "formation_started"),
-        ("start-formation", "founder", "documents_generated"),
-        ("start-formation", "founder", "signatures_pending"),
-        ("start-formation", "founder", "dso_submitted"),
-        ("start-formation", "founder", "dso_approved"),
-        ("start-formation", "founder", "active"),
-        ("start-formation", "founder", "rejected"),
-        ("documents", "document-manager", "active"),
-    ],
-)
-def test_stale_formation_post_preserves_leg_progress(submitted, action, actor, status):
+@pytest.fixture
+def formation_ready(submitted):
     client, db, cid, fields = submitted
     for bid in ("document-manager", "participant"):
         assert db.save_building(
@@ -423,6 +411,65 @@ def test_stale_formation_post_preserves_leg_progress(submitted, action, actor, s
         cid, "gemeinschaftsvereinbarung", b"%PDF", "original.pdf"
     )
     assert original_id
+    return client, db, cid, fields, original_id
+
+
+@pytest.mark.parametrize(
+    ("before_status", "after_status"),
+    [
+        ("interested", "formation_started"),
+        ("documents_generated", "documents_generated"),
+        ("dso_approved", "dso_approved"),
+    ],
+)
+def test_first_start_records_timestamp_without_regressing_status(
+    formation_ready, before_status, after_status
+):
+    client, db, cid, fields, _ = formation_ready
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET status = %s WHERE community_id = %s",
+            (before_status, cid),
+        )
+    overview = f"/leg/dashboard?cid={cid}"
+    path = f"/leg/community/{cid}/start-formation"
+    form = f'action="{path}"'
+    assert form in client.get(overview).text
+    response = client.post(path, data=fields)
+    assert response.status_code == 302
+    assert response.location == overview
+    started = db.fetch_community_with_members(cid, "founder")
+    assert started["formation_started_at"] is not None
+    assert started["status"] == after_status
+    assert form not in client.get(overview).text
+
+    retry = client.post(path, data=fields)
+    assert retry.status_code == 302
+    assert retry.location == overview
+    assert "Die Gründung lässt sich nur einmal" in client.get(overview).text
+    after_retry = db.fetch_community_with_members(cid, "founder")
+    assert after_retry["status"] == after_status
+    assert after_retry["formation_started_at"] == started["formation_started_at"]
+
+
+@pytest.mark.parametrize(
+    ("action", "actor", "status"),
+    [
+        ("start-formation", "founder", "formation_started"),
+        ("start-formation", "founder", "documents_generated"),
+        ("start-formation", "founder", "signatures_pending"),
+        ("start-formation", "founder", "dso_submitted"),
+        ("start-formation", "founder", "dso_approved"),
+        ("start-formation", "founder", "active"),
+        ("start-formation", "founder", "rejected"),
+        ("documents", "document-manager", "active"),
+        ("documents", "document-manager", "dso_approved"),
+    ],
+)
+def test_stale_formation_post_preserves_leg_progress(
+    formation_ready, action, actor, status
+):
+    client, db, cid, fields, original_id = formation_ready
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             "UPDATE communities SET status = 'interested' WHERE community_id = %s",

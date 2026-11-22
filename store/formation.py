@@ -15,10 +15,10 @@ import community_access
 
 logger = logging.getLogger(__name__)
 
-FORMATION_START_STATUSES = ("interested", "invited", "confirmed")
+BEFORE_FORMATION_STATUSES = ("interested", "invited", "confirmed")
 
 PRE_ACTIVATION_STATUSES = (
-    *FORMATION_START_STATUSES,
+    *BEFORE_FORMATION_STATUSES,
     "formation_started",
     "documents_generated",
     "signatures_pending",
@@ -179,17 +179,20 @@ def count_confirmed_members(community_id: str) -> int | None:
 
 
 def mark_formation_started(community_id: str) -> bool:
-    """Set the formation_started status and timestamp."""
+    """Record the first formal start while preserving later progress."""
     try:
         with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
                     UPDATE communities
-                    SET status = %s, formation_started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-                    WHERE community_id = %s AND status IN %s AND activated_at IS NULL
+                    SET status = CASE WHEN status IN %s THEN 'formation_started' ELSE status END,
+                        formation_started_at = CURRENT_TIMESTAMP,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE community_id = %s AND status IN %s
+                        AND activated_at IS NULL AND formation_started_at IS NULL
                 """,
-                    ("formation_started", community_id, FORMATION_START_STATUSES),
+                    (BEFORE_FORMATION_STATUSES, community_id, PRE_ACTIVATION_STATUSES),
                 )
                 if cur.rowcount == 0:
                     return False

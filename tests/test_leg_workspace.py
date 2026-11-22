@@ -85,10 +85,12 @@ def test_formation_moves_at_operating_start(workspace):
     assert marker in active_formation
     assert f'action="{ROOT}/start-formation"' not in active_formation
     status["status"] = "dso_approved"
+    status["formation_started_at"] = "2020-01-01"
     pending_formation = client.get(OVERVIEW).text
     assert marker in pending_formation
     assert f'action="{ROOT}/start-formation"' not in pending_formation
     status["status"] = "interested"
+    status["formation_started_at"] = None
     assert f'action="{ROOT}/start-formation"' in client.get(OVERVIEW).text
     assert marker not in client.get(ROOT + "/formation").text
 

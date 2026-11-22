@@ -31,7 +31,7 @@
 {% else %}
 <header class="mb-6">
   {% if page == "overview" %}
-  <h1 class="mb-3 text-4xl tracking-tight">{{ community.name }}</h1>
+  <h1 class="mb-3 text-4xl tracking-tight wrap-anywhere">{{ community.name }}</h1>
   <dl class="flex flex-wrap gap-x-6 gap-y-2 text-ink-muted">
     <div><dt class="inline">{{ _('Status:') }}</dt> <dd class="inline font-semibold {% if community.status == 'active' %}text-sage-dark{% elif community.status == 'rejected' %}text-accent-dark{% endif %}">{{ _(community.status_label) }}</dd></div>
     <div><dt class="inline">{{ _('Verteilmodell:') }}</dt> <dd class="inline">{{ _(community.distribution_model_label) }}</dd></div>

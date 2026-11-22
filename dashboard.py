@@ -29,7 +29,7 @@ from email_localization import gettext
 from i18n import localized_url
 from locale_policy import resolve_locale
 from money_display import InvalidMoneyAmount, format_amount
-from store.formation import FORMATION_START_STATUSES
+from store.formation import PRE_ACTIVATION_STATUSES
 from translation_markers import gettext_noop as _N
 
 logger = logging.getLogger(__name__)
@@ -324,7 +324,11 @@ def leg_overview(
         ],
         "viewer_building_id": building_id,
         "is_admin": community_access.is_administrator(member),
-        "can_start_formation": status["status"] in FORMATION_START_STATUSES,
+        "can_start_formation": (
+            status["status"] in PRE_ACTIVATION_STATUSES
+            and status.get("activated_at") is None
+            and status.get("formation_started_at") is None
+        ),
         "can_manage_members": community_access.MANAGE_MEMBERS in capabilities,
         "can_manage_documents": community_access.MANAGE_DOCUMENTS in capabilities,
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,

@@ -330,6 +330,7 @@ def get_community_status(
             "next_steps": _get_next_steps(row["status"], counts["confirmed"]),
         }
         if viewer_building_id:
+            result["activated_at"] = _iso(row.get("activated_at"))
             result["vnb_start_confirmation"] = row.get("vnb_start_confirmation")
         return result
     except Exception:
