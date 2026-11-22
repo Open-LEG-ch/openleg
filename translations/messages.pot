@@ -3402,6 +3402,12 @@ msgstr ""
 msgid "Der Netzbetreiber die Anmeldung bearbeitet und der Messbedarf geklärt ist."
 msgstr ""
 
+#: store/formation_documents.py:123
+msgid ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."
+msgstr ""
+
 #: templates/leg_workspace/formation.html:102
 msgid ""
 "Der Netzbetreiber muss den Start der LEG bestätigen. Eine Empfangsbestätigung für die Anmeldung "
@@ -14602,7 +14608,7 @@ msgstr ""
 msgid "Vertragsentwürfe erstellen"
 msgstr ""
 
-#: store/formation_documents.py:119
+#: store/formation_documents.py:118
 msgid "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
 msgstr ""
 

@@ -20058,3 +20058,12 @@ msgstr "Consultez ici l’annonce au gestionnaire de réseau et la confirmation 
 #: templates/leg_workspace/header.html:14
 msgid "LEG und Sprache wechseln"
 msgstr "Changer de CEL ou de langue"
+
+#. Draft translation; native language and domain review pending.
+#: store/formation_documents.py:123
+msgid ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."
+msgstr ""
+"Le gestionnaire de réseau a déjà confirmé la mise en service. Vous ne pouvez plus remplacer les "
+"projets de contrat."

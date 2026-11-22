@@ -22453,3 +22453,10 @@ msgstr "Find the grid operator registration and confirmation of the operating st
 #: templates/leg_workspace/header.html:14
 msgid "LEG und Sprache wechseln"
 msgstr "Switch LEG or language"
+
+#. Draft translation; native language and domain review pending.
+#: store/formation_documents.py:123
+msgid ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."
+msgstr "The grid operator has already confirmed the start. You can no longer replace the draft agreements."

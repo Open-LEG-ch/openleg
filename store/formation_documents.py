@@ -112,11 +112,17 @@ def replace_leg_document_bundle(community_id: str, documents: list[dict]) -> int
         if (
             not community
             or community["status"] not in PRE_ACTIVATION_STATUSES
-            or community["status"] == "dso_approved"
             or community["activated_at"] is not None
         ):
             raise ValueError(
                 _N("Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen.")
+            )
+        if community["status"] == "dso_approved":
+            raise ValueError(
+                _N(
+                    "Der Netzbetreiber hat den Start bereits bestätigt. "
+                    "Die Vertragsentwürfe lassen sich deshalb nicht mehr ersetzen."
+                )
             )
         cur.execute(
             """

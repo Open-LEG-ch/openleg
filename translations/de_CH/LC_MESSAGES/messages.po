@@ -19084,3 +19084,11 @@ msgstr "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung de
 #: templates/leg_workspace/header.html:14
 msgid "LEG und Sprache wechseln"
 msgstr "LEG und Sprache wechseln"
+
+#: store/formation_documents.py:123
+msgid ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."
+msgstr ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."

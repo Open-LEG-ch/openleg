@@ -22722,3 +22722,12 @@ msgstr "Qui trovi la registrazione presso il gestore di rete e la conferma dell�
 #: templates/leg_workspace/header.html:14
 msgid "LEG und Sprache wechseln"
 msgstr "Cambia CLE o lingua"
+
+#. Draft translation; native language and domain review pending.
+#: store/formation_documents.py:123
+msgid ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."
+msgstr ""
+"Il gestore di rete ha già confermato l’avvio dell’attività. Non puoi più sostituire le bozze di "
+"contratto."

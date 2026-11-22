@@ -526,10 +526,14 @@ def test_stale_formation_post_preserves_leg_progress(
     )
     assert response.location == expected_url
     page = client.get(response.location)
-    message = (
-        "Die Gründung lässt sich nur einmal"
-        if action == "start-formation"
-        else "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
-    )
+    if action == "start-formation":
+        message = "Die Gründung lässt sich nur einmal"
+    elif status == "dso_approved":
+        message = (
+            "Der Netzbetreiber hat den Start bereits bestätigt. "
+            "Die Vertragsentwürfe lassen sich deshalb nicht mehr ersetzen."
+        )
+    else:
+        message = "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
     assert message in page.text
     assert form not in page.text
