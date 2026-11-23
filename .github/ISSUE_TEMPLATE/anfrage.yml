@@ -1,0 +1,45 @@
+name: Anfrage / Request
+description: Beschreiben Sie Ihren Bedarf. / Tell us what you need.
+labels: ["anfrage", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Neue Anfragen werden am monatlichen Online-Treffen besprochen.
+        Das ist keine Zusage zur Umsetzung oder Antwortzeit.
+        Bitte veröffentlichen Sie keine Personendaten, Zugangsdaten oder privaten Messdaten.
+        Fragen gehören in [Discussions](https://github.com/Open-LEG-ch/openleg/discussions).
+        Sicherheitslücken melden Sie bitte privat an hallo@openleg.ch.
+
+        New requests are reviewed at the monthly online meetup.
+        This does not promise implementation or a response time.
+        Do not publish personal data, credentials or private meter data.
+        Use Discussions for questions and hallo@openleg.ch for private security reports.
+  - type: textarea
+    id: who
+    attributes:
+      label: Wer braucht das? / Who needs this?
+      description: Beschreiben Sie die Rolle oder Gruppe, ohne Personendaten. / Describe the role or group without personal data.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Was ist das Problem? / What is the problem?
+      description: Was möchten Sie erreichen und was hindert Sie daran? / What do you want to achieve and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: Wie lösen Sie das heute? / How do you handle this today?
+      description: Beschreiben Sie Ihren bisherigen Ablauf oder schreiben Sie «noch keine Lösung». / Describe your current workflow or write "no solution yet".
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: LEG oder Gemeinde (optional) / LEG or municipality (optional)
+      description: Welcher öffentliche Kontext hilft beim Verständnis? / What public context would help us understand?
+    validations:
+      required: false
