@@ -528,6 +528,10 @@ def test_newer_history_cannot_hide_an_unresolved_entry(workspace):
         for index in range(200)
     )
     _upload_xml(workspace, statement[:start] + history + statement[end:])
+    entries = db.list_bank_statement_entries(COMMUNITY, limit=201)
+    assert len(entries) == 201
+    assert all(row["match_decision"] == "reversal" for row in entries[:-1])
+    assert entries[-1]["id"] == older["id"]
     page = workspace.get(BILLING)
     assert page.status_code == 200
     assert "old unresolved reference" in page.text
@@ -687,7 +691,10 @@ def test_override_shows_and_rechecks_the_complete_set(workspace, app_module):
     ):
         assert value in review
     old = _review_token(page)
-    for fields in ({"confirm_distinct": ""}, {"csrf_token": "invalid"}):
+    for fields in (
+        {"confirm_distinct": ""},
+        {"csrf_token": "invalid", "confirm_distinct": "yes"},
+    ):
         assert (
             _assignment_outcome(
                 workspace,
@@ -998,6 +1005,10 @@ def test_whitespace_in_bank_reference_does_not_prove_identity(workspace):
     )
     candidate = db.list_bank_statement_entries(COMMUNITY)[0]
     page = _follow_assignment(workspace, _assign(workspace, candidate["id"], second))
+    review = page.text.split('id="duplicate-review-matches"', 1)[1].split("</ul>", 1)[0]
+    assert "gleicher Betrag innerhalb von 3 Tagen" in review
+    assert "gleiche Bankreferenz" not in review
+    assert "Sehr wahrscheinlich dieselbe Zahlung" not in review
     assert (
         _assignment_outcome(
             workspace,
@@ -1005,6 +1016,63 @@ def test_whitespace_in_bank_reference_does_not_prove_identity(workspace):
         )
         == "assigned"
     )
+
+
+@pytest.mark.parametrize(
+    ("servicer", "stored_reference", "held"),
+    [
+        ("shared-bank", "shared-bank", True),
+        ("", "statement-1:1:1", False),
+        ("batch-bank:1", "batch-bank:1", False),
+        ("notprovided", "notprovided", False),
+    ],
+)
+def test_upgrade_preserves_only_legacy_bank_references(
+    workspace, servicer, stored_reference, held
+):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    _upload_xml(workspace, _statement_xml(reference="FIRST-INVOICE", servicer=servicer))
+    (earlier,) = db.list_bank_statement_entries(COMMUNITY)
+    assert earlier["entry_reference"] == stored_reference
+    assert _entry_booking(earlier["id"]) == ("matched", first)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        # Restore the persisted row shape from 7b47c415 before running the upgrade.
+        cur.execute("""
+            ALTER TABLE bank_statement_entries
+                DROP COLUMN bank_references, DROP COLUMN creditor_references,
+                DROP COLUMN source_statement_reference, DROP COLUMN debtor_name,
+                DROP COLUMN remittance_information, DROP COLUMN duplicate_reason
+        """)
+    db.create_tables()
+    db.create_tables()
+
+    _upload_xml(
+        workspace,
+        _booking_on(
+            _statement_xml(
+                statement="reissued",
+                reference="SECOND-INVOICE",
+                servicer=stored_reference,
+            ),
+            "2026-09-18",
+        ),
+    )
+    candidate, prior = db.list_bank_statement_entries(COMMUNITY)
+    assert _entry_booking(prior["id"]) == ("matched", first)
+    if held:
+        assert candidate["duplicate_reason"] == "possible_duplicate_payment"
+        assert _entry_booking(candidate["id"]) == ("mismatch", None)
+        page = _follow_assignment(
+            workspace, _assign(workspace, candidate["id"], second)
+        )
+        _review_token(page)
+        assert "gleiche Bankreferenz" in page.text
+        assert len(_paid_events()) == 1
+    else:
+        assert prior["bank_references"] == []
+        assert _entry_booking(candidate["id"]) == ("matched", second)
+        assert len(_paid_events()) == 2
 
 
 @pytest.mark.parametrize("shared", ["RF18 5390 0754 7034", "FIRST-INVOICE"])

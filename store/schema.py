@@ -1273,10 +1273,29 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS booking_status TEXT,
                 ADD COLUMN IF NOT EXISTS debtor_name TEXT,
                 ADD COLUMN IF NOT EXISTS remittance_information TEXT,
-                ADD COLUMN IF NOT EXISTS bank_references TEXT[] NOT NULL DEFAULT '{}',
+                ADD COLUMN IF NOT EXISTS bank_references TEXT[],
                 ADD COLUMN IF NOT EXISTS creditor_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS source_statement_reference TEXT,
                 ADD COLUMN IF NOT EXISTS duplicate_reason TEXT
+            """)
+            # Only rows predating bank_references have NULL here. The old importer
+            # generated statement:entry:transaction IDs and appended :transaction
+            # to batch references. A numeric suffix makes the origin ambiguous.
+            cur.execute("""
+                UPDATE bank_statement_entries
+                SET bank_references = CASE
+                    WHEN btrim(entry_reference) <> ''
+                         AND upper(btrim(entry_reference)) <> 'NOTPROVIDED'
+                         AND entry_reference !~ ':[0-9]+$'
+                    THEN ARRAY[entry_reference]
+                    ELSE '{}'::TEXT[]
+                END
+                WHERE bank_references IS NULL
+            """)
+            cur.execute("""
+                ALTER TABLE bank_statement_entries
+                ALTER COLUMN bank_references SET DEFAULT '{}',
+                ALTER COLUMN bank_references SET NOT NULL
             """)
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_payment_facts
