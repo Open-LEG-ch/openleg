@@ -123,3 +123,126 @@ jobs:
             echo "source_sha=${GITHUB_SHA}"
             echo "image=${{ steps.image.outputs.name }}@${{ steps.push.outputs.digest }}"
           } | tee -a "${GITHUB_STEP_SUMMARY}"
+
+  publish-mcp:
+    name: publish-mcp-image
+    runs-on: ubuntu-latest
+    env:
+      TRIVY_IMAGE_SRC: docker
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Define image name
+        id: image
+        shell: bash
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/openleg-mcp" >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ steps.image.outputs.name }}
+          flavor: latest=false
+          tags: |
+            type=ref,event=tag
+            type=sha,format=short
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile.mcp
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Verify sidecar image
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.name }}:${{ steps.meta.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Non-root, no Flask application code, and closed unless explicitly enabled.
+          [[ "$(docker run --rm --entrypoint id "${IMAGE_REF}" -u)" != "0" ]]
+          docker run --rm --entrypoint sh "${IMAGE_REF}" -c '! test -e /app/app.py'
+          docker run --rm --entrypoint python "${IMAGE_REF}" -c "import mcp_sidecar.server"
+          if output="$(docker run --rm "${IMAGE_REF}" 2>&1)"; then
+            echo "::error::The sidecar started without OPENLEG_MCP_ENABLED=true"
+            exit 1
+          fi
+          grep -q "MCP sidecar is disabled" <<< "${output}"
+
+      - name: Block high-severity image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ steps.image.outputs.name }}:${{ steps.meta.outputs.version }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Generate SBOM
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ steps.image.outputs.name }}:${{ steps.meta.outputs.version }}
+          format: cyclonedx
+          output: sbom.cdx.json
+          skip-setup-trivy: true
+
+      - name: Push scanned image
+        id: push
+        shell: bash
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          digest=""
+          while IFS= read -r tag; do
+            [[ -z "${tag}" ]] && continue
+            docker push "${tag}"
+            current="$(docker buildx imagetools inspect "${tag}" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+            [[ "${current}" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::Push returned no digest for ${tag}"; exit 1; }
+            [[ -z "${digest}" || "${digest}" = "${current}" ]] || { echo "::error::Published tags have different digests"; exit 1; }
+            digest="${current}"
+          done <<< "${IMAGE_TAGS}"
+          [[ -n "${digest}" ]] || { echo "::error::No image tags were published"; exit 1; }
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+
+      - name: Attest image provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          sbom-path: sbom.cdx.json
+          push-to-registry: true
+
+      - name: Record immutable release identity
+        run: |
+          {
+            echo "source_sha=${GITHUB_SHA}"
+            echo "image=${{ steps.image.outputs.name }}@${{ steps.push.outputs.digest }}"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"

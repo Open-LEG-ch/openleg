@@ -404,3 +404,8 @@ read-only and rate limited by both sidecar and upstream budgets described above.
 - Leave MCP disabled by default. Production enablement happens in the private
   ops repository through the deploy process after this gate passes. This local
   Compose overlay does not enable production.
+- Deploy the sidecar from the image that a version tag publishes:
+  `ghcr.io/open-leg-ch/openleg-mcp`, built from `Dockerfile.mcp`. The `image.yml`
+  workflow scans it, attests its provenance and SBOM, and records its digest like
+  the main image. The image runs without root, contains no Flask code and
+  refuses to start unless `OPENLEG_MCP_ENABLED=true`.
