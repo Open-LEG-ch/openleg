@@ -8203,10 +8203,6 @@ msgstr ""
 msgid "Ihren ungefähren Jahresverbrauch in kWh (steht auf der Stromrechnung)"
 msgstr ""
 
-#: templates/release/homepage.html:34
-msgid "Illustration: erfundenes Quartier"
-msgstr ""
-
 #: templates/sandbox/home.html:62
 msgid ""
 "Im Dashboard können Sie Ihr erfundenes Profil herunterladen oder seine Löschung per Postfach "
