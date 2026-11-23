@@ -9,7 +9,7 @@ import os
 import re
 import secrets
 import uuid
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from flask import (
     Blueprint,
@@ -40,6 +40,9 @@ PROTOCOL_FIELDS = frozenset(
         "code_challenge_method",
         "resource",
     }
+)
+RESPONSE_PARAMETERS = frozenset(
+    {"code", "state", "error", "error_description", "error_uri", "iss"}
 )
 CONSENT_FIELDS = frozenset(
     {
@@ -381,6 +384,9 @@ def init_oauth(app):
             u = urlsplit(uri)
             if (
                 u.fragment
+                # The callback adds these once; a preset copy would repeat them.
+                or {k for k, _ in parse_qsl(u.query, keep_blank_values=True)}
+                & RESPONSE_PARAMETERS
                 or u.username
                 or u.password
                 or not u.hostname

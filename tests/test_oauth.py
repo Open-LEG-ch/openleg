@@ -642,6 +642,28 @@ def test_client_name_matches_storage_limit():
         init_oauth(configured("n" * 129))
 
 
+@pytest.mark.parametrize(
+    "parameter", ["iss", "code", "state", "error", "error_description", "error_uri"]
+)
+def test_redirect_uri_cannot_preset_an_authorization_response_parameter(parameter):
+    from oauth_server import init_oauth
+
+    def configured(uri):
+        app = Flask(__name__)
+        app.config.update(
+            OAUTH_ISSUER="https://auth.example",
+            OAUTH_RESOURCE="https://mcp.example/mcp",
+            OAUTH_DOWNSTREAM_KEY="0123456789abcdef" * 4,  # gitleaks:allow
+            OAUTH_INTROSPECTION_SECRET="s" * 64,
+            OAUTH_CLIENTS={"host": {"name": "Host", "redirect_uris": [uri]}},
+        )
+        return app
+
+    init_oauth(configured("https://host.example/cb?registered=yes"))
+    with pytest.raises(ValueError, match="redirect URI"):
+        init_oauth(configured(f"https://host.example/cb?registered=yes&{parameter}=x"))
+
+
 def test_refresh_secret_redacted(caplog):
     import logging
 
