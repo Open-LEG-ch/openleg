@@ -87,8 +87,8 @@ def test_concurrent_entries_pay_delivered_invoice_only_once(payment_client):
                 statement_import_id,community_id,entry_reference,booking_date,
                 amount,currency,payment_reference,is_reversal,
                 credit_debit_indicator,match_decision,amount_basis,booking_status)
-               SELECT statement_import_id,community_id,'second-entry',booking_date,
-                amount,currency,payment_reference,is_reversal,
+               SELECT statement_import_id,community_id,'second-entry',booking_date+10,
+                amount,currency,'separate reference',is_reversal,
                 credit_debit_indicator,match_decision,amount_basis,booking_status
                FROM bank_statement_entries WHERE id=%s RETURNING id""",
             (first_id,),
