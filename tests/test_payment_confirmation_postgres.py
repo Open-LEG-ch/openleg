@@ -60,6 +60,46 @@ def confirm(http, ids, query="", **kwargs):
     )
 
 
+@pytest.mark.parametrize("code", ["invalid_invoice_total", "missing_reference"])
+def test_api_refuses_missing_payment_data(operator_http, code):
+    import payment_reconciliation
+    from tests.test_billing_payment_assignment_postgres import _statement_xml
+    from tests.test_operator_contract import load_contract
+
+    http = operator_http
+    ids = seed_operator_resources(http)
+    if code == "invalid_invoice_total":
+        with http.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("ALTER TABLE invoices DISABLE TRIGGER USER")
+            cur.execute(
+                "UPDATE invoices SET gross_chf=NULL WHERE id=%s", (ids["invoice_id"],)
+            )
+            cur.execute("ALTER TABLE invoices ENABLE TRIGGER USER")
+    payment_reconciliation.import_statement(
+        http.community_id,
+        "contract-admin",
+        "synthetic.xml",
+        _statement_xml(
+            reference="" if code == "missing_reference" else "unknown"
+        ).replace(b"9.67", b"42.50"),
+        http.db,
+    )
+    ids["entry_id"] = http.db.list_bank_statement_entries(http.community_id)[0]["id"]
+    before = rows(http)
+
+    response = confirm(http, ids)
+
+    assert response.status_code == 409
+    assert response.json["code"] == code
+    operator_contract_helpers.validate_response(
+        load_contract(),
+        "/api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm",
+        "post",
+        response,
+    )
+    assert rows(http) == before
+
+
 def test_dry_run_preserves_full_rows(operator_http):
     ids = seed_operator_resources(operator_http)
     before = rows(operator_http)
@@ -402,8 +442,8 @@ def test_real_confirmation_keeps_payment_locks(
                        statement_import_id,community_id,entry_reference,booking_date,
                        amount,currency,payment_reference,credit_debit_indicator,
                        match_decision,booking_status,amount_basis)
-                   SELECT statement_import_id,community_id,'ENTRY-2',booking_date,
-                          amount,currency,payment_reference,credit_debit_indicator,
+                   SELECT statement_import_id,community_id,'ENTRY-2',booking_date+10,
+                          amount,currency,'separate reference',credit_debit_indicator,
                           match_decision,booking_status,amount_basis
                    FROM bank_statement_entries WHERE id=%s RETURNING id""",
                 (ids["entry_id"],),
@@ -419,3 +459,106 @@ def test_real_confirmation_keeps_payment_locks(
             "SELECT COUNT(*) AS n FROM invoice_lifecycle_events WHERE event_type='paid'"
         )
         assert cur.fetchone()["n"] == 1
+
+
+@pytest.mark.parametrize("adapter", ["api", "mcp"])
+@pytest.mark.parametrize("case", ["identical", "plausible"])
+def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, case):
+    import asyncio
+
+    import payment_reconciliation
+    from mcp_sidecar.server import create_app
+    from tests.test_billing_payment_assignment_postgres import _statement_xml
+    from tests.test_mcp_sidecar import session
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    http = operator_http
+    ids = seed_operator_resources(http)
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE bank_statement_entries SET payment_reference='separate reference' WHERE id=%s",
+            (ids["entry_id"],),
+        )
+    account = {"account": "CH0000000000000000000", "account_is_iban": True}
+    statements = [
+        _statement_xml(reference="CONTRACT-1", **account),
+        _statement_xml(
+            statement="statement-2",
+            reference="unknown",
+            servicer="other-credit" if case == "plausible" else "bank-entry-1",
+            **account,
+        ),
+    ]
+    if case == "plausible":
+        statements.append(
+            _statement_xml(
+                statement="statement-3",
+                reference="third credit",
+                servicer="third-credit",
+                **account,
+            )
+        )
+    for xml in statements:
+        payment_reconciliation.import_statement(
+            http.community_id,
+            "contract-admin",
+            "synthetic.xml",
+            xml.replace(b"9.67", b"42.50"),
+            http.db,
+        )
+    entries = http.db.list_bank_statement_entries(http.community_id)
+    ids["entry_id"] = entries[0]["id"]
+    code = "possible_duplicate_payment"
+    expected_ids = sorted(
+        row["id"] for row in (entries[1:3] if case == "plausible" else entries[1:2])
+    )
+    before = rows(http)
+    if adapter == "api":
+        from tests.test_operator_contract import load_contract
+
+        response = confirm(
+            http, ids, json={"invoice_id": ids["invoice_id"], "confirm_distinct": True}
+        )
+        assert response.status_code == 409
+        assert response.json["code"] == code
+        assert response.json.get("matching_entry_ids") == expected_ids
+        operator_contract_helpers.validate_response(
+            load_contract(),
+            "/api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm",
+            "post",
+            response,
+        )
+    else:
+        monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+        monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
+        with operator_server(http.app) as origin:
+            monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+            app = create_app()
+
+            async def check():
+                async with (
+                    app.router.lifespan_context(app),
+                    session(app, http.headers) as sdk,
+                ):
+                    args = {
+                        "community_id": http.community_id,
+                        "entry_id": ids["entry_id"],
+                        "invoice_id": ids["invoice_id"],
+                        "idempotency_key": "duplicate-test",
+                    }
+                    result = await sdk.call_tool("confirm_payment_match", args)
+                    assert result.is_error
+                    assert result.structured_content["code"] == code
+                    assert (
+                        result.structured_content.get("matching_entry_ids")
+                        == expected_ids
+                    )
+                    forged = await sdk.call_tool(
+                        "confirm_payment_match", {**args, "confirm_distinct": True}
+                    )
+                    assert forged.is_error
+                    assert forged.structured_content["code"] == "invalid_arguments"
+
+            asyncio.run(check())
+
+    assert rows(http) == before

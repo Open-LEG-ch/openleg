@@ -413,11 +413,14 @@ def create_app():
         {"components": {"schemas": error_schema}, **error_schema["Error"]}
     )
 
-    def error(code, *, field=None, retryable=False, text=None):
+    def error(code, *, field=None, retryable=False, text=None, matching_entry_ids=None):
+        details = {"code": code, "field": field, "retryable": retryable}
+        if matching_entry_ids is not None:
+            details["matching_entry_ids"] = matching_entry_ids
         return types.CallToolResult(
             is_error=True,
             content=[types.TextContent(type="text", text=text or code)],
-            structured_content={"code": code, "field": field, "retryable": retryable},
+            structured_content=details,
         )
 
     # The HTTP request is passed explicitly: the resource summary reuses these
@@ -611,6 +614,9 @@ def create_app():
                     field=field,
                     retryable=body["retryable"],
                     text={403: "forbidden"}.get(response.status_code),
+                    matching_entry_ids=body.get("matching_entry_ids")
+                    if confirm and body["code"] == "possible_duplicate_payment"
+                    else None,
                 )
             body = response.json()
             if confirm:

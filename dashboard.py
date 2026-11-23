@@ -20,15 +20,18 @@ import formation_documents
 import formation_wizard
 import member_invoices
 import member_savings
+import operator_actor
 import payment_reconciliation
 import quartierakku
 import security_utils
 import telemetry
 import vnb_exchange
 from email_localization import gettext
+from i18n import gettext as _
 from i18n import localized_url
 from locale_policy import resolve_locale
-from money_display import InvalidMoneyAmount, format_amount
+from money_display import InvalidMoneyAmount, finite_decimal, format_amount
+from operator_errors import IdempotencyConflict
 from store.formation import PRE_ACTIVATION_STATUSES
 from translation_markers import gettext_noop as _N
 
@@ -481,11 +484,119 @@ def _display_gross_chf(invoice: dict) -> tuple[str, bool]:
         return _N("Unlesbar"), True
 
 
+_DASHBOARD_PAYMENT_KEY_PREFIX = "dashboard-payment-"
+_PAYMENT_REFUSALS = {
+    "debit": (
+        _N("Das ist eine Belastung, keine Gutschrift."),
+        _N("Gleichen Sie die Belastung separat mit der Bank ab."),
+    ),
+    "reversal": (
+        _N("Die Bank hat die Zahlung zurückgebucht."),
+        _N(
+            "Prüfen Sie die ursprüngliche Zahlung und klären Sie die Rückbuchung mit der Bank."
+        ),
+    ),
+    "currency": (
+        _N("Die Währung ist nicht CHF."),
+        _N("Klären Sie die Währung mit der zahlenden Person."),
+    ),
+    "missing_reference": (
+        _N("Die Zahlung hat keine Referenz."),
+        _N("Fordern Sie bei der Bank einen Kontoauszug mit Zahlungsreferenz an."),
+    ),
+    "split_payment": (
+        _N("Der Betrag ist zu tief."),
+        _N(
+            "Teilzahlungen bleiben unverbucht. Klären Sie den offenen Betrag mit der zahlenden Person."
+        ),
+    ),
+    "overpayment": (
+        _N("Der Betrag ist zu hoch."),
+        _N(
+            "Überzahlungen bleiben unverbucht. Klären Sie den überschüssigen Betrag mit der zahlenden Person."
+        ),
+    ),
+    "booking_status": (
+        _N("Der Auszug weist keine definitive Buchung aus."),
+        _N("Importieren Sie den definitiven Kontoauszug."),
+    ),
+    "amount_basis": (
+        _N("Der Auszug belegt den Betrag für diesen Eintrag nicht eindeutig."),
+        _N("Fordern Sie einen Kontoauszug mit Einzelbeträgen an."),
+    ),
+    "invoice_state": (
+        _N("Die Rechnung ist aktuell nicht zur Zahlung offen."),
+        _N(
+            "Stellen Sie die Rechnung zuerst zu oder wählen Sie eine andere zugestellte Rechnung."
+        ),
+    ),
+    "invalid_invoice_total": (
+        _N("Die Rechnung hat keinen gültigen Gesamtbetrag."),
+        _N("Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."),
+    ),
+}
+_PAYMENT_TITLES = {
+    "unmatched": _N("Die Referenz passt zu keiner Rechnung."),
+    "ambiguous": _N("Die Referenz passt zu mehreren Rechnungen."),
+    "mismatch": _N("Die Angaben zur Zahlung passen nicht zur Rechnung."),
+    "matched": _N("Die Zahlung ist verbucht."),
+}
+
+
+def _display_statement_amount(amount):
+    try:
+        return f"{finite_decimal(amount):,.2f}".replace(",", "'")
+    except InvalidMoneyAmount:
+        return _N("Unlesbar")
+
+
+def _billing_statement_entry(entry, invoices_by_id):
+    decision = entry["match_decision"]
+    reviewable = decision in payment_reconciliation.REVIEWABLE_DECISIONS
+    refusal = (
+        payment_reconciliation.payment_entry_refusal(entry) if reviewable else decision
+    )
+    heading, recovery = _PAYMENT_REFUSALS.get(refusal, (None, None))
+    if not heading and entry.get("likely_duplicate_invoice_number"):
+        heading = _(
+            "Wahrscheinlich bereits auf Rechnung %(invoice)s gebucht.",
+            invoice=entry["likely_duplicate_invoice_number"],
+        )
+    if decision == "matched" and entry["confirmation_replay_available"]:
+        heading = _N("Zahlung zugeordnet")
+    related_invoice = invoices_by_id.get(entry["invoice_id"])
+    shortfall = None
+    if (
+        decision == "split_payment"
+        and related_invoice
+        and not related_invoice["gross_unreadable"]
+    ):
+        shortfall = _display_statement_amount(
+            finite_decimal(related_invoice["gross_chf"])
+            - finite_decimal(entry["amount"])
+        )
+    return {
+        **entry,
+        "heading": heading
+        or (
+            _N("Mögliche Doppelzahlung.")
+            if entry.get("duplicate_reason")
+            else _PAYMENT_TITLES[decision]
+        ),
+        "recovery": recovery,
+        "display_amount": _display_statement_amount(entry["amount"]),
+        "related_invoice": related_invoice,
+        "shortfall": shortfall,
+        "can_assign": reviewable and not recovery,
+    }
+
+
 def leg_billing_workspace_view(
     community_id: str,
     building_id: str,
     *,
     include_statement_entries: bool = False,
+    statement_before: int | None = None,
     **extra,
 ) -> dict:
     """Capability-gated view model for the billing approval workspace."""
@@ -495,6 +606,7 @@ def leg_billing_workspace_view(
     if not member:
         return {"error": _N("Kein Zugriff.")}
     capabilities = community_access.capabilities_for(member)
+    can_prepare = community_access.PREPARE_BILLING in capabilities
     periods = db.list_community_billing_periods(community_id)
     flag_counts = _veracity_flag_counts(periods)
     invoices = [
@@ -558,6 +670,31 @@ def leg_billing_workspace_view(
             and not candidate.get("corrects_invoice_number")
         ]
         invoice["queries"] = queries_by_invoice.get(invoice["id"], [])
+        if include_statement_entries:
+            invoice["statement_amount"] = _display_statement_amount(
+                invoice.get("gross_chf")
+            )
+    statement_invoices = (
+        {invoice["id"]: invoice for invoice in invoices}
+        if include_statement_entries
+        else {}
+    )
+    statement_entries = []
+    next_statement_before = None
+    if include_statement_entries:
+        open_entries = db.list_bank_statement_entries(
+            community_id, limit=201, reviewable=True, before=statement_before
+        )
+        if len(open_entries) > 200:
+            open_entries = open_entries[:200]
+            next_statement_before = open_entries[-1]["id"]
+        statement_entries = open_entries
+        if statement_before is None:
+            statement_entries += db.list_bank_statement_entries(
+                community_id,
+                reviewable=False,
+                confirmation_key_prefix=_DASHBOARD_PAYMENT_KEY_PREFIX,
+            )
     view = {
         "error": None,
         "community_id": community_id,
@@ -566,21 +703,21 @@ def leg_billing_workspace_view(
             for period in periods
         ],
         "invoices": invoices,
+        "statement_invoice_candidates": [
+            invoice
+            for invoice in statement_invoices.values()
+            if invoice["lifecycle_state"] == "delivered"
+            and not invoice["gross_unreadable"]
+        ]
+        if can_prepare
+        else [],
         "statement_entries_loaded": include_statement_entries,
         "statement_entries": [
-            {
-                **entry,
-                "match_decision_label": payment_reconciliation.DECISION_LABELS.get(
-                    entry.get("match_decision"),
-                    entry.get("match_decision") or "Unbekannt",
-                ),
-            }
-            for entry in (
-                db.list_bank_statement_entries(community_id)
-                if include_statement_entries
-                else []
-            )
+            _billing_statement_entry(entry, statement_invoices)
+            for entry in statement_entries
         ],
+        "statement_before": statement_before,
+        "next_statement_before": next_statement_before,
         "billing_approved": False,
         "approval_error": None,
         "viewer_building_id": building_id,
@@ -589,7 +726,7 @@ def leg_billing_workspace_view(
                 formation_wizard.get_community_status(community_id, building_id) or {}
             ).get("require_dual_control")
         ),
-        "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
+        "can_prepare_billing": can_prepare,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
         "can_import_bank_statement": _is_confirmed_admin(member),
     }
@@ -605,6 +742,95 @@ def leg_import_bank_statement(community_id, building_id, source_name, content):
         community_id, building_id, source_name, content, db
     )
     return {"error": None, **result}
+
+
+def _payment_review_row(row):
+    bank_reference = next(iter(row["bank_references"]), "")
+    return {
+        **row,
+        "review_reference": row["payment_reference"] or bank_reference,
+        "display_amount": _display_statement_amount(row["amount"]),
+    }
+
+
+def leg_payment_duplicate_review(community_id, entry_id):
+    duplicate = db.read_payment_duplicate_review(community_id, entry_id)
+    if duplicate is None:
+        return {"error": _N("Prüfen Sie die Buchung erneut.")}
+    return {
+        "error": _N("Mögliche Doppelzahlung."),
+        "reviewed_duplicates": duplicate.review,
+        "candidate": _payment_review_row(duplicate.entry),
+        "matches": [_payment_review_row(row) for row in duplicate.matches],
+    }
+
+
+def leg_assign_bank_payment(
+    community_id,
+    building_id,
+    entry_id,
+    invoice_id,
+    confirmed,
+    *,
+    reviewed_duplicates=None,
+):
+    """Submit a signed-in billing preparer's reviewed payment."""
+    if not _require_capability(
+        community_id, building_id, community_access.PREPARE_BILLING
+    ):
+        return {"error_status": 403}
+    if not confirmed:
+        return {
+            "error_status": 400,
+            "error": _N(
+                "Bestätigen Sie die Prüfung mit dem Kontrollkästchen und senden Sie die Zuordnung erneut."
+            ),
+        }
+    if not invoice_id or invoice_id < 1:
+        return {
+            "error_status": 400,
+            "error": _N(
+                "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestellte Rechnung."
+            ),
+        }
+    try:
+        # A dashboard session belongs to a building and has no API client.
+        with operator_actor.acting_as({"id": None, "actor_kind": "human"}):
+            result = db.confirm_operator_payment_match(
+                entry_id,
+                invoice_id,
+                community_id,
+                building_id,
+                f"{_DASHBOARD_PAYMENT_KEY_PREFIX}{entry_id}",
+                reviewed_duplicates=reviewed_duplicates,
+            )
+    except payment_reconciliation.BankPaymentDuplicate:
+        return {
+            "error_status": 409,
+            "error": _N("Mögliche Doppelzahlung."),
+            "duplicate_review_required": True,
+        }
+    except payment_reconciliation.PaymentMatchRefused as exc:
+        error, recovery = _PAYMENT_REFUSALS[exc.detail]
+        return {"error_status": 409, "error": error, "recovery": recovery}
+    except InvoiceLifecycleError as exc:
+        return {
+            "error_status": 409,
+            "error": str(exc),
+            "recovery": _N(
+                "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
+            ),
+        }
+    except IdempotencyConflict:
+        result = None
+    if not result:
+        return {
+            "error_status": 409,
+            "error": _N(
+                "Dieser Eintrag ist nicht mehr zur Zuordnung verfügbar. Prüfen Sie den aktuellen Zahlungsabgleich unten."
+            ),
+        }
+    return {"error_status": None}
 
 
 def leg_deliver_invoice(

@@ -8,11 +8,41 @@ from hashlib import sha256
 
 from defusedxml import ElementTree
 
+from billing_lifecycle import InvoiceLifecycleError
+from money_display import InvalidMoneyAmount, finite_decimal
+from operator_errors import ErrorCode
 from translation_markers import gettext_noop as _N
 
 
 class StatementError(ValueError):
     """The uploaded document is not a supported, valid bank statement."""
+
+
+class PaymentMatchRefused(InvoiceLifecycleError):
+    """A review failed shared payment eligibility."""
+
+    def __init__(self, detail):
+        super().__init__("Die Zahlung passt nicht exakt zur Rechnung.")
+        self.detail = detail
+        self.reason = {
+            "invalid_invoice_total": ErrorCode.INVALID_INVOICE_TOTAL,
+            "missing_reference": ErrorCode.MISSING_REFERENCE,
+        }.get(detail, ErrorCode.INVALID_PAYMENT)
+
+
+class BankPaymentDuplicate(InvoiceLifecycleError):
+    """A statement entry needs human review of plausible duplicate payments."""
+
+    reason = ErrorCode.POSSIBLE_DUPLICATE_PAYMENT
+
+    def __init__(self, matches, *, entry):
+        super().__init__("Bank credit needs duplicate review")
+        self.matches = matches
+        self.entry = entry
+
+    @property
+    def review(self):
+        return sorted([row["id"], row["booked_invoice_id"]] for row in self.matches)
 
 
 DECISION_LABELS = {
@@ -24,6 +54,7 @@ DECISION_LABELS = {
     "reversal": _N("Rückbuchung"),
     "mismatch": _N("Angaben stimmen nicht überein"),
 }
+REVIEWABLE_DECISIONS = frozenset({"unmatched", "ambiguous", "mismatch"})
 
 
 @dataclass(frozen=True)
@@ -37,6 +68,11 @@ class PaymentEntry:
     credit_debit_indicator: str
     booking_status: str | None = None
     amount_basis: str | None = None
+    debtor_name: str | None = None
+    remittance_information: str | None = None
+    bank_references: tuple[str, ...] = ()
+    creditor_references: tuple[str, ...] = ()
+    source_statement_reference: str | None = None
 
 
 @dataclass(frozen=True)
@@ -107,6 +143,35 @@ def _account_currency(container):
     ):
         raise StatementError(_N("Der Zahlungseintrag enthält keine gültige Währung."))
     return value
+
+
+def _bank_references(element, *paths):
+    return tuple(
+        node.text
+        for path in paths
+        for node in element.findall(path)
+        if (trimmed := (node.text or "").strip()) and trimmed.upper() != "NOTPROVIDED"
+    )
+
+
+def _creditor_references(transaction):
+    return tuple(
+        dict.fromkeys(
+            raw
+            for node in transaction.findall("./{*}RmtInf/{*}Strd/{*}CdtrRefInf/{*}Ref")
+            if (raw := (node.text or "").strip()) and raw.upper() != "NOTPROVIDED"
+        )
+    )
+
+
+def _debtor_name(transaction):
+    debtor = transaction.find("./{*}RltdPties/{*}Dbtr")
+    if debtor is not None:
+        for path in ("./{*}Nm", "./{*}Pty/{*}Nm"):
+            name = debtor.findtext(path, default="").strip()
+            if name and name != "NOTPROVIDED":
+                return name
+    return None
 
 
 def _validate_batch_details(entry, entry_direction):
@@ -210,15 +275,23 @@ def parse_statement(content: bytes) -> Statement:
     containers = _children(root, container_name)
     if not containers:
         raise StatementError(_N("Der Kontoauszug enthält keinen Auszug."))
-    statement_reference = _text(containers[0], "Id")
+    statement_reference = containers[0].findtext("./{*}Id", default="").strip()
     entries = []
     scoped_entries = []
+    seen_references = set()
     for container in containers:
         account_currency = _account_currency(container)
+        source_statement = container.findtext("./{*}Id", default="").strip()
         scoped_entries.extend(
-            (entry, account_currency) for entry in container if _local(entry) == "Ntry"
+            (entry, account_currency, source_statement)
+            for entry in container
+            if _local(entry) == "Ntry"
         )
-    for entry_number, (entry, account_currency) in enumerate(scoped_entries, start=1):
+    for entry_number, (
+        entry,
+        account_currency,
+        source_statement,
+    ) in enumerate(scoped_entries, start=1):
         booking_elements = _children(entry, "BookgDt")
         if not booking_elements:
             raise StatementError(
@@ -231,7 +304,7 @@ def parse_statement(content: bytes) -> Statement:
             raise StatementError(
                 _N("Der Zahlungseintrag enthält kein gültiges Buchungsdatum.")
             ) from error
-        reversal = _text(entry, "RvslInd").lower() == "true"
+        reversal = _text(entry, "RvslInd").lower() in {"true", "1"}
         credit_debit_indicator = _text(entry, "CdtDbtInd").upper()
         if credit_debit_indicator not in {"CRDT", "DBIT"}:
             raise StatementError(
@@ -284,11 +357,40 @@ def parse_statement(content: bytes) -> Statement:
             else:
                 amount, currency = _amount(transaction)
             payment_reference = _text(transaction, "Ref", "Ustrd", "EndToEndId")
+            transaction_references = (
+                _bank_references(
+                    transaction,
+                    "./{*}Refs/{*}AcctSvcrRef",
+                    "./{*}Refs/{*}NtryRef",
+                    "./{*}AcctSvcrRef",
+                    "./{*}NtryRef",
+                )
+                if transaction is not entry
+                else ()
+            )
+            entry_references = _bank_references(
+                entry, "./{*}AcctSvcrRef", "./{*}NtryRef"
+            )
+            references = tuple(
+                dict.fromkeys((*transaction_references, *entry_references))
+            )
+            remittance_lines = transaction.findall("./{*}RmtInf/{*}Ustrd")
+            remittance_lines.extend(
+                transaction.findall("./{*}RmtInf/{*}Strd/{*}AddtlRmtInf")
+            )
+            remittance = "\n".join(
+                line for item in remittance_lines if (line := (item.text or "").strip())
+            )
             entry_reference = _text(transaction, "AcctSvcrRef", "NtryRef")
             if not entry_reference:
-                entry_reference = f"{statement_reference or 'statement'}:{entry_number}:{transaction_number}"
+                entry_reference = f"{source_statement or 'statement'}:{entry_number}:{transaction_number}"
             elif len(transactions) > 1:
                 entry_reference = f"{entry_reference}:{transaction_number}"
+            # Keep import-row IDs unique even when banks reuse the same local reference.
+            # The original bank references are retained separately for duplicate review.
+            while entry_reference in seen_references:
+                entry_reference += f":{entry_number}:{transaction_number}"
+            seen_references.add(entry_reference)
             entries.append(
                 PaymentEntry(
                     entry_reference=entry_reference,
@@ -300,6 +402,11 @@ def parse_statement(content: bytes) -> Statement:
                     credit_debit_indicator=credit_debit_indicator,
                     booking_status=_booking_status(entry),
                     amount_basis="reconciled_batch" if is_batch else "entry",
+                    debtor_name=_debtor_name(transaction),
+                    remittance_information=remittance or None,
+                    bank_references=references,
+                    creditor_references=_creditor_references(transaction),
+                    source_statement_reference=source_statement or None,
                 )
             )
     if not entries:
@@ -321,7 +428,7 @@ def import_statement(community_id, actor_id, source_name, content, store):
     )
 
 
-def _normalised_reference(value):
+def normalise_payment_reference(value):
     return "".join(
         character for character in str(value or "").upper() if character.isalnum()
     )
@@ -329,11 +436,12 @@ def _normalised_reference(value):
 
 def match_payment(entry, invoices):
     """Classify one entry without mutating invoices or invoice snapshots."""
-    reference = _normalised_reference(entry["payment_reference"])
+    reference = normalise_payment_reference(entry["payment_reference"])
     candidates = [
         invoice
         for invoice in invoices
-        if reference and _normalised_reference(invoice["invoice_number"]) == reference
+        if reference
+        and normalise_payment_reference(invoice["invoice_number"]) == reference
     ]
     invoice_id = candidates[0]["id"] if len(candidates) == 1 else None
     if entry["is_reversal"]:
@@ -342,21 +450,46 @@ def match_payment(entry, invoices):
         return MatchDecision("ambiguous")
     if not candidates:
         return MatchDecision("unmatched")
-    return MatchDecision(payment_eligibility(entry, candidates[0]), invoice_id)
+    try:
+        decision = payment_eligibility(entry, candidates[0])
+    except PaymentMatchRefused:
+        decision = "mismatch"
+    return MatchDecision(decision, invoice_id)
+
+
+def payment_entry_refusal(entry):
+    """Explain restrictions that apply before an invoice is selected."""
+    if entry["is_reversal"]:
+        return "reversal"
+    if entry.get("booking_status") != "BOOK":
+        return "booking_status"
+    if entry.get("amount_basis") not in {"entry", "reconciled_batch"}:
+        return "amount_basis"
+    if entry["credit_debit_indicator"] != "CRDT":
+        return "debit"
+    if entry["currency"] != "CHF":
+        return "currency"
+    reference = entry.get("payment_reference")
+    if not isinstance(reference, str) or not reference.strip():
+        return "missing_reference"
+    return None
+
+
+def is_duplicate_payment_evidence(entry):
+    """A booked payment or a statement entry itself eligible for booking."""
+    return entry["match_decision"] == "matched" or payment_entry_refusal(entry) is None
 
 
 def payment_eligibility(entry, invoice):
     """Classify acceptance rules shared by automatic and reviewed selection."""
-    if entry["is_reversal"]:
-        return "reversal"
-    invoice_amount = Decimal(str(invoice["gross_chf"]))
+    refusal = payment_entry_refusal(entry)
+    if refusal:
+        return "reversal" if refusal == "reversal" else "mismatch"
+    try:
+        invoice_amount = finite_decimal(invoice.get("gross_chf"))
+    except InvalidMoneyAmount as exc:
+        raise PaymentMatchRefused("invalid_invoice_total") from exc
     entry_amount = Decimal(str(entry["amount"]))
-    if entry.get("booking_status") != "BOOK":
-        return "mismatch"
-    if entry.get("amount_basis") not in {"entry", "reconciled_batch"}:
-        return "mismatch"
-    if entry["credit_debit_indicator"] != "CRDT" or entry["currency"] != "CHF":
-        return "mismatch"
     if entry_amount < invoice_amount:
         return "split_payment"
     if entry_amount > invoice_amount:

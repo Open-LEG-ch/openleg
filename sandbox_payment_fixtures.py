@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Deterministic fictional camt inputs bound to an existing village invoice."""
 
+from datetime import date, timedelta
 from decimal import Decimal
 from xml.sax.saxutils import escape
 
@@ -34,6 +35,8 @@ def fixture(invoice, kind, message):
         if message == "053"
         else ("BkToCstmrDbtCdtNtfctn", "Ntfctn")
     )
+    # Each exercise has its own date. The two exports of one exercise share it.
+    booking_date = date(2026, 11, 6) + timedelta(days=4 * KINDS.index(kind))
     currency = "EUR" if kind == "wrong-currency" else "CHF"
     direction = "DBIT" if kind == "debit" else "CRDT"
     reversal = "true" if kind == "reversal" else "false"
@@ -43,7 +46,7 @@ def fixture(invoice, kind, message):
         f"<{wrapper}><{container}><Id>{escape(identity)}</Id>"
         "<Acct><Id><Othr><Id>SIMULATION-SONNWIL-NO-BANK</Id></Othr></Id></Acct>"
         f'<Ntry><Amt Ccy="{currency}">{amount:.2f}</Amt><CdtDbtInd>{direction}</CdtDbtInd><RvslInd>{reversal}</RvslInd>'
-        "<Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-11-06</Dt></BookgDt><NtryDtls><TxDtls><Refs>"
+        f"<Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>{booking_date}</Dt></BookgDt><NtryDtls><TxDtls><Refs>"
         f"<AcctSvcrRef>{escape(identity)}</AcctSvcrRef><EndToEndId>{escape(reference)}</EndToEndId>"
         f"</Refs><RmtInf><Ustrd>{escape(reference)}</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>"
         f"</{container}></{wrapper}></Document>"

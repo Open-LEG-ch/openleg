@@ -58,14 +58,19 @@ def _issued(village, client):
     return prefix, invoices
 
 
-def _statement(client, prefix, fixture):
+def _statement(client, prefix, fixture, *, booking_date=None):
     """Upload a synthetic statement through the ordinary billing form."""
+    content = fixture.data
+    if booking_date:
+        import re
+
+        content = re.sub(rb"(?<=<BookgDt><Dt>)[0-9-]+", booking_date.encode(), content)
     page = client.get(prefix + COMMUNITY + "/billing")
     return client.post(
         prefix + COMMUNITY + "/billing/statements",
         data={
             "csrf_token": _csrf(page),
-            "statement": (io.BytesIO(fixture.data), "simulation-camt.xml"),
+            "statement": (io.BytesIO(content), "simulation-camt.xml"),
         },
         content_type="multipart/form-data",
     )
@@ -117,6 +122,25 @@ def test_exact_import_and_reviewed_unknown_reference_share_payment_guards(villag
     exact = client.get(path + f"/fixtures/{neighbour}/exact/053.xml")
     for _ in range(2):
         assert _statement(client, prefix, exact).status_code == 302
+    other_format = client.get(path + f"/fixtures/{neighbour}/exact/054.xml")
+    assert _statement(client, prefix, other_format).status_code == 302
+    with (
+        _workspace_connection(village, prefix) as connection,
+        connection.cursor() as cur,
+    ):
+        cur.execute(
+            "SELECT id, duplicate_reason FROM bank_statement_entries ORDER BY id DESC LIMIT 1"
+        )
+        repeat, reason = cur.fetchone()
+        assert reason == "possible_duplicate_payment"
+    page = client.get(path)
+    refused = client.post(
+        path + f"/confirm/{repeat}",
+        data={"csrf_token": _csrf(page), "invoice_id": neighbour, "confirm": "yes"},
+    )
+    assert refused.status_code == 409
+    assert "Mögliche Doppelzahlung." in refused.text
+    assert f'{COMMUNITY}/billing?section=payments#payments"' in refused.text
     page = client.get(path)
     assert "invoice.paid" in page.text and "payment.match.confirmed" in page.text
     with (
@@ -149,7 +173,10 @@ def test_concurrent_confirmation_creates_one_paid_transition(village, same_entry
         delivery = client.get(
             path + f"/fixtures/{invoice}/unknown-reference/{message}.xml"
         )
-        assert _statement(client, prefix, delivery).status_code == 302
+        date = "2026-11-16" if message == "054" else None
+        assert (
+            _statement(client, prefix, delivery, booking_date=date).status_code == 302
+        )
         with (
             _workspace_connection(village, prefix) as connection,
             connection.cursor() as cur,
