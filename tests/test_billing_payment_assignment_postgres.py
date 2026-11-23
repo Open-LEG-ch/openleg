@@ -1019,29 +1019,44 @@ def test_whitespace_in_bank_reference_does_not_prove_identity(workspace):
 
 
 @pytest.mark.parametrize(
-    ("stored_reference", "held"),
+    ("statement", "stored_reference", "kind", "expected_references", "repeat"),
     [
-        ("shared-bank", True),
-        ("WIRE:123", True),
-        ("WIRE:123:456", True),
-        ("statement-1:1:1", False),
-        ("batch-bank:1", False),
-        ("\t\n", False),
-        ("notprovided", False),
+        ("s", "shared-bank", "single", ["shared-bank"], "shared-bank"),
+        ("s", "WIRE:123", "single", ["WIRE:123", "WIRE"], "WIRE:123"),
+        ("s", "WIRE:123:456", "single", ["WIRE:123:456", "WIRE:123", "WIRE"], "WIRE"),
+        ("s", "s:1:1", "generated", ["s:1:1", "s:1", "s"], "s:1:1"),
+        ("s", "batch-bank:1", "batch", ["batch-bank:1", "batch-bank"], "batch-bank"),
+        ("s", "\t\n", "whitespace", [], "\t\n"),
+        ("s", "notprovided", "single", [], "notprovided"),
+        ("s", "WIRE:123", "declared-single", ["WIRE:123", "WIRE"], "WIRE:123"),
+        (
+            "WIRE",
+            "WIRE:123:456",
+            "single",
+            ["WIRE:123:456", "WIRE:123", "WIRE"],
+            "WIRE:123:456",
+        ),
+        (
+            "ARCHIVE:42",
+            "ARCHIVE:42:1:1",
+            "single",
+            ["ARCHIVE:42:1:1", "ARCHIVE:42:1", "ARCHIVE:42"],
+            "ARCHIVE:42:1:1",
+        ),
     ],
 )
 def test_upgrade_preserves_only_legacy_bank_references(
-    workspace, stored_reference, held
+    workspace, statement, stored_reference, kind, expected_references, repeat
 ):
     first = _invoice("FIRST-INVOICE")
     second = _invoice("SECOND-INVOICE")
-    servicer = {
-        "statement-1:1:1": "",
-        "batch-bank:1": "batch-bank",
-        "\t\n": "",
-    }.get(stored_reference, stored_reference)
-    original = _statement_xml(reference="FIRST-INVOICE", servicer=servicer)
-    if stored_reference == "batch-bank:1":
+    servicer = {"generated": "", "batch": "batch-bank", "whitespace": ""}.get(
+        kind, stored_reference
+    )
+    original = _statement_xml(
+        statement=statement, reference="FIRST-INVOICE", servicer=servicer
+    )
+    if kind == "batch":
         original = (
             original.replace(b"9.67", b"10.67", 1)
             .replace(b"<TxDtls>", b'<TxDtls><Amt Ccy="CHF">9.67</Amt>')
@@ -1050,6 +1065,11 @@ def test_upgrade_preserves_only_legacy_bank_references(
                 b'<TxDtls><Amt Ccy="CHF">1.00</Amt></TxDtls></NtryDtls>',
             )
         )
+    if kind == "declared-single":
+        original = original.replace(
+            b"<NtryDtls><TxDtls>",
+            b'<NtryDtls><Btch><NbOfTxs>1</NbOfTxs></Btch><TxDtls><Amt Ccy="CHF">9.67</Amt>',
+        )
     _upload_xml(workspace, original)
     earlier = next(
         row
@@ -1057,10 +1077,10 @@ def test_upgrade_preserves_only_legacy_bank_references(
         if row["invoice_id"] == first
     )
     assert _entry_booking(earlier["id"]) == ("matched", first)
-    if stored_reference == "batch-bank:1":
+    if kind in {"batch", "declared-single"}:
         assert earlier["amount_basis"] == "reconciled_batch"
     with db.get_connection() as conn, conn.cursor() as cur:
-        if stored_reference == "\t\n":
+        if kind == "whitespace":
             cur.execute(
                 "UPDATE bank_statement_entries SET entry_reference=%s WHERE id=%s",
                 (stored_reference, earlier["id"]),
@@ -1081,7 +1101,7 @@ def test_upgrade_preserves_only_legacy_bank_references(
             _statement_xml(
                 statement="reissued",
                 reference="SECOND-INVOICE",
-                servicer=stored_reference,
+                servicer=repeat,
             ),
             "2026-09-18",
         ),
@@ -1090,7 +1110,7 @@ def test_upgrade_preserves_only_legacy_bank_references(
     prior = next(row for row in prior_rows if row["id"] == earlier["id"])
     assert prior["entry_reference"] == stored_reference
     assert _entry_booking(prior["id"]) == ("matched", first)
-    if held:
+    if expected_references:
         assert candidate["duplicate_reason"] == "possible_duplicate_payment"
         assert _entry_booking(candidate["id"]) == ("mismatch", None)
         page = _follow_assignment(
@@ -1100,9 +1120,23 @@ def test_upgrade_preserves_only_legacy_bank_references(
         assert "gleiche Bankreferenz" in page.text
         assert len(_paid_events()) == 1
     else:
-        assert prior["bank_references"] == []
         assert _entry_booking(candidate["id"]) == ("matched", second)
         assert len(_paid_events()) == 2
+    assert sorted(prior["bank_references"]) == sorted(expected_references)
+
+
+def test_schema_reruns_keep_current_statement_references(workspace):
+    _invoice("FIRST-INVOICE")
+    _upload_xml(
+        workspace,
+        _with_parent_reference(
+            _statement_xml(reference="FIRST-INVOICE", servicer="bank:7:8"), "parent"
+        ),
+    )
+    db.create_tables()
+    db.create_tables()
+    (entry,) = db.list_bank_statement_entries(COMMUNITY)
+    assert entry["bank_references"] == ["bank:7:8", "parent"]
 
 
 @pytest.mark.parametrize("shared", ["RF18 5390 0754 7034", "FIRST-INVOICE"])

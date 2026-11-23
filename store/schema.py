@@ -1278,22 +1278,22 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS source_statement_reference TEXT,
                 ADD COLUMN IF NOT EXISTS duplicate_reason TEXT
             """)
-            # Only rows predating bank_references have NULL here. The old importer
-            # generated statement:entry:transaction IDs and appended :transaction
-            # to bank references in multi-transaction entries.
+            # Legacy entry IDs do not distinguish bank values from importer suffixes.
+            # With the same amount, currency and direction, an extra reference can
+            # hold a credit for review. A missing one can let the same credit book twice.
             cur.execute("""
-                UPDATE bank_statement_entries AS e
-                SET bank_references = CASE
-                    WHEN e.entry_reference !~* '^[[:space:]]*(NOTPROVIDED)?[[:space:]]*$'
-                         AND substring(e.entry_reference FROM '^(.*):[1-9][0-9]*:[1-9][0-9]*$')
-                             IS DISTINCT FROM COALESCE(NULLIF(s.statement_reference, ''), 'statement')
-                         AND (e.amount_basis IS DISTINCT FROM 'reconciled_batch'
-                              OR e.entry_reference !~ ':[1-9][0-9]*$')
-                    THEN ARRAY[e.entry_reference]
-                    ELSE '{}'::TEXT[]
-                END
-                FROM bank_statement_imports AS s
-                WHERE e.statement_import_id = s.id AND e.bank_references IS NULL
+                UPDATE bank_statement_entries
+                SET bank_references = ARRAY(
+                    SELECT DISTINCT reference
+                    FROM unnest(ARRAY[
+                        entry_reference,
+                        regexp_replace(entry_reference, ':[0-9]+$', ''),
+                        regexp_replace(entry_reference, ':[0-9]+:[0-9]+$', '')
+                    ]) AS candidates(reference)
+                    WHERE reference !~* '^[[:space:]]*(NOTPROVIDED)?[[:space:]]*$'
+                    ORDER BY reference
+                )
+                WHERE bank_references IS NULL
             """)
             cur.execute("""
                 ALTER TABLE bank_statement_entries
