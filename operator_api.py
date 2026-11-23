@@ -654,9 +654,7 @@ def confirm_payment_match(community_id, entry_id):
             "Invalid payment confirmation",
             409,
             exc.reason,
-            matching_entry_ids=[row["id"] for row in exc.matches]
-            if exc.possible
-            else None,
+            matching_entry_ids=[entry_id for entry_id, _ in exc.review],
         )
     except (TypeError, ValueError) as exc:
         # Store validation messages stay internal; the API answer is fixed.

@@ -737,7 +737,6 @@ components:
       - invalid_payment
       - invalid_invoice_total
       - missing_reference
-      - duplicate_payment
       - possible_duplicate_payment
       - conflict
       - idempotency_conflict

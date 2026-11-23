@@ -20182,11 +20182,6 @@ msgid "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestell
 msgstr "La facture sélectionnée est absente ou non valide. Choisissez une facture déjà envoyée."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:782
-msgid "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
-msgstr "Comparez cette écriture avec le paiement déjà comptabilisé."
-
-#. Draft translation; native language and domain review pending.
 #: dashboard.py:793
 msgid "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
 msgstr "Vérifiez le relevé bancaire ou choisissez une autre facture déjà envoyée par cette CEL."
@@ -20271,12 +20266,6 @@ msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende 
 msgstr "Aucune facture envoyée ne peut être sélectionnée. Envoyez d’abord la facture concernée."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:789
-#, python-format
-msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
-msgstr "Ce paiement est déjà comptabilisé pour la facture %(invoice)s."
-
-#. Draft translation; native language and domain review pending.
 #: store/billing.py:1297
 msgid "Prüfen Sie die Buchung erneut."
 msgstr "Vérifiez de nouveau l’écriture."
@@ -20309,3 +20298,18 @@ msgstr "même référence bancaire"
 
 msgid "gleiche Zahlungsreferenz"
 msgstr "même référence de paiement"
+
+msgid "Wahrscheinlich bereits auf Rechnung %(invoice)s gebucht."
+msgstr "Probablement déjà comptabilisé sur la facture %(invoice)s."
+
+msgid "Sehr wahrscheinlich dieselbe Zahlung"
+msgstr "Très probablement le même paiement"
+
+msgid "Über einen weiteren Eintrag verbunden."
+msgstr "Lié par une autre écriture."
+
+msgid "Wenn Sie dieselbe Zahlung in beiden Formaten importieren, bleibt der zweite Eintrag als mögliche Doppelzahlung offen."
+msgstr "Si vous importez le même paiement dans les deux formats, la seconde écriture reste ouverte comme doublon possible."
+
+msgid "Doppelzahlungen unter Zahlungen prüfen"
+msgstr "Vérifier les doublons sous Paiements"

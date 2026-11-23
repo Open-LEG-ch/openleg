@@ -48,6 +48,8 @@
         {% for match in assignment_feedback.matches %}
         <li class="py-3">
           <p class="font-semibold">{{ match.booking_date|datelabel }} <span class="font-mono">{{ match.currency }} {{ match.display_amount }}</span></p>
+          {% if match.likely_repeat %}<p class="mt-1 font-semibold">{{ _('Sehr wahrscheinlich dieselbe Zahlung') }}</p>{% endif %}
+          {% if match.indirect %}<p class="mt-1 text-sm text-ink-muted">{{ _('Über einen weiteren Eintrag verbunden.') }}</p>{% endif %}
           <p class="mt-1 text-sm text-ink-muted">{% for reason in match.reasons %}{{ _(reason) }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
           <dl class="mt-2 grid gap-2 sm:grid-cols-3">
             <div><dt class="text-sm text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ match.review_reference }}</dd></div>
@@ -105,7 +107,7 @@
           {% if entry.remittance_information and entry.remittance_information != entry.payment_reference %}
           <div><dt class="text-sm text-ink-muted">{{ _('Mitteilung') }}</dt><dd class="whitespace-pre-line">{{ entry.remittance_information }}</dd></div>
           {% endif %}
-          <div><dt class="text-sm text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ entry.payment_reference }}</dd></div>
+          <div><dt class="text-sm text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ entry.payment_reference }}</dd>{% for reference in entry.creditor_references %}{% if reference != entry.payment_reference %}<dd>{{ reference }}</dd>{% endif %}{% endfor %}</div>
           <div><dt class="text-sm text-ink-muted">{{ _('Richtung') }}</dt><dd>{{ _('Gutschrift') if entry.credit_debit_indicator == 'CRDT' else _('Belastung') }}</dd></div>
           {% if entry.related_invoice %}
           <div>

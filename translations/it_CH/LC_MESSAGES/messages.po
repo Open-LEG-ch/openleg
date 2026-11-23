@@ -22842,11 +22842,6 @@ msgid "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestell
 msgstr "La fattura selezionata manca o non è valida. Scegliete una fattura già inviata."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:782
-msgid "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
-msgstr "Confrontate questa registrazione con il pagamento già contabilizzato."
-
-#. Draft translation; native language and domain review pending.
 #: dashboard.py:793
 msgid "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
 msgstr "Controllate l’estratto conto o scegliete un’altra fattura già inviata da questa LEG."
@@ -22931,12 +22926,6 @@ msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende 
 msgstr "Non ci sono fatture inviate da selezionare. Inviate prima la fattura corrispondente."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:789
-#, python-format
-msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
-msgstr "Il pagamento è già stato contabilizzato sulla fattura %(invoice)s."
-
-#. Draft translation; native language and domain review pending.
 #: store/billing.py:1297
 msgid "Prüfen Sie die Buchung erneut."
 msgstr "Verificate di nuovo la registrazione."
@@ -22969,3 +22958,18 @@ msgstr "stesso riferimento bancario"
 
 msgid "gleiche Zahlungsreferenz"
 msgstr "stesso riferimento di pagamento"
+
+msgid "Wahrscheinlich bereits auf Rechnung %(invoice)s gebucht."
+msgstr "Probabilmente già registrato sulla fattura %(invoice)s."
+
+msgid "Sehr wahrscheinlich dieselbe Zahlung"
+msgstr "Molto probabilmente lo stesso pagamento"
+
+msgid "Über einen weiteren Eintrag verbunden."
+msgstr "Collegato tramite un’altra registrazione."
+
+msgid "Wenn Sie dieselbe Zahlung in beiden Formaten importieren, bleibt der zweite Eintrag als mögliche Doppelzahlung offen."
+msgstr "Se importi lo stesso pagamento in entrambi i formati, la seconda registrazione resta aperta come possibile duplicato."
+
+msgid "Doppelzahlungen unter Zahlungen prüfen"
+msgstr "Verifica i duplicati in Pagamenti"

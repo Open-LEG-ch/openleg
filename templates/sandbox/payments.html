@@ -4,7 +4,7 @@
 <div class="mx-auto max-w-3xl px-4 py-12">
   <h1 class="text-3xl font-bold">{{ _('Bankzahlungen ausprobieren') }}</h1>
   <p class="mt-4">{{ _('SIMULATION SONNWIL: Diese erfundenen Kontoauszüge lösen keine Überweisung aus. Es gibt keine Verbindung zu einer Bank. Beträge und Referenzen beziehen sich ausschliesslich auf Rechnungen dieses Übungsdorfs.') }}</p>
-  {% if error %}<p role="alert" class="mt-6 rounded-lg border border-accent p-4">{{ _(error) }}</p>{% endif %}
+  {% if error %}<p role="alert" class="mt-6 rounded-lg border border-accent p-4">{{ _(error) }}</p>{% if duplicate_hold %}<p class="mt-2"><a class="font-semibold underline" href="/leg/community/{{ community_id }}/billing?section=payments#payments">{{ _('Doppelzahlungen unter Zahlungen prüfen') }}</a></p>{% endif %}{% endif %}
   <section class="mt-8 rounded-lg border border-line p-6">
     <h2 class="text-xl font-semibold">{{ _('1. Rechnungen ausstellen und zustellen') }}</h2>
     <p class="mt-3">{{ _('Bereiten Sie zuerst die September-Abrechnung als Sam vor. Geben Sie die Rechnungen als Robin frei und stellen Sie mindestens zwei Rechnungen mit positivem Betrag zu. Bleiben Sie für den Zahlungsabgleich als Robin angemeldet. Eine ausgestellte, noch nicht zugestellte Rechnung ist nicht zahlungsberechtigt.') }}</p>
@@ -13,6 +13,7 @@
   <section class="mt-8 rounded-lg border border-line p-6">
     <h2 class="text-xl font-semibold">{{ _('2. Kontoauszüge herunterladen und importieren') }}</h2>
     <p class="mt-3">{{ _('Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, Belastung und Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge bleiben unverbucht. Laden Sie danach die unbekannte Referenz mit passendem Betrag und bestätigen Sie die geprüfte Zuordnung unten. Verwenden Sie für die automatische Verbuchung eine andere zugestellte Rechnung und deren exakte CHF-Gutschrift. Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen.') }}</p>
+    <p class="mt-3">{{ _('Wenn Sie dieselbe Zahlung in beiden Formaten importieren, bleibt der zweite Eintrag als mögliche Doppelzahlung offen.') }} <a class="font-semibold underline" href="/leg/community/{{ community_id }}/billing?section=payments#payments">{{ _('Doppelzahlungen unter Zahlungen prüfen') }}</a></p>
     {% if invoices %}
     <form method="get" action="/sandbox/payments" class="mt-4">
       <label for="payment-invoice" class="block font-semibold">{{ _('Rechnung für die Übungsdateien') }}</label>

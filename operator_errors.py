@@ -18,7 +18,6 @@ class ErrorCode(StrEnum):
     INVALID_PAYMENT = "invalid_payment"
     INVALID_INVOICE_TOTAL = "invalid_invoice_total"
     MISSING_REFERENCE = "missing_reference"
-    DUPLICATE_PAYMENT = "duplicate_payment"
     POSSIBLE_DUPLICATE_PAYMENT = "possible_duplicate_payment"
     CONFLICT = "conflict"
     IDEMPOTENCY_CONFLICT = "idempotency_conflict"

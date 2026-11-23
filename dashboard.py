@@ -557,13 +557,11 @@ def _billing_statement_entry(entry, invoices_by_id):
         payment_reconciliation.payment_entry_refusal(entry) if reviewable else decision
     )
     heading, recovery = _PAYMENT_REFUSALS.get(refusal, (None, None))
-    if entry.get("duplicate_invoice_number"):
-        duplicate = _payment_duplicate_feedback(
-            payment_reconciliation.BankPaymentDuplicate(
-                [], invoice_number=entry["duplicate_invoice_number"]
-            )
+    if not heading and entry.get("likely_duplicate_invoice_number"):
+        heading = _(
+            "Wahrscheinlich bereits auf Rechnung %(invoice)s gebucht.",
+            invoice=entry["likely_duplicate_invoice_number"],
         )
-        heading, recovery = duplicate["error"], duplicate["recovery"]
     if decision == "matched" and entry["confirmation_replay_available"]:
         heading = _N("Zahlung zugeordnet")
     related_invoice = invoices_by_id.get(entry["invoice_id"])
@@ -746,31 +744,11 @@ def leg_import_bank_statement(community_id, building_id, source_name, content):
     return {"error": None, **result}
 
 
-def _payment_duplicate_feedback(duplicate):
-    if duplicate.possible:
-        return {
-            "error_status": 409,
-            "error": _N("Mögliche Doppelzahlung."),
-            "duplicate_review_required": True,
-        }
-    return {
-        "error_status": 409,
-        "error": _(
-            "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht.",
-            invoice=duplicate.invoice_number,
-        ),
-        "recovery": _N(
-            "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
-        ),
-    }
-
-
 def _payment_review_row(row):
-    bank_reference = row.get("bank_reference") or next(iter(row["bank_references"]), "")
+    bank_reference = next(iter(row["bank_references"]), "")
     return {
         **row,
-        "review_reference": row["payment_reference"]
-        or payment_reconciliation.bank_reference_value(bank_reference),
+        "review_reference": row["payment_reference"] or bank_reference,
         "display_amount": _display_statement_amount(row["amount"]),
     }
 
@@ -779,12 +757,12 @@ def leg_payment_duplicate_review(community_id, entry_id):
     duplicate = db.read_payment_duplicate_review(community_id, entry_id)
     if duplicate is None:
         return {"error": _N("Prüfen Sie die Buchung erneut.")}
-    feedback = _payment_duplicate_feedback(duplicate)
-    if duplicate.possible:
-        feedback["reviewed_duplicates"] = duplicate.review
-        feedback["candidate"] = _payment_review_row(duplicate.entry)
-        feedback["matches"] = [_payment_review_row(row) for row in duplicate.matches]
-    return feedback
+    return {
+        "error": _N("Mögliche Doppelzahlung."),
+        "reviewed_duplicates": duplicate.review,
+        "candidate": _payment_review_row(duplicate.entry),
+        "matches": [_payment_review_row(row) for row in duplicate.matches],
+    }
 
 
 def leg_assign_bank_payment(
@@ -826,8 +804,12 @@ def leg_assign_bank_payment(
                 f"{_DASHBOARD_PAYMENT_KEY_PREFIX}{entry_id}",
                 reviewed_duplicates=reviewed_duplicates,
             )
-    except payment_reconciliation.BankPaymentDuplicate as exc:
-        return _payment_duplicate_feedback(exc)
+    except payment_reconciliation.BankPaymentDuplicate:
+        return {
+            "error_status": 409,
+            "error": _N("Mögliche Doppelzahlung."),
+            "duplicate_review_required": True,
+        }
     except payment_reconciliation.PaymentMatchRefused as exc:
         error, recovery = _PAYMENT_REFUSALS[exc.detail]
         return {"error_status": 409, "error": error, "recovery": recovery}

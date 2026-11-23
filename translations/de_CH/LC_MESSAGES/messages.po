@@ -19177,10 +19177,6 @@ msgstr "Bestätigen Sie die Prüfung mit dem Kontrollkästchen und senden Sie di
 msgid "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestellte Rechnung."
 msgstr "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestellte Rechnung."
 
-#: dashboard.py:782
-msgid "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
-msgstr "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
-
 #: dashboard.py:793
 msgid "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
 msgstr "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
@@ -19249,11 +19245,6 @@ msgstr "Zahlung zuordnen"
 msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu."
 msgstr "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu."
 
-#: dashboard.py:789
-#, python-format
-msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
-msgstr "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
-
 #: store/billing.py:1297
 msgid "Prüfen Sie die Buchung erneut."
 msgstr "Prüfen Sie die Buchung erneut."
@@ -19285,3 +19276,18 @@ msgstr "gleiche Bankreferenz"
 
 msgid "gleiche Zahlungsreferenz"
 msgstr "gleiche Zahlungsreferenz"
+
+msgid "Wahrscheinlich bereits auf Rechnung %(invoice)s gebucht."
+msgstr "Wahrscheinlich bereits auf Rechnung %(invoice)s gebucht."
+
+msgid "Sehr wahrscheinlich dieselbe Zahlung"
+msgstr "Sehr wahrscheinlich dieselbe Zahlung"
+
+msgid "Über einen weiteren Eintrag verbunden."
+msgstr "Über einen weiteren Eintrag verbunden."
+
+msgid "Wenn Sie dieselbe Zahlung in beiden Formaten importieren, bleibt der zweite Eintrag als mögliche Doppelzahlung offen."
+msgstr "Wenn Sie dieselbe Zahlung in beiden Formaten importieren, bleibt der zweite Eintrag als mögliche Doppelzahlung offen."
+
+msgid "Doppelzahlungen unter Zahlungen prüfen"
+msgstr "Doppelzahlungen unter Zahlungen prüfen"

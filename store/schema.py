@@ -1273,8 +1273,6 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS booking_status TEXT,
                 ADD COLUMN IF NOT EXISTS debtor_name TEXT,
                 ADD COLUMN IF NOT EXISTS remittance_information TEXT,
-                ADD COLUMN IF NOT EXISTS bank_account_key TEXT NOT NULL DEFAULT '',
-                ADD COLUMN IF NOT EXISTS bank_reference TEXT,
                 ADD COLUMN IF NOT EXISTS bank_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS creditor_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS source_statement_reference TEXT,

@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Parse ISO 20022 statements and submit canonical payments for reconciliation."""
 
-import json
-import re
 from dataclasses import asdict, dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -33,23 +31,18 @@ class PaymentMatchRefused(InvoiceLifecycleError):
 
 
 class BankPaymentDuplicate(InvoiceLifecycleError):
-    """A statement entry conflicts with a previous bank booking."""
+    """A statement entry needs human review of plausible duplicate payments."""
 
-    def __init__(self, matches, *, invoice_number=None, entry=None):
+    reason = ErrorCode.POSSIBLE_DUPLICATE_PAYMENT
+
+    def __init__(self, matches, *, entry):
         super().__init__("Bank credit needs duplicate review")
         self.matches = matches
         self.entry = entry
-        self.invoice_number = invoice_number
-        self.possible = invoice_number is None
-        self.reason = (
-            ErrorCode.POSSIBLE_DUPLICATE_PAYMENT
-            if self.possible
-            else ErrorCode.DUPLICATE_PAYMENT
-        )
 
     @property
     def review(self):
-        return [[row["id"], row["booked_invoice_id"]] for row in self.matches]
+        return sorted([row["id"], row["booked_invoice_id"]] for row in self.matches)
 
 
 DECISION_LABELS = {
@@ -77,8 +70,6 @@ class PaymentEntry:
     amount_basis: str | None = None
     debtor_name: str | None = None
     remittance_information: str | None = None
-    bank_reference: str | None = None
-    bank_account_key: str = ""
     bank_references: tuple[str, ...] = ()
     creditor_references: tuple[str, ...] = ()
     source_statement_reference: str | None = None
@@ -154,68 +145,23 @@ def _account_currency(container):
     return value
 
 
-def _bank_account_key(container):
-    """Scope a servicer reference without saving the bank account identifier."""
-    iban = container.findtext("./{*}Acct/{*}Id/{*}IBAN", default="")
-    iban = "".join(iban.split()).upper()
-    if iban and iban != "NOTPROVIDED":
-        identity = "IBAN:" + iban
-    else:
-        other = container.find("./{*}Acct/{*}Id/{*}Othr")
-        if other is None:
-            return ""
-        identifier = other.findtext("./{*}Id", default="").strip()
-        servicer = container.find("./{*}Acct/{*}Svcr/{*}FinInstnId")
-        if not identifier or identifier.upper() == "NOTPROVIDED" or servicer is None:
-            return ""
-        bic = (
-            (servicer.findtext("./{*}BICFI") or servicer.findtext("./{*}BIC") or "")
-            .strip()
-            .upper()
-        )
-        clearing = servicer.find("./{*}ClrSysMmbId")
-        bank = ["bic", bic] if bic and bic != "NOTPROVIDED" else None
-        if bank is None and clearing is not None:
-            system = (
-                clearing.findtext("./{*}ClrSysId/{*}Cd")
-                or clearing.findtext("./{*}ClrSysId/{*}Prtry")
-                or ""
-            ).strip()
-            member = clearing.findtext("./{*}MmbId", default="").strip()
-            if system and member and member.upper() != "NOTPROVIDED":
-                bank = ["clearing", system, member]
-        if bank is None:
-            return ""
-        scheme = other.findtext("./{*}SchmeNm/{*}Cd") or other.findtext(
-            "./{*}SchmeNm/{*}Prtry", default=""
-        )
-        issuer = other.findtext("./{*}Issr", default="")
-        identity = json.dumps(["Othr", bank, scheme, issuer, identifier])
-    return sha256(identity.encode()).hexdigest()
-
-
 def _bank_references(element, *paths):
-    kinds = {"AcctSvcrRef": "acctsvcr", "NtryRef": "ntry"}
     return tuple(
-        f"{kinds[_local(node)]}:{node.text}"
+        node.text
         for path in paths
         for node in element.findall(path)
-        if (value := (node.text or "").strip()) and value.upper() != "NOTPROVIDED"
+        if (trimmed := (node.text or "").strip()) and trimmed.upper() != "NOTPROVIDED"
     )
 
 
-def bank_reference_value(reference):
-    return reference.partition(":")[2]
-
-
 def _creditor_references(transaction):
-    references = {}
-    for node in transaction.findall("./{*}RmtInf/{*}Strd/{*}CdtrRefInf/{*}Ref"):
-        raw = node.text or ""
-        key = normalise_payment_reference(raw)
-        if is_structured_creditor_reference(raw, key):
-            references[key] = None
-    return tuple(references)
+    return tuple(
+        dict.fromkeys(
+            raw
+            for node in transaction.findall("./{*}RmtInf/{*}Strd/{*}CdtrRefInf/{*}Ref")
+            if (raw := (node.text or "").strip()) and raw.upper() != "NOTPROVIDED"
+        )
+    )
 
 
 def _debtor_name(transaction):
@@ -335,17 +281,15 @@ def parse_statement(content: bytes) -> Statement:
     seen_references = set()
     for container in containers:
         account_currency = _account_currency(container)
-        account_key = _bank_account_key(container)
         source_statement = container.findtext("./{*}Id", default="").strip()
         scoped_entries.extend(
-            (entry, account_currency, account_key, source_statement)
+            (entry, account_currency, source_statement)
             for entry in container
             if _local(entry) == "Ntry"
         )
     for entry_number, (
         entry,
         account_currency,
-        account_key,
         source_statement,
     ) in enumerate(scoped_entries, start=1):
         booking_elements = _children(entry, "BookgDt")
@@ -430,10 +374,6 @@ def parse_statement(content: bytes) -> Statement:
             references = tuple(
                 dict.fromkeys((*transaction_references, *entry_references))
             )
-            # A parent batch reference can link payments for review. It does not identify a child.
-            identity_references = (
-                transaction_references if len(transactions) > 1 else references
-            )
             remittance_lines = transaction.findall("./{*}RmtInf/{*}Ustrd")
             remittance_lines.extend(
                 transaction.findall("./{*}RmtInf/{*}Strd/{*}AddtlRmtInf")
@@ -464,8 +404,6 @@ def parse_statement(content: bytes) -> Statement:
                     amount_basis="reconciled_batch" if is_batch else "entry",
                     debtor_name=_debtor_name(transaction),
                     remittance_information=remittance or None,
-                    bank_reference=next(iter(identity_references), None),
-                    bank_account_key=account_key,
                     bank_references=references,
                     creditor_references=_creditor_references(transaction),
                     source_statement_reference=source_statement or None,
@@ -494,21 +432,6 @@ def normalise_payment_reference(value):
     return "".join(
         character for character in str(value or "").upper() if character.isalnum()
     )
-
-
-def is_structured_creditor_reference(raw, normalised):
-    """Recognise standalone QR and ISO 11649 references, including display spaces."""
-    if "".join((raw or "").upper().split()) != normalised:
-        return False
-    if re.fullmatch(r"[0-9]{27}", normalised):
-        return True
-    if not re.fullmatch(r"RF[0-9]{2}[A-Z0-9]{1,21}", normalised):
-        return False
-    rearranged = normalised[4:] + normalised[:4]
-    digits = "".join(
-        str(ord(char) - 55) if char.isalpha() else char for char in rearranged
-    )
-    return int(digits) % 97 == 1
 
 
 def match_payment(entry, invoices):

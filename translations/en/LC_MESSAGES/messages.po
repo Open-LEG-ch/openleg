@@ -22567,11 +22567,6 @@ msgid "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestell
 msgstr "The invoice selection is missing or invalid. Choose a delivered invoice."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:782
-msgid "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
-msgstr "Compare this entry with the payment already recorded."
-
-#. Draft translation; native language and domain review pending.
 #: dashboard.py:793
 msgid "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
 msgstr "Check the bank statement or choose another delivered invoice from this LEG."
@@ -22654,12 +22649,6 @@ msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende 
 msgstr "There are no delivered invoices to choose from. Deliver the relevant invoice first."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:789
-#, python-format
-msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
-msgstr "This payment has already been booked against invoice %(invoice)s."
-
-#. Draft translation; native language and domain review pending.
 #: store/billing.py:1297
 msgid "Prüfen Sie die Buchung erneut."
 msgstr "Check the booking again."
@@ -22692,3 +22681,18 @@ msgstr "same bank reference"
 
 msgid "gleiche Zahlungsreferenz"
 msgstr "same payment reference"
+
+msgid "Wahrscheinlich bereits auf Rechnung %(invoice)s gebucht."
+msgstr "Probably already booked against invoice %(invoice)s."
+
+msgid "Sehr wahrscheinlich dieselbe Zahlung"
+msgstr "Very likely the same payment"
+
+msgid "Über einen weiteren Eintrag verbunden."
+msgstr "Linked through another entry."
+
+msgid "Wenn Sie dieselbe Zahlung in beiden Formaten importieren, bleibt der zweite Eintrag als mögliche Doppelzahlung offen."
+msgstr "If you import the same payment in both formats, the second entry stays open as a possible duplicate."
+
+msgid "Doppelzahlungen unter Zahlungen prüfen"
+msgstr "Review duplicate payments under Payments"

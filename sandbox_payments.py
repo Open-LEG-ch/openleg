@@ -63,7 +63,7 @@ def _positive_invoices():
     ]
 
 
-def _present(error=None, status=200):
+def _present(error=None, status=200, *, duplicate_hold=False):
     """Render scoped invoices, imported entries and payment audit events."""
     try:
         invoices = _positive_invoices()
@@ -97,6 +97,7 @@ def _present(error=None, status=200):
         labels=LABELS,
         decisions=payment_reconciliation.DECISION_LABELS,
         error=error,
+        duplicate_hold=duplicate_hold,
     ), status
 
 
@@ -144,6 +145,8 @@ def install(web):
                 actor,
                 f"{CONFIRMATION_KEY_PREFIX}{entry_id}",
             )
+        except payment_reconciliation.BankPaymentDuplicate:
+            return _present(_N("Mögliche Doppelzahlung."), 409, duplicate_hold=True)
         except (TypeError, ValueError):
             return _present(
                 _N(

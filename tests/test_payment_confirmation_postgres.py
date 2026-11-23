@@ -508,9 +508,9 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, cas
         )
     entries = http.db.list_bank_statement_entries(http.community_id)
     ids["entry_id"] = entries[0]["id"]
-    code = "duplicate_payment" if case == "identical" else "possible_duplicate_payment"
-    expected_ids = (
-        sorted(row["id"] for row in entries[1:3]) if case == "plausible" else None
+    code = "possible_duplicate_payment"
+    expected_ids = sorted(
+        row["id"] for row in (entries[1:3] if case == "plausible" else entries[1:2])
     )
     before = rows(http)
     if adapter == "api":
@@ -522,12 +522,6 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, cas
         assert response.status_code == 409
         assert response.json["code"] == code
         assert response.json.get("matching_entry_ids") == expected_ids
-        if case == "identical":
-            for invoice_id in (entries[1]["invoice_id"], 999999):
-                assert (
-                    confirm(http, ids, json={"invoice_id": invoice_id}).json["code"]
-                    == code
-                )
         operator_contract_helpers.validate_response(
             load_contract(),
             "/api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm",
@@ -559,13 +553,6 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, cas
                         result.structured_content.get("matching_entry_ids")
                         == expected_ids
                     )
-                    if case == "identical":
-                        for invoice_id in (entries[1]["invoice_id"], 999999):
-                            retry = await sdk.call_tool(
-                                "confirm_payment_match",
-                                {**args, "invoice_id": invoice_id},
-                            )
-                            assert retry.structured_content["code"] == code
                     forged = await sdk.call_tool(
                         "confirm_payment_match", {**args, "confirm_distinct": True}
                     )
