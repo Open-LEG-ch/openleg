@@ -468,14 +468,18 @@ def _statement_xml(
     reference="LEG-2026-000042",
     servicer="bank-entry-1",
     account="fictional-account",
+    account_is_iban=False,
     details=b"",
     reversal=b"",
 ):
     from tests.test_payment_reconciliation import CAMT_053
 
-    account_xml = (
-        f"<Acct><Id><Othr><Id>{account}</Id></Othr></Id></Acct>" if account else ""
+    account_identifier = (
+        f"<IBAN>{account}</IBAN>"
+        if account_is_iban
+        else f"<Othr><Id>{account}</Id></Othr>"
     )
+    account_xml = f"<Acct><Id>{account_identifier}</Id></Acct>" if account else ""
     return (
         CAMT_053.replace(b"statement-1</Id>", f"{statement}</Id>{account_xml}".encode())
         .replace(b"120.50", b"9.67")
@@ -563,7 +567,7 @@ def test_rejected_duplicate_supplies_trusted_aliases(workspace, booking):
 
 
 @pytest.mark.parametrize(
-    "case", ["single", "transitive", "unknown-account", "other-account"]
+    "case", ["single", "transitive", "unknown-account", "other-account", "mixed-kind"]
 )
 def test_aliases_connect_exports_imported_before_booking(workspace, case):
     first = _invoice("FIRST-INVOICE")
@@ -575,14 +579,17 @@ def test_aliases_connect_exports_imported_before_booking(workspace, case):
             reference="unknown",
             servicer=tx_ref,
             account=account,
+            account_is_iban=case == "mixed-kind" and number == 2,
         )
         return _with_entry_servicer(statement).replace(
             b"shared-entry-reference", entry_ref.encode()
         )
 
-    bridge_account = {"unknown-account": "", "other-account": "another-account"}.get(
-        case, "fictional-account"
-    )
+    bridge_account = {
+        "unknown-account": "",
+        "other-account": "another-account",
+        "mixed-kind": "CH0000000000000000000",
+    }.get(case, "fictional-account")
     exports = [
         export(1, "transaction-one", "entry-one"),
         export(2, "transaction-one", "entry-two", bridge_account),
@@ -612,7 +619,7 @@ def test_aliases_connect_exports_imported_before_booking(workspace, case):
         return
 
     refusal = _follow_assignment(workspace, response)
-    if case == "unknown-account":
+    if case in {"unknown-account", "mixed-kind"}:
         assert (
             "Diese Zahlung könnte bereits auf Rechnung FIRST-INVOICE verbucht sein."
             in refusal.text
@@ -684,6 +691,72 @@ def test_unidentified_credits_in_distinct_known_accounts_book_separately(workspa
     )
     assert _entry_booking(candidate["id"]) == ("matched", second)
     assert len(_paid_events()) == 2
+
+
+@pytest.mark.parametrize(
+    "case", ["different-kind", "different-iban", "same-iban", "untyped-key", "fallback"]
+)
+def test_bank_account_identifiers_scope_duplicates_by_kind(workspace, case):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    first_iban = "CH0000000000000000000"
+    uses_other_kind = case in {"different-kind", "fallback"}
+    servicer = "" if case == "fallback" else "bank-entry-1"
+    _upload_xml(
+        workspace,
+        _statement_xml(
+            reference="FIRST-INVOICE",
+            servicer=servicer,
+            account=first_iban,
+            account_is_iban=True,
+        ),
+    )
+    (booked,) = db.list_bank_statement_entries(COMMUNITY)
+    assert booked["invoice_id"] == first
+    if case == "untyped-key":
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE bank_statement_entries SET bank_account_key = regexp_replace(bank_account_key, '^iban:', '') WHERE id=%s",
+                (booked["id"],),
+            )
+    _upload_xml(
+        workspace,
+        _statement_xml(
+            statement="statement-2",
+            reference="SECOND-INVOICE" if case == "different-kind" else "FIRST-INVOICE",
+            servicer=servicer,
+            account_is_iban=not uses_other_kind,
+            account={"different-iban": "CH9900000000000000001"}.get(
+                case,
+                "fictional-account" if uses_other_kind else first_iban,
+            ),
+        ),
+    )
+    candidate = db.list_bank_statement_entries(COMMUNITY)[0]
+    if case == "different-iban":
+        assert candidate["duplicate_reason"] is None
+        assert (
+            _assignment_outcome(workspace, _assign(workspace, candidate["id"], second))
+            == "assigned"
+        )
+        assert _entry_booking(candidate["id"]) == ("matched", second)
+        assert len(_paid_events()) == 2
+        return
+
+    expected = (
+        "duplicate_payment" if case == "same-iban" else "possible_duplicate_payment"
+    )
+    assert candidate["duplicate_reason"] == expected
+    assert candidate["invoice_id"] is None and candidate["match_decision"] == "mismatch"
+    page = _follow_assignment(workspace, _assign(workspace, candidate["id"], second))
+    if case == "same-iban":
+        assert (
+            "Diese Zahlung ist bereits auf Rechnung FIRST-INVOICE gebucht." in page.text
+        )
+        assert 'name="duplicate_review"' not in page.text
+    else:
+        _review_token(page)
+    assert len(_paid_events()) == 1
 
 
 def test_alias_from_a_possible_duplicate_still_allows_review(workspace):

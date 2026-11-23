@@ -1116,6 +1116,13 @@ def _lock_payment_booking(cur, community_id):
     )
 
 
+def _compatible_bank_accounts_sql(left, right):
+    # Empty keys and older untyped hashes lack a comparable kind.
+    return f"""({left} = {right}
+                OR strpos({left}, ':') = 0 OR strpos({right}, ':') = 0
+                OR split_part({left}, ':', 1) <> split_part({right}, ':', 1))"""
+
+
 def _bank_payment_duplicate(cur, community_id, entry, import_id):
     """Classify trusted matches and uncertain collisions in one scoped read."""
     reference_key = entry.get("bank_servicer_key")
@@ -1124,11 +1131,11 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
     )
     typed_keys = entry.get("bank_typed_reference_keys")
     cur.execute(
-        """
+        f"""
         WITH RECURSIVE scoped_entries AS (
             SELECT id, amount, currency, credit_debit_indicator, bank_account_key,
                    bank_typed_reference_keys AS typed_keys,
-                   COALESCE(NULLIF(bank_reference_keys, '{}'::text[]),
+                   COALESCE(NULLIF(bank_reference_keys, ARRAY[]::text[]),
                             ARRAY[bank_servicer_key]) AS trusted_keys
             FROM bank_statement_entries
             WHERE community_id = %(community)s AND id IS DISTINCT FROM %(entry_id)s
@@ -1140,7 +1147,7 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
                         AND credit_debit_indicator = %(direction)s) IS TRUE
             FROM scoped_entries
             WHERE trusted_keys && %(keys)s::text[]
-              AND (bank_account_key IN ('', %(account)s) OR %(account)s = '')
+              AND {_compatible_bank_accounts_sql("bank_account_key", "%(account)s")}
             -- UNION visits each entry at most once per certainty, even with cycles.
             UNION
             SELECT neighbor.id, (connected.certain
@@ -1155,8 +1162,7 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
             JOIN scoped_entries previous ON previous.id = connected.id
             JOIN scoped_entries neighbor ON neighbor.id <> previous.id
                 AND neighbor.trusted_keys && previous.trusted_keys
-                AND (neighbor.bank_account_key IN ('', previous.bank_account_key)
-                     OR previous.bank_account_key = '')
+                AND {_compatible_bank_accounts_sql("neighbor.bank_account_key", "previous.bank_account_key")}
         )
         SELECT i.invoice_number, e.id AS entry_id,
                COALESCE(NULLIF(e.payment_reference, ''), e.entry_reference) AS reference,
@@ -1182,7 +1188,7 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
         ) paid ON TRUE
         WHERE e.community_id = %(community)s AND e.match_decision = 'matched'
           AND evidence.id IS DISTINCT FROM %(entry_id)s
-          AND (e.bank_account_key IN ('', %(account)s) OR %(account)s = '')
+          AND {_compatible_bank_accounts_sql("e.bank_account_key", "%(account)s")}
           AND (
               connected.id IS NOT NULL
               OR (

@@ -152,6 +152,7 @@ def _bank_account_key(container):
     """Scope a servicer reference without saving the bank account identifier."""
     iban = container.findtext("./{*}Acct/{*}Id/{*}IBAN", default="")
     if iban.strip() and iban.strip() != "NOTPROVIDED":
+        kind = "iban"
         identity = "IBAN:" + "".join(iban.split()).upper()
     else:
         other = container.find("./{*}Acct/{*}Id/{*}Othr")
@@ -164,8 +165,9 @@ def _bank_account_key(container):
             "./{*}SchmeNm/{*}Prtry", default=""
         )
         issuer = other.findtext("./{*}Issr", default="")
+        kind = "othr"
         identity = json.dumps(["Othr", scheme, issuer, identifier])
-    return sha256(identity.encode()).hexdigest()
+    return f"{kind}:{sha256(identity.encode()).hexdigest()}"
 
 
 def _debtor_name(transaction):

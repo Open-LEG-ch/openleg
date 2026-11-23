@@ -3394,11 +3394,11 @@ msgid ""
 " Beschwerdemöglichkeit vorgesehen."
 msgstr ""
 
-#: payment_reconciliation.py:409
+#: payment_reconciliation.py:411
 msgid "Der Kontoauszug enthält keine Zahlungseinträge."
 msgstr ""
 
-#: payment_reconciliation.py:281
+#: payment_reconciliation.py:283
 msgid "Der Kontoauszug enthält keinen Auszug."
 msgstr ""
 
@@ -3627,26 +3627,26 @@ msgid ""
 "Netzbetreiber genehmigt sie (20 Prozentpunkte)."
 msgstr ""
 
-#: payment_reconciliation.py:299 payment_reconciliation.py:306
+#: payment_reconciliation.py:301 payment_reconciliation.py:308
 msgid "Der Zahlungseintrag enthält kein gültiges Buchungsdatum."
 msgstr ""
 
-#: payment_reconciliation.py:202 payment_reconciliation.py:312 payment_reconciliation.py:331
+#: payment_reconciliation.py:204 payment_reconciliation.py:314 payment_reconciliation.py:333
 msgid "Der Zahlungseintrag enthält keine gültige Richtung."
 msgstr ""
 
-#: payment_reconciliation.py:136 payment_reconciliation.py:147 payment_reconciliation.py:250
-#: payment_reconciliation.py:320
+#: payment_reconciliation.py:136 payment_reconciliation.py:147 payment_reconciliation.py:252
+#: payment_reconciliation.py:322
 msgid "Der Zahlungseintrag enthält keine gültige Währung."
 msgstr ""
 
-#: payment_reconciliation.py:238
+#: payment_reconciliation.py:240
 msgid "Der Zahlungseintrag enthält keinen Betrag."
 msgstr ""
 
-#: payment_reconciliation.py:218 payment_reconciliation.py:230 payment_reconciliation.py:244
-#: payment_reconciliation.py:247 payment_reconciliation.py:255 payment_reconciliation.py:258
-#: payment_reconciliation.py:342 payment_reconciliation.py:353
+#: payment_reconciliation.py:220 payment_reconciliation.py:232 payment_reconciliation.py:246
+#: payment_reconciliation.py:249 payment_reconciliation.py:257 payment_reconciliation.py:260
+#: payment_reconciliation.py:344 payment_reconciliation.py:355
 msgid "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgstr ""
 
@@ -3982,11 +3982,11 @@ msgstr ""
 msgid "Die Interessenmeldung konnte nicht gespeichert werden."
 msgstr ""
 
-#: payment_reconciliation.py:270
+#: payment_reconciliation.py:272
 msgid "Die Kontoauszugsdatei ist kein gültiges XML."
 msgstr ""
 
-#: payment_reconciliation.py:265
+#: payment_reconciliation.py:267
 msgid "Die Kontoauszugsdatei ist leer."
 msgstr ""
 
@@ -12253,7 +12253,7 @@ msgstr ""
 msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
 msgstr ""
 
-#: store/billing.py:1348
+#: store/billing.py:1354
 msgid "Prüfen Sie die Buchung erneut."
 msgstr ""
 
@@ -14436,7 +14436,7 @@ msgstr ""
 msgid "Unterschriften ausstehend"
 msgstr ""
 
-#: payment_reconciliation.py:278
+#: payment_reconciliation.py:280
 msgid "Unterstützt werden nur camt.053 und camt.054."
 msgstr ""
 
