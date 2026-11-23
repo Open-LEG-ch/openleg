@@ -10,6 +10,7 @@ from hashlib import sha256
 from defusedxml import ElementTree
 
 from billing_lifecycle import InvoiceLifecycleError
+from operator_errors import ErrorCode
 from translation_markers import gettext_noop as _N
 
 
@@ -25,13 +26,20 @@ class PaymentMatchRefused(InvoiceLifecycleError):
         self.detail = detail
 
 
-class BankPaymentAlreadyBooked(InvoiceLifecycleError):
-    """A statement repeats a bank transaction that has already paid an invoice."""
+class BankPaymentDuplicate(InvoiceLifecycleError):
+    """A statement entry conflicts with a previous bank booking."""
 
-    def __init__(self, invoice_number, *, possible=False):
+    def __init__(self, invoice_number, entry_id, reference, *, possible=False):
         super().__init__("Bank transaction already booked")
         self.invoice_number = invoice_number
+        self.entry_id = entry_id
+        self.reference = reference
         self.possible = possible
+        self.reason = (
+            ErrorCode.POSSIBLE_DUPLICATE_PAYMENT
+            if possible
+            else ErrorCode.DUPLICATE_PAYMENT
+        )
 
 
 DECISION_LABELS = {
@@ -62,6 +70,7 @@ class PaymentEntry:
     bank_servicer_key: str | None = None
     bank_account_key: str = ""
     bank_reference_keys: tuple[str, ...] = ()
+    bank_typed_reference_keys: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -347,17 +356,18 @@ def parse_statement(content: bytes) -> Statement:
             bank_reference = transaction.findtext(
                 "./{*}Refs/{*}AcctSvcrRef", default=""
             ).strip()
-            references = [bank_reference]
+            references = [("transaction", bank_reference)]
             if not is_batch:
                 references.append(
-                    entry.findtext("./{*}AcctSvcrRef", default="").strip()
+                    ("entry", entry.findtext("./{*}AcctSvcrRef", default="").strip())
                 )
+            typed_keys = tuple(
+                f"{level}:{sha256(reference.encode()).hexdigest()}"
+                for level, reference in references
+                if reference and reference != "NOTPROVIDED"
+            )
             reference_keys = tuple(
-                dict.fromkeys(
-                    sha256(reference.encode()).hexdigest()
-                    for reference in references
-                    if reference and reference != "NOTPROVIDED"
-                )
+                dict.fromkeys(key.split(":", 1)[1] for key in typed_keys)
             )
             remittance_lines = transaction.findall("./{*}RmtInf/{*}Ustrd")
             remittance_lines.extend(
@@ -387,6 +397,7 @@ def parse_statement(content: bytes) -> Statement:
                     bank_servicer_key=reference_keys[0] if reference_keys else None,
                     bank_account_key=account_key,
                     bank_reference_keys=reference_keys,
+                    bank_typed_reference_keys=typed_keys,
                 )
             )
     if not entries:

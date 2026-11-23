@@ -716,6 +716,8 @@ components:
       - invalid_membership
       - invalid_case
       - invalid_payment
+      - duplicate_payment
+      - possible_duplicate_payment
       - conflict
       - idempotency_conflict
       - retry_in_progress

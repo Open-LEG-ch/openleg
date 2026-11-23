@@ -419,3 +419,87 @@ def test_real_confirmation_keeps_payment_locks(
             "SELECT COUNT(*) AS n FROM invoice_lifecycle_events WHERE event_type='paid'"
         )
         assert cur.fetchone()["n"] == 1
+
+
+@pytest.mark.parametrize("adapter", ["api", "mcp"])
+@pytest.mark.parametrize("possible", [False, True])
+def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, possible):
+    import asyncio
+
+    import payment_reconciliation
+    from mcp_sidecar.server import create_app
+    from tests.test_billing_payment_assignment_postgres import (
+        _statement_xml,
+        _with_entry_servicer,
+    )
+    from tests.test_mcp_sidecar import session
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    http = operator_http
+    ids = seed_operator_resources(http)
+    original = _statement_xml(
+        reference="CONTRACT-1",
+        servicer="shared-entry-reference" if possible else "bank-entry-1",
+    )
+    repeat = _statement_xml(
+        statement="statement-2",
+        reference="unknown",
+        servicer="" if possible else "bank-entry-1",
+    )
+    if possible:
+        repeat = _with_entry_servicer(repeat)
+    for xml in (original, repeat):
+        payment_reconciliation.import_statement(
+            http.community_id,
+            "contract-admin",
+            "synthetic.xml",
+            xml.replace(b"9.67", b"42.50"),
+            http.db,
+        )
+    ids["entry_id"] = http.db.list_bank_statement_entries(http.community_id)[0]["id"]
+    code = "possible_duplicate_payment" if possible else "duplicate_payment"
+    before = rows(http)
+    if adapter == "api":
+        from tests.test_operator_contract import load_contract
+
+        response = confirm(
+            http, ids, json={"invoice_id": ids["invoice_id"], "confirm_distinct": True}
+        )
+        assert response.status_code == 409
+        assert response.json["code"] == code
+        operator_contract_helpers.validate_response(
+            load_contract(),
+            "/api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm",
+            "post",
+            response,
+        )
+    else:
+        monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+        monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
+        with operator_server(http.app) as origin:
+            monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+            app = create_app()
+
+            async def check():
+                async with (
+                    app.router.lifespan_context(app),
+                    session(app, http.headers) as sdk,
+                ):
+                    args = {
+                        "community_id": http.community_id,
+                        "entry_id": ids["entry_id"],
+                        "invoice_id": ids["invoice_id"],
+                        "idempotency_key": "duplicate-test",
+                    }
+                    result = await sdk.call_tool("confirm_payment_match", args)
+                    assert result.is_error
+                    assert result.structured_content["code"] == code
+                    forged = await sdk.call_tool(
+                        "confirm_payment_match", {**args, "confirm_distinct": True}
+                    )
+                    assert forged.is_error
+                    assert forged.structured_content["code"] == "invalid_arguments"
+
+            asyncio.run(check())
+
+    assert rows(http) == before

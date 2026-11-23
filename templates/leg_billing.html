@@ -34,6 +34,19 @@
     <p id="assignment-feedback" role="alert" class="mb-4 rounded-lg border border-line bg-paper-deep p-3">
       {{ _(assignment_feedback.error) }}{% if assignment_feedback.recovery %} {{ _(assignment_feedback.recovery) }}{% endif %}
     </p>
+    {% if assignment_feedback.duplicate_review and can_prepare_billing %}
+    <form method="post" action="{{ url_for('.leg_billing_statement_assign', community_id=community_id, entry_id=assignment_feedback.entry_id, statement_before=statement_before) }}" class="mb-4 rounded-xl bg-white border border-line p-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="invoice_id" value="{{ assignment_feedback.invoice_id }}">
+      <input type="hidden" name="confirm" value="yes">
+      <input type="hidden" name="duplicate_review" value="{{ assignment_feedback.duplicate_review }}">
+      <label class="flex items-start gap-2">
+        <input type="checkbox" name="confirm_distinct" value="yes" required class="mt-1">
+        <span>{{ _('Ich habe beide Kontoauszüge geprüft. Es ist eine andere Zahlung.') }}</span>
+      </label>
+      <button type="submit" class="mt-3 rounded-full bg-brand px-5 py-3 font-semibold text-white">{{ _('Trotzdem zuordnen') }}</button>
+    </form>
+    {% endif %}
     {% else %}
     <p id="assignment-feedback" role="status" class="mb-4 rounded-lg border border-brand bg-brand/10 p-3">{{ _('Zahlung zugeordnet') }}</p>
     {% endif %}

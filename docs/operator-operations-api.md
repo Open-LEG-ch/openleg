@@ -404,8 +404,11 @@ one query value, `true` or `false`; repeated values, other spellings and a
 executes confirmation.
 
 An eligible preview returns `dry_run: true`, `eligible: true`, `invoice_id`
-and `lifecycle_state: paid`. Ineligible requests return the existing error
-codes (`invalid_payment` or `not_found`); they do not reserve the match.
+and `lifecycle_state: paid`. Ineligible payments return `invalid_payment` or
+`not_found`. A confirmed or possible repeat returns HTTP 409 with
+`duplicate_payment` or `possible_duplicate_payment`, respectively. Possible
+duplicates require a human review in the billing workspace. The operator API
+and MCP provide no override. These responses reserve no match.
 Preview writes no business rows, events, deliveries or idempotency ledger entry.
 Credential usage accounting still applies. Confirmation rechecks eligibility:
 only booked (`BOOK`), non-reversed CHF credits for the exact invoice amount

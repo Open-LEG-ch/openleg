@@ -730,7 +730,15 @@ def leg_import_bank_statement(community_id, building_id, source_name, content):
     return {"error": None, **result}
 
 
-def leg_assign_bank_payment(community_id, building_id, entry_id, invoice_id, confirmed):
+def leg_assign_bank_payment(
+    community_id,
+    building_id,
+    entry_id,
+    invoice_id,
+    confirmed,
+    *,
+    reviewed_duplicate_id=None,
+):
     """Submit a signed-in billing preparer's reviewed payment."""
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
@@ -759,8 +767,9 @@ def leg_assign_bank_payment(community_id, building_id, entry_id, invoice_id, con
                 community_id,
                 building_id,
                 f"{_DASHBOARD_PAYMENT_KEY_PREFIX}{entry_id}",
+                reviewed_duplicate_id=reviewed_duplicate_id,
             )
-    except payment_reconciliation.BankPaymentAlreadyBooked as exc:
+    except payment_reconciliation.BankPaymentDuplicate as exc:
         if exc.possible:
             return {
                 "error_status": 409,
@@ -768,14 +777,16 @@ def leg_assign_bank_payment(community_id, building_id, entry_id, invoice_id, con
                     "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein.",
                     invoice=exc.invoice_number,
                 ),
-                "recovery": _N(
-                    "Prüfen Sie die bisherige Buchung, bevor Sie den Eintrag zuordnen."
+                "recovery": _(
+                    "Prüfen Sie die frühere Buchung mit der Referenz %(reference)s.",
+                    reference=exc.reference,
                 ),
+                "duplicate_entry_id": exc.entry_id,
             }
         return {
             "error_status": 409,
             "error": _(
-                "Diese Zahlung ist bereits auf Rechnung %(invoice)s verbucht.",
+                "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht.",
                 invoice=exc.invoice_number,
             ),
             "recovery": _N(

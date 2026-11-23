@@ -24,6 +24,7 @@ from flask import (
     session,
     url_for,
 )
+from itsdangerous import BadData, URLSafeSerializer
 
 import access_token
 import billing_approval
@@ -1026,6 +1027,11 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.post("/leg/community/<community_id>/billing/statements/<int:entry_id>/assign")
     def leg_billing_statement_assign(community_id, entry_id):
         building_id = _require_dashboard_session()
+        invoice_id = request.form.get("invoice_id", type=int)
+        review_scope = [community_id, building_id, entry_id, invoice_id]
+        signer = URLSafeSerializer(
+            current_app.secret_key, salt="leg-payment-duplicate-review"
+        )
         if not _dashboard_csrf_valid():
             result = {
                 "error_status": 400,
@@ -1034,23 +1040,45 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 ),
             }
         else:
+            receipt = request.form.get("duplicate_review")
+            reviewed_duplicate_id = None
+            if receipt is not None:
+                # Zero signals an attempted override without valid review evidence.
+                reviewed_duplicate_id = 0
+                if request.form.get("confirm_distinct") == "yes":
+                    try:
+                        claim = signer.loads(receipt)
+                    except BadData:
+                        claim = []
+                    if claim[:-1] == review_scope:
+                        reviewed_duplicate_id = claim[-1]
             try:
                 result = dashboard_module.leg_assign_bank_payment(
                     community_id,
                     building_id,
                     entry_id,
-                    request.form.get("invoice_id", type=int),
+                    invoice_id,
                     request.form.get("confirm") == "yes",
+                    reviewed_duplicate_id=reviewed_duplicate_id,
                 )
             except (db.BillingStoreError, psycopg2.Error):
                 abort(503)
         error_status = result["error_status"]
         if error_status == 403:
             result["error"] = _("Sie dürfen in dieser LEG keine Zahlungen zuordnen.")
-        session[f"leg-payment-assignment:{community_id}"] = {
+        feedback = {
             "error": result.get("error"),
             "recovery": result.get("recovery"),
         }
+        if result.get("duplicate_entry_id") is not None:
+            feedback.update(
+                duplicate_review=signer.dumps(
+                    [*review_scope, result["duplicate_entry_id"]]
+                ),
+                entry_id=entry_id,
+                invoice_id=invoice_id,
+            )
+        session[f"leg-payment-assignment:{community_id}"] = feedback
         statement_before = (
             request.args.get("statement_before", type=int) if error_status else None
         )

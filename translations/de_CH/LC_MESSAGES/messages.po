@@ -19182,15 +19182,6 @@ msgstr "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestel
 msgid "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein."
 msgstr "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein."
 
-#: dashboard.py:772
-msgid "Prüfen Sie die bisherige Buchung, bevor Sie den Eintrag zuordnen."
-msgstr "Prüfen Sie die bisherige Buchung, bevor Sie den Eintrag zuordnen."
-
-#: dashboard.py:778
-#, python-format
-msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s verbucht."
-msgstr "Diese Zahlung ist bereits auf Rechnung %(invoice)s verbucht."
-
 #: dashboard.py:782
 msgid "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
 msgstr "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
@@ -19262,3 +19253,25 @@ msgstr "Zahlung zuordnen"
 #: templates/leg_billing.html:113
 msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu."
 msgstr "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu."
+
+#: dashboard.py:781
+#, python-format
+msgid "Prüfen Sie die frühere Buchung mit der Referenz %(reference)s."
+msgstr "Prüfen Sie die frühere Buchung mit der Referenz %(reference)s."
+
+#: dashboard.py:789
+#, python-format
+msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
+msgstr "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
+
+#: store/billing.py:1297
+msgid "Prüfen Sie die Buchung erneut."
+msgstr "Prüfen Sie die Buchung erneut."
+
+#: templates/leg_billing.html:45
+msgid "Ich habe beide Kontoauszüge geprüft. Es ist eine andere Zahlung."
+msgstr "Ich habe beide Kontoauszüge geprüft. Es ist eine andere Zahlung."
+
+#: templates/leg_billing.html:47
+msgid "Trotzdem zuordnen"
+msgstr "Trotzdem zuordnen"

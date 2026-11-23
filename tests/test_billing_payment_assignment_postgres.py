@@ -432,7 +432,7 @@ def test_same_bank_credit_cannot_pay_another_invoice(workspace, second_match):
     if second_match == "reviewed":
         response = _assign(workspace, duplicate["id"], second)
         response = _follow_assignment(workspace, response)
-        assert "bereits auf Rechnung FIRST-INVOICE verbucht" in response.text
+        assert "bereits auf Rechnung FIRST-INVOICE gebucht" in response.text
     assert not any(
         event["event_type"] == "paid"
         for event in db.list_invoice_events(second, COMMUNITY)
@@ -601,6 +601,11 @@ def _as_legacy(entry):
                 "UPDATE bank_statement_entries SET bank_reference_keys=NULL WHERE id=%s",
                 (entry["id"],),
             )
+        if "bank_typed_reference_keys" in entry:
+            cur.execute(
+                "UPDATE bank_statement_entries SET bank_typed_reference_keys=NULL WHERE id=%s",
+                (entry["id"],),
+            )
 
 
 def _with_entry_servicer(statement):
@@ -646,7 +651,7 @@ def test_export_duplicate_cannot_book_twice(workspace, case, second_match):
                 in refusal.text
             )
         else:
-            assert "bereits auf Rechnung FIRST-INVOICE verbucht" in refusal.text
+            assert "bereits auf Rechnung FIRST-INVOICE gebucht" in refusal.text
     else:
         assert duplicate["match_decision"] == "mismatch"
     assert not any(
@@ -710,3 +715,240 @@ def test_legacy_comparison_distinguishes_unrelated_credits(workspace, variant):
     duplicate = db.list_bank_statement_entries(COMMUNITY)[0]
     assert duplicate["entry_reference"] == original["entry_reference"]
     assert _assign(workspace, duplicate["id"], second).status_code == 303
+
+
+def _review_token(page):
+    import re
+
+    assert "Trotzdem zuordnen" in page.text
+    assert (
+        "Ich habe beide Kontoauszüge geprüft. Es ist eine andere Zahlung." in page.text
+    )
+    return re.search(r'name="duplicate_review" value="([^"]+)"', page.text).group(1)
+
+
+def _paid_events():
+    return db.list_community_operator_events(COMMUNITY, event_types=("invoice.paid",))
+
+
+def test_positional_legacy_export_holds_repeated_credit(workspace):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    original_xml = _with_entry_servicer(
+        _statement_xml(reference="FIRST-INVOICE", servicer="")
+    )
+    _upload_xml(workspace, original_xml)
+    (original,) = db.list_bank_statement_entries(COMMUNITY)
+    assert original["entry_reference"] == "statement-1:1:1"
+    assert original["invoice_id"] == first
+    _as_legacy(original)
+    _upload_xml(workspace, original_xml.replace(b"statement-1", b"statement-2"))
+    repeat = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert repeat["entry_reference"] == "statement-2:1:1"
+    assert (
+        _assignment_outcome(workspace, _assign(workspace, repeat["id"], second))
+        == "refused"
+    )
+    assert len(_paid_events()) == 1
+    assert repeat["duplicate_reason"] == "possible_duplicate_payment"
+
+
+def _batch_with_transaction_reference():
+    statement = _statement_xml(
+        reference="FIRST-INVOICE", servicer="shared-entry-reference"
+    )
+    start = statement.index(b"<TxDtls>")
+    end = statement.index(b"</TxDtls>") + len(b"</TxDtls>")
+    details = statement[start:end].replace(
+        b"<TxDtls>", b'<TxDtls><Amt Ccy="CHF">9.67</Amt>'
+    )
+    other = details.replace(b"FIRST-INVOICE", b"unallocated").replace(
+        b"shared-entry-reference", b"separate-transaction"
+    )
+    return (statement[:start] + details + other + statement[end:]).replace(
+        b'<Ntry>\n    <Amt Ccy="CHF">9.67', b'<Ntry>\n    <Amt Ccy="CHF">19.34', 1
+    )
+
+
+@pytest.mark.parametrize("case", ["legacy-other-account", "cross-level"])
+def test_reviewed_possible_duplicate_books_with_source_audit(workspace, case):
+    _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    if case == "legacy-other-account":
+        _upload_xml(workspace, _statement_xml(reference="FIRST-INVOICE"))
+        (first,) = db.list_bank_statement_entries(COMMUNITY)
+        _as_legacy(first)
+        candidate = _statement_xml(
+            statement="statement-2",
+            account="another-account",
+            reference="SECOND-INVOICE",
+        )
+    else:
+        _upload_xml(workspace, _batch_with_transaction_reference())
+        first = next(
+            row
+            for row in db.list_bank_statement_entries(COMMUNITY)
+            if row["match_decision"] == "matched"
+        )
+        candidate = _with_entry_servicer(
+            _statement_xml(
+                statement="statement-2",
+                reference="SECOND-INVOICE",
+                servicer="new-transaction",
+            )
+        )
+    _upload_xml(workspace, candidate)
+    repeat = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert repeat["match_decision"] == "mismatch"
+    refusal = _follow_assignment(workspace, _assign(workspace, repeat["id"], second))
+    assert (
+        "Diese Zahlung könnte bereits auf Rechnung FIRST-INVOICE verbucht sein."
+        in refusal.text
+    )
+    token = _review_token(refusal)
+    assert repeat["duplicate_reason"] == "possible_duplicate_payment"
+    before = len(_paid_events())
+    assert (
+        _assignment_outcome(
+            workspace, _assign(workspace, repeat["id"], second, duplicate_review=token)
+        )
+        == "refused"
+    )
+    assert len(_paid_events()) == before
+    if case == "legacy-other-account":
+        other = _invoice("OTHER-TARGET")
+        for target, fields in [
+            (other, {"confirm_distinct": "yes"}),
+            (second, {"confirm_distinct": "yes", "csrf_token": "wrong"}),
+        ]:
+            assert (
+                _assignment_outcome(
+                    workspace,
+                    _assign(
+                        workspace,
+                        repeat["id"],
+                        target,
+                        duplicate_review=token,
+                        **fields,
+                    ),
+                )
+                == "refused"
+            )
+        _set_session(workspace, AUDITOR)
+        assert (
+            _assignment_outcome(
+                workspace,
+                _assign(
+                    workspace,
+                    repeat["id"],
+                    second,
+                    duplicate_review=token,
+                    confirm_distinct="yes",
+                ),
+            )
+            == "refused"
+        )
+        _set_session(workspace, ACTOR)
+        assert len(_paid_events()) == before
+    assert (
+        _assignment_outcome(
+            workspace,
+            _assign(
+                workspace,
+                repeat["id"],
+                second,
+                duplicate_review=token,
+                confirm_distinct="yes",
+            ),
+        )
+        == "assigned"
+    )
+    assert len(_paid_events()) == before + 1
+    (paid,) = [
+        event
+        for event in db.list_community_invoice_events(COMMUNITY)
+        if event["event_type"] == "paid" and event["invoice_id"] == second
+    ]
+    assert paid["payment_match"] == {
+        "entry_id": repeat["id"],
+        "decision": "matched",
+        "duplicate_override": {
+            "actor_id": ACTOR,
+            "earlier_entry_id": first["id"],
+            "decision": "possible duplicate confirmed",
+        },
+    }
+    assert db.list_bank_statement_entries(COMMUNITY)[0]["match_decision"] == "matched"
+
+
+def test_certain_duplicate_refuses_forged_override(workspace):
+    _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(reference="FIRST-INVOICE"),
+        _statement_xml(statement="statement-2", reference="SECOND-INVOICE"),
+    )
+    duplicate = db.list_bank_statement_entries(COMMUNITY)[0]
+    page = _follow_assignment(
+        workspace,
+        _assign(
+            workspace,
+            duplicate["id"],
+            second,
+            duplicate_review="forged",
+            confirm_distinct="yes",
+        ),
+    )
+    assert "Diese Zahlung ist bereits auf Rechnung FIRST-INVOICE gebucht." in page.text
+    assert 'name="duplicate_review"' not in page.text
+    assert len(_paid_events()) == 1
+
+
+def test_concurrent_duplicate_overrides_only_add_one_paid_event(workspace, app_module):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    _invoice("FIRST-INVOICE")
+    invoices = [_invoice("SECOND-INVOICE"), _invoice("THIRD-INVOICE")]
+    _upload_xml(workspace, _statement_xml(reference="FIRST-INVOICE"))
+    (previous,) = db.list_bank_statement_entries(COMMUNITY)
+    _as_legacy(previous)
+    _upload_xml(
+        workspace,
+        _statement_xml(
+            statement="statement-2",
+            reference="FIRST-INVOICE",
+            servicer="shared-entry-reference",
+        ),
+        _with_entry_servicer(
+            _statement_xml(
+                statement="statement-3", reference="FIRST-INVOICE", servicer=""
+            )
+        ),
+    )
+    entries = db.list_bank_statement_entries(COMMUNITY)[:2]
+    barrier = Barrier(2)
+
+    def submit(entry, invoice):
+        with app_module.web.test_client() as client:
+            _set_session(client, ACTOR)
+            token = _review_token(
+                _follow_assignment(client, _assign(client, entry["id"], invoice))
+            )
+            barrier.wait(timeout=10)
+            return _assignment_outcome(
+                client,
+                _assign(
+                    client,
+                    entry["id"],
+                    invoice,
+                    duplicate_review=token,
+                    confirm_distinct="yes",
+                ),
+            )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(submit, entries, invoices))
+    assert sorted(outcomes) == ["assigned", "refused"]
+    assert len(_paid_events()) == 2
