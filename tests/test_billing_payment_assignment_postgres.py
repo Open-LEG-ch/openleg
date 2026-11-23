@@ -811,7 +811,9 @@ def test_likely_repeat_needs_audited_dashboard_review(workspace, case):
     [
         ("000000000000000000000000001", "000000000000000000000000002", False, True),
         ("Lease AB C", "Lease A BC", False, False),
+        ("Unstructured lease payment", "Unstructured lease payment", False, False),
         ("LEG-2026-000042", "leg 2026 000042", True, True),
+        ("LEG-2026-000042", "leg 2026 000042", True, False),
         ("000000000000000000000000001", "00000 00000 00000 00000 0000001", True, True),
         ("RF18539007547034", "rf18 5390 0754 7034", True, True),
     ],
@@ -848,7 +850,7 @@ def test_same_amount_outside_date_window_requires_reference_evidence(
                 statement="second-export",
                 servicer="booking-b",
             ),
-            "2026-10-14" if not held else "2026-09-24",
+            "2026-10-14" if structured and not held else "2026-09-24",
         ),
     )
     candidate = db.list_bank_statement_entries(COMMUNITY)[0]
@@ -856,7 +858,9 @@ def test_same_amount_outside_date_window_requires_reference_evidence(
     response = _assign(workspace, candidate["id"], second)
     if held:
         assert candidate["duplicate_reason"] == "possible_duplicate_payment"
-        _review_token(_follow_assignment(workspace, response))
+        review = _follow_assignment(workspace, response)
+        _review_token(review)
+        assert "gleiche Zahlungsreferenz" in review.text
         assert len(_paid_events()) == 1
     else:
         assert candidate["duplicate_reason"] is None

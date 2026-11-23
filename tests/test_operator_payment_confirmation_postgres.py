@@ -74,10 +74,14 @@ def test_dashboard_replay_recognizes_operator_payment(payment_client):
     )
 
 
-def test_concurrent_entries_pay_delivered_invoice_only_once(payment_client):
+def test_concurrent_entries_pay_delivered_invoice_only_once(
+    payment_client, monkeypatch
+):
     import time
     from concurrent.futures import ThreadPoolExecutor
     from threading import Barrier
+
+    from store import billing
 
     invoice_id = _invoice()
     first_id, _ = _import()
@@ -95,6 +99,8 @@ def test_concurrent_entries_pay_delivered_invoice_only_once(payment_client):
         )
         second_id = cur.fetchone()["id"]
     barrier = Barrier(3)
+    # Exercise the invoice lock independently of LEG booking serialisation.
+    monkeypatch.setattr(billing, "_lock_payment_booking", lambda cur, community: None)
 
     def confirm(entry_id):
         barrier.wait(timeout=10)
@@ -116,12 +122,14 @@ def test_concurrent_entries_pay_delivered_invoice_only_once(payment_client):
                     cur.execute(
                         """SELECT count(*) AS n FROM pg_stat_activity
                            WHERE datname=current_database() AND pid<>pg_backend_pid()
-                           AND wait_event_type='Lock'"""
+                           AND wait_event_type='Lock'
+                           AND wait_event IN ('transactionid', 'tuple')
+                           AND query LIKE '%FOR UPDATE OF i%'"""
                     )
                     if cur.fetchone()["n"] == 2:
                         break
                     assert time.monotonic() < deadline, (
-                        "both requests must wait on locks"
+                        "both requests must wait on the invoice row lock"
                     )
                     time.sleep(0.01)
             finally:

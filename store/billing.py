@@ -1127,11 +1127,14 @@ _PAYMENT_PEERS = """
 """
 
 
-def _with_payment_reference_keys(entry):
+def _with_payment_reference_keys(entry, invoice_reference_keys):
     normalise = payment_reconciliation.normalise_payment_reference
     creditor_keys = {
         key for raw in entry.get("creditor_references", ()) if (key := normalise(raw))
     }
+    payment_key = normalise(entry["payment_reference"])
+    if payment_key in invoice_reference_keys:
+        creditor_keys.add(payment_key)
     return {
         **entry,
         "bank_keys": set(entry["bank_references"]),
@@ -1202,10 +1205,19 @@ def _bank_payment_duplicate(cur, community_id, entry, *, hold_only=False):
         """,
         (community_id, entry["id"]),
     )
-    entry = _with_payment_reference_keys(entry)
     records = cur.fetchall()
+    if not records:
+        return None
+    cur.execute(
+        "SELECT invoice_number FROM invoices WHERE community_id=%s", (community_id,)
+    )
+    normalise = payment_reconciliation.normalise_payment_reference
+    invoice_reference_keys = {
+        key for row in cur.fetchall() if (key := normalise(row["invoice_number"]))
+    }
+    entry = _with_payment_reference_keys(entry, invoice_reference_keys)
     peers = (
-        _with_payment_reference_keys(row)
+        _with_payment_reference_keys(row, invoice_reference_keys)
         for row in records
         if payment_reconciliation.is_duplicate_payment_evidence(row)
     )
