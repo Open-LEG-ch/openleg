@@ -5930,10 +5930,6 @@ msgstr "Enthält die Änderung des Speicherstands und Speicherverluste."
 msgid "Entladen"
 msgstr "Entladen"
 
-#: templates/leg_billing.html:45
-msgid "Entscheid:"
-msgstr "Entscheid:"
-
 #: templates/fuer_bewohner.html:89
 msgid "Entscheiden"
 msgstr "Entscheiden"
@@ -11348,10 +11344,6 @@ msgstr "Ohne Mehrwertsteuer muss der Satz 0 sein."
 msgid "Ohne Spannungstransformation"
 msgstr "Ohne Spannungstransformation"
 
-#: templates/leg_billing.html:44
-msgid "Ohne Zahlungsreferenz"
-msgstr "Ohne Zahlungsreferenz"
-
 #: templates/pricing.html:133
 msgid ""
 "Ohne eigenen Betrieb, wir übernehmen Wartung und Verfügbarkeit. Kostenlos für "
@@ -16679,10 +16671,6 @@ msgstr "· %(format_a_population_int_replace)s Einwohner"
 msgid "· %(format_b_population_int_replace)s Einwohner"
 msgstr "· %(format_b_population_int_replace)s Einwohner"
 
-#: templates/leg_billing.html:45
-msgid "· Akteur:"
-msgstr "· Akteur:"
-
 #: templates/leg_billing.html:174 templates/member_invoice_detail.html:204
 msgid "· Antwort bis"
 msgstr "· Antwort bis"
@@ -16702,10 +16690,6 @@ msgstr "· Firmware"
 #: templates/advisories.html:23 templates/equipment_form.html:54
 msgid "· Firmware:"
 msgstr "· Firmware:"
-
-#: templates/leg_billing.html:45
-msgid "· Import:"
-msgstr "· Import:"
 
 #: templates/leg_billing.html:109
 msgid "· Interner Preis:"
@@ -19092,3 +19076,189 @@ msgid ""
 msgstr ""
 "Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
 " mehr ersetzen."
+
+#: dashboard.py:490
+msgid "Das ist eine Belastung, keine Gutschrift."
+msgstr "Das ist eine Belastung, keine Gutschrift."
+
+#: dashboard.py:491
+msgid "Gleichen Sie die Belastung separat mit der Bank ab."
+msgstr "Gleichen Sie die Belastung separat mit der Bank ab."
+
+#: dashboard.py:494
+msgid "Die Bank hat die Zahlung zurückgebucht."
+msgstr "Die Bank hat die Zahlung zurückgebucht."
+
+#: dashboard.py:496
+msgid "Prüfen Sie die ursprüngliche Zahlung und klären Sie die Rückbuchung mit der Bank."
+msgstr "Prüfen Sie die ursprüngliche Zahlung und klären Sie die Rückbuchung mit der Bank."
+
+#: dashboard.py:500
+msgid "Die Währung ist nicht CHF."
+msgstr "Die Währung ist nicht CHF."
+
+#: dashboard.py:501
+msgid "Klären Sie die Währung mit der zahlenden Person."
+msgstr "Klären Sie die Währung mit der zahlenden Person."
+
+#: dashboard.py:504
+msgid "Der Betrag ist zu tief."
+msgstr "Der Betrag ist zu tief."
+
+#: dashboard.py:506
+msgid "Teilzahlungen bleiben unverbucht. Klären Sie den offenen Betrag mit der zahlenden Person."
+msgstr "Teilzahlungen bleiben unverbucht. Klären Sie den offenen Betrag mit der zahlenden Person."
+
+#: dashboard.py:510
+msgid "Der Betrag ist zu hoch."
+msgstr "Der Betrag ist zu hoch."
+
+#: dashboard.py:512
+msgid "Überzahlungen bleiben unverbucht. Klären Sie den überschüssigen Betrag mit der zahlenden Person."
+msgstr "Überzahlungen bleiben unverbucht. Klären Sie den überschüssigen Betrag mit der zahlenden Person."
+
+#: dashboard.py:516
+msgid "Der Auszug weist keine definitive Buchung aus."
+msgstr "Der Auszug weist keine definitive Buchung aus."
+
+#: dashboard.py:517
+msgid "Importieren Sie den definitiven Kontoauszug."
+msgstr "Importieren Sie den definitiven Kontoauszug."
+
+#: dashboard.py:520
+msgid "Der Auszug belegt den Betrag für diesen Eintrag nicht eindeutig."
+msgstr "Der Auszug belegt den Betrag für diesen Eintrag nicht eindeutig."
+
+#: dashboard.py:521
+msgid "Fordern Sie einen Kontoauszug mit Einzelbeträgen an."
+msgstr "Fordern Sie einen Kontoauszug mit Einzelbeträgen an."
+
+#: dashboard.py:524
+msgid "Die Rechnung ist aktuell nicht zur Zahlung offen."
+msgstr "Die Rechnung ist aktuell nicht zur Zahlung offen."
+
+#: dashboard.py:526
+msgid "Stellen Sie die Rechnung zuerst zu oder wählen Sie eine andere zugestellte Rechnung."
+msgstr "Stellen Sie die Rechnung zuerst zu oder wählen Sie eine andere zugestellte Rechnung."
+
+#: dashboard.py:531
+msgid "Die Referenz passt zu keiner Rechnung."
+msgstr "Die Referenz passt zu keiner Rechnung."
+
+#: dashboard.py:532
+msgid "Die Referenz passt zu mehreren Rechnungen."
+msgstr "Die Referenz passt zu mehreren Rechnungen."
+
+#: dashboard.py:533
+msgid "Die Angaben zur Zahlung passen nicht zur Rechnung."
+msgstr "Die Angaben zur Zahlung passen nicht zur Rechnung."
+
+#: dashboard.py:534
+msgid "Die Zahlung ist verbucht."
+msgstr "Die Zahlung ist verbucht."
+
+#: dashboard.py:553
+msgid "Die Zahlung hat keine Referenz."
+msgstr "Die Zahlung hat keine Referenz."
+
+#: dashboard.py:555
+msgid "Fordern Sie bei der Bank einen Kontoauszug mit Zahlungsreferenz an."
+msgstr "Fordern Sie bei der Bank einen Kontoauszug mit Zahlungsreferenz an."
+
+#: dashboard.py:558 templates/leg_billing.html:38
+msgid "Zahlung zugeordnet"
+msgstr "Zahlung zugeordnet"
+
+#: dashboard.py:743
+msgid "Bestätigen Sie die Prüfung mit dem Kontrollkästchen und senden Sie die Zuordnung erneut."
+msgstr "Bestätigen Sie die Prüfung mit dem Kontrollkästchen und senden Sie die Zuordnung erneut."
+
+#: dashboard.py:750
+msgid "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestellte Rechnung."
+msgstr "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestellte Rechnung."
+
+#: dashboard.py:768
+#, python-format
+msgid "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein."
+msgstr "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein."
+
+#: dashboard.py:772
+msgid "Prüfen Sie die bisherige Buchung, bevor Sie den Eintrag zuordnen."
+msgstr "Prüfen Sie die bisherige Buchung, bevor Sie den Eintrag zuordnen."
+
+#: dashboard.py:778
+#, python-format
+msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s verbucht."
+msgstr "Diese Zahlung ist bereits auf Rechnung %(invoice)s verbucht."
+
+#: dashboard.py:782
+msgid "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
+msgstr "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
+
+#: dashboard.py:793
+msgid "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
+msgstr "Prüfen Sie den Kontoauszug oder wählen Sie eine andere zugestellte Rechnung dieser LEG."
+
+#: dashboard.py:802
+msgid ""
+"Dieser Eintrag ist nicht mehr zur Zuordnung verfügbar. Prüfen Sie den aktuellen Zahlungsabgleich "
+"unten."
+msgstr ""
+"Dieser Eintrag ist nicht mehr zur Zuordnung verfügbar. Prüfen Sie den aktuellen Zahlungsabgleich "
+"unten."
+
+#: dashboard_routes.py:979 dashboard_routes.py:1049
+msgid "Sie dürfen in dieser LEG keine Zahlungen zuordnen."
+msgstr "Sie dürfen in dieser LEG keine Zahlungen zuordnen."
+
+#: dashboard_routes.py:1033
+msgid "Das Formular ist abgelaufen. Öffnen Sie die Buchung erneut."
+msgstr "Das Formular ist abgelaufen. Öffnen Sie die Buchung erneut."
+
+#: templates/leg_billing.html:59
+msgid "Neueste offene Buchungen"
+msgstr "Neueste offene Buchungen"
+
+#: templates/leg_billing.html:60
+msgid "Ältere offene Buchungen"
+msgstr "Ältere offene Buchungen"
+
+#: templates/leg_billing.html:73
+msgid "Von"
+msgstr "Von"
+
+#: templates/leg_billing.html:79
+msgid "Gutschrift"
+msgstr "Gutschrift"
+
+#: templates/leg_billing.html:79
+msgid "Belastung"
+msgstr "Belastung"
+
+#: templates/leg_billing.html:82
+msgid "Referenz gehört zu"
+msgstr "Referenz gehört zu"
+
+#: templates/leg_billing.html:87
+msgid "Es fehlen"
+msgstr "Es fehlen"
+
+#: templates/leg_billing.html:90
+msgid "Importiert am"
+msgstr "Importiert am"
+
+#: templates/leg_billing.html:91
+msgid "Importiert von"
+msgstr "Importiert von"
+
+#: templates/leg_billing.html:101
+msgid "Rechnung auswählen"
+msgstr "Rechnung auswählen"
+
+#: templates/leg_billing.html:110
+msgid "Zahlung zuordnen"
+msgstr "Zahlung zuordnen"
+
+#: templates/leg_billing.html:113
+msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu."
+msgstr "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu."

@@ -20,6 +20,7 @@ ACTOR = "fictional-preparer"
 AUDITOR = "fictional-auditor"
 ADMIN = "fictional-admin"
 BILLING = f"/leg/community/{COMMUNITY}/billing"
+PAYMENTS = f"{BILLING}?section=payments"
 
 
 @pytest.fixture
@@ -79,12 +80,31 @@ def _assign(client, entry, invoice, **overrides):
     )
 
 
+def _follow_assignment(client, response):
+    assert response.status_code == 303
+    assert response.location == f"{PAYMENTS}#payments"
+    page = client.get(response.location)
+    assert page.status_code == 200
+    assert f'href="{PAYMENTS}#payments" aria-current="page"' in " ".join(
+        page.text.split()
+    )
+    return page
+
+
+def _assignment_outcome(client, response):
+    page = _follow_assignment(client, response)
+    if 'id="assignment-feedback" role="status"' in page.text:
+        return "assigned"
+    assert 'id="assignment-feedback" role="alert"' in page.text
+    return "refused"
+
+
 def test_preparer_assigns_exact_credit_and_can_replay(workspace):
     invoice = _invoice()
     entry, _ = _import()
     for _ in range(2):
         response = _assign(workspace, entry, invoice)
-        assert response.status_code == 303
+        assert _assignment_outcome(workspace, response) == "assigned"
     page = workspace.get(BILLING)
     assert "Zahlung zugeordnet" in page.text
     assert f"/statements/{entry}/assign" not in page.text
@@ -134,30 +154,27 @@ def test_preparer_assigns_exact_credit_and_can_replay(workspace):
 
 
 @pytest.mark.parametrize(
-    ("case", "status", "message"),
+    ("case", "message"),
     [
-        ("debit", 409, "Das ist eine Belastung, keine Gutschrift."),
-        ("reversal", 409, "Die Bank hat die Zahlung zurückgebucht."),
-        ("underpayment", 409, "Der Betrag ist zu tief."),
-        ("overpayment", 409, "Der Betrag ist zu hoch."),
-        ("currency", 409, "Die Währung ist nicht CHF."),
-        ("missing_reference", 409, "Eine Zahlungsreferenz ist erforderlich."),
-        ("issued", 409, "Stellen Sie die Rechnung zuerst zu"),
-        ("foreign_invoice", 409, "Rechnung nicht gefunden."),
+        ("debit", "Das ist eine Belastung, keine Gutschrift."),
+        ("reversal", "Die Bank hat die Zahlung zurückgebucht."),
+        ("underpayment", "Der Betrag ist zu tief."),
+        ("overpayment", "Der Betrag ist zu hoch."),
+        ("currency", "Die Währung ist nicht CHF."),
+        ("missing_reference", "Eine Zahlungsreferenz ist erforderlich."),
+        ("issued", "Stellen Sie die Rechnung zuerst zu"),
+        ("foreign_invoice", "Rechnung nicht gefunden."),
         (
             "foreign_entry",
-            409,
             "Dieser Eintrag ist nicht mehr zur Zuordnung verfügbar.",
         ),
-        ("missing_confirmation", 400, "Bestätigen Sie die Prüfung"),
-        ("csrf", 400, None),
-        ("auditor", 403, None),
-        ("anonymous", 401, None),
+        ("missing_confirmation", "Bestätigen Sie die Prüfung"),
+        ("csrf", "Das Formular ist abgelaufen."),
+        ("auditor", "Sie dürfen in dieser LEG keine Zahlungen zuordnen."),
+        ("anonymous", None),
     ],
 )
-def test_refused_assignment_has_no_financial_side_effects(
-    workspace, case, status, message
-):
+def test_refused_assignment_has_no_financial_side_effects(workspace, case, message):
     from tests.test_store_billing_postgres import _insert_issued_invoice
 
     invoice = _insert_issued_invoice("ISSUED-ONLY") if case == "issued" else _invoice()
@@ -227,13 +244,15 @@ def test_refused_assignment_has_no_financial_side_effects(
         )
         == []
     )
-    assert response.status_code == status
-    if message:
-        assert message in response.text
+    if case == "anonymous":
+        assert response.status_code == 401
+        return
+    response = _follow_assignment(workspace, response)
+    assert 'id="assignment-feedback" role="alert"' in response.text
+    assert message in response.text
     if case == "missing_reference":
         assert "Die Zahlung hat keine Referenz." in response.text
         assert f'action="{BILLING}/statements/{entry}/assign' not in response.text
-        assert f'href="{BILLING}?lang=fr-CH#statement-assignments"' in response.text
 
 
 def test_stale_selection_cannot_change_the_booked_invoice(workspace):
@@ -244,13 +263,34 @@ def test_stale_selection_cannot_change_the_booked_invoice(workspace):
 
     response = _assign(workspace, entry, other)
 
-    assert response.status_code == 409
+    response = _follow_assignment(workspace, response)
     assert "Dieser Eintrag ist nicht mehr zur Zuordnung verfügbar." in response.text
     (statement,) = db.list_bank_statement_entries(COMMUNITY)
     assert statement["invoice_id"] == invoice
     assert not any(
         event["event_type"] == "paid"
         for event in db.list_invoice_events(other, COMMUNITY)
+    )
+
+
+def test_assignment_notice_exposes_no_billing_data_without_audit_access(workspace):
+    invoice = _invoice("INVOICE-PRIVATE-TO-BILLING")
+    entry, _ = _import()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE community_members SET access_roles='[]' WHERE community_id=%s AND building_id=%s",
+            (COMMUNITY, ACTOR),
+        )
+    response = _assign(workspace, entry, invoice)
+    assert response.status_code == 303
+    assert response.location == f"{PAYMENTS}#payments"
+    page = workspace.get(response.location)
+    assert 'id="payments"' in page.text
+    assert "Sie dürfen in dieser LEG keine Zahlungen zuordnen." in page.text
+    assert "INVOICE-PRIVATE-TO-BILLING" not in page.text
+    assert workspace.get(response.location).status_code == 403
+    assert not db.list_community_operator_events(
+        COMMUNITY, event_types=("invoice.paid",)
     )
 
 
@@ -304,7 +344,7 @@ def test_workspace_renders_imported_bank_details_and_only_delivered_leg_invoices
     page = workspace.get(BILLING)
 
     assert page.status_code == 200
-    form = page.text.split("/assign#", 1)[1].split("</form>", 1)[0]
+    form = page.text.split("/assign", 1)[1].split("</form>", 1)[0]
     assert f'<option value="{invoice}">DELIVERED-LOCAL' in form
     assert "ISSUED-ONLY" not in form
     assert "DELIVERED-FOREIGN" not in form
@@ -313,7 +353,7 @@ def test_workspace_renders_imported_bank_details_and_only_delivered_leg_invoices
         in form
     )
     assert "Zahlung zuordnen" in form
-    assert page.text.count("/assign#") == 1
+    assert page.text.count("/assign") == 1
     assert "Der Betrag ist zu tief." in page.text
     assert "Referenz gehört zu" in page.text
     assert "Es fehlen" in page.text and "CHF 5.67" in page.text
@@ -391,7 +431,7 @@ def test_same_bank_credit_cannot_pay_another_invoice(workspace, second_match):
     assert original["invoice_id"] == first
     if second_match == "reviewed":
         response = _assign(workspace, duplicate["id"], second)
-        assert response.status_code == 409
+        response = _follow_assignment(workspace, response)
         assert "bereits auf Rechnung FIRST-INVOICE verbucht" in response.text
     assert not any(
         event["event_type"] == "paid"
@@ -415,7 +455,10 @@ def test_camt_numeric_reversal_cannot_book_a_payment(workspace, automatic):
     )
     (entry,) = db.list_bank_statement_entries(COMMUNITY)
     if not automatic:
-        assert _assign(workspace, entry["id"], invoice).status_code == 409
+        assert (
+            _assignment_outcome(workspace, _assign(workspace, entry["id"], invoice))
+            == "refused"
+        )
     assert entry["match_decision"] == "reversal"
     assert not any(
         event["event_type"] == "paid"
@@ -438,7 +481,7 @@ def test_newer_history_cannot_hide_an_unresolved_entry(workspace):
     page = workspace.get(BILLING)
     assert page.status_code == 200
     assert "old unresolved reference" in page.text
-    assert f"/statements/{older['id']}/assign#" in page.text
+    assert f"/statements/{older['id']}/assign" in page.text
 
 
 def test_debtor_contact_name_is_not_a_party_name(workspace):
@@ -485,7 +528,9 @@ def test_bank_credit_identity_uses_account_and_servicer_reference(workspace, cas
     if case == "generated-reference":
         assert newest["entry_reference"] == original["entry_reference"]
     response = _assign(workspace, newest["id"], second)
-    assert response.status_code == (409 if case == "missing-account" else 303)
+    assert _assignment_outcome(workspace, response) == (
+        "refused" if case == "missing-account" else "assigned"
+    )
 
 
 def test_concurrent_review_of_repeated_bank_credit_only_books_once(
@@ -503,11 +548,11 @@ def test_concurrent_review_of_repeated_bank_credit_only_books_once(
         with app_module.web.test_client() as client:
             _set_session(client, ACTOR)
             barrier.wait(timeout=10)
-            return _assign(client, entry, invoice).status_code
+            return _assignment_outcome(client, _assign(client, entry, invoice))
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         outcomes = list(pool.map(assign, (entry["id"] for entry in entries), invoices))
-    assert sorted(outcomes) == [303, 409]
+    assert sorted(outcomes) == ["assigned", "refused"]
     assert (
         len(
             db.list_community_operator_events(
@@ -535,8 +580,8 @@ def test_older_unresolved_entries_have_a_link_when_review_queue_is_full(workspac
     first_page = workspace.get(BILLING)
     assert "old unresolved reference" not in first_page.text
     assert "Ältere offene Buchungen" in first_page.text
-    older_path = f"{BILLING}?statement_before={older['id'] + 1}#statement-assignments"
-    assert f'href="{older_path}"' in first_page.text
+    older_path = f"{PAYMENTS}&statement_before={older['id'] + 1}#payments"
+    assert f'href="{older_path}"' in unescape(first_page.text)
     next_page = workspace.get(older_path)
     assert "old unresolved reference" in next_page.text
     assert "Neueste offene Buchungen" in next_page.text
@@ -594,7 +639,7 @@ def test_export_duplicate_cannot_book_twice(workspace, case, second_match):
     duplicate = db.list_bank_statement_entries(COMMUNITY)[0]
     if second_match == "reviewed":
         refusal = _assign(workspace, duplicate["id"], second)
-        assert refusal.status_code == 409
+        refusal = _follow_assignment(workspace, refusal)
         if case == "legacy":
             assert (
                 "Diese Zahlung könnte bereits auf Rechnung FIRST-INVOICE verbucht sein."
@@ -637,11 +682,11 @@ def test_concurrent_export_duplicates_only_book_once(workspace, app_module, case
         with app_module.web.test_client() as client:
             _set_session(client, ACTOR)
             barrier.wait(timeout=10)
-            return _assign(client, entry["id"], invoice).status_code
+            return _assignment_outcome(client, _assign(client, entry["id"], invoice))
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         outcomes = list(pool.map(assign, [oldest, newest], invoices))
-    assert sorted(outcomes) == [303, 409]
+    assert sorted(outcomes) == ["assigned", "refused"]
     assert (
         len(db.list_community_operator_events(COMMUNITY, event_types=("invoice.paid",)))
         == 1

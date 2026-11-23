@@ -78,14 +78,18 @@ def _require_dashboard_session():
     return building_id
 
 
-def _require_dashboard_csrf():
+def _dashboard_csrf_valid():
     submitted = request.headers.get("X-CSRF-Token") or request.form.get(
         "csrf_token", ""
     )
     if not isinstance(submitted, str) or not submitted.isascii():
-        abort(400)
+        return False
     expected = _dashboard_csrf_token()
-    if not expected or not hmac.compare_digest(submitted, expected):
+    return bool(expected and hmac.compare_digest(submitted, expected))
+
+
+def _require_dashboard_csrf():
+    if not _dashboard_csrf_valid():
         abort(400)
 
 
@@ -942,8 +946,14 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(result.get("error_status", 409))
         return _leg_dashboard_redirect(community_id, "members")
 
-    def render_billing_workspace(community_id, building_id, *, status=200, **extra):
+    def render_billing_workspace(community_id, building_id, **extra):
         statement_before = request.args.get("statement_before", type=int)
+        payment_section = request.args.get("section") == "payments"
+        feedback = (
+            session.pop(f"leg-payment-assignment:{community_id}", None)
+            if payment_section
+            else None
+        )
         try:
             view = dashboard_module.leg_billing_workspace_view(
                 community_id,
@@ -957,12 +967,24 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         except db.BillingStoreError:
             abort(503)
         if view["error"]:
-            abort(403)
+            if not feedback:
+                abort(403)
+            # The redirect can outlive a role change. Keep the feedback generic
+            # and render no billing data if the viewer lacks audit access.
+            view = {
+                "community_id": community_id,
+                "payment_notice_only": True,
+            }
+            feedback = {
+                "error": _("Sie dürfen in dieser LEG keine Zahlungen zuordnen."),
+            }
         return render_leg_workspace(
             "leg_billing.html",
             csrf_token=_dashboard_csrf_token(),
+            payment_section=payment_section,
+            assignment_feedback=feedback,
             **view,
-        ), status
+        )
 
     @bp.route("/leg/community/<community_id>/billing")
     def leg_billing_workspace(community_id):
@@ -1004,35 +1026,42 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.post("/leg/community/<community_id>/billing/statements/<int:entry_id>/assign")
     def leg_billing_statement_assign(community_id, entry_id):
         building_id = _require_dashboard_session()
-        _require_dashboard_csrf()
-        try:
-            result = dashboard_module.leg_assign_bank_payment(
-                community_id,
-                building_id,
-                entry_id,
-                request.form.get("invoice_id", type=int),
-                request.form.get("confirm") == "yes",
-            )
-        except (db.BillingStoreError, psycopg2.Error):
-            abort(503)
-        if result["error_status"] == 403:
-            abort(403)
-        workspace_location = dashboard_module.leg_billing_workspace_location(
-            community_id
-        )
-        if result["error_status"]:
-            return render_billing_workspace(
-                community_id,
-                building_id,
-                status=result["error_status"],
-                assignment_error=result["error"],
-                assignment_recovery=result.get("recovery"),
-                language_switch_url=lambda locale: localized_url(
-                    workspace_location + "#statement-assignments", locale
+        if not _dashboard_csrf_valid():
+            result = {
+                "error_status": 400,
+                "error": _(
+                    "Das Formular ist abgelaufen. Öffnen Sie die Buchung erneut."
                 ),
-            )
+            }
+        else:
+            try:
+                result = dashboard_module.leg_assign_bank_payment(
+                    community_id,
+                    building_id,
+                    entry_id,
+                    request.form.get("invoice_id", type=int),
+                    request.form.get("confirm") == "yes",
+                )
+            except (db.BillingStoreError, psycopg2.Error):
+                abort(503)
+        error_status = result["error_status"]
+        if error_status == 403:
+            result["error"] = _("Sie dürfen in dieser LEG keine Zahlungen zuordnen.")
+        session[f"leg-payment-assignment:{community_id}"] = {
+            "error": result.get("error"),
+            "recovery": result.get("recovery"),
+        }
+        statement_before = (
+            request.args.get("statement_before", type=int) if error_status else None
+        )
         return redirect(
-            workspace_location + f"#statement-{entry_id}",
+            url_for(
+                ".leg_billing_workspace",
+                community_id=community_id,
+                section="payments",
+                statement_before=statement_before,
+            )
+            + "#payments",
             code=303,
         )
 
