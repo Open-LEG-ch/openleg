@@ -20302,3 +20302,9 @@ msgstr "J’ai vérifié les deux relevés bancaires. Il s’agit d’un autre p
 #: templates/leg_billing.html:47
 msgid "Trotzdem zuordnen"
 msgstr "Attribuer quand même"
+
+msgid "Die Rechnung hat keinen gültigen Gesamtbetrag."
+msgstr "Le montant total de la facture est invalide."
+
+msgid "Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."
+msgstr "Vérifiez la facture ou sélectionnez une autre facture transmise."

@@ -22962,3 +22962,9 @@ msgstr "Ho verificato entrambi gli estratti conto. Si tratta di un altro pagamen
 #: templates/leg_billing.html:47
 msgid "Trotzdem zuordnen"
 msgstr "Abbina comunque"
+
+msgid "Die Rechnung hat keinen gültigen Gesamtbetrag."
+msgstr "L’importo totale della fattura non è valido."
+
+msgid "Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."
+msgstr "Verifichi la fattura o selezioni un’altra fattura inviata."

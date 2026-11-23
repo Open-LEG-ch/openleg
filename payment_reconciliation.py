@@ -10,6 +10,7 @@ from hashlib import sha256
 from defusedxml import ElementTree
 
 from billing_lifecycle import InvoiceLifecycleError
+from money_display import InvalidMoneyAmount, finite_decimal
 from operator_errors import ErrorCode
 from translation_markers import gettext_noop as _N
 
@@ -21,9 +22,10 @@ class StatementError(ValueError):
 class PaymentMatchRefused(InvoiceLifecycleError):
     """A review failed shared payment eligibility."""
 
-    def __init__(self, detail):
+    def __init__(self, detail, *, reason=ErrorCode.INVALID_PAYMENT):
         super().__init__("Die Zahlung passt nicht exakt zur Rechnung.")
         self.detail = detail
+        self.reason = reason
 
 
 class BankPaymentDuplicate(InvoiceLifecycleError):
@@ -440,7 +442,11 @@ def match_payment(entry, invoices):
         return MatchDecision("ambiguous")
     if not candidates:
         return MatchDecision("unmatched")
-    return MatchDecision(payment_eligibility(entry, candidates[0]), invoice_id)
+    try:
+        decision = payment_eligibility(entry, candidates[0])
+    except PaymentMatchRefused:
+        decision = "mismatch"
+    return MatchDecision(decision, invoice_id)
 
 
 def payment_entry_refusal(entry):
@@ -463,7 +469,12 @@ def payment_eligibility(entry, invoice):
     refusal = payment_entry_refusal(entry)
     if refusal:
         return "reversal" if refusal == "reversal" else "mismatch"
-    invoice_amount = Decimal(str(invoice["gross_chf"]))
+    try:
+        invoice_amount = finite_decimal(invoice.get("gross_chf"))
+    except InvalidMoneyAmount as exc:
+        raise PaymentMatchRefused(
+            "invalid_invoice_total", reason=ErrorCode.INVALID_INVOICE_TOTAL
+        ) from exc
     entry_amount = Decimal(str(entry["amount"]))
     if entry_amount < invoice_amount:
         return "split_payment"

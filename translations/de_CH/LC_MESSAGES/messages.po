@@ -19275,3 +19275,9 @@ msgstr "Ich habe beide Kontoauszüge geprüft. Es ist eine andere Zahlung."
 #: templates/leg_billing.html:47
 msgid "Trotzdem zuordnen"
 msgstr "Trotzdem zuordnen"
+
+msgid "Die Rechnung hat keinen gültigen Gesamtbetrag."
+msgstr "Die Rechnung hat keinen gültigen Gesamtbetrag."
+
+msgid "Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."
+msgstr "Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."

@@ -526,6 +526,10 @@ _PAYMENT_REFUSALS = {
             "Stellen Sie die Rechnung zuerst zu oder wählen Sie eine andere zugestellte Rechnung."
         ),
     ),
+    "invalid_invoice_total": (
+        _N("Die Rechnung hat keinen gültigen Gesamtbetrag."),
+        _N("Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."),
+    ),
 }
 _PAYMENT_TITLES = {
     "unmatched": _N("Die Referenz passt zu keiner Rechnung."),
@@ -694,6 +698,7 @@ def leg_billing_workspace_view(
             invoice
             for invoice in statement_invoices.values()
             if invoice["lifecycle_state"] == "delivered"
+            and not invoice["gross_unreadable"]
         ]
         if can_prepare
         else [],

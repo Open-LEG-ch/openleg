@@ -16,6 +16,7 @@ class ErrorCode(StrEnum):
     INVALID_MEMBERSHIP = "invalid_membership"
     INVALID_CASE = "invalid_case"
     INVALID_PAYMENT = "invalid_payment"
+    INVALID_INVOICE_TOTAL = "invalid_invoice_total"
     DUPLICATE_PAYMENT = "duplicate_payment"
     POSSIBLE_DUPLICATE_PAYMENT = "possible_duplicate_payment"
     CONFLICT = "conflict"

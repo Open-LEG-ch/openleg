@@ -336,6 +336,36 @@ def test_payment_assignment_feedback_survives_a_failed_get(workspace, monkeypatc
     assert 'id="assignment-feedback"' not in workspace.get(response.location).text
 
 
+def test_assignment_refuses_unreadable_invoice_total(workspace):
+    unreadable = _invoice("UNREADABLE-INVOICE")
+    readable = _invoice("READABLE-INVOICE")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("ALTER TABLE invoices DISABLE TRIGGER USER")
+        cur.execute("UPDATE invoices SET gross_chf=NULL WHERE id=%s", (unreadable,))
+        cur.execute("ALTER TABLE invoices ENABLE TRIGGER USER")
+
+    _upload_xml(workspace, _statement_xml(reference="unknown"))
+    (entry,) = db.list_bank_statement_entries(COMMUNITY)
+    refusal = _follow_assignment(workspace, _assign(workspace, entry["id"], unreadable))
+    assert 'id="assignment-feedback" role="alert"' in refusal.text
+    assert "Die Rechnung hat keinen gültigen Gesamtbetrag." in refusal.text
+    assert (
+        "Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."
+        in refusal.text
+    )
+    assert f'<option value="{unreadable}">' not in refusal.text
+    assert f'<option value="{readable}">' in refusal.text
+    assert _entry_booking(entry["id"]) == ("unmatched", None)
+
+    _upload_xml(
+        workspace,
+        _statement_xml(statement="statement-2", reference="UNREADABLE-INVOICE"),
+    )
+    imported = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert imported["match_decision"] == "mismatch"
+    assert not _paid_events()
+
+
 def test_workspace_renders_imported_bank_details_and_only_delivered_leg_invoices(
     workspace,
 ):

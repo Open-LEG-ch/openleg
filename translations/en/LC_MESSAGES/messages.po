@@ -22685,3 +22685,9 @@ msgstr "I checked both bank statements. This is a different payment."
 #: templates/leg_billing.html:47
 msgid "Trotzdem zuordnen"
 msgstr "Assign anyway"
+
+msgid "Die Rechnung hat keinen gültigen Gesamtbetrag."
+msgstr "The invoice has no valid total."
+
+msgid "Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."
+msgstr "Check the invoice or select another delivered invoice."
