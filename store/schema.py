@@ -1280,17 +1280,20 @@ def create_tables():
             """)
             # Only rows predating bank_references have NULL here. The old importer
             # generated statement:entry:transaction IDs and appended :transaction
-            # to batch references. A numeric suffix makes the origin ambiguous.
+            # to bank references in multi-transaction entries.
             cur.execute("""
-                UPDATE bank_statement_entries
+                UPDATE bank_statement_entries AS e
                 SET bank_references = CASE
-                    WHEN btrim(entry_reference) <> ''
-                         AND upper(btrim(entry_reference)) <> 'NOTPROVIDED'
-                         AND entry_reference !~ ':[0-9]+$'
-                    THEN ARRAY[entry_reference]
+                    WHEN e.entry_reference !~* '^[[:space:]]*(NOTPROVIDED)?[[:space:]]*$'
+                         AND substring(e.entry_reference FROM '^(.*):[1-9][0-9]*:[1-9][0-9]*$')
+                             IS DISTINCT FROM COALESCE(NULLIF(s.statement_reference, ''), 'statement')
+                         AND (e.amount_basis IS DISTINCT FROM 'reconciled_batch'
+                              OR e.entry_reference !~ ':[1-9][0-9]*$')
+                    THEN ARRAY[e.entry_reference]
                     ELSE '{}'::TEXT[]
                 END
-                WHERE bank_references IS NULL
+                FROM bank_statement_imports AS s
+                WHERE e.statement_import_id = s.id AND e.bank_references IS NULL
             """)
             cur.execute("""
                 ALTER TABLE bank_statement_entries

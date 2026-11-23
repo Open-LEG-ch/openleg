@@ -1019,24 +1019,52 @@ def test_whitespace_in_bank_reference_does_not_prove_identity(workspace):
 
 
 @pytest.mark.parametrize(
-    ("servicer", "stored_reference", "held"),
+    ("stored_reference", "held"),
     [
-        ("shared-bank", "shared-bank", True),
-        ("", "statement-1:1:1", False),
-        ("batch-bank:1", "batch-bank:1", False),
-        ("notprovided", "notprovided", False),
+        ("shared-bank", True),
+        ("WIRE:123", True),
+        ("WIRE:123:456", True),
+        ("statement-1:1:1", False),
+        ("batch-bank:1", False),
+        ("\t\n", False),
+        ("notprovided", False),
     ],
 )
 def test_upgrade_preserves_only_legacy_bank_references(
-    workspace, servicer, stored_reference, held
+    workspace, stored_reference, held
 ):
     first = _invoice("FIRST-INVOICE")
     second = _invoice("SECOND-INVOICE")
-    _upload_xml(workspace, _statement_xml(reference="FIRST-INVOICE", servicer=servicer))
-    (earlier,) = db.list_bank_statement_entries(COMMUNITY)
-    assert earlier["entry_reference"] == stored_reference
+    servicer = {
+        "statement-1:1:1": "",
+        "batch-bank:1": "batch-bank",
+        "\t\n": "",
+    }.get(stored_reference, stored_reference)
+    original = _statement_xml(reference="FIRST-INVOICE", servicer=servicer)
+    if stored_reference == "batch-bank:1":
+        original = (
+            original.replace(b"9.67", b"10.67", 1)
+            .replace(b"<TxDtls>", b'<TxDtls><Amt Ccy="CHF">9.67</Amt>')
+            .replace(
+                b"</NtryDtls>",
+                b'<TxDtls><Amt Ccy="CHF">1.00</Amt></TxDtls></NtryDtls>',
+            )
+        )
+    _upload_xml(workspace, original)
+    earlier = next(
+        row
+        for row in db.list_bank_statement_entries(COMMUNITY)
+        if row["invoice_id"] == first
+    )
     assert _entry_booking(earlier["id"]) == ("matched", first)
+    if stored_reference == "batch-bank:1":
+        assert earlier["amount_basis"] == "reconciled_batch"
     with db.get_connection() as conn, conn.cursor() as cur:
+        if stored_reference == "\t\n":
+            cur.execute(
+                "UPDATE bank_statement_entries SET entry_reference=%s WHERE id=%s",
+                (stored_reference, earlier["id"]),
+            )
         # Restore the persisted row shape from 7b47c415 before running the upgrade.
         cur.execute("""
             ALTER TABLE bank_statement_entries
@@ -1058,7 +1086,9 @@ def test_upgrade_preserves_only_legacy_bank_references(
             "2026-09-18",
         ),
     )
-    candidate, prior = db.list_bank_statement_entries(COMMUNITY)
+    candidate, *prior_rows = db.list_bank_statement_entries(COMMUNITY)
+    prior = next(row for row in prior_rows if row["id"] == earlier["id"])
+    assert prior["entry_reference"] == stored_reference
     assert _entry_booking(prior["id"]) == ("matched", first)
     if held:
         assert candidate["duplicate_reason"] == "possible_duplicate_payment"
