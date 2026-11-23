@@ -605,6 +605,62 @@ def _override(client, entry, invoice, token):
     )
 
 
+def _overlapping_overrides(app_module, monkeypatch, first, second):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+    from time import monotonic, sleep
+
+    from store import billing
+
+    entered, release = Event(), Event()
+    first_pid = None
+    duplicate_check = billing._bank_payment_duplicate
+
+    def pause_first(cur, community_id, entry, *, hold_only=False):
+        nonlocal first_pid
+        result = duplicate_check(cur, community_id, entry, hold_only=hold_only)
+        if first_pid is None:
+            first_pid = cur.connection.get_backend_pid()
+            entered.set()
+            assert release.wait(timeout=20)
+        return result
+
+    monkeypatch.setattr(billing, "_bank_payment_duplicate", pause_first)
+
+    def confirm(booking):
+        with app_module.web.test_client() as client:
+            _set_session(client, ACTOR)
+            return _assignment_outcome(client, _override(client, *booking))
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first_request = pool.submit(confirm, first)
+        try:
+            assert entered.wait(timeout=10), (
+                "first confirmation did not reach its duplicate check"
+            )
+            second_request = pool.submit(confirm, second)
+            with db.get_connection() as conn, conn.cursor() as cur:
+                deadline = monotonic() + 10
+                while True:
+                    cur.execute(
+                        """SELECT EXISTS (
+                               SELECT 1 FROM pg_locks
+                               WHERE locktype='advisory' AND NOT granted
+                                 AND %s=ANY(pg_blocking_pids(pid))
+                           ) AS waiting""",
+                        (first_pid,),
+                    )
+                    if cur.fetchone()["waiting"]:
+                        break
+                    assert not second_request.done() and monotonic() < deadline, (
+                        "second confirmation did not wait on the first confirmation's LEG lock"
+                    )
+                    sleep(0.01)
+        finally:
+            release.set()
+        return [first_request.result(timeout=10), second_request.result(timeout=10)]
+
+
 def _booking_on(xml, booking_date):
     return xml.replace(b"2026-09-14", booking_date.encode())
 
@@ -651,7 +707,9 @@ def test_all_rows_are_visible_before_auto_booking(workspace, reverse):
     assert len(_paid_events()) == 1
 
 
-def test_override_shows_and_rechecks_the_complete_set(workspace, app_module):
+def test_override_shows_and_rechecks_the_complete_set(
+    workspace, app_module, monkeypatch
+):
     _invoice("FIRST-INVOICE")
     second = _invoice("SECOND-INVOICE")
     candidate_invoice = _invoice("CANDIDATE")
@@ -724,22 +782,11 @@ def test_override_shows_and_rechecks_the_complete_set(workspace, app_module):
     )
     assert len(_paid_events()) == 2
 
-    from concurrent.futures import ThreadPoolExecutor
-    from threading import Barrier
-
-    token = _review_token(refreshed)
-    barrier = Barrier(2)
-
-    def confirm(_):
-        with app_module.web.test_client() as client:
-            _set_session(client, ACTOR)
-            barrier.wait(timeout=10)
-            return _assignment_outcome(
-                client, _override(client, entry, candidate_invoice, token)
-            )
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        assert list(pool.map(confirm, range(2))) == ["assigned", "assigned"]
+    booking = (entry, candidate_invoice, _review_token(refreshed))
+    assert _overlapping_overrides(app_module, monkeypatch, booking, booking) == [
+        "assigned",
+        "assigned",
+    ]
     assert len(_paid_events()) == 3
     assert _entry_booking(entry) == ("matched", candidate_invoice)
     [audit] = [
@@ -899,11 +946,8 @@ def test_single_transaction_batch_keeps_its_entry_reference(workspace):
 
 
 def test_booking_one_reviewed_candidate_invalidates_the_others_review(
-    workspace, app_module
+    workspace, app_module, monkeypatch
 ):
-    from concurrent.futures import ThreadPoolExecutor
-    from threading import Barrier
-
     invoices = [_invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")]
     _upload_xml(
         workspace,
@@ -917,16 +961,10 @@ def test_booking_one_reviewed_candidate_invalidates_the_others_review(
         page = _follow_assignment(workspace, _assign(workspace, row["id"], invoice))
         bookings.append((row["id"], invoice, _review_token(page)))
 
-    barrier = Barrier(2)
-
-    def confirm(booking):
-        with app_module.web.test_client() as client:
-            _set_session(client, ACTOR)
-            barrier.wait(timeout=10)
-            return _assignment_outcome(client, _override(client, *booking))
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        assert sorted(pool.map(confirm, bookings)) == ["assigned", "refused"]
+    assert _overlapping_overrides(app_module, monkeypatch, *bookings) == [
+        "assigned",
+        "refused",
+    ]
     assert len(_paid_events()) == 1
 
 
@@ -993,33 +1031,102 @@ def test_bank_references_match_across_kinds_and_dates(workspace):
     assert len(_paid_events()) == 2
 
 
-def test_whitespace_in_bank_reference_does_not_prove_identity(workspace):
+@pytest.mark.parametrize("repeat_date", ["2026-09-14", "2026-09-24"])
+def test_bank_reference_comparison_ignores_surrounding_whitespace(
+    workspace, repeat_date
+):
     _invoice("FIRST-INVOICE")
     second = _invoice("SECOND-INVOICE")
     account = {"account": "CH0000000000000000000", "account_is_iban": True}
     _upload_xml(
         workspace,
-        _statement_xml(reference="FIRST-INVOICE", servicer=" PAYMENT-123", **account),
-        _statement_xml(
-            statement="repeat",
-            reference="SECOND-INVOICE",
-            servicer="PAYMENT-123",
-            **account,
+        _statement_xml(reference="FIRST-INVOICE", servicer=" PAYMENT-123 ", **account),
+        _booking_on(
+            _statement_xml(
+                statement="repeat",
+                reference="SECOND-INVOICE",
+                servicer="PAYMENT-123",
+                **account,
+            ),
+            repeat_date,
         ),
     )
-    candidate = db.list_bank_statement_entries(COMMUNITY)[0]
+    candidate, prior = db.list_bank_statement_entries(COMMUNITY)
+    assert prior["bank_references"] == [" PAYMENT-123 "]
+    assert candidate["duplicate_reason"] == "possible_duplicate_payment"
     page = _follow_assignment(workspace, _assign(workspace, candidate["id"], second))
     review = page.text.split('id="duplicate-review-matches"', 1)[1].split("</ul>", 1)[0]
-    assert "gleicher Betrag innerhalb von 3 Tagen" in review
-    assert "gleiche Bankreferenz" not in review
-    assert "Sehr wahrscheinlich dieselbe Zahlung" not in review
+    same_day = repeat_date == "2026-09-14"
+    assert "gleiche Bankreferenz" in review
+    assert ("Sehr wahrscheinlich dieselbe Zahlung" in review) is same_day
     assert (
-        _assignment_outcome(
+        "Wahrscheinlich bereits auf Rechnung FIRST-INVOICE gebucht." in page.text
+    ) is same_day
+    _review_token(page)
+    assert len(_paid_events()) == 1
+
+
+def _drop_bank_reference_columns(cur):
+    # Restore the persisted row shape from 7b47c415 before running the upgrade.
+    cur.execute("""
+        ALTER TABLE bank_statement_entries
+            DROP COLUMN bank_references, DROP COLUMN IF EXISTS legacy_bank_references,
+            DROP COLUMN creditor_references, DROP COLUMN source_statement_reference,
+            DROP COLUMN debtor_name, DROP COLUMN remittance_information,
+            DROP COLUMN duplicate_reason
+    """)
+
+
+@pytest.mark.parametrize("bank_reference", ["different-reference", "statement:1:1"])
+def test_legacy_tokens_hold_for_review_without_claiming_a_likely_repeat(
+    workspace, bank_reference
+):
+    for name, booking_date in (
+        ("FIRST-INVOICE", "2026-09-14"),
+        ("SECOND-INVOICE", "2026-09-24"),
+        ("THIRD-INVOICE", "2026-09-24"),
+    ):
+        invoice = _invoice(name)
+        _upload_xml(
             workspace,
-            _override(workspace, candidate["id"], second, _review_token(page)),
+            _booking_on(
+                _statement_xml(statement="", reference=name, servicer=""), booking_date
+            ),
         )
-        == "assigned"
+        entry = db.list_bank_statement_entries(COMMUNITY)[0]
+        assert entry["entry_reference"] == "statement:1:1"
+        if entry["match_decision"] != "matched":
+            page = _follow_assignment(
+                workspace, _assign(workspace, entry["id"], invoice)
+            )
+            assert (
+                _assignment_outcome(
+                    workspace,
+                    _override(workspace, entry["id"], invoice, _review_token(page)),
+                )
+                == "assigned"
+            )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        _drop_bank_reference_columns(cur)
+    db.create_tables()
+    db.create_tables()
+    target = _invoice("TARGET-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(
+            statement="new-report", reference="TARGET-INVOICE", servicer=bank_reference
+        ),
     )
+    entry = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert entry["duplicate_reason"] == "possible_duplicate_payment"
+    page = _follow_assignment(workspace, _assign(workspace, entry["id"], target))
+    _review_token(page)
+    review = page.text.split('id="duplicate-review-matches"', 1)[1].split("</ul>", 1)[0]
+    for name in ("FIRST-INVOICE", "SECOND-INVOICE", "THIRD-INVOICE"):
+        assert name in review
+    assert "Sehr wahrscheinlich dieselbe Zahlung" not in review
+    assert "Wahrscheinlich bereits auf Rechnung" not in page.text
+    assert len(_paid_events()) == 3
 
 
 @pytest.mark.parametrize(
@@ -1089,13 +1196,7 @@ def test_upgrade_preserves_only_legacy_bank_references(
                 "UPDATE bank_statement_entries SET entry_reference=%s WHERE id=%s",
                 (stored_reference, earlier["id"]),
             )
-        # Restore the persisted row shape from 7b47c415 before running the upgrade.
-        cur.execute("""
-            ALTER TABLE bank_statement_entries
-                DROP COLUMN bank_references, DROP COLUMN creditor_references,
-                DROP COLUMN source_statement_reference, DROP COLUMN debtor_name,
-                DROP COLUMN remittance_information, DROP COLUMN duplicate_reason
-        """)
+        _drop_bank_reference_columns(cur)
     db.create_tables()
     db.create_tables()
 
@@ -1126,7 +1227,8 @@ def test_upgrade_preserves_only_legacy_bank_references(
     else:
         assert _entry_booking(candidate["id"]) == ("matched", second)
         assert len(_paid_events()) == 2
-    assert sorted(prior["bank_references"]) == sorted(expected_references)
+    assert prior["bank_references"] == []
+    assert sorted(prior["legacy_bank_references"]) == sorted(expected_references)
 
 
 def test_schema_reruns_keep_current_statement_references(workspace):
@@ -1141,6 +1243,7 @@ def test_schema_reruns_keep_current_statement_references(workspace):
     db.create_tables()
     (entry,) = db.list_bank_statement_entries(COMMUNITY)
     assert entry["bank_references"] == ["bank:7:8", "parent"]
+    assert entry["legacy_bank_references"] == []
 
 
 @pytest.mark.parametrize("shared", ["RF18 5390 0754 7034", "FIRST-INVOICE"])

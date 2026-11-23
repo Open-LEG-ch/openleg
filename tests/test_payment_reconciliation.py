@@ -410,8 +410,21 @@ def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatc
             [{"match_decision": "matched"}],
             [paid_invoice],
             [{"invoice_id": 42, "new_state": "paid"}],
-            [],
-            [{"match_decision": "mismatch"}],
+            [
+                _bank_entry(
+                    id=71,
+                    match_decision="matched",
+                    booked_invoice_id=42,
+                    bank_references=[],
+                )
+            ],
+            [{"invoice_number": paid_invoice["invoice_number"]}],
+            [
+                {
+                    "match_decision": "mismatch",
+                    "duplicate_reason": "possible_duplicate_payment",
+                }
+            ],
         ],
     )
     monkeypatch.setattr(database, "get_connection", _connection(cursor))
@@ -438,7 +451,8 @@ def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatc
     assert event_params[:4] == (42, "community-a", "admin-a", "paid")
     assert event_params[9] == "bank:7:bank-entry-1"
     assert len(_event_inserts(cursor)) == 1
-    assert _entry_decisions(cursor) == [(42, "matched"), (42, "mismatch")]
+    assert _entry_decisions(cursor) == [(42, "matched"), (None, "mismatch")]
+    assert second["entries"][0]["duplicate_reason"] == "possible_duplicate_payment"
 
 
 @pytest.mark.parametrize(

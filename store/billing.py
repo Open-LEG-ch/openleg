@@ -1135,9 +1135,14 @@ def _with_payment_reference_keys(entry, invoice_reference_keys):
     payment_key = normalise(entry["payment_reference"])
     if payment_key in invoice_reference_keys:
         creditor_keys.add(payment_key)
+    bank_keys = {key for ref in entry["bank_references"] if (key := ref.strip())}
+    legacy_keys = {
+        key for ref in entry.get("legacy_bank_references", ()) if (key := ref.strip())
+    }
     return {
         **entry,
-        "bank_keys": set(entry["bank_references"]),
+        "bank_keys": bank_keys,
+        "bank_match_keys": bank_keys | legacy_keys,
         "creditor_keys": creditor_keys,
     }
 
@@ -1149,7 +1154,7 @@ def _payment_match_reasons(left, right):
         <= _PLAUSIBLE_BOOKING_DAYS
     ):
         reasons.append(_N("gleicher Betrag innerhalb von 3 Tagen"))
-    if left["bank_keys"] & right["bank_keys"]:
+    if left["bank_match_keys"] & right["bank_match_keys"]:
         reasons.append(_N("gleiche Bankreferenz"))
     if left["creditor_keys"] & right["creditor_keys"]:
         reasons.append(_N("gleiche Zahlungsreferenz"))
@@ -1191,7 +1196,7 @@ def _bank_payment_duplicate(cur, community_id, entry, *, hold_only=False):
     cur.execute(
         f"""
         SELECT e.id, e.booking_date, e.amount, e.currency, e.payment_reference,
-               e.bank_references, e.creditor_references,
+               e.bank_references, e.legacy_bank_references, e.creditor_references,
                e.match_decision, e.booking_status, e.is_reversal, e.amount_basis,
                e.credit_debit_indicator, i.id AS booked_invoice_id, i.invoice_number, s.source_name,
                COALESCE(e.source_statement_reference, s.statement_reference) AS statement_reference
@@ -1585,7 +1590,12 @@ def list_bank_statement_entries(
                         JOIN invoices i ON i.id=e.invoice_id AND i.community_id=e.community_id
                         WHERE c.match_decision <> 'matched' AND {_PAYMENT_PEERS}
                           AND e.match_decision='matched' AND e.booking_date=c.booking_date
-                          AND e.bank_references && c.bank_references
+                          AND EXISTS (
+                              SELECT 1 FROM unnest(e.bank_references) AS booked(reference)
+                              JOIN unnest(c.bank_references) AS reported(reference)
+                                ON regexp_replace(booked.reference, '^[[:space:]]+|[[:space:]]+$', '', 'g')
+                                 = regexp_replace(reported.reference, '^[[:space:]]+|[[:space:]]+$', '', 'g')
+                          )
                         ORDER BY e.id LIMIT 1) AS likely_duplicate_invoice_number,
                        EXISTS (
                            SELECT 1 FROM operator_action_idempotency a

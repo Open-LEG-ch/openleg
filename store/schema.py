@@ -1274,6 +1274,7 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS debtor_name TEXT,
                 ADD COLUMN IF NOT EXISTS remittance_information TEXT,
                 ADD COLUMN IF NOT EXISTS bank_references TEXT[],
+                ADD COLUMN IF NOT EXISTS legacy_bank_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS creditor_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS source_statement_reference TEXT,
                 ADD COLUMN IF NOT EXISTS duplicate_reason TEXT
@@ -1283,7 +1284,7 @@ def create_tables():
             # hold a credit for review. A missing one can let the same credit book twice.
             cur.execute("""
                 UPDATE bank_statement_entries
-                SET bank_references = ARRAY(
+                SET bank_references = '{}', legacy_bank_references = ARRAY(
                     SELECT DISTINCT reference
                     FROM unnest(ARRAY[
                         entry_reference,
