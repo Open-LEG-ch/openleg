@@ -1073,3 +1073,26 @@ def test_identical_repeat_names_booked_invoice_without_an_open_target(workspace)
         "Diese Zahlung ist bereits auf Rechnung FIRST-INVOICE gebucht." in refusal.text
     )
     assert 'name="duplicate_review"' not in refusal.text
+
+
+@pytest.mark.parametrize("earlier", ["pending", "reversal", "booked"])
+def test_only_bookable_credit_reports_are_duplicate_evidence(workspace, earlier):
+    invoice = _invoice("FIRST-INVOICE")
+    report = _statement_xml(
+        reference="FIRST-INVOICE",
+        reversal=b"<RvslInd>true</RvslInd>" if earlier == "reversal" else b"",
+    )
+    if earlier == "pending":
+        report = report.replace(b"<Cd>BOOK</Cd>", b"<Cd>PDNG</Cd>")
+    _upload_xml(workspace, report)
+    _upload_xml(
+        workspace, _statement_xml(statement="booked-report", reference="FIRST-INVOICE")
+    )
+    latest, original = db.list_bank_statement_entries(COMMUNITY)
+    if earlier == "booked":
+        assert latest["duplicate_reason"] == "possible_duplicate_payment"
+        assert _entry_booking(original["id"]) == ("matched", invoice)
+    else:
+        assert latest["duplicate_reason"] is None
+        assert _entry_booking(latest["id"]) == ("matched", invoice)
+    assert len(_paid_events()) == 1

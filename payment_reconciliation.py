@@ -552,6 +552,11 @@ def payment_entry_refusal(entry):
     return None
 
 
+def is_duplicate_payment_evidence(entry):
+    """A booked payment or a statement entry itself eligible for booking."""
+    return entry["match_decision"] == "matched" or payment_entry_refusal(entry) is None
+
+
 def payment_eligibility(entry, invoice):
     """Classify acceptance rules shared by automatic and reviewed selection."""
     refusal = payment_entry_refusal(entry)

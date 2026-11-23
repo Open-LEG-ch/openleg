@@ -413,9 +413,9 @@ reference returns `invalid_payment`.
 
 An identical booked entry returns HTTP 409 with `duplicate_payment`. Other
 plausible matches return HTTP 409 with `possible_duplicate_payment` and
-`matching_entry_ids`, the sorted IDs of every matching statement entry, including
-unresolved entries. Only the billing workspace permits a human to confirm a
-distinct payment after reviewing the whole set.
+`matching_entry_ids`, the sorted IDs of every matching statement entry that is
+booked or eligible for booking before invoice selection. Only the billing workspace
+permits a human to confirm a distinct payment after reviewing the whole set.
 Preview writes no business rows, events, deliveries or idempotency ledger entry.
 Credential usage accounting still applies. Confirmation rechecks eligibility:
 only booked (`BOOK`), non-reversed CHF credits for the exact invoice amount

@@ -1149,6 +1149,8 @@ def _bank_payment_duplicate(cur, community_id, entry, *, invoice_references=None
         f"""
         SELECT e.id, e.booking_date, e.amount, e.currency, e.payment_reference,
                e.bank_reference, e.bank_references, e.creditor_references,
+               e.match_decision, e.booking_status, e.is_reversal,
+               e.amount_basis, e.credit_debit_indicator,
                i.id AS booked_invoice_id, i.invoice_number, s.source_name,
                COALESCE(e.source_statement_reference, s.statement_reference) AS statement_reference,
                i.id IS NOT NULL AND ({_IDENTICAL_PAYMENT}) AS identical
@@ -1162,7 +1164,11 @@ def _bank_payment_duplicate(cur, community_id, entry, *, invoice_references=None
         """,
         (community_id, entry["id"]),
     )
-    candidates = cur.fetchall()
+    candidates = [
+        row
+        for row in cur.fetchall()
+        if payment_reconciliation.is_duplicate_payment_evidence(row)
+    ]
     for row in candidates:
         if row["identical"]:
             return payment_reconciliation.BankPaymentDuplicate(
@@ -1516,8 +1522,7 @@ def reconcile_bank_statement(
                 duplicate = None
                 if decision == "matched" or (
                     decision in payment_reconciliation.REVIEWABLE_DECISIONS
-                    and payment_reconciliation.payment_entry_refusal(entry)
-                    in (None, "missing_reference")
+                    and payment_reconciliation.payment_entry_refusal(entry) is None
                 ):
                     duplicate = _bank_payment_duplicate(
                         cur, community_id, entry, invoice_references=invoice_references
