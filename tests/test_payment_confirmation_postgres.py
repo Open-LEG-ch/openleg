@@ -60,24 +60,28 @@ def confirm(http, ids, query="", **kwargs):
     )
 
 
-def test_api_refuses_unreadable_invoice_total(operator_http):
+@pytest.mark.parametrize("code", ["invalid_invoice_total", "missing_reference"])
+def test_api_refuses_missing_payment_data(operator_http, code):
     import payment_reconciliation
     from tests.test_billing_payment_assignment_postgres import _statement_xml
     from tests.test_operator_contract import load_contract
 
     http = operator_http
     ids = seed_operator_resources(http)
-    with http.db.get_connection() as conn, conn.cursor() as cur:
-        cur.execute("ALTER TABLE invoices DISABLE TRIGGER USER")
-        cur.execute(
-            "UPDATE invoices SET gross_chf=NULL WHERE id=%s", (ids["invoice_id"],)
-        )
-        cur.execute("ALTER TABLE invoices ENABLE TRIGGER USER")
+    if code == "invalid_invoice_total":
+        with http.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("ALTER TABLE invoices DISABLE TRIGGER USER")
+            cur.execute(
+                "UPDATE invoices SET gross_chf=NULL WHERE id=%s", (ids["invoice_id"],)
+            )
+            cur.execute("ALTER TABLE invoices ENABLE TRIGGER USER")
     payment_reconciliation.import_statement(
         http.community_id,
         "contract-admin",
         "synthetic.xml",
-        _statement_xml(reference="unknown").replace(b"9.67", b"42.50"),
+        _statement_xml(
+            reference="" if code == "missing_reference" else "unknown"
+        ).replace(b"9.67", b"42.50"),
         http.db,
     )
     ids["entry_id"] = http.db.list_bank_statement_entries(http.community_id)[0]["id"]
@@ -86,7 +90,7 @@ def test_api_refuses_unreadable_invoice_total(operator_http):
     response = confirm(http, ids)
 
     assert response.status_code == 409
-    assert response.json["code"] == "invalid_invoice_total"
+    assert response.json["code"] == code
     operator_contract_helpers.validate_response(
         load_contract(),
         "/api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm",

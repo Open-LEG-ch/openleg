@@ -500,6 +500,10 @@ _PAYMENT_REFUSALS = {
         _N("Die Währung ist nicht CHF."),
         _N("Klären Sie die Währung mit der zahlenden Person."),
     ),
+    "missing_reference": (
+        _N("Die Zahlung hat keine Referenz."),
+        _N("Fordern Sie bei der Bank einen Kontoauszug mit Zahlungsreferenz an."),
+    ),
     "split_payment": (
         _N("Der Betrag ist zu tief."),
         _N(
@@ -553,11 +557,6 @@ def _billing_statement_entry(entry, invoices_by_id):
         payment_reconciliation.payment_entry_refusal(entry) if reviewable else decision
     )
     heading, recovery = _PAYMENT_REFUSALS.get(refusal, (None, None))
-    if not heading and reviewable and not entry["payment_reference"]:
-        heading = _N("Die Zahlung hat keine Referenz.")
-        recovery = _N(
-            "Fordern Sie bei der Bank einen Kontoauszug mit Zahlungsreferenz an."
-        )
     if decision == "matched" and entry["confirmation_replay_available"]:
         heading = _N("Zahlung zugeordnet")
     related_invoice = invoices_by_id.get(entry["invoice_id"])

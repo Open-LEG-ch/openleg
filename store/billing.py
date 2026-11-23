@@ -1149,10 +1149,10 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
         ) paid ON TRUE
         WHERE e.community_id = %(community)s AND e.match_decision = 'matched'
           AND evidence.id IS DISTINCT FROM %(entry_id)s
+          AND (e.bank_account_key IN ('', %(account)s) OR %(account)s = '')
           AND (
               ((evidence.bank_reference_keys && %(keys)s::text[]
                 OR evidence.bank_servicer_key = ANY(%(keys)s::text[]))
-               AND (e.bank_account_key IN ('', %(account)s) OR %(account)s = '')
                AND (evidence.bank_account_key IN ('', %(account)s) OR %(account)s = ''))
               OR (
                   evidence.id = e.id
@@ -1461,10 +1461,12 @@ def reconcile_bank_statement(
                 invoice_id = match.invoice_id
                 decision = match.decision
                 duplicate = None
+                # A later export can supply the missing reference while reusing these aliases.
                 if (
                     decision == "matched"
                     or decision in payment_reconciliation.REVIEWABLE_DECISIONS
-                    and payment_reconciliation.payment_entry_refusal(entry) is None
+                    and payment_reconciliation.payment_entry_refusal(entry)
+                    in (None, "missing_reference")
                 ):
                     duplicate = _bank_payment_duplicate(
                         cur, community_id, entry, import_id

@@ -406,7 +406,8 @@ executes confirmation.
 An eligible preview returns `dry_run: true`, `eligible: true`, `invoice_id`
 and `lifecycle_state: paid`. Ineligible payments return `invalid_payment` or
 `not_found`. An unreadable invoice total returns HTTP 409 with
-`invalid_invoice_total`. A confirmed or possible repeat returns HTTP 409 with
+`invalid_invoice_total`. A credit without a payment reference returns HTTP 409
+with `missing_reference`. A confirmed or possible repeat returns HTTP 409 with
 `duplicate_payment` or `possible_duplicate_payment`, respectively. Possible
 duplicates require a human review in the billing workspace. The operator API
 and MCP provide no override. These responses reserve no match.

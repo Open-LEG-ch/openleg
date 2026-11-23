@@ -167,7 +167,7 @@ def test_preparer_assigns_exact_credit_and_can_replay(workspace):
         ("underpayment", "Der Betrag ist zu tief."),
         ("overpayment", "Der Betrag ist zu hoch."),
         ("currency", "Die Währung ist nicht CHF."),
-        ("missing_reference", "Eine Zahlungsreferenz ist erforderlich."),
+        ("missing_reference", "Die Zahlung hat keine Referenz."),
         ("issued", "Stellen Sie die Rechnung zuerst zu"),
         ("foreign_invoice", "Rechnung nicht gefunden."),
         (
@@ -254,10 +254,14 @@ def test_refused_assignment_has_no_financial_side_effects(workspace, case, messa
         assert response.status_code == 401
         return
     response = _follow_assignment(workspace, response)
-    assert 'id="assignment-feedback" role="alert"' in response.text
-    assert message in response.text
+    feedback = response.text.partition('id="assignment-feedback" role="alert"')[2]
+    feedback = feedback.partition("</p>")[0]
+    assert message in feedback
     if case == "missing_reference":
-        assert "Die Zahlung hat keine Referenz." in response.text
+        assert (
+            "Fordern Sie bei der Bank einen Kontoauszug mit Zahlungsreferenz an."
+            in feedback
+        )
         assert f'action="{BILLING}/statements/{entry}/assign' not in response.text
 
 
@@ -515,15 +519,18 @@ def test_same_bank_credit_cannot_pay_another_invoice(workspace, second_match):
     )
 
 
-@pytest.mark.parametrize("booking", ["import", "assignment"])
+@pytest.mark.parametrize("booking", ["import", "assignment", "missing-reference"])
 def test_rejected_duplicate_supplies_trusted_aliases(workspace, booking):
     first = _invoice("FIRST-INVOICE")
     second = _invoice("SECOND-INVOICE")
-    original_ref = "FIRST-INVOICE" if booking == "import" else "unknown"
+    original_ref = "unknown" if booking == "assignment" else "FIRST-INVOICE"
     original = _with_entry_servicer(_statement_xml(reference=original_ref))
-    alternate = _with_entry_servicer(_statement_xml(statement="statement-2")).replace(
-        b"shared-entry-reference", b"alternate-entry-reference"
-    )
+    alternate = _with_entry_servicer(
+        _statement_xml(
+            statement="statement-2",
+            reference="" if booking == "missing-reference" else "unknown",
+        )
+    ).replace(b"shared-entry-reference", b"alternate-entry-reference")
     _upload_xml(workspace, original, alternate)
     alias, booked = db.list_bank_statement_entries(COMMUNITY)
     if booking == "assignment":
@@ -569,6 +576,30 @@ def test_reformatted_statement_without_servicer_ref_is_held_for_review(workspace
     refusal = _follow_assignment(workspace, _assign(workspace, repeated["id"], second))
     _review_token(refusal)
     assert len(_paid_events()) == 1
+
+
+def test_unidentified_credits_in_distinct_known_accounts_book_separately(workspace):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(reference="FIRST-INVOICE", servicer=""),
+        _statement_xml(
+            statement="statement-2",
+            reference="FIRST-INVOICE",
+            account="another-account",
+            servicer="",
+        ),
+    )
+    candidate, booked = db.list_bank_statement_entries(COMMUNITY)
+    assert booked["invoice_id"] == first
+    assert candidate["duplicate_reason"] is None
+    assert (
+        _assignment_outcome(workspace, _assign(workspace, candidate["id"], second))
+        == "assigned"
+    )
+    assert _entry_booking(candidate["id"]) == ("matched", second)
+    assert len(_paid_events()) == 2
 
 
 def test_alias_from_a_possible_duplicate_still_allows_review(workspace):

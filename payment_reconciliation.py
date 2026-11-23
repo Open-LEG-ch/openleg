@@ -22,10 +22,13 @@ class StatementError(ValueError):
 class PaymentMatchRefused(InvoiceLifecycleError):
     """A review failed shared payment eligibility."""
 
-    def __init__(self, detail, *, reason=ErrorCode.INVALID_PAYMENT):
+    def __init__(self, detail):
         super().__init__("Die Zahlung passt nicht exakt zur Rechnung.")
         self.detail = detail
-        self.reason = reason
+        self.reason = {
+            "invalid_invoice_total": ErrorCode.INVALID_INVOICE_TOTAL,
+            "missing_reference": ErrorCode.MISSING_REFERENCE,
+        }.get(detail, ErrorCode.INVALID_PAYMENT)
 
 
 class BankPaymentDuplicate(InvoiceLifecycleError):
@@ -461,6 +464,9 @@ def payment_entry_refusal(entry):
         return "debit"
     if entry["currency"] != "CHF":
         return "currency"
+    reference = entry.get("payment_reference")
+    if not isinstance(reference, str) or not reference.strip():
+        return "missing_reference"
     return None
 
 
@@ -472,9 +478,7 @@ def payment_eligibility(entry, invoice):
     try:
         invoice_amount = finite_decimal(invoice.get("gross_chf"))
     except InvalidMoneyAmount as exc:
-        raise PaymentMatchRefused(
-            "invalid_invoice_total", reason=ErrorCode.INVALID_INVOICE_TOTAL
-        ) from exc
+        raise PaymentMatchRefused("invalid_invoice_total") from exc
     entry_amount = Decimal(str(entry["amount"]))
     if entry_amount < invoice_amount:
         return "split_payment"
