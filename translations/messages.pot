@@ -2957,7 +2957,7 @@ msgstr ""
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
 msgstr ""
 
-#: dashboard_routes.py:1039
+#: dashboard_routes.py:1049
 msgid "Das Formular ist abgelaufen. Öffnen Sie die Buchung erneut."
 msgstr ""
 
@@ -3514,7 +3514,7 @@ msgid ""
 " sich je nach LEG, Rechtsform und Netzbetreiber und sind nicht eingerechnet."
 msgstr ""
 
-#: dashboard_routes.py:180
+#: dashboard_routes.py:182
 #, python-format
 msgid ""
 "Der Stand Ihrer Kontaktanfragen hat sich geändert. Öffnen Sie Ihr Dashboard, um die Anfrage zu "
@@ -3738,7 +3738,7 @@ msgstr ""
 msgid "Die Akku-Konfiguration ist unvollständig oder passt nicht zu den abgerechneten Mitgliedern."
 msgstr ""
 
-#: dashboard_routes.py:1175
+#: dashboard_routes.py:1190
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
@@ -4743,7 +4743,7 @@ msgid ""
 "Quelldokumente."
 msgstr ""
 
-#: dashboard_routes.py:1140
+#: dashboard_routes.py:1155
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -6133,7 +6133,7 @@ msgstr ""
 msgid "Falls ein Profil zu Ihrer E-Mail-Adresse existiert, erhalten Sie einen neuen Zugangslink."
 msgstr ""
 
-#: dashboard_routes.py:384
+#: dashboard_routes.py:386
 msgid "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen neuen Zugangslink gesendet."
 msgstr ""
 
@@ -7961,7 +7961,7 @@ msgid ""
 "der Vorstand muss den Austritt nicht bewilligen."
 msgstr ""
 
-#: dashboard_routes.py:423
+#: dashboard_routes.py:425
 msgid "Ihr Dashboard-Zugangslink"
 msgstr ""
 
@@ -8109,7 +8109,7 @@ msgid ""
 " Anbieter."
 msgstr ""
 
-#: dashboard_routes.py:178
+#: dashboard_routes.py:180
 msgid "Ihre Kontaktanfragen bei OpenLEG"
 msgstr ""
 
@@ -12249,7 +12249,7 @@ msgstr ""
 msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
 msgstr ""
 
-#: store/billing.py:1297
+#: store/billing.py:1312
 msgid "Prüfen Sie die Buchung erneut."
 msgstr ""
 
@@ -13248,7 +13248,7 @@ msgstr ""
 msgid "Sie dürfen Abrechnungen vorbereiten. Die Administration bleibt einem anderen Konto vorbehalten."
 msgstr ""
 
-#: dashboard_routes.py:980 dashboard_routes.py:1068
+#: dashboard_routes.py:986 dashboard_routes.py:1078
 msgid "Sie dürfen in dieser LEG keine Zahlungen zuordnen."
 msgstr ""
 
@@ -16858,7 +16858,7 @@ msgstr ""
 msgid "Öffnen Sie Ihr Dashboard über den Link aus Ihrer E-Mail."
 msgstr ""
 
-#: dashboard_routes.py:425
+#: dashboard_routes.py:427
 #, python-format
 msgid ""
 "Öffnen Sie Ihr Dashboard über diesen Link:\n"

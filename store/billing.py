@@ -1127,11 +1127,13 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
         """
         SELECT i.invoice_number, e.id AS entry_id,
                COALESCE(NULLIF(e.payment_reference, ''), e.entry_reference) AS reference,
-               ((e.bank_typed_reference_keys && %(typed_keys)s::text[])
-                AND (e.bank_account_key IN ('', %(account)s) OR %(account)s = '')
+               ((evidence.bank_typed_reference_keys && %(typed_keys)s::text[])
+                AND (evidence.id = e.id OR evidence.duplicate_reason = 'duplicate_payment')
                 AND e.amount = %(amount)s AND e.currency = %(currency)s
                 AND e.credit_debit_indicator = %(direction)s) IS TRUE AS certain
-        FROM bank_statement_entries e
+        FROM bank_statement_entries evidence
+        JOIN bank_statement_entries e ON e.community_id = evidence.community_id
+            AND e.id = COALESCE(evidence.duplicate_of_entry_id, evidence.id)
         JOIN invoices i ON i.id = e.invoice_id AND i.community_id = e.community_id
         JOIN bank_statement_imports s ON s.id = e.statement_import_id
             AND s.community_id = e.community_id
@@ -1144,12 +1146,15 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
             ORDER BY audit.id DESC LIMIT 1
         ) paid ON TRUE
         WHERE e.community_id = %(community)s AND e.match_decision = 'matched'
+          AND evidence.id IS DISTINCT FROM %(entry_id)s
           AND (
-              ((e.bank_reference_keys && %(keys)s::text[]
-                OR e.bank_servicer_key = ANY(%(keys)s::text[]))
-               AND (e.bank_account_key IN ('', %(account)s) OR %(account)s = ''))
+              ((evidence.bank_reference_keys && %(keys)s::text[]
+                OR evidence.bank_servicer_key = ANY(%(keys)s::text[]))
+               AND (e.bank_account_key IN ('', %(account)s) OR %(account)s = '')
+               AND (evidence.bank_account_key IN ('', %(account)s) OR %(account)s = ''))
               OR (
-                  (%(unidentified)s OR (COALESCE(cardinality(e.bank_reference_keys), 0) = 0
+                  evidence.id = e.id
+                  AND (%(unidentified)s OR (COALESCE(cardinality(e.bank_reference_keys), 0) = 0
                                         AND e.bank_servicer_key IS NULL))
                   AND e.amount = %(amount)s AND e.currency = %(currency)s
                   AND e.credit_debit_indicator = %(direction)s
@@ -1174,6 +1179,7 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
         """,
         {
             "community": community_id,
+            "entry_id": entry.get("id"),
             "keys": keys,
             "typed_keys": list(typed_keys or ()),
             "account": entry.get("bank_account_key", ""),
@@ -1286,6 +1292,15 @@ def confirm_payment(
                 or not duplicate.possible
                 or duplicate.entry_id != reviewed_duplicate_id
             ):
+                if not dry_run:
+                    cur.execute(
+                        """UPDATE bank_statement_entries
+                           SET duplicate_reason=%s, duplicate_of_entry_id=%s
+                           WHERE id=%s""",
+                        (duplicate.reason.value, duplicate.entry_id, entry_id),
+                    )
+                    # Retain the duplicate evidence even though no booking is made.
+                    conn.commit()
                 raise duplicate
             payment_match["duplicate_override"] = {
                 "earlier_entry_id": duplicate.entry_id,
@@ -1320,7 +1335,9 @@ def confirm_payment(
             payment_match=payment_match,
         )
         cur.execute(
-            "UPDATE bank_statement_entries SET invoice_id=%s,match_decision='matched',duplicate_reason=NULL WHERE id=%s",
+            """UPDATE bank_statement_entries
+               SET invoice_id=%s, match_decision='matched',
+                   duplicate_reason=NULL, duplicate_of_entry_id=NULL WHERE id=%s""",
             (invoice_id, entry_id),
         )
         cur.execute(
@@ -1472,8 +1489,9 @@ def reconcile_bank_statement(
                         payment_reference, is_reversal, credit_debit_indicator,
                         match_decision, amount_basis, booking_status,
                         debtor_name, remittance_information, bank_servicer_key, bank_account_key,
-                        bank_reference_keys, bank_typed_reference_keys, duplicate_reason
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        bank_reference_keys, bank_typed_reference_keys,
+                        duplicate_reason, duplicate_of_entry_id
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         import_id,
@@ -1496,6 +1514,7 @@ def reconcile_bank_statement(
                         list(entry.get("bank_reference_keys", ())),
                         list(entry.get("bank_typed_reference_keys", ())),
                         duplicate.reason.value if duplicate else None,
+                        duplicate.entry_id if duplicate else None,
                     ),
                 )
             return _statement_import_result(cur, import_id, duplicate=False)

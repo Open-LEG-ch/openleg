@@ -43,6 +43,8 @@ from i18n import localized_url, normalize_locale
 from store import contact_request
 from telemetry import TelemetryError
 
+_PAYMENT_ASSIGNMENT_FEEDBACK = "leg-payment-assignment"
+
 
 def _dashboard_session_building_id():
     return (session.get("dashboard_building_id") or "").strip()
@@ -950,11 +952,15 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def render_billing_workspace(community_id, building_id, **extra):
         statement_before = request.args.get("statement_before", type=int)
         payment_section = request.args.get("section") == "payments"
+        receipt = request.args.get("assignment") if payment_section else None
+        pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})
+        submission = pending.get(receipt)
         feedback = (
-            session.pop(f"leg-payment-assignment:{community_id}", None)
-            if payment_section
+            submission["feedback"]
+            if submission and submission["scope"] == [community_id, building_id]
             else None
         )
+        consume_receipt = feedback is not None
         try:
             view = dashboard_module.leg_billing_workspace_view(
                 community_id,
@@ -979,13 +985,17 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             feedback = {
                 "error": _("Sie dürfen in dieser LEG keine Zahlungen zuordnen."),
             }
-        return render_leg_workspace(
+        page = render_leg_workspace(
             "leg_billing.html",
             csrf_token=_dashboard_csrf_token(),
             payment_section=payment_section,
             assignment_feedback=feedback,
             **view,
         )
+        if consume_receipt:
+            del pending[receipt]
+            session[_PAYMENT_ASSIGNMENT_FEEDBACK] = pending
+        return page
 
     @bp.route("/leg/community/<community_id>/billing")
     def leg_billing_workspace(community_id):
@@ -1078,7 +1088,11 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 entry_id=entry_id,
                 invoice_id=invoice_id,
             )
-        session[f"leg-payment-assignment:{community_id}"] = feedback
+        receipt = secrets.token_urlsafe(16)
+        pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})
+        pending[receipt] = {"scope": review_scope[:2], "feedback": feedback}
+        # Flask stores the session in a cookie. Keep outstanding receipts bounded.
+        session[_PAYMENT_ASSIGNMENT_FEEDBACK] = dict(list(pending.items())[-5:])
         statement_before = (
             request.args.get("statement_before", type=int) if error_status else None
         )
@@ -1087,6 +1101,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 ".leg_billing_workspace",
                 community_id=community_id,
                 section="payments",
+                assignment=receipt,
                 statement_before=statement_before,
             )
             + "#payments",

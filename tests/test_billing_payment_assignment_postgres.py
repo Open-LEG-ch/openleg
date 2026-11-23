@@ -3,6 +3,7 @@
 
 import hashlib
 from html import unescape
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from psycopg2.extras import Json
@@ -82,7 +83,12 @@ def _assign(client, entry, invoice, **overrides):
 
 def _follow_assignment(client, response):
     assert response.status_code == 303
-    assert response.location == f"{PAYMENTS}#payments"
+    location = urlsplit(response.location)
+    query = parse_qs(location.query)
+    assert location.path == BILLING
+    assert location.fragment == "payments"
+    assert query["section"] == ["payments"]
+    assert len(query["assignment"]) == 1
     page = client.get(response.location)
     assert page.status_code == 200
     assert f'href="{PAYMENTS}#payments" aria-current="page"' in " ".join(
@@ -283,7 +289,6 @@ def test_assignment_notice_exposes_no_billing_data_without_audit_access(workspac
         )
     response = _assign(workspace, entry, invoice)
     assert response.status_code == 303
-    assert response.location == f"{PAYMENTS}#payments"
     page = workspace.get(response.location)
     assert 'id="payments"' in page.text
     assert "Sie dürfen in dieser LEG keine Zahlungen zuordnen." in page.text
@@ -292,6 +297,43 @@ def test_assignment_notice_exposes_no_billing_data_without_audit_access(workspac
     assert not db.list_community_operator_events(
         COMMUNITY, event_types=("invoice.paid",)
     )
+
+
+def test_payment_assignment_feedback_follows_its_own_redirect(workspace):
+    invoice = _invoice()
+    entry, _ = _import()
+    assigned = _assign(workspace, entry, invoice)
+    refused = _assign(workspace, entry, invoice, confirm="no")
+
+    assert 'id="assignment-feedback"' not in workspace.get(PAYMENTS).text
+    _set_session(workspace, AUDITOR)
+    assert 'id="assignment-feedback"' not in workspace.get(assigned.location).text
+    _set_session(workspace, ACTOR)
+    assert assigned.location != refused.location
+    first = _follow_assignment(workspace, assigned)
+    second = _follow_assignment(workspace, refused)
+    assert 'id="assignment-feedback" role="status"' in first.text
+    assert 'id="assignment-feedback" role="alert"' in second.text
+    assert 'id="assignment-feedback"' not in workspace.get(assigned.location).text
+    assert 'id="assignment-feedback"' not in workspace.get(refused.location).text
+
+
+def test_payment_assignment_feedback_survives_a_failed_get(workspace, monkeypatch):
+    import dashboard
+
+    invoice = _invoice()
+    entry, _ = _import()
+    response = _assign(workspace, entry, invoice, confirm="no")
+
+    def unavailable(*args, **kwargs):
+        raise db.BillingStoreError("fictional outage")
+
+    with monkeypatch.context() as failure:
+        failure.setattr(dashboard, "leg_billing_workspace_view", unavailable)
+        assert workspace.get(response.location).status_code == 503
+    page = workspace.get(response.location)
+    assert 'id="assignment-feedback" role="alert"' in page.text
+    assert 'id="assignment-feedback"' not in workspace.get(response.location).text
 
 
 def test_workspace_renders_imported_bank_details_and_only_delivered_leg_invoices(
@@ -443,6 +485,93 @@ def test_same_bank_credit_cannot_pay_another_invoice(workspace, second_match):
     )
 
 
+@pytest.mark.parametrize("booking", ["import", "assignment"])
+def test_rejected_duplicate_supplies_trusted_aliases(workspace, booking):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    original_ref = "FIRST-INVOICE" if booking == "import" else "unknown"
+    original = _with_entry_servicer(_statement_xml(reference=original_ref))
+    alternate = _with_entry_servicer(_statement_xml(statement="statement-2")).replace(
+        b"shared-entry-reference", b"alternate-entry-reference"
+    )
+    _upload_xml(workspace, original, alternate)
+    alias, booked = db.list_bank_statement_entries(COMMUNITY)
+    if booking == "assignment":
+        assert (
+            _assignment_outcome(workspace, _assign(workspace, booked["id"], first))
+            == "assigned"
+        )
+        assert (
+            _assignment_outcome(workspace, _assign(workspace, alias["id"], second))
+            == "refused"
+        )
+    else:
+        assert booked["invoice_id"] == first
+        assert alias["duplicate_reason"] == "duplicate_payment"
+    _upload_xml(
+        workspace,
+        _with_entry_servicer(
+            _statement_xml(
+                statement="statement-3", reference="SECOND-INVOICE", servicer=""
+            )
+        ).replace(b"shared-entry-reference", b"alternate-entry-reference"),
+    )
+    newest = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert newest["duplicate_reason"] == "duplicate_payment"
+    refused = _follow_assignment(workspace, _assign(workspace, newest["id"], second))
+    assert (
+        "Diese Zahlung ist bereits auf Rechnung FIRST-INVOICE gebucht." in refused.text
+    )
+    assert len(_paid_events()) == 1
+
+
+def test_reformatted_statement_without_servicer_ref_is_held_for_review(workspace):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    statement = _statement_xml(reference="FIRST-INVOICE", servicer="")
+    reformatted = statement.replace(b"<Ntry>", b"<Ntry>\n  ")
+    _upload_xml(workspace, statement, reformatted)
+    repeated, booked = db.list_bank_statement_entries(COMMUNITY)
+    assert repeated["statement_import_id"] != booked["statement_import_id"]
+    assert repeated["entry_reference"] == booked["entry_reference"]
+    assert booked["invoice_id"] == first
+    assert repeated["duplicate_reason"] == "possible_duplicate_payment"
+    refusal = _follow_assignment(workspace, _assign(workspace, repeated["id"], second))
+    _review_token(refusal)
+    assert len(_paid_events()) == 1
+
+
+def test_alias_from_a_possible_duplicate_still_allows_review(workspace):
+    _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    _upload_xml(
+        workspace,
+        _batch_with_transaction_reference(),
+        _with_entry_servicer(
+            _statement_xml(statement="statement-2", servicer="alternate-transaction")
+        ),
+        _statement_xml(
+            statement="statement-3",
+            servicer="alternate-transaction",
+            reference="SECOND-INVOICE",
+        ),
+    )
+    candidate = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert candidate["duplicate_reason"] == "possible_duplicate_payment"
+    refused = _follow_assignment(workspace, _assign(workspace, candidate["id"], second))
+    token = _review_token(refused)
+    accepted = _assign(
+        workspace,
+        candidate["id"],
+        second,
+        duplicate_review=token,
+        confirm_distinct="yes",
+    )
+    assert _assignment_outcome(workspace, accepted) == "assigned"
+    assert _entry_booking(candidate["id"]) == ("matched", second)
+    assert len(_paid_events()) == 2
+
+
 @pytest.mark.parametrize("automatic", [False, True])
 def test_camt_numeric_reversal_cannot_book_a_payment(workspace, automatic):
     invoice = _invoice("DELIVERED-INVOICE")
@@ -531,27 +660,79 @@ def test_bank_credit_identity_uses_account_and_servicer_reference(workspace, cas
     assert _assignment_outcome(workspace, response) == (
         "refused" if case == "missing-account" else "assigned"
     )
+    if case == "generated-reference":
+        assert _entry_booking(newest["id"]) == ("matched", second)
 
 
-def test_concurrent_review_of_repeated_bank_credit_only_books_once(
-    workspace, app_module
-):
+def _entry_booking(entry_id):
+    entry = next(
+        row
+        for row in db.list_bank_statement_entries(COMMUNITY)
+        if row["id"] == entry_id
+    )
+    return entry["match_decision"], entry["invoice_id"]
+
+
+def _concurrent_assignments(app_module, monkeypatch, entry_ids, invoices):
     from concurrent.futures import ThreadPoolExecutor
-    from threading import Barrier
+    from threading import Event
+    from time import monotonic
 
-    invoices = [_invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")]
-    _upload_xml(workspace, _statement_xml(), _statement_xml(statement="statement-2"))
-    entries = db.list_bank_statement_entries(COMMUNITY)
-    barrier = Barrier(2)
+    from store import billing
+
+    checked_first, checked_second, release_first = Event(), Event(), Event()
+    check_duplicate = billing._bank_payment_duplicate
+
+    def pause_after_check(cur, community_id, entry, import_id):
+        result = check_duplicate(cur, community_id, entry, import_id)
+        if entry["id"] == entry_ids[0]:
+            checked_first.set()
+            assert release_first.wait(10)
+        else:
+            checked_second.set()
+        return result
 
     def assign(entry, invoice):
         with app_module.web.test_client() as client:
             _set_session(client, ACTOR)
-            barrier.wait(timeout=10)
             return _assignment_outcome(client, _assign(client, entry, invoice))
 
+    monkeypatch.setattr(billing, "_bank_payment_duplicate", pause_after_check)
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(assign, (entry["id"] for entry in entries), invoices))
+        first = pool.submit(assign, entry_ids[0], invoices[0])
+        try:
+            assert checked_first.wait(10)
+            second = pool.submit(assign, entry_ids[1], invoices[1])
+            deadline = monotonic() + 5
+            # Release the first writer once the second either waits on the
+            # LEG lock or has read the old snapshot with the lock removed.
+            with db.get_connection() as conn, conn.cursor() as cur:
+                while not checked_second.wait(0.01):
+                    cur.execute(
+                        """SELECT EXISTS (
+                               SELECT 1 FROM pg_locks WHERE locktype = 'advisory'
+                               AND database = (SELECT oid FROM pg_database
+                                               WHERE datname = current_database())
+                               AND NOT granted
+                           ) AS waiting"""
+                    )
+                    if cur.fetchone()["waiting"]:
+                        break
+                    assert monotonic() < deadline
+        finally:
+            release_first.set()
+        return [first.result(), second.result()]
+
+
+def test_concurrent_review_of_repeated_bank_credit_only_books_once(
+    workspace, app_module, monkeypatch
+):
+    invoices = [_invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")]
+    _upload_xml(workspace, _statement_xml(), _statement_xml(statement="statement-2"))
+    entries = db.list_bank_statement_entries(COMMUNITY)
+    outcomes = _concurrent_assignments(
+        app_module, monkeypatch, [entry["id"] for entry in entries], invoices
+    )
     assert sorted(outcomes) == ["assigned", "refused"]
     assert (
         len(
@@ -665,10 +846,9 @@ def test_export_duplicate_cannot_book_twice(workspace, case, second_match):
 
 
 @pytest.mark.parametrize("case", ("legacy", "overlap"))
-def test_concurrent_export_duplicates_only_book_once(workspace, app_module, case):
-    from concurrent.futures import ThreadPoolExecutor
-    from threading import Barrier
-
+def test_concurrent_export_duplicates_only_book_once(
+    workspace, app_module, monkeypatch, case
+):
     invoices = [_invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")]
     first_xml = _statement_xml()
     second_xml = _statement_xml(
@@ -681,16 +861,9 @@ def test_concurrent_export_duplicates_only_book_once(workspace, app_module, case
     newest, oldest = db.list_bank_statement_entries(COMMUNITY)
     if case == "legacy":
         _as_legacy(oldest)
-    barrier = Barrier(2)
-
-    def assign(entry, invoice):
-        with app_module.web.test_client() as client:
-            _set_session(client, ACTOR)
-            barrier.wait(timeout=10)
-            return _assignment_outcome(client, _assign(client, entry["id"], invoice))
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(assign, [oldest, newest], invoices))
+    outcomes = _concurrent_assignments(
+        app_module, monkeypatch, [oldest["id"], newest["id"]], invoices
+    )
     assert sorted(outcomes) == ["assigned", "refused"]
     assert (
         len(db.list_community_operator_events(COMMUNITY, event_types=("invoice.paid",)))
@@ -714,7 +887,9 @@ def test_legacy_comparison_distinguishes_unrelated_credits(workspace, variant):
     _upload_xml(workspace, new_xml)
     duplicate = db.list_bank_statement_entries(COMMUNITY)[0]
     assert duplicate["entry_reference"] == original["entry_reference"]
-    assert _assign(workspace, duplicate["id"], second).status_code == 303
+    response = _assign(workspace, duplicate["id"], second)
+    assert _assignment_outcome(workspace, response) == "assigned"
+    assert _entry_booking(duplicate["id"]) == ("matched", second)
 
 
 def _review_token(page):

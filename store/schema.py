@@ -1277,7 +1277,8 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS bank_servicer_key TEXT,
                 ADD COLUMN IF NOT EXISTS bank_reference_keys TEXT[],
                 ADD COLUMN IF NOT EXISTS bank_typed_reference_keys TEXT[],
-                ADD COLUMN IF NOT EXISTS duplicate_reason TEXT
+                ADD COLUMN IF NOT EXISTS duplicate_reason TEXT,
+                ADD COLUMN IF NOT EXISTS duplicate_of_entry_id INTEGER
             """)
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_booked_servicer
