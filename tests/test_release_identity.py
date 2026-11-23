@@ -95,7 +95,9 @@ def test_homepage_trust_line_shows_only_release_identity(app_module, supplied): 
         "SITE_RELEASE_ENABLED": True,
         "TESTING": True,
     }
-    application = app_module.create_app(config, check_database=False)
+    application = app_module.create_app(
+        config, load_environment=False, check_database=False
+    )
     html = application.test_client().get("/").get_data(as_text=True)
     assert 'data-site-release="true"' in html
     assert "Illustration: erfundenes Quartier" not in html
