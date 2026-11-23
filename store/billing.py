@@ -1125,17 +1125,50 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
     typed_keys = entry.get("bank_typed_reference_keys")
     cur.execute(
         """
+        WITH RECURSIVE scoped_entries AS (
+            SELECT id, amount, currency, credit_debit_indicator, bank_account_key,
+                   bank_typed_reference_keys AS typed_keys,
+                   COALESCE(NULLIF(bank_reference_keys, '{}'::text[]),
+                            ARRAY[bank_servicer_key]) AS trusted_keys
+            FROM bank_statement_entries
+            WHERE community_id = %(community)s AND id IS DISTINCT FROM %(entry_id)s
+              AND (cardinality(bank_reference_keys) > 0 OR bank_servicer_key IS NOT NULL)
+        ), connected(id, certain) AS (
+            SELECT id, ((typed_keys && %(typed_keys)s::text[])
+                        AND %(account)s <> '' AND bank_account_key = %(account)s
+                        AND amount = %(amount)s AND currency = %(currency)s
+                        AND credit_debit_indicator = %(direction)s) IS TRUE
+            FROM scoped_entries
+            WHERE trusted_keys && %(keys)s::text[]
+              AND (bank_account_key IN ('', %(account)s) OR %(account)s = '')
+            -- UNION visits each entry at most once per certainty, even with cycles.
+            UNION
+            SELECT neighbor.id, (connected.certain
+                         AND (neighbor.typed_keys && previous.typed_keys)
+                         AND neighbor.bank_account_key <> ''
+                         AND neighbor.bank_account_key = previous.bank_account_key
+                         AND neighbor.amount = previous.amount
+                         AND neighbor.currency = previous.currency
+                         AND neighbor.credit_debit_indicator = previous.credit_debit_indicator
+                         ) IS TRUE
+            FROM connected
+            JOIN scoped_entries previous ON previous.id = connected.id
+            JOIN scoped_entries neighbor ON neighbor.id <> previous.id
+                AND neighbor.trusted_keys && previous.trusted_keys
+                AND (neighbor.bank_account_key IN ('', previous.bank_account_key)
+                     OR previous.bank_account_key = '')
+        )
         SELECT i.invoice_number, e.id AS entry_id,
                COALESCE(NULLIF(e.payment_reference, ''), e.entry_reference) AS reference,
-               ((evidence.bank_typed_reference_keys && %(typed_keys)s::text[])
+               (connected.certain
                 AND (evidence.id = e.id OR evidence.duplicate_reason = 'duplicate_payment')
                 AND %(account)s <> '' AND e.bank_account_key = %(account)s
-                AND evidence.bank_account_key = %(account)s
                 AND e.amount = %(amount)s AND e.currency = %(currency)s
                 AND e.credit_debit_indicator = %(direction)s) IS TRUE AS certain
         FROM bank_statement_entries evidence
         JOIN bank_statement_entries e ON e.community_id = evidence.community_id
             AND e.id = COALESCE(evidence.duplicate_of_entry_id, evidence.id)
+        LEFT JOIN connected ON connected.id = evidence.id
         JOIN invoices i ON i.id = e.invoice_id AND i.community_id = e.community_id
         JOIN bank_statement_imports s ON s.id = e.statement_import_id
             AND s.community_id = e.community_id
@@ -1151,9 +1184,7 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
           AND evidence.id IS DISTINCT FROM %(entry_id)s
           AND (e.bank_account_key IN ('', %(account)s) OR %(account)s = '')
           AND (
-              ((evidence.bank_reference_keys && %(keys)s::text[]
-                OR evidence.bank_servicer_key = ANY(%(keys)s::text[]))
-               AND (evidence.bank_account_key IN ('', %(account)s) OR %(account)s = ''))
+              connected.id IS NOT NULL
               OR (
                   evidence.id = e.id
                   AND (%(unidentified)s OR (COALESCE(cardinality(e.bank_reference_keys), 0) = 0
@@ -1162,7 +1193,9 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
                   AND e.credit_debit_indicator = %(direction)s
                   AND e.booking_date = %(date)s
                   AND (
-                      e.payment_reference = NULLIF(%(payment_reference)s, '')
+                      upper(regexp_replace(e.payment_reference, %(reference_whitespace)s, '', 'g'))
+                        = NULLIF(upper(regexp_replace(%(payment_reference)s,
+                                                     %(reference_whitespace)s, '', 'g')), '')
                       OR (
                           (%(legacy)s OR (e.bank_reference_keys IS NULL
                                           AND e.bank_servicer_key IS NULL))
@@ -1189,6 +1222,7 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
             "legacy": entry.get("bank_reference_keys") is None and not reference_key,
             "entry_reference": entry["entry_reference"],
             "payment_reference": entry["payment_reference"],
+            "reference_whitespace": "[[:space:]\u00a0\u2007\u202f]+",
             "amount": entry["amount"],
             "currency": entry["currency"],
             "direction": entry["credit_debit_indicator"],

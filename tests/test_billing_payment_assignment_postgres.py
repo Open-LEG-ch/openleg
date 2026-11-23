@@ -562,6 +562,71 @@ def test_rejected_duplicate_supplies_trusted_aliases(workspace, booking):
     assert len(_paid_events()) == 1
 
 
+@pytest.mark.parametrize(
+    "case", ["single", "transitive", "unknown-account", "other-account"]
+)
+def test_aliases_connect_exports_imported_before_booking(workspace, case):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+
+    def export(number, tx_ref, entry_ref, account="fictional-account"):
+        statement = _statement_xml(
+            statement=f"statement-{number}",
+            reference="unknown",
+            servicer=tx_ref,
+            account=account,
+        )
+        return _with_entry_servicer(statement).replace(
+            b"shared-entry-reference", entry_ref.encode()
+        )
+
+    bridge_account = {"unknown-account": "", "other-account": "another-account"}.get(
+        case, "fictional-account"
+    )
+    exports = [
+        export(1, "transaction-one", "entry-one"),
+        export(2, "transaction-one", "entry-two", bridge_account),
+    ]
+    if case == "transitive":
+        exports.extend(
+            [
+                export(3, "transaction-two", "entry-two"),
+                export(4, "transaction-two", "entry-three"),
+            ]
+        )
+    exports.append(
+        export(5, "", "entry-three" if case == "transitive" else "entry-two")
+    )
+    _upload_xml(workspace, *exports)
+    newest, *bridges, earliest = db.list_bank_statement_entries(COMMUNITY)
+    assert all(row["duplicate_reason"] is None for row in bridges)
+    assert (
+        _assignment_outcome(workspace, _assign(workspace, earliest["id"], first))
+        == "assigned"
+    )
+
+    response = _assign(workspace, newest["id"], second)
+    if case == "other-account":
+        assert _assignment_outcome(workspace, response) == "assigned"
+        assert len(_paid_events()) == 2
+        return
+
+    refusal = _follow_assignment(workspace, response)
+    if case == "unknown-account":
+        assert (
+            "Diese Zahlung könnte bereits auf Rechnung FIRST-INVOICE verbucht sein."
+            in refusal.text
+        )
+        _review_token(refusal)
+    else:
+        assert (
+            "Diese Zahlung ist bereits auf Rechnung FIRST-INVOICE gebucht."
+            in refusal.text
+        )
+        assert 'name="duplicate_review"' not in refusal.text
+    assert len(_paid_events()) == 1
+
+
 def test_reformatted_statement_without_servicer_ref_is_held_for_review(workspace):
     first = _invoice("FIRST-INVOICE")
     second = _invoice("SECOND-INVOICE")
@@ -575,6 +640,25 @@ def test_reformatted_statement_without_servicer_ref_is_held_for_review(workspace
     assert repeated["duplicate_reason"] == "possible_duplicate_payment"
     refusal = _follow_assignment(workspace, _assign(workspace, repeated["id"], second))
     _review_token(refusal)
+    assert len(_paid_events()) == 1
+
+
+@pytest.mark.parametrize(
+    "reference", ["FIRST- INVOICE", "FIRST-\u00a0INVOICE", "first-invoice"]
+)
+def test_normalized_payment_reference_holds_unidentified_credit(workspace, reference):
+    _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(reference="FIRST-INVOICE", servicer=""),
+        _statement_xml(statement="statement-2", reference=reference, servicer=""),
+    )
+    repeated = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert repeated["payment_reference"] == reference
+    refusal = _follow_assignment(workspace, _assign(workspace, repeated["id"], second))
+    _review_token(refusal)
+    assert repeated["duplicate_reason"] == "possible_duplicate_payment"
     assert len(_paid_events()) == 1
 
 
