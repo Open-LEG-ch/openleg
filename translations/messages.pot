@@ -12249,7 +12249,7 @@ msgstr ""
 msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
 msgstr ""
 
-#: store/billing.py:1312
+#: store/billing.py:1314
 msgid "Prüfen Sie die Buchung erneut."
 msgstr ""
 

@@ -422,8 +422,8 @@ def test_real_confirmation_keeps_payment_locks(
 
 
 @pytest.mark.parametrize("adapter", ["api", "mcp"])
-@pytest.mark.parametrize("possible", [False, True])
-def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, possible):
+@pytest.mark.parametrize("case", ["same-level", "cross-level", "unknown-account"])
+def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, case):
     import asyncio
 
     import payment_reconciliation
@@ -439,14 +439,15 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, pos
     ids = seed_operator_resources(http)
     original = _statement_xml(
         reference="CONTRACT-1",
-        servicer="shared-entry-reference" if possible else "bank-entry-1",
+        servicer="shared-entry-reference" if case == "cross-level" else "bank-entry-1",
+        account="" if case == "unknown-account" else "fictional-account",
     )
     repeat = _statement_xml(
         statement="statement-2",
         reference="unknown",
-        servicer="" if possible else "bank-entry-1",
+        servicer="" if case == "cross-level" else "bank-entry-1",
     )
-    if possible:
+    if case == "cross-level":
         repeat = _with_entry_servicer(repeat)
     for xml in (original, repeat):
         payment_reconciliation.import_statement(
@@ -457,7 +458,7 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, pos
             http.db,
         )
     ids["entry_id"] = http.db.list_bank_statement_entries(http.community_id)[0]["id"]
-    code = "possible_duplicate_payment" if possible else "duplicate_payment"
+    code = "duplicate_payment" if case == "same-level" else "possible_duplicate_payment"
     before = rows(http)
     if adapter == "api":
         from tests.test_operator_contract import load_contract

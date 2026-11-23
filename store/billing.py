@@ -1129,6 +1129,8 @@ def _bank_payment_duplicate(cur, community_id, entry, import_id):
                COALESCE(NULLIF(e.payment_reference, ''), e.entry_reference) AS reference,
                ((evidence.bank_typed_reference_keys && %(typed_keys)s::text[])
                 AND (evidence.id = e.id OR evidence.duplicate_reason = 'duplicate_payment')
+                AND %(account)s <> '' AND e.bank_account_key = %(account)s
+                AND evidence.bank_account_key = %(account)s
                 AND e.amount = %(amount)s AND e.currency = %(currency)s
                 AND e.credit_debit_indicator = %(direction)s) IS TRUE AS certain
         FROM bank_statement_entries evidence

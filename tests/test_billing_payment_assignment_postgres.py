@@ -945,14 +945,23 @@ def _batch_with_transaction_reference():
     )
 
 
-@pytest.mark.parametrize("case", ["legacy-other-account", "cross-level"])
+@pytest.mark.parametrize(
+    "case", ["legacy-other-account", "cross-level", "unknown-account"]
+)
 def test_reviewed_possible_duplicate_books_with_source_audit(workspace, case):
     _invoice("FIRST-INVOICE")
     second = _invoice("SECOND-INVOICE")
-    if case == "legacy-other-account":
-        _upload_xml(workspace, _statement_xml(reference="FIRST-INVOICE"))
+    if case != "cross-level":
+        _upload_xml(
+            workspace,
+            _statement_xml(
+                reference="FIRST-INVOICE",
+                account="" if case == "unknown-account" else "fictional-account",
+            ),
+        )
         (first,) = db.list_bank_statement_entries(COMMUNITY)
-        _as_legacy(first)
+        if case == "legacy-other-account":
+            _as_legacy(first)
         candidate = _statement_xml(
             statement="statement-2",
             account="another-account",
@@ -1053,7 +1062,31 @@ def test_reviewed_possible_duplicate_books_with_source_audit(workspace, case):
             "decision": "possible duplicate confirmed",
         },
     }
-    assert db.list_bank_statement_entries(COMMUNITY)[0]["match_decision"] == "matched"
+    assert _entry_booking(repeat["id"]) == ("matched", second)
+
+    if case == "unknown-account":
+        assert first["bank_account_key"] == "" and repeat["bank_account_key"]
+        assert first["bank_typed_reference_keys"] == repeat["bank_typed_reference_keys"]
+        third = _invoice("THIRD-INVOICE")
+        _upload_xml(
+            workspace,
+            _statement_xml(
+                statement="statement-3",
+                account="another-account",
+                reference="THIRD-INVOICE",
+            ),
+        )
+        same_account = db.list_bank_statement_entries(COMMUNITY)[0]
+        assert same_account["duplicate_reason"] == "duplicate_payment"
+        page = _follow_assignment(
+            workspace, _assign(workspace, same_account["id"], third)
+        )
+        assert (
+            "Diese Zahlung ist bereits auf Rechnung SECOND-INVOICE gebucht."
+            in page.text
+        )
+        assert 'name="duplicate_review"' not in page.text
+        assert len(_paid_events()) == before + 1
 
 
 def test_certain_duplicate_refuses_forged_override(workspace):
