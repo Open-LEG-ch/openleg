@@ -12251,7 +12251,7 @@ msgstr ""
 msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
 msgstr ""
 
-#: dashboard.py:759 store/billing.py:1330
+#: dashboard.py:759 store/billing.py:1342
 msgid "Prüfen Sie die Buchung erneut."
 msgstr ""
 
@@ -16353,15 +16353,15 @@ msgstr ""
 msgid "geschätztes Dachpotenzial minus installierte Leistung."
 msgstr ""
 
-#: store/billing.py:1150
+#: store/billing.py:1153
 msgid "gleiche Bankreferenz"
 msgstr ""
 
-#: store/billing.py:1152
+#: store/billing.py:1155
 msgid "gleiche Zahlungsreferenz"
 msgstr ""
 
-#: store/billing.py:1148
+#: store/billing.py:1151
 msgid "gleicher Betrag innerhalb von 3 Tagen"
 msgstr ""
 
