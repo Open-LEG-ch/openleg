@@ -36,6 +36,8 @@ class Cursor:
         return self.rows.pop(0) if self.rows else None
 
     def fetchall(self):
+        if self.rows and isinstance(self.rows[0], list):
+            return self.rows.pop(0)
         return list(self.rows)
 
     def __enter__(self):
@@ -199,6 +201,8 @@ def test_reused_retry_key_with_a_different_payload_conflicts(monkeypatch):
 def _payment_entry(**overrides):
     entry = {
         "id": 12,
+        "entry_reference": "servicer-12",
+        "statement_import_id": 7,
         "match_decision": "unmatched",
         "currency": "CHF",
         "credit_debit_indicator": "CRDT",
@@ -208,6 +212,7 @@ def _payment_entry(**overrides):
         "amount": Decimal("42.50"),
         "payment_reference": "BANK-1",
         "booking_date": date(2026, 9, 1),
+        "bank_references": [],
     }
     return {**entry, **overrides}
 
@@ -217,6 +222,7 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         [
             None,
             _payment_entry(),
+            [],
             {"id": 3, "gross_chf": Decimal("42.50")},
             {"new_state": "delivered"},
             {"id": 77},
@@ -239,7 +245,7 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         in entry_query
     )
     assert entry_params == (12, COMMUNITY)
-    invoice_query_sql, invoice_params = cursor.executed[3]
+    invoice_query_sql, invoice_params = cursor.executed[4]
     assert "i.id = %s AND i.community_id = %s" in invoice_query_sql
     assert "FOR UPDATE OF i" in invoice_query_sql
     assert invoice_params == (3, COMMUNITY)
@@ -248,8 +254,9 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         for query, params in cursor.executed
         if "INSERT INTO invoice_lifecycle_events" in query
     )
-    assert lifecycle_params[-1].adapted is None
-    assert lifecycle_params[:-1] == (
+    assert lifecycle_params[-2].adapted is None
+    assert lifecycle_params[-1].adapted == {"entry_id": 12, "decision": "matched"}
+    assert lifecycle_params[:-2] == (
         3,
         COMMUNITY,
         "operator-a",
@@ -317,6 +324,7 @@ def test_confirm_payment_refuses_an_amount_that_misses_the_invoice(monkeypatch):
         [
             None,
             _payment_entry(amount=Decimal("40.00")),
+            [],
             {"id": 3, "gross_chf": Decimal("42.50")},
             {"new_state": "delivered"},
         ]

@@ -38,6 +38,7 @@ import database as db
 import formation_wizard
 import operator_actor
 import operator_request
+import payment_reconciliation
 import sdat_ingestion
 import vnb_exchange
 from operator_errors import ErrorCode
@@ -108,7 +109,7 @@ def _json_default(value):
     raise TypeError
 
 
-def _error(message, status, code=None, *, field=None):
+def _error(message, status, code=None, *, field=None, matching_entry_ids=None):
     code = (
         code
         or {
@@ -129,6 +130,8 @@ def _error(message, status, code=None, *, field=None):
     }
     if field is not None:
         body["field"] = field
+    if matching_entry_ids is not None:
+        body["matching_entry_ids"] = matching_entry_ids
     response = jsonify(body)
     response.status_code = status
     response.headers.update(
@@ -645,6 +648,13 @@ def confirm_payment_match(community_id, entry_id):
             g.operator_client["created_by"],
             key,
             **({"dry_run": True} if dry_run else {}),
+        )
+    except payment_reconciliation.BankPaymentDuplicate as exc:
+        return _error(
+            "Invalid payment confirmation",
+            409,
+            exc.reason,
+            matching_entry_ids=[entry_id for entry_id, _ in exc.review],
         )
     except (TypeError, ValueError) as exc:
         # Store validation messages stay internal; the API answer is fixed.

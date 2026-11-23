@@ -1119,6 +1119,10 @@ def create_tables():
             """)
 
             cur.execute("""
+                ALTER TABLE invoice_lifecycle_events
+                ADD COLUMN IF NOT EXISTS payment_match JSONB
+            """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS invoice_queries (
                     id BIGSERIAL PRIMARY KEY,
                     invoice_id INTEGER NOT NULL REFERENCES invoices(id),
@@ -1266,7 +1270,40 @@ def create_tables():
             """)
             cur.execute("""
                 ALTER TABLE bank_statement_entries
-                ADD COLUMN IF NOT EXISTS booking_status TEXT
+                ADD COLUMN IF NOT EXISTS booking_status TEXT,
+                ADD COLUMN IF NOT EXISTS debtor_name TEXT,
+                ADD COLUMN IF NOT EXISTS remittance_information TEXT,
+                ADD COLUMN IF NOT EXISTS bank_references TEXT[],
+                ADD COLUMN IF NOT EXISTS legacy_bank_references TEXT[] NOT NULL DEFAULT '{}',
+                ADD COLUMN IF NOT EXISTS creditor_references TEXT[] NOT NULL DEFAULT '{}',
+                ADD COLUMN IF NOT EXISTS source_statement_reference TEXT,
+                ADD COLUMN IF NOT EXISTS duplicate_reason TEXT
+            """)
+            # Legacy entry IDs do not distinguish bank values from importer suffixes.
+            # With the same amount, currency and direction, an extra reference can
+            # hold a credit for review. A missing one can let the same credit book twice.
+            cur.execute("""
+                UPDATE bank_statement_entries
+                SET bank_references = '{}', legacy_bank_references = ARRAY(
+                    SELECT DISTINCT reference
+                    FROM unnest(ARRAY[
+                        entry_reference,
+                        regexp_replace(entry_reference, ':[0-9]+$', ''),
+                        regexp_replace(entry_reference, ':[0-9]+:[0-9]+$', '')
+                    ]) AS candidates(reference)
+                    WHERE reference !~* '^[[:space:]]*(NOTPROVIDED)?[[:space:]]*$'
+                    ORDER BY reference
+                )
+                WHERE bank_references IS NULL
+            """)
+            cur.execute("""
+                ALTER TABLE bank_statement_entries
+                ALTER COLUMN bank_references SET DEFAULT '{}',
+                ALTER COLUMN bank_references SET NOT NULL
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_payment_facts
+                ON bank_statement_entries (community_id, amount, currency, credit_debit_indicator)
             """)
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_community_id

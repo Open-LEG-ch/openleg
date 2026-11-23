@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """HTTP contracts for the LEG administration workspace."""
 
+from datetime import UTC, date, datetime
+
 import pytest
 
 from tests.test_dashboard_access_routes import _set_session, app_module  # noqa: F401
@@ -36,10 +38,12 @@ def workspace(app_module, monkeypatch):  # noqa: F811
         "list_correspondence",
         "list_community_billing_periods",
         "list_community_invoices",
-        "list_bank_statement_entries",
         "list_billing_policies",
     ):
         monkeypatch.setattr(app_module.db, operation, lambda _cid: [])
+    monkeypatch.setattr(
+        app_module.db, "list_bank_statement_entries", lambda _cid, **_filters: []
+    )
     monkeypatch.setattr(app_module.db, "get_battery", lambda _cid: None)
     return app_module.web.test_client(), status
 
@@ -291,7 +295,11 @@ def test_formation_feedback_is_shown_only_on_its_destination(
 def test_billing_shortcuts_jump_to_a_visible_section(workspace, section):
     client, _ = workspace
     _set_session(client, "auditor")
-    assert f'href="{ROOT}/billing#{section}"' in client.get(ROOT + f"/{section}").text
+    query = "?section=payments" if section == "payments" else ""
+    assert (
+        f'href="{ROOT}/billing{query}#{section}"'
+        in client.get(ROOT + f"/{section}").text
+    )
     assert f'id="{section}"' in client.get(ROOT + "/billing").text
 
 
@@ -325,13 +333,26 @@ def test_billing_approval_error_distinguishes_unloaded_payments(workspace, monke
     monkeypatch.setattr(
         dashboard.db,
         "list_bank_statement_entries",
-        lambda _cid: [
-            {
-                "payment_reference": "SYNTHETIC-PAID",
-                "amount": "10.00",
-                "currency": "CHF",
-            }
-        ],
+        lambda _cid, *, reviewable, **_filters: (
+            []
+            if reviewable
+            else [
+                {
+                    "id": 1,
+                    "invoice_id": None,
+                    "match_decision": "matched",
+                    "confirmation_replay_available": False,
+                    "booking_date": date(2026, 11, 19),
+                    "imported_at": datetime(2026, 11, 20, tzinfo=UTC),
+                    "payment_reference": "SYNTHETIC-PAID",
+                    "amount": "10.00",
+                    "currency": "CHF",
+                    "credit_debit_indicator": "CRDT",
+                    "source_name": "synthetic.xml",
+                    "actor_id": "b-admin",
+                }
+            ]
+        ),
     )
 
     def reject_approval(*_args):

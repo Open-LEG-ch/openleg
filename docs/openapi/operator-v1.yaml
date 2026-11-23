@@ -696,11 +696,30 @@ components:
           type: string
         retryable:
           type: boolean
+        matching_entry_ids:
+          description: Complete sorted list of matching bank statement entry IDs for possible_duplicate_payment.
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
       required:
       - schema_version
       - error
       - code
       - retryable
+      if:
+        properties:
+          code:
+            const: possible_duplicate_payment
+      then:
+        required:
+        - matching_entry_ids
+      else:
+        not:
+          required:
+          - matching_entry_ids
       additionalProperties: false
     ErrorCode:
       type: string
@@ -716,6 +735,9 @@ components:
       - invalid_membership
       - invalid_case
       - invalid_payment
+      - invalid_invoice_total
+      - missing_reference
+      - possible_duplicate_payment
       - conflict
       - idempotency_conflict
       - retry_in_progress

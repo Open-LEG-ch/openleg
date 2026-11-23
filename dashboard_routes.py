@@ -24,6 +24,7 @@ from flask import (
     session,
     url_for,
 )
+from itsdangerous import BadData, URLSafeSerializer
 
 import access_token
 import billing_approval
@@ -41,6 +42,8 @@ from i18n import gettext as _
 from i18n import localized_url, normalize_locale
 from store import contact_request
 from telemetry import TelemetryError
+
+_PAYMENT_ASSIGNMENT_FEEDBACK = "leg-payment-assignment"
 
 
 def _dashboard_session_building_id():
@@ -78,14 +81,18 @@ def _require_dashboard_session():
     return building_id
 
 
-def _require_dashboard_csrf():
+def _dashboard_csrf_valid():
     submitted = request.headers.get("X-CSRF-Token") or request.form.get(
         "csrf_token", ""
     )
     if not isinstance(submitted, str) or not submitted.isascii():
-        abort(400)
+        return False
     expected = _dashboard_csrf_token()
-    if not expected or not hmac.compare_digest(submitted, expected):
+    return bool(expected and hmac.compare_digest(submitted, expected))
+
+
+def _require_dashboard_csrf():
+    if not _dashboard_csrf_valid():
         abort(400)
 
 
@@ -942,25 +949,99 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(result.get("error_status", 409))
         return _leg_dashboard_redirect(community_id, "members")
 
-    @bp.route("/leg/community/<community_id>/billing")
-    def leg_billing_workspace(community_id):
-        building_id = _require_dashboard_session()
+    def payment_review_signer():
+        return URLSafeSerializer(
+            current_app.secret_key, salt="leg-payment-duplicate-review-set"
+        )
+
+    def render_billing_workspace(community_id, building_id, **extra):
+        statement_before = request.args.get("statement_before", type=int)
+        payment_section = request.args.get("section") == "payments"
+        receipt = request.args.get("assignment") if payment_section else None
+        pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})
+        submission = pending.get(receipt)
+        feedback = (
+            submission["feedback"]
+            if submission and submission["scope"] == [community_id, building_id]
+            else None
+        )
+        consume_receipt = feedback is not None
         try:
             view = dashboard_module.leg_billing_workspace_view(
                 community_id,
                 building_id,
                 include_statement_entries=True,
-                billing_approved=request.args.get("approved") == "1",
-                statement_status=request.args.get("statement"),
+                statement_before=statement_before
+                if statement_before and statement_before > 0
+                else None,
+                **extra,
             )
         except db.BillingStoreError:
             abort(503)
         if view["error"]:
-            abort(403)
-        return render_leg_workspace(
+            if not feedback:
+                abort(403)
+            # The redirect can outlive a role change. Keep the feedback generic
+            # and render no billing data if the viewer lacks audit access.
+            view = {
+                "community_id": community_id,
+                "payment_notice_only": True,
+            }
+            feedback = {
+                "error": _("Sie dürfen in dieser LEG keine Zahlungen zuordnen."),
+            }
+        if (
+            feedback
+            and feedback.get("duplicate_review_required")
+            and view.get("can_prepare_billing")
+        ):
+            entry_id, invoice_id = feedback["entry_id"], feedback["invoice_id"]
+            try:
+                current_review = dashboard_module.leg_payment_duplicate_review(
+                    community_id, entry_id
+                )
+            except psycopg2.Error:
+                abort(503)
+            feedback = {**feedback, **current_review}
+            invoice = next(
+                (
+                    row
+                    for row in view["statement_invoice_candidates"]
+                    if row["id"] == invoice_id
+                ),
+                None,
+            )
+            if invoice and "reviewed_duplicates" in current_review:
+                feedback["target_invoice"] = invoice["invoice_number"]
+                feedback["duplicate_review"] = payment_review_signer().dumps(
+                    [
+                        community_id,
+                        building_id,
+                        entry_id,
+                        invoice_id,
+                        current_review["reviewed_duplicates"],
+                    ]
+                )
+        page = render_leg_workspace(
             "leg_billing.html",
             csrf_token=_dashboard_csrf_token(),
+            payment_section=payment_section,
+            assignment_feedback=feedback,
             **view,
+        )
+        if consume_receipt:
+            del pending[receipt]
+            session[_PAYMENT_ASSIGNMENT_FEEDBACK] = pending
+        return page
+
+    @bp.route("/leg/community/<community_id>/billing")
+    def leg_billing_workspace(community_id):
+        building_id = _require_dashboard_session()
+        return render_billing_workspace(
+            community_id,
+            building_id,
+            billing_approved=request.args.get("approved") == "1",
+            statement_status=request.args.get("statement"),
         )
 
     @bp.route("/leg/community/<community_id>/billing/statements", methods=["POST"])
@@ -988,6 +1069,73 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         return redirect(
             dashboard_module.leg_billing_workspace_location(community_id) + suffix
+        )
+
+    @bp.post("/leg/community/<community_id>/billing/statements/<int:entry_id>/assign")
+    def leg_billing_statement_assign(community_id, entry_id):
+        building_id = _require_dashboard_session()
+        invoice_id = request.form.get("invoice_id", type=int)
+        review_scope = [community_id, building_id, entry_id, invoice_id]
+        if not _dashboard_csrf_valid():
+            result = {
+                "error_status": 400,
+                "error": _(
+                    "Das Formular ist abgelaufen. Öffnen Sie die Buchung erneut."
+                ),
+            }
+        else:
+            receipt = request.form.get("duplicate_review")
+            reviewed_duplicates = None
+            if receipt is not None:
+                # An empty list signals an attempt without verified review evidence.
+                reviewed_duplicates = []
+                if request.form.get("confirm_distinct") == "yes":
+                    try:
+                        claim = payment_review_signer().loads(receipt)
+                    except BadData:
+                        claim = []
+                    if isinstance(claim, list) and claim[:-1] == review_scope:
+                        reviewed_duplicates = claim[-1]
+            try:
+                result = dashboard_module.leg_assign_bank_payment(
+                    community_id,
+                    building_id,
+                    entry_id,
+                    invoice_id,
+                    request.form.get("confirm") == "yes",
+                    reviewed_duplicates=reviewed_duplicates,
+                )
+            except (db.BillingStoreError, psycopg2.Error):
+                abort(503)
+        error_status = result["error_status"]
+        if error_status == 403:
+            result["error"] = _("Sie dürfen in dieser LEG keine Zahlungen zuordnen.")
+        feedback = {
+            "error": result.get("error"),
+            "recovery": result.get("recovery"),
+        }
+        if result.get("duplicate_review_required"):
+            feedback.update(
+                duplicate_review_required=True, entry_id=entry_id, invoice_id=invoice_id
+            )
+        receipt = secrets.token_urlsafe(16)
+        pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})
+        pending[receipt] = {"scope": review_scope[:2], "feedback": feedback}
+        # Flask stores the session in a cookie. Keep outstanding receipts bounded.
+        session[_PAYMENT_ASSIGNMENT_FEEDBACK] = dict(list(pending.items())[-5:])
+        statement_before = (
+            request.args.get("statement_before", type=int) if error_status else None
+        )
+        return redirect(
+            url_for(
+                ".leg_billing_workspace",
+                community_id=community_id,
+                section="payments",
+                assignment=receipt,
+                statement_before=statement_before,
+            )
+            + "#payments",
+            code=303,
         )
 
     @bp.route(
