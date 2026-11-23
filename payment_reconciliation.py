@@ -35,9 +35,10 @@ class PaymentMatchRefused(InvoiceLifecycleError):
 class BankPaymentDuplicate(InvoiceLifecycleError):
     """A statement entry conflicts with a previous bank booking."""
 
-    def __init__(self, matches, *, invoice_number=None):
+    def __init__(self, matches, *, invoice_number=None, entry=None):
         super().__init__("Bank credit needs duplicate review")
         self.matches = matches
+        self.entry = entry
         self.invoice_number = invoice_number
         self.possible = invoice_number is None
         self.reason = (
@@ -79,6 +80,7 @@ class PaymentEntry:
     bank_reference: str | None = None
     bank_account_key: str = ""
     bank_references: tuple[str, ...] = ()
+    creditor_references: tuple[str, ...] = ()
     source_statement_reference: str | None = None
 
 
@@ -193,12 +195,27 @@ def _bank_account_key(container):
 
 
 def _bank_references(element, *paths):
+    kinds = {"AcctSvcrRef": "acctsvcr", "NtryRef": "ntry"}
     return tuple(
-        value
+        f"{kinds[_local(node)]}:{node.text}"
         for path in paths
         for node in element.findall(path)
         if (value := (node.text or "").strip()) and value.upper() != "NOTPROVIDED"
     )
+
+
+def bank_reference_value(reference):
+    return reference.partition(":")[2]
+
+
+def _creditor_references(transaction):
+    references = {}
+    for node in transaction.findall("./{*}RmtInf/{*}Strd/{*}CdtrRefInf/{*}Ref"):
+        raw = node.text or ""
+        key = normalise_payment_reference(raw)
+        if is_structured_creditor_reference(raw, key):
+            references[key] = None
+    return tuple(references)
 
 
 def _debtor_name(transaction):
@@ -450,6 +467,7 @@ def parse_statement(content: bytes) -> Statement:
                     bank_reference=next(iter(identity_references), None),
                     bank_account_key=account_key,
                     bank_references=references,
+                    creditor_references=_creditor_references(transaction),
                     source_statement_reference=source_statement or None,
                 )
             )

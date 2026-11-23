@@ -557,6 +557,13 @@ def _billing_statement_entry(entry, invoices_by_id):
         payment_reconciliation.payment_entry_refusal(entry) if reviewable else decision
     )
     heading, recovery = _PAYMENT_REFUSALS.get(refusal, (None, None))
+    if entry.get("duplicate_invoice_number"):
+        duplicate = _payment_duplicate_feedback(
+            payment_reconciliation.BankPaymentDuplicate(
+                [], invoice_number=entry["duplicate_invoice_number"]
+            )
+        )
+        heading, recovery = duplicate["error"], duplicate["recovery"]
     if decision == "matched" and entry["confirmation_replay_available"]:
         heading = _N("Zahlung zugeordnet")
     related_invoice = invoices_by_id.get(entry["invoice_id"])
@@ -758,6 +765,16 @@ def _payment_duplicate_feedback(duplicate):
     }
 
 
+def _payment_review_row(row):
+    bank_reference = row.get("bank_reference") or next(iter(row["bank_references"]), "")
+    return {
+        **row,
+        "review_reference": row["payment_reference"]
+        or payment_reconciliation.bank_reference_value(bank_reference),
+        "display_amount": _display_statement_amount(row["amount"]),
+    }
+
+
 def leg_payment_duplicate_review(community_id, entry_id):
     duplicate = db.read_payment_duplicate_review(community_id, entry_id)
     if duplicate is None:
@@ -765,10 +782,8 @@ def leg_payment_duplicate_review(community_id, entry_id):
     feedback = _payment_duplicate_feedback(duplicate)
     if duplicate.possible:
         feedback["reviewed_duplicates"] = duplicate.review
-        feedback["matches"] = [
-            {**row, "display_amount": _display_statement_amount(row["amount"])}
-            for row in duplicate.matches
-        ]
+        feedback["candidate"] = _payment_review_row(duplicate.entry)
+        feedback["matches"] = [_payment_review_row(row) for row in duplicate.matches]
     return feedback
 
 

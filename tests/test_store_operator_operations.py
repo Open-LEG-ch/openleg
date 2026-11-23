@@ -222,9 +222,9 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         [
             None,
             _payment_entry(),
+            [],
             {"id": 3, "gross_chf": Decimal("42.50")},
             {"new_state": "delivered"},
-            [],
             {"id": 77},
         ]
     )
@@ -245,7 +245,7 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
         in entry_query
     )
     assert entry_params == (12, COMMUNITY)
-    invoice_query_sql, invoice_params = cursor.executed[3]
+    invoice_query_sql, invoice_params = cursor.executed[4]
     assert "i.id = %s AND i.community_id = %s" in invoice_query_sql
     assert "FOR UPDATE OF i" in invoice_query_sql
     assert invoice_params == (3, COMMUNITY)
@@ -324,6 +324,7 @@ def test_confirm_payment_refuses_an_amount_that_misses_the_invoice(monkeypatch):
         [
             None,
             _payment_entry(amount=Decimal("40.00")),
+            [],
             {"id": 3, "gross_chf": Decimal("42.50")},
             {"new_state": "delivered"},
         ]

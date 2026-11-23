@@ -40,12 +40,17 @@
       <input type="hidden" name="invoice_id" value="{{ assignment_feedback.invoice_id }}">
       <input type="hidden" name="confirm" value="yes">
       <input type="hidden" name="duplicate_review" value="{{ assignment_feedback.duplicate_review }}">
+      <dl class="mb-3 grid gap-2 wrap-anywhere sm:grid-cols-2">
+        <div><dt class="text-sm text-ink-muted">{{ _('Zahlung zuordnen') }}</dt><dd>{{ assignment_feedback.candidate.booking_date|datelabel }} <span class="font-mono">{{ assignment_feedback.candidate.currency }} {{ assignment_feedback.candidate.display_amount }}</span></dd><dd>{{ assignment_feedback.candidate.review_reference }}</dd></div>
+        <div><dt class="text-sm text-ink-muted">{{ _('Rechnung') }}</dt><dd>{{ assignment_feedback.target_invoice }}</dd></div>
+      </dl>
       <ul id="duplicate-review-matches" class="mb-4 divide-y divide-line wrap-anywhere">
         {% for match in assignment_feedback.matches %}
         <li class="py-3">
           <p class="font-semibold">{{ match.booking_date|datelabel }} <span class="font-mono">{{ match.currency }} {{ match.display_amount }}</span></p>
+          <p class="mt-1 text-sm text-ink-muted">{% for reason in match.reasons %}{{ _(reason) }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
           <dl class="mt-2 grid gap-2 sm:grid-cols-3">
-            <div><dt class="text-sm text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ match.payment_reference or match.bank_reference or '' }}</dd></div>
+            <div><dt class="text-sm text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ match.review_reference }}</dd></div>
             <div><dt class="text-sm text-ink-muted">{{ _('Kontoauszug') }}</dt><dd>{{ match.statement_reference or match.source_name }}{% if match.statement_reference and match.source_name %}<span class="block text-sm text-ink-muted">{{ match.source_name }}</span>{% endif %}</dd></div>
             {% if match.invoice_number %}<div><dt class="text-sm text-ink-muted">{{ _('Rechnung') }}</dt><dd>{{ match.invoice_number }}</dd></div>{% endif %}
           </dl>

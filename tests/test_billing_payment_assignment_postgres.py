@@ -945,3 +945,131 @@ def test_equal_local_references_in_one_file_keep_both_statement_origins(workspac
         == "assigned"
     )
     assert len(_paid_events()) == 2
+
+
+@pytest.mark.parametrize(
+    ("same_kind", "later"), [(False, False), (False, True), (True, False)]
+)
+def test_only_same_kind_bank_references_can_hard_refuse(workspace, same_kind, later):
+    first = _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    account = {"account": "CH0000000000000000000", "account_is_iban": True}
+    original = _statement_xml(reference="FIRST-INVOICE", **account).replace(
+        b"AcctSvcrRef", b"NtryRef"
+    )
+    repeat = _statement_xml(statement="repeat", reference="SECOND-INVOICE", **account)
+    if same_kind:
+        repeat = repeat.replace(b"AcctSvcrRef", b"NtryRef")
+    if later:
+        repeat = _booking_on(repeat, "2026-09-24")
+    _upload_xml(workspace, original, repeat)
+    candidate, prior = db.list_bank_statement_entries(COMMUNITY)
+    assert _entry_booking(prior["id"]) == ("matched", first)
+    assert len(_paid_events()) == 1
+    entry = candidate["id"]
+    page = _follow_assignment(workspace, _assign(workspace, entry, second))
+    if same_kind:
+        assert (
+            "Diese Zahlung ist bereits auf Rechnung FIRST-INVOICE gebucht." in page.text
+        )
+        assert 'name="duplicate_review"' not in page.text
+        assert (
+            _assignment_outcome(
+                workspace, _override(workspace, entry, second, "invalid-review")
+            )
+            == "refused"
+        )
+        assert len(_paid_events()) == 1
+    else:
+        assert "gleiche Bankreferenz" in page.text
+        assert (
+            _assignment_outcome(
+                workspace, _override(workspace, entry, second, _review_token(page))
+            )
+            == "assigned"
+        )
+        assert _entry_booking(entry) == ("matched", second)
+        assert len(_paid_events()) == 2
+
+
+def test_whitespace_in_bank_reference_does_not_prove_identity(workspace):
+    _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    account = {"account": "CH0000000000000000000", "account_is_iban": True}
+    _upload_xml(
+        workspace,
+        _statement_xml(reference="FIRST-INVOICE", servicer=" PAYMENT-123", **account),
+        _statement_xml(
+            statement="repeat",
+            reference="SECOND-INVOICE",
+            servicer="PAYMENT-123",
+            **account,
+        ),
+    )
+    candidate = db.list_bank_statement_entries(COMMUNITY)[0]
+    page = _follow_assignment(workspace, _assign(workspace, candidate["id"], second))
+    assert (
+        _assignment_outcome(
+            workspace,
+            _override(workspace, candidate["id"], second, _review_token(page)),
+        )
+        == "assigned"
+    )
+
+
+def test_second_structured_creditor_reference_links_payments(workspace):
+    _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+
+    def with_creditor_refs(xml, invoice_reference):
+        xml_refs = (
+            f"<Strd><CdtrRefInf><Ref>{invoice_reference}</Ref></CdtrRefInf></Strd>"
+            "<Strd><CdtrRefInf><Ref>RF18 5390 0754 7034</Ref></CdtrRefInf></Strd>"
+        )
+        return xml.replace(b"</RmtInf>", xml_refs.encode() + b"</RmtInf>")
+
+    _upload_xml(
+        workspace,
+        with_creditor_refs(
+            _statement_xml(reference="FIRST-INVOICE", servicer="booking-a"),
+            "FIRST-INVOICE",
+        ),
+        _booking_on(
+            with_creditor_refs(
+                _statement_xml(
+                    statement="late", reference="SECOND-INVOICE", servicer="booking-b"
+                ),
+                "SECOND-INVOICE",
+            ),
+            "2026-10-14",
+        ),
+    )
+    candidate = db.list_bank_statement_entries(COMMUNITY)[0]
+    assert candidate["duplicate_reason"] == "possible_duplicate_payment"
+    page = _follow_assignment(workspace, _assign(workspace, candidate["id"], second))
+    assert "gleiche Zahlungsreferenz" in page.text
+    _review_token(page)
+    assert len(_paid_events()) == 1
+
+
+def test_identical_repeat_names_booked_invoice_without_an_open_target(workspace):
+    first = _invoice("FIRST-INVOICE")
+    account = {"account": "CH0000000000000000000", "account_is_iban": True}
+    _upload_xml(
+        workspace,
+        _statement_xml(reference="FIRST-INVOICE", **account),
+        _statement_xml(statement="repeat", reference="FIRST-INVOICE", **account),
+    )
+    candidate = db.list_bank_statement_entries(COMMUNITY)[0]
+    page = workspace.get(PAYMENTS)
+    card = page.text.split(f'id="statement-{candidate["id"]}"', 1)[1].split(
+        "</article>", 1
+    )[0]
+    assert "Diese Zahlung ist bereits auf Rechnung FIRST-INVOICE gebucht." in card
+    assert "/assign" not in card
+    assert "Stellen Sie" not in card
+    refusal = _follow_assignment(workspace, _assign(workspace, candidate["id"], first))
+    assert (
+        "Diese Zahlung ist bereits auf Rechnung FIRST-INVOICE gebucht." in refusal.text
+    )
+    assert 'name="duplicate_review"' not in refusal.text

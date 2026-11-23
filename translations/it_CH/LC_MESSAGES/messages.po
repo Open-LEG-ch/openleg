@@ -22960,3 +22960,12 @@ msgstr "Estratto conto"
 
 msgid "Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung."
 msgstr "Ho verificato tutti i pagamenti elencati. Si tratta di un altro pagamento."
+
+msgid "gleicher Betrag innerhalb von 3 Tagen"
+msgstr "stesso importo entro 3 giorni"
+
+msgid "gleiche Bankreferenz"
+msgstr "stesso riferimento bancario"
+
+msgid "gleiche Zahlungsreferenz"
+msgstr "stesso riferimento di pagamento"

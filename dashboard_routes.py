@@ -1003,7 +1003,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             except psycopg2.Error:
                 abort(503)
             feedback = {**feedback, **current_review}
-            if "reviewed_duplicates" in current_review:
+            invoice = next(
+                (
+                    row
+                    for row in view["statement_invoice_candidates"]
+                    if row["id"] == invoice_id
+                ),
+                None,
+            )
+            if invoice and "reviewed_duplicates" in current_review:
+                feedback["target_invoice"] = invoice["invoice_number"]
                 feedback["duplicate_review"] = payment_review_signer().dumps(
                     [
                         community_id,

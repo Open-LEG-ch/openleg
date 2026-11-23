@@ -19276,3 +19276,12 @@ msgstr "Kontoauszug"
 
 msgid "Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung."
 msgstr "Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung."
+
+msgid "gleicher Betrag innerhalb von 3 Tagen"
+msgstr "gleicher Betrag innerhalb von 3 Tagen"
+
+msgid "gleiche Bankreferenz"
+msgstr "gleiche Bankreferenz"
+
+msgid "gleiche Zahlungsreferenz"
+msgstr "gleiche Zahlungsreferenz"

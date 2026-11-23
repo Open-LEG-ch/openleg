@@ -20300,3 +20300,12 @@ msgstr "Relevé bancaire"
 
 msgid "Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung."
 msgstr "J’ai vérifié tous les paiements affichés. Il s’agit d’un autre paiement."
+
+msgid "gleicher Betrag innerhalb von 3 Tagen"
+msgstr "même montant à 3 jours d’écart au maximum"
+
+msgid "gleiche Bankreferenz"
+msgstr "même référence bancaire"
+
+msgid "gleiche Zahlungsreferenz"
+msgstr "même référence de paiement"

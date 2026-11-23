@@ -22683,3 +22683,12 @@ msgstr "Bank statement"
 
 msgid "Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung."
 msgstr "I checked every listed payment. This is a different payment."
+
+msgid "gleicher Betrag innerhalb von 3 Tagen"
+msgstr "same amount within 3 days"
+
+msgid "gleiche Bankreferenz"
+msgstr "same bank reference"
+
+msgid "gleiche Zahlungsreferenz"
+msgstr "same payment reference"
