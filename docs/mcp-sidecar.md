@@ -323,7 +323,11 @@ Use OAuth for remote access. Register the host's public client ID and exact
 callback URL in the Flask app's `OPENLEG_OAUTH_CLIENTS` JSON configuration, for
 example `{"host":{"name":"My MCP host","redirect_uris":["https://host.example/callback"]}}`.
 There is no dynamic client registration or client secret for these public
-clients. Configure `OPENLEG_OAUTH_ISSUER=https://app.example` on both services,
+clients. Every redirect from the authorization endpoint carries the issuer as `iss`
+(RFC 9207), for a code and for an error, and the issuer metadata reports
+`authorization_response_iss_parameter_supported`. Hosts that require issuer
+identification, such as ChatGPT, then use their stable callback URL.
+Configure `OPENLEG_OAUTH_ISSUER=https://app.example` on both services,
 `OPENLEG_OAUTH_RESOURCE=https://mcp.example/mcp` on Flask and
 `OPENLEG_MCP_RESOURCE=https://mcp.example/mcp` on the sidecar. Configure the
 independent downstream key on Flask and the shared introspection secret as
