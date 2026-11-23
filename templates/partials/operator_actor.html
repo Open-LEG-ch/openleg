@@ -1,1 +1,9 @@
-{% if actor %}<span>{{ _('Ausgelöst durch') }} {{ {'human': _('Mensch'), 'service': _('Dienst'), 'agent': _('Agent')}.get(actor.actor_kind, actor.actor_kind) }}{% if actor.agent_label %} · {{ actor.agent_label }}{% endif %}{% if actor.initiating_client_id %} · <code>{{ actor.initiating_client_id }}</code>{% endif %}</span>{% endif %}
+{% if actor %}
+<span>
+  {{ _('Ausgelöst durch') }} {{ {'human': _('Mensch'), 'service': _('Dienst'), 'agent': _('Agent')}.get(actor.actor_kind, actor.actor_kind) }}
+  {% if actor.agent_label %}{% if actor_multiline %}<br>{% else %} · {% endif %}{{ actor.agent_label }}{% endif %}
+  {% if actor.initiating_client_id %}
+    {% if actor_multiline %}<br>{{ actor.initiating_client_id }}{% else %} · <code>{{ actor.initiating_client_id }}</code>{% endif %}
+  {% endif %}
+</span>
+{% endif %}

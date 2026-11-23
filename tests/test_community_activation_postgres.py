@@ -108,6 +108,7 @@ def test_record_start_confirmation_then_explicitly_activate(founder):
     response = client.post(f"/leg/community/{cid}/vnb-start-confirmation", data=fields)
 
     assert response.status_code == 302
+    assert response.location == f"/leg/dashboard?cid={cid}"
     row = db.fetch_community_with_members(cid, "founder")
     assert row["status"] == "dso_approved"
     assert row["activated_at"] is None
@@ -123,6 +124,7 @@ def test_record_start_confirmation_then_explicitly_activate(founder):
         f"/leg/community/{cid}/activate", data={"csrf_token": "csrf-secret"}
     )
     assert response.status_code == 302
+    assert response.location == f"/leg/community/{cid}/formation"
     row = db.fetch_community_with_members(cid, "founder")
     assert row["status"] == "active"
     assert row["activated_at"] is not None
@@ -378,4 +380,160 @@ def test_start_confirmation_and_original_attachment_survive_archive_restore(subm
     assert after["dso_approved_at"] == before["dso_approved_at"]
     assert after["activated_at"] == before["activated_at"]
     assert client.post(f"/leg/community/{cid}/activate", data=fields).status_code == 302
-    assert "SYNTHETIC-START-1" in client.get(f"/leg/dashboard?cid={cid}").text
+    assert "SYNTHETIC-START-1" in client.get(f"/leg/community/{cid}/formation").text
+
+
+@pytest.fixture
+def formation_ready(submitted):
+    client, db, cid, fields = submitted
+    for bid in ("document-manager", "participant"):
+        assert db.save_building(
+            bid,
+            f"{bid}@example.invalid",
+            {
+                "address": "Synthetic 2",
+                "lat": 47.2,
+                "lon": 8.2,
+                "potential_pv_kwp": 8 if bid == "participant" else 0,
+            },
+            {"share_with_neighbors": True},
+            verified=True,
+        )
+        assert db.insert_invited_member(cid, bid, "founder")
+        assert db.confirm_invited_member(cid, bid)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE community_members SET access_roles = '["documents"]'
+               WHERE community_id = %s AND building_id = 'document-manager'""",
+            (cid,),
+        )
+    original_id = db.store_leg_document(
+        cid, "gemeinschaftsvereinbarung", b"%PDF", "original.pdf"
+    )
+    assert original_id
+    return client, db, cid, fields, original_id
+
+
+@pytest.mark.parametrize(
+    ("before_status", "after_status"),
+    [
+        ("interested", "formation_started"),
+        ("documents_generated", "documents_generated"),
+        ("dso_approved", "dso_approved"),
+    ],
+)
+def test_first_start_records_timestamp_without_regressing_status(
+    formation_ready, before_status, after_status
+):
+    client, db, cid, fields, _ = formation_ready
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET status = %s WHERE community_id = %s",
+            (before_status, cid),
+        )
+    overview = f"/leg/dashboard?cid={cid}"
+    path = f"/leg/community/{cid}/start-formation"
+    form = f'action="{path}"'
+    assert form in client.get(overview).text
+    response = client.post(path, data=fields)
+    assert response.status_code == 302
+    assert response.location == overview
+    started = db.fetch_community_with_members(cid, "founder")
+    assert started["formation_started_at"] is not None
+    assert started["status"] == after_status
+    assert form not in client.get(overview).text
+
+    retry = client.post(path, data=fields)
+    assert retry.status_code == 302
+    assert retry.location == overview
+    assert "Die Gründung lässt sich nur einmal" in client.get(overview).text
+    after_retry = db.fetch_community_with_members(cid, "founder")
+    assert after_retry["status"] == after_status
+    assert after_retry["formation_started_at"] == started["formation_started_at"]
+
+
+@pytest.mark.parametrize(
+    ("action", "actor", "status"),
+    [
+        ("start-formation", "founder", "formation_started"),
+        ("start-formation", "founder", "documents_generated"),
+        ("start-formation", "founder", "signatures_pending"),
+        ("start-formation", "founder", "dso_submitted"),
+        ("start-formation", "founder", "dso_approved"),
+        ("start-formation", "founder", "active"),
+        ("start-formation", "founder", "rejected"),
+        ("documents", "document-manager", "active"),
+        ("documents", "document-manager", "dso_approved"),
+    ],
+)
+def test_stale_formation_post_preserves_leg_progress(
+    formation_ready, action, actor, status
+):
+    client, db, cid, fields, original_id = formation_ready
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET status = 'interested' WHERE community_id = %s",
+            (cid,),
+        )
+    _set_session(client, actor)
+    form = f'action="/leg/community/{cid}/{action}"'
+    assert form in client.get(f"/leg/dashboard?cid={cid}").text
+
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE communities SET status = %s, formation_started_at = '2020-01-01'
+               WHERE community_id = %s""",
+            ("dso_submitted" if status in {"active", "dso_approved"} else status, cid),
+        )
+    _set_session(client, "founder")
+    if status in {"active", "dso_approved"}:
+        assert (
+            client.post(
+                f"/leg/community/{cid}/vnb-start-confirmation", data=fields
+            ).status_code
+            == 302
+        )
+    if status == "active":
+        assert (
+            client.post(f"/leg/community/{cid}/activate", data=fields).status_code
+            == 302
+        )
+    before = db.fetch_community_with_members(cid, "founder")
+    documents = db.list_leg_documents(cid)
+    billing_eligible = any(
+        row["community_id"] == cid for row in db.get_active_communities()
+    )
+    assert billing_eligible is (status == "active")
+
+    _set_session(client, actor)
+    response = client.post(f"/leg/community/{cid}/{action}", data=fields)
+    after = db.fetch_community_with_members(cid, "founder")
+    assert after["status"] == status
+    assert after["activated_at"] == before["activated_at"]
+    assert after["formation_started_at"] == before["formation_started_at"]
+    assert after["vnb_start_confirmation"] == before["vnb_start_confirmation"]
+    assert db.list_leg_documents(cid) == documents
+    assert bytes(db.get_leg_document(original_id)["pdf_data"]) == b"%PDF"
+    assert (
+        any(row["community_id"] == cid for row in db.get_active_communities())
+        is billing_eligible
+    )
+    assert response.status_code == 302
+    expected_url = (
+        f"/leg/community/{cid}/formation"
+        if status == "active"
+        else f"/leg/dashboard?cid={cid}"
+    )
+    assert response.location == expected_url
+    page = client.get(response.location)
+    if action == "start-formation":
+        message = "Die Gründung lässt sich nur einmal"
+    elif status == "dso_approved":
+        message = (
+            "Der Netzbetreiber hat den Start bereits bestätigt. "
+            "Die Vertragsentwürfe lassen sich deshalb nicht mehr ersetzen."
+        )
+    else:
+        message = "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
+    assert message in page.text
+    assert form not in page.text

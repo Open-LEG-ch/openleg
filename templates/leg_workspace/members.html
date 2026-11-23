@@ -1,0 +1,84 @@
+
+<section class="mb-10">
+  {% if roles_error %}<p class="mx-5 mt-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(roles_error) }}</p>{% endif %}
+  <div class="overflow-x-auto"><table class="w-full table-fixed sm:table-auto text-sm">
+    <caption class="sr-only">{{ _('Mitglieder dieser Stromgemeinschaft') }}</caption>
+    <thead class="border-y border-line">
+      <tr>
+        <th scope="col" class="px-2 py-3 sm:px-5 text-left">{{ _('Adresse') }}</th>
+        <th scope="col" class="px-2 py-3 sm:px-5 text-left">{{ _('Rolle') }}</th>
+        <th scope="col" class="px-2 py-3 sm:px-5 text-left">{{ _('Status') }}</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-line">
+      {% for member in community.members %}
+      <tr>
+        <td class="px-2 py-3 sm:px-5 wrap-break-word">{{ member.address or member.building_id }}{% if member.building_id == viewer_building_id %} <span class="text-xs text-brand">{{ _('(Sie)') }}</span>{% endif %}</td>
+        <td class="px-2 py-3 sm:px-5 wrap-break-word text-ink-muted">{{ _(member.role_label) }}</td>
+        <td class="px-2 py-3 sm:px-5 wrap-break-word">
+          <span class="text-xs font-semibold {{ 'text-sage-dark' if member.status == 'confirmed' else 'text-ink-muted' }}">{{ _(member.status_label) }}</span>
+        </td>
+      </tr>
+      {% if can_manage_members and viewer_has_session and member.status == 'confirmed' %}
+      <tr>
+        <td colspan="3" class="px-5 pb-4 wrap-break-word">
+          <form method="post" action="/leg/community/{{ community.community_id }}/members/{{ member.building_id }}/roles" class="flex flex-wrap items-center gap-3 text-xs">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            {% for role, label in access_role_labels.items() %}
+            <label class="inline-flex items-center gap-1"><input type="checkbox" name="roles" value="{{ role }}" {% if role in (member.access_roles or []) or (role == 'admin' and member.role == 'admin') %}checked{% endif %}> {{ _(label) }}</label>
+            {% endfor %}
+            <button type="submit" class="rounded-lg border border-line px-3 py-1 font-semibold">{{ _('Rollen speichern') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<section class="mb-10" aria-labelledby="vnb-mutations-title">
+  <h2 id="vnb-mutations-title" class="font-bold mb-2">{{ _('Mitgliedschaft und Netzbetreiber') }}</h2>
+  {% if not vnb_exchange_available|default(true) %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar.') }}</p>{% endif %}
+  <p class="text-sm text-ink-muted mb-4">{{ _('Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der Netzbetreiber verarbeitet. Die Antwort des Netzbetreibers ändert den LEG-Vertrag nicht.') }}</p>
+  {% if vnb_mutations|default([]) %}
+  <div class="overflow-x-auto mb-4"><table class="w-full min-w-3xl text-sm">
+    <caption class="sr-only">{{ _('Mitgliedermutationen und Stand beim Netzbetreiber') }}</caption>
+    <thead><tr><th scope="col" class="text-left p-2">{{ _('LEG-Vorgang') }}</th><th scope="col" class="text-left p-2">{{ _('Person') }}</th><th scope="col" class="text-left p-2">{{ _('Wirksam') }}</th><th scope="col" class="text-left p-2">{{ _('Status beim Netzbetreiber') }}</th><th scope="col" class="text-left p-2">{{ _('Antwort') }}</th></tr></thead>
+    <tbody class="divide-y divide-line">{% for mutation in vnb_mutations %}<tr>
+      <td class="p-2"><span class="wrap-anywhere">{{ mutation.mutation_id }}</span><br>{% with actor=mutation.actor, actor_multiline=true %}{% include "partials/operator_actor.html" %}{% endwith %}<br><span class="text-xs text-ink-muted">{{ {"join": _("Beitritt"), "exit": _("Austritt"), "change": _("Änderung")}.get(mutation.mutation_type, mutation.mutation_type) }} </span><br><span class="text-xs text-ink-muted">{{ _('Vertrag: %(id)s', id=mutation.source_agreement_id) }}</span></td>
+      <td class="p-2"><span class="wrap-anywhere">{{ mutation.participant_id }}</span></td><td class="p-2">{{ mutation.effective_date }}</td>
+      <td class="p-2">{{ {"prepared": _("Manuelle Übergabe bereit"), "delivered": _("Zugestellt"), "acknowledged": _("Bestätigt"), "rejected": _("Abgelehnt"), "failed": _("Fehlgeschlagen"), "superseded": _("Ersetzt")}.get(mutation.state, mutation.state) }}</td>
+      <td class="p-2">{{ mutation.response_status or "" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% for mutation in vnb_mutations if mutation.state == "prepared" and is_admin and viewer_has_session %}
+  <div class="mb-3 flex flex-wrap gap-3 text-sm"><a class="inline-flex items-center font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/vnb-mutations/{{ mutation.case_id }}/handover">{{ _('Übergabepaket herunterladen') }}</a><form method="post" action="/leg/community/{{ community.community_id }}/vnb-mutations/{{ mutation.case_id }}/delivered"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="font-semibold text-brand" type="submit">{{ _('Zustellung bestätigen') }}</button></form></div>
+  {% endfor %}
+  {% endif %}
+  {% if is_admin and viewer_has_session %}
+  <form method="post" action="/leg/community/{{ community.community_id }}/vnb-mutations" class="grid gap-3 rounded-xl border border-line bg-white p-4 sm:p-6 md:grid-cols-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="text-sm">{{ _('Vorgangs-ID') }}<input required name="mutation_id" class="mt-1 w-full rounded-lg border p-2" placeholder="{{ _('z. B. mitglied-2026-001') }}"></label>
+    <label class="text-sm">{{ _('Teilnehmer-ID') }}<select required name="participant_id" class="mt-1 w-full rounded-lg border p-2">{% for member in community.members %}<option value="{{ member.building_id }}">{{ member.address or member.building_id }}</option>{% endfor %}</select></label>
+    <label class="text-sm">{{ _('Vorgang') }}<select name="mutation_type" class="mt-1 w-full rounded-lg border p-2"><option value="join">{{ _('Beitritt') }}</option><option value="exit">{{ _('Austritt') }}</option><option value="change">{{ _('Änderung') }}</option></select></label>
+    <label class="text-sm">{{ _('Wirksamkeitsdatum') }}<input required type="date" name="effective_date" class="mt-1 w-full rounded-lg border p-2"></label>
+    <label class="text-sm">{{ _('Quellvertrag') }}<input required name="source_agreement_id" class="mt-1 w-full rounded-lg border p-2"></label>
+    <label class="text-sm md:col-span-2">{{ _('Änderungsdaten (nur bei Änderung; JSON mit status, role oder access_roles)') }}<textarea name="after_facts" rows="2" class="mt-1 w-full rounded-lg border p-2 text-sm" placeholder='{"status": "confirmed", "access_roles": ["documents"]}'></textarea></label>
+    <div class="md:col-span-2"><button class="bg-brand text-white px-5 py-2 rounded-lg font-semibold" type="submit">{{ _('Beim Netzbetreiber einreichen') }}</button></div>
+  </form>
+  {% endif %}
+</section>
+{% if can_manage_members and viewer_has_session %}
+<section class="bg-white rounded-xl border p-6 mb-8">
+  <h2 class="font-bold mb-2">{{ _('Mitglied einladen') }}</h2>
+  <p class="text-sm text-ink-muted mb-4">{{ _('Geben Sie die E-Mail-Adresse ein, mit der sich die Person bei OpenLEG registriert hat. Wir zeigen nicht an, ob bereits ein Profil existiert.') }}</p>
+  {% if invite_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(invite_error) }}</p>{% endif %}
+  <form method="post" action="/leg/community/{{ community.community_id }}/invite" class="flex flex-col sm:flex-row gap-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="invite-email" class="sr-only">{{ _('E-Mail-Adresse') }}</label>
+    <input id="invite-email" type="email" name="invite_email" autocomplete="email" required placeholder="{{ _('name@beispiel.ch') }}" class="flex-1 border rounded-lg px-4 py-2 text-sm">
+    <button type="submit" class="bg-brand text-white px-6 py-2 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Einladen') }}</button>
+  </form>
+</section>
+{% endif %}

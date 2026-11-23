@@ -963,14 +963,6 @@ msgstr "Aktiv"
 msgid "Aktive Mitglieder"
 msgstr "Aktive Mitglieder"
 
-#: templates/leg_dashboard.html:310
-msgid ""
-"Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung "
-"brauchen Sie weiterhin vollständige Tarife, Messwerte und VNB-Zuteilungen."
-msgstr ""
-"Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung "
-"brauchen Sie weiterhin vollständige Tarife, Messwerte und VNB-Zuteilungen."
-
 #: templates/telemetry_dashboard.html:18 templates/telemetry_dashboard.html:24
 #: templates/telemetry_shared.html:14
 msgid "Aktualität unbekannt"
@@ -1180,10 +1172,6 @@ msgstr "Amtliche Gemeindenummer (BFS), Kanton und freiwillige Angaben zu Rolle u
 #, python-format
 msgid "An %(recipient)s"
 msgstr "An %(recipient)s"
-
-#: templates/leg_dashboard.html:276
-msgid "An VNB eskalieren"
-msgstr "An VNB eskalieren"
 
 #: templates/documents/dso_registration.html:14
 msgid "An:"
@@ -1962,10 +1950,6 @@ msgstr ""
 #: templates/documents/dso_registration.html:25
 msgid "Beilagen"
 msgstr "Beilagen"
-
-#: templates/leg_dashboard.html:262
-msgid "Beim VNB einreichen"
-msgstr "Beim VNB einreichen"
 
 #: templates/sandbox/manage.html:10
 msgid ""
@@ -3531,10 +3515,6 @@ msgstr ""
 "Halten Sie Vertretung, Zustimmung der Teilnehmenden, internen Strompreis und "
 "Abrechnung schriftlich fest und melden Sie den vZEV beim VNB an."
 
-#: templates/leg_dashboard.html:236
-msgid "Der VNB-Austausch ist derzeit nicht verfügbar."
-msgstr "Der VNB-Austausch ist derzeit nicht verfügbar."
-
 #: templates/verein/index.html:10
 msgid ""
 "Der Verein nimmt keine Finanzierung von Energieversorgern an, auch nicht über Dritte."
@@ -4223,16 +4203,6 @@ msgid ""
 msgstr ""
 "Die Mindestzahl macht freigegebene Einzelwerte nicht anonym. Die Ansicht trennt "
 "Quellen verschiedener Messkanäle."
-
-#: templates/leg_dashboard.html:237
-msgid ""
-"Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen "
-"separat, was der Netzbetreiber verarbeitet. Eine VNB-Antwort ändert den LEG-Vertrag "
-"nicht."
-msgstr ""
-"Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen "
-"separat, was der Netzbetreiber verarbeitet. Eine VNB-Antwort ändert den LEG-Vertrag "
-"nicht."
 
 #: templates/release/knowledge.html:19
 msgid ""
@@ -7610,10 +7580,6 @@ msgstr "Gründung fortsetzen"
 msgid "Gründung gestartet"
 msgstr "Gründung gestartet"
 
-#: dashboard.py:1088
-msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
-msgstr "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
-
 #: templates/emails/day_14_formation.html:71 templates/leg_dashboard.html:423
 #: templates/leg_dashboard.html:427 templates/leg_dashboard.html:433
 msgid "Gründung starten"
@@ -8151,10 +8117,6 @@ msgstr "Ihre Daten bleiben bei Ihnen"
 #: templates/how-it-works.html:157
 msgid "Ihre Daten, Ihre Kontrolle"
 msgstr "Ihre Daten, Ihre Kontrolle"
-
-#: templates/leg_dashboard.html:189
-msgid "Ihre Einladung"
-msgstr "Ihre Einladung"
 
 #: templates/leg_kalkulator.html:72
 msgid "Ihre Gemeinde"
@@ -10384,10 +10346,6 @@ msgstr "Mitglieder entscheiden gemeinsam"
 msgid "Mitglieder und LEG-Einstellungen verwalten"
 msgstr "Mitglieder und LEG-Einstellungen verwalten"
 
-#: templates/leg_dashboard.html:240
-msgid "Mitgliedermutationen und deren VNB-Verarbeitungsstatus"
-msgstr "Mitgliedermutationen und deren VNB-Verarbeitungsstatus"
-
 #: community_access.py:61
 msgid "Mitgliederverwaltung"
 msgstr "Mitgliederverwaltung"
@@ -10416,10 +10374,6 @@ msgstr "Mitgliedschaft"
 #: templates/verein/index.html:11
 msgid "Mitgliedschaft beantragen"
 msgstr "Mitgliedschaft beantragen"
-
-#: templates/leg_dashboard.html:235
-msgid "Mitgliedschaft: LEG und VNB"
-msgstr "Mitgliedschaft: LEG und VNB"
 
 #: templates/verein/index.html:13 templates/verein/index.html:14
 msgid "Mithelfen, auch ohne Mitgliedschaft"
@@ -13406,11 +13360,6 @@ msgstr "Sie sind abgemeldet. Melden Sie sich mit dem erfundenen Konto wieder an.
 msgid "Sie sind als Haushalt am Musterweg 1 angemeldet."
 msgstr "Sie sind als Haushalt am Musterweg 1 angemeldet."
 
-#: templates/leg_dashboard.html:190
-#, python-format
-msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
-msgstr "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
-
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:17
 #, python-format
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
@@ -14576,10 +14525,6 @@ msgstr "VNB"
 msgid "VNB Monitor"
 msgstr "VNB-Überwachung"
 
-#: templates/leg_dashboard.html:276
-msgid "VNB kontaktieren"
-msgstr "VNB kontaktieren"
-
 #: templates/admin/abrechnungen.html:82
 msgid "VNB-Abgleich"
 msgstr "VNB-Abgleich"
@@ -14591,10 +14536,6 @@ msgstr "VNB-Mutation vorübergehend nicht verfügbar."
 #: templates/admin/ops.html:123
 msgid "VNB-Plausibilität"
 msgstr "VNB-Plausibilität"
-
-#: templates/leg_dashboard.html:241
-msgid "VNB-Status"
-msgstr "VNB-Status"
 
 #: templates/api_docs.html:161
 msgid "Value-gap analysis"
@@ -16791,10 +16732,6 @@ msgstr "· Quelle:"
 #, python-format
 msgid "· Rang %(p_pv_rank)s CH"
 msgstr "· Rang %(p_pv_rank)s CH"
-
-#: templates/leg_dashboard.html:243
-msgid "· Vertrag"
-msgstr "· Vertrag"
 
 #: templates/advisories.html:38
 msgid "· Zurückgezogen"
@@ -19038,3 +18975,120 @@ msgid ""
 msgstr ""
 "Hier erscheinen geprüfte Zahlungsangaben, sobald sie freigegeben sind. Bitte senden Sie kein Geld"
 " an vermutete oder ältere Kontodaten."
+
+#: templates/leg_dashboard.html:56
+msgid "Gründungsstand auf der Übersicht öffnen"
+msgstr "Gründungsstand auf der Übersicht öffnen"
+
+#: templates/leg_dashboard.html:60
+msgid "Bankzahlungen in der Abrechnung öffnen"
+msgstr "Bankzahlungen in der Abrechnung öffnen"
+
+#: templates/leg_dashboard.html:60
+msgid "Rechnungen in der Abrechnung öffnen"
+msgstr "Rechnungen in der Abrechnung öffnen"
+
+#: templates/leg_workspace_base.html:9
+msgid "Übersicht"
+msgstr "Übersicht"
+
+#: templates/leg_workspace_base.html:12
+msgid "Rechnungen"
+msgstr "Rechnungen"
+
+#: templates/leg_workspace/formation.html:71
+msgid "Netzbetreiber kontaktieren"
+msgstr "Netzbetreiber kontaktieren"
+
+#: templates/leg_workspace/formation.html:71
+msgid "An den Netzbetreiber eskalieren"
+msgstr "An den Netzbetreiber eskalieren"
+
+#: templates/leg_workspace/formation.html:105
+msgid ""
+"Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
+"weiterhin vollständige Tarife, Messwerte und Zuteilungen des Netzbetreibers."
+msgstr ""
+"Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
+"weiterhin vollständige Tarife, Messwerte und Zuteilungen des Netzbetreibers."
+
+#: templates/leg_workspace/members.html:54
+msgid "Mitgliedschaft und Netzbetreiber"
+msgstr "Mitgliedschaft und Netzbetreiber"
+
+#: templates/leg_workspace/members.html:55
+msgid "Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar."
+msgstr "Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar."
+
+#: templates/leg_workspace/members.html:56
+msgid ""
+"Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der"
+" Netzbetreiber verarbeitet. Die Antwort des Netzbetreibers ändert den LEG-Vertrag nicht."
+msgstr ""
+"Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der"
+" Netzbetreiber verarbeitet. Die Antwort des Netzbetreibers ändert den LEG-Vertrag nicht."
+
+#: templates/leg_workspace/members.html:59
+msgid "Mitgliedermutationen und Stand beim Netzbetreiber"
+msgstr "Mitgliedermutationen und Stand beim Netzbetreiber"
+
+#: templates/leg_workspace/members.html:60
+msgid "Status beim Netzbetreiber"
+msgstr "Status beim Netzbetreiber"
+
+#: templates/leg_workspace/members.html:62
+#, python-format
+msgid "Vertrag: %(id)s"
+msgstr "Vertrag: %(id)s"
+
+#: templates/leg_workspace/members.html:81
+msgid "Beim Netzbetreiber einreichen"
+msgstr "Beim Netzbetreiber einreichen"
+
+#: templates/leg_workspace/navigation.html:1
+msgid "LEG-Verwaltung"
+msgstr "LEG-Verwaltung"
+
+#: templates/leg_workspace/settings.html:15
+msgid "Integrationskonten öffnen"
+msgstr "Integrationskonten öffnen"
+
+#: store/formation_documents.py:118
+msgid "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
+msgstr "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
+
+#: templates/leg_workspace/formation.html:55
+msgid "Für diese LEG liegen keine Vertragsdokumente vor."
+msgstr "Für diese LEG liegen keine Vertragsdokumente vor."
+
+#: templates/leg_billing.html:55
+msgid "Noch keine Bankzahlungen abgeglichen."
+msgstr "Noch keine Bankzahlungen abgeglichen."
+
+#: templates/leg_billing.html:57
+msgid "Diese Ansicht lädt keine Zahlungsdaten."
+msgstr "Diese Ansicht lädt keine Zahlungsdaten."
+
+#: dashboard.py:1119
+msgid ""
+"Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
+"Mitgliedern starten."
+msgstr ""
+"Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
+"Mitgliedern starten."
+
+#: templates/leg_dashboard.html:45
+msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
+msgstr "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
+
+#: templates/leg_workspace/header.html:14
+msgid "LEG und Sprache wechseln"
+msgstr "LEG und Sprache wechseln"
+
+#: store/formation_documents.py:123
+msgid ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."
+msgstr ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."

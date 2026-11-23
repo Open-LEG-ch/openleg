@@ -1,11 +1,13 @@
-{% extends "product_base.html" %}
-{% block content %}
+{% extends "leg_workspace_base.html" %}
+{% set workspace_page = "billing" %}
+{% set workspace_billing = true %}
+{% block workspace_content %}
 {% set query_categories = {'amount': _('amount'), 'metering': _('metering'), 'payment': _('payment'), 'other': _('other')} %}
 {% set query_states = {'open': _('open'), 'acknowledged': _('acknowledged'), 'resolved': _('resolved')} %}
 {% set can_prepare_billing = can_prepare_billing|default(false) %}
 {% set can_approve_billing = can_approve_billing|default(false) %}
 <div class="max-w-3xl mx-auto px-4 py-8">
-  <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="text-brand hover:underline font-semibold">{{ _('Zurück zum LEG-Dashboard') }}</a></p>
+  <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="inline-flex items-center text-brand hover:underline font-semibold">{{ _('Zurück zum LEG-Dashboard') }}</a></p>
   <h1 class="text-2xl font-bold mb-2">{{ _('Abrechnungen') }}</h1>
   <p class="text-sm text-ink-muted mb-4">{{ _('Hier prüfen Sie Abrechnungsentwürfe und geben sie frei. Die Freigabe erstellt unveränderliche Rechnungen pro Teilnehmer mit der eingefrorenen Richtlinie, dem Abgleich und den Quelldokumenten der Periode.') }}</p>
 
@@ -23,31 +25,38 @@
   {% if statement_status == 'imported' %}<p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">{{ _('Der Kontoauszug wurde importiert und abgeglichen.') }}</p>{% endif %}
   {% if statement_status == 'duplicate' %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht.') }}</p>{% endif %}
 
-  {% if can_prepare_billing %}
-  <section class="bg-white rounded-xl border p-6 mb-6">
-    <h2 class="font-bold mb-2">{{ _('Bankzahlungen abgleichen') }}</h2>
-    <p class="text-sm text-ink-muted mb-4">{{ _('Laden Sie einen ISO-20022-Kontoauszug im Format camt.053 oder camt.054 hoch. Nur eine eindeutige Zahlung mit passender Referenz, CHF-Betrag und LEG wird automatisch verbucht.') }}</p>
-    <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community_id }}/billing/statements">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <input type="file" name="statement" accept=".xml,application/xml,text/xml" required class="block w-full border rounded-lg px-3 py-2 mb-3">
-      <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">{{ _('Kontoauszug importieren') }}</button>
-    </form>
-  </section>
-  {% endif %}
+  <section id="payments" aria-labelledby="payments-title" class="mb-6">
+    <h2 id="payments-title" class="text-xl font-bold mb-4">{{ _('Zahlungen') }}</h2>
+    {% if can_import_bank_statement %}
+    <section class="bg-white rounded-xl border p-6 mb-6">
+      <h3 class="font-bold mb-2">{{ _('Bankzahlungen abgleichen') }}</h3>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Laden Sie einen ISO-20022-Kontoauszug im Format camt.053 oder camt.054 hoch. Nur eine eindeutige Zahlung mit passender Referenz, CHF-Betrag und LEG wird automatisch verbucht.') }}</p>
+      <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community_id }}/billing/statements">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="file" name="statement" accept=".xml,application/xml,text/xml" required class="block w-full border rounded-lg px-3 py-2 mb-3">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">{{ _('Kontoauszug importieren') }}</button>
+      </form>
+    </section>
+    {% endif %}
 
-  {% if statement_entries %}
-  <section class="bg-white rounded-xl border p-6 mb-6">
-    <h2 class="font-bold mb-3">{{ _('Zahlungsabgleich prüfen') }}</h2>
-    <div class="space-y-3 text-sm">
-      {% for entry in statement_entries %}
-      <div class="border-l-2 border-brand pl-3">
-        <p class="font-semibold">{{ entry.payment_reference or _('Ohne Zahlungsreferenz') }} · {{ entry.amount }} {{ entry.currency }}</p>
-        <p class="text-ink-muted">{{ _('Entscheid:') }} {{ _(entry.match_decision_label) }} {{ _('· Quelle:') }} {{ entry.source_name }} {{ _('· Import:') }} {{ entry.imported_at }} {{ _('· Akteur:') }} {{ entry.actor_id }}</p>
+    {% if statement_entries %}
+    <section class="bg-white rounded-xl border p-6 mb-6">
+      <h3 class="font-bold mb-3">{{ _('Zahlungsabgleich prüfen') }}</h3>
+      <div class="space-y-3 text-sm">
+        {% for entry in statement_entries %}
+        <div class="border-l-2 border-brand pl-3">
+          <p class="font-semibold">{{ entry.payment_reference or _('Ohne Zahlungsreferenz') }} · {{ entry.amount }} {{ entry.currency }}</p>
+          <p class="text-ink-muted">{{ _('Entscheid:') }} {{ _(entry.match_decision_label) }} {{ _('· Quelle:') }} {{ entry.source_name }} {{ _('· Import:') }} {{ entry.imported_at }} {{ _('· Akteur:') }} {{ entry.actor_id }}</p>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
-    </div>
+    </section>
+    {% elif statement_entries_loaded %}
+    <p class="text-sm text-ink-muted">{{ _('Noch keine Bankzahlungen abgeglichen.') }}</p>
+    {% else %}
+    <p class="text-sm text-ink-muted">{{ _('Diese Ansicht lädt keine Zahlungsdaten.') }}</p>
+    {% endif %}
   </section>
-  {% endif %}
 
   {% if periods %}
   <div class="space-y-6">
@@ -97,7 +106,7 @@
   </section>
   {% endif %}
 
-  <h2 class="text-xl font-bold mt-10 mb-4">{{ _('Freigegebene Rechnungen') }}</h2>
+  <h2 id="invoices" class="text-xl font-bold mt-10 mb-4">{{ _('Freigegebene Rechnungen') }}</h2>
   {% if invoices %}
   <div class="space-y-4">
     {% for invoice in invoices %}

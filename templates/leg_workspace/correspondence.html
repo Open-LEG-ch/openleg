@@ -1,0 +1,56 @@
+<section class="mb-10">
+  <p class="text-sm text-ink-muted mb-4">{{ _('Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist.') }}</p>
+  {% if correspondence %}
+  <div class="overflow-x-auto mb-4"><table class="w-full min-w-2xl text-sm">
+    <caption class="sr-only">{{ _('Korrespondenzjournal dieser Stromgemeinschaft') }}</caption>
+    <thead class="border-y border-line">
+      <tr>
+        <th scope="col" class="px-3 py-2 text-left">{{ _('Richtung') }}</th>
+        <th scope="col" class="px-3 py-2 text-left">{{ _('Kanal') }}</th>
+        <th scope="col" class="px-3 py-2 text-left">{{ _('Gegenstelle') }}</th>
+        <th scope="col" class="px-3 py-2 text-left">{{ _('Betreff') }}</th>
+        <th scope="col" class="px-3 py-2 text-right">{{ _('Datum') }}</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-line">
+      {% for entry in correspondence %}
+      <tr>
+        <td class="px-3 py-2">{{ _("Eingang") if entry.direction == "in" else _("Ausgang") }}</td>
+        <td class="px-3 py-2 text-ink-muted">{{ _("Brief") if entry.channel == "post" else _("E-Mail") }}</td>
+        <td class="px-3 py-2">{{ entry.counterparty }}</td>
+        <td class="px-3 py-2">{{ entry.subject }}</td>
+        <td class="px-3 py-2 text-right text-xs text-ink-muted">{{ entry.created_at }}</td>
+      </tr>
+      {% if entry.attachment_filename %}<tr><td colspan="5" class="px-3 pb-3 text-right"><a class="inline-flex items-center text-sm font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/correspondence/{{ entry.id }}/attachment">{{ entry.attachment_filename }} {{ _('herunterladen') }}</a></td></tr>{% endif %}
+      {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="text-sm text-ink-muted mb-4">{{ _('Hier erscheinen Briefe und E-Mails Ihrer LEG. Fügen Sie den ersten Eintrag hinzu.') }}</p>
+  {% endif %}
+  {% if viewer_has_session %}
+  {% if correspondence_error %}<p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(correspondence_error) }}</p>{% endif %}
+  <p class="mb-4 text-xs text-ink-muted">{{ _('Das Journal bleibt nachvollziehbar: Korrekturen bleiben als neue Einträge sichtbar. Bestehende Einträge werden nicht überschrieben oder gelöscht.') }}</p>
+  <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community.community_id }}/correspondence" class="grid gap-3 rounded-xl border border-line bg-white p-4 sm:grid-cols-2 sm:p-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div><label for="correspondence-direction" class="block text-sm font-semibold mb-1">{{ _('Richtung') }}</label><select id="correspondence-direction" name="direction" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+      <option value="out">{{ _('Ausgang') }}</option>
+      <option value="in">{{ _('Eingang') }}</option>
+    </select></div>
+    <div><label for="correspondence-channel" class="block text-sm font-semibold mb-1">{{ _('Kanal') }}</label><select id="correspondence-channel" name="channel" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+      <option value="email">{{ _('E-Mail') }}</option>
+      <option value="post">{{ _('Brief') }}</option>
+    </select></div>
+    <div><label for="correspondence-counterparty" class="block text-sm font-semibold mb-1">{{ _('Gegenstelle') }}</label><input id="correspondence-counterparty" type="text" name="counterparty" placeholder="{{ _('z. B. Netzbetreiber') }}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+    <div><label for="correspondence-subject" class="block text-sm font-semibold mb-1">{{ _('Betreff') }}</label><input id="correspondence-subject" type="text" name="subject" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+    <div class="sm:col-span-2"><label for="correspondence-notes" class="block text-sm font-semibold mb-1">{{ _('Notiz') }} <span class="font-normal text-ink-muted">{{ _('optional') }}</span></label><input id="correspondence-notes" type="text" name="notes" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+    <div class="sm:col-span-2"><label for="correspondence-attachment" class="block text-sm font-semibold mb-1">{{ _('PDF-Anhang') }} <span class="font-normal text-ink-muted">{{ _('optional, höchstens 2 MB') }}</span></label><input id="correspondence-attachment" type="file" name="attachment" accept="application/pdf,.pdf" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+    <button type="submit" class="sm:col-span-2 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Eintrag hinzufügen') }}</button>
+  </form>
+  {% else %}
+  <div class="rounded-lg border border-dashed border-line px-4 py-4 text-sm text-ink-muted">
+    <p class="mb-3">{{ _('Im Nur-Lesezugriff sehen Sie das Journal, können aber nichts verändern.') }}</p>
+    <a href="/dashboard" class="inline-flex items-center rounded-lg border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Vollzugriff im persönlichen Dashboard anfordern') }}</a>
+  </div>
+  {% endif %}
+</section>

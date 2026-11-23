@@ -1,0 +1,48 @@
+{% extends "product_base.html" %}
+{% set page = workspace_page|default("overview") %}
+{% set section = workspace_section|default(page) %}
+{% set workspace_id = community.community_id if community else community_id|default("") %}
+{% set demo = workspace_demo|default(false) %}
+{% set workspace_billing = workspace_billing|default(viewer_has_session and (can_audit_billing|default(is_admin))) %}
+{% set workspace_root = "/leg/community/" ~ (workspace_id|urlencode) %}
+{% set workspace_overview = "/leg/dashboard/demo" if demo else "/leg/dashboard?" ~ ({"cid": workspace_id}|urlencode) %}
+{% set workspace_labels = dict([
+  ("overview", _("Übersicht")),
+  ("billing", _("Abrechnung")),
+  ("payments", _("Zahlungen")),
+  ("invoices", _("Rechnungen")),
+  ("members", _("Mitglieder")),
+  ("correspondence", _("Korrespondenz")),
+  ("formation", _("Gründung")),
+  ("settings", _("Einstellungen")),
+]) %}
+{% set workspace_focus = "[&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-solid! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-3! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-offset-3! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-brand!" %}
+{% block product_header %}
+  {% if workspace_id %}
+    {% include "leg_workspace/header.html" %}
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+{% block content %}
+<div data-leg-workspace data-dashboard-structure="community-operations"
+     class="mx-auto max-w-7xl
+       [&_h1]:font-serif [&_h1]:font-normal
+       {{ workspace_focus }}
+       {% if site_release_enabled %}
+       [&_a.text-brand:not(.rounded-full,.bg-brand)]:underline [&_a.text-brand:not(.rounded-full,.bg-brand)]:underline-offset-4
+       [&_a]:decoration-2 [&_a]:decoration-[color:var(--workspace-roof)]
+       {% endif %}
+       [&_a.inline-flex]:min-h-12 [&_button]:min-h-12 [&_button]:rounded-full [&_button]:whitespace-normal
+       [&_label:has(input:is([type=checkbox],[type=radio]))]:min-h-12
+       [&_input:not([type=hidden],[type=checkbox],[type=radio])]:min-h-12 [&_input]:max-w-full [&_select]:min-h-12 [&_select]:max-w-full [&_textarea]:min-h-12 [&_summary]:min-h-12">
+  <div class="grid min-w-0 {% if workspace_id %}lg:grid-cols-[13.5rem_minmax(0,1fr)]{% endif %}">
+    {% if workspace_id %}
+    {% include "leg_workspace/navigation.html" %}
+    {% endif %}
+    <div class="min-w-0 px-4 py-8 lg:px-12 lg:py-12">
+      {% block workspace_content scoped %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

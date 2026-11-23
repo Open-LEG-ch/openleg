@@ -29,6 +29,7 @@ from email_localization import gettext
 from i18n import localized_url
 from locale_policy import resolve_locale
 from money_display import InvalidMoneyAmount, format_amount
+from store.formation import PRE_ACTIVATION_STATUSES
 from translation_markers import gettext_noop as _N
 
 logger = logging.getLogger(__name__)
@@ -95,6 +96,16 @@ def leg_dashboard_location(community_id: str) -> str:
     what the caller passes (no protocol-relative //host, no fragments).
     """
     return "/leg/dashboard?" + urlencode({"cid": community_id})
+
+
+def leg_workspace_location(community_id: str, page: str) -> str:
+    return "/leg/community/" + quote(community_id, safe="") + "/" + page
+
+
+def leg_formation_page(community: dict | None) -> str:
+    return (
+        "formation" if community and community.get("status") == "active" else "overview"
+    )
 
 
 def readiness(building_id: str, *, city_id=None, app_base_url: str = "") -> dict:
@@ -215,7 +226,9 @@ def _money_display(value) -> str:
         return _N("Unlesbar")
 
 
-def leg_overview(community_id: str, building_id: str) -> dict:
+def leg_overview(
+    community_id: str, building_id: str, *, workspace_page: str = "overview"
+) -> dict:
     """Operator view of one community, gated on membership.
 
     Same capability-URL model as the resident dashboard: the caller must
@@ -245,6 +258,21 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     if member.get("status") != "confirmed":
         return {"error": _N("Kein Zugriff."), "community": None}
 
+    capabilities = community_access.capabilities_for(member)
+    can_audit_billing = community_access.AUDIT_BILLING in capabilities
+    if workspace_page in ("settings", "payments", "invoices") and not can_audit_billing:
+        return {"error": _N("Kein Zugriff."), "community": None}
+
+    needs_start_evidence = (
+        workspace_page == "overview"
+        and status["status"] == "dso_submitted"
+        and community_access.is_administrator(member)
+    )
+    correspondence = (
+        db.list_correspondence(community_id)
+        if workspace_page == "correspondence" or needs_start_evidence
+        else []
+    )
     vnb_exchange_available = db.is_db_available()
     if vnb_exchange_available:
         try:
@@ -257,7 +285,6 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     else:
         vnb_submissions = []
         vnb_mutations = []
-    capabilities = community_access.capabilities_for(member)
     battery_unavailable = False
     try:
         battery = db.get_battery(community_id)
@@ -297,14 +324,19 @@ def leg_overview(community_id: str, building_id: str) -> dict:
         ],
         "viewer_building_id": building_id,
         "is_admin": community_access.is_administrator(member),
+        "can_start_formation": (
+            status["status"] in PRE_ACTIVATION_STATUSES
+            and status.get("activated_at") is None
+            and status.get("formation_started_at") is None
+        ),
         "can_manage_members": community_access.MANAGE_MEMBERS in capabilities,
         "can_manage_documents": community_access.MANAGE_DOCUMENTS in capabilities,
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
-        "can_audit_billing": community_access.AUDIT_BILLING in capabilities,
+        "can_audit_billing": can_audit_billing,
         "access_role_labels": community_access.ROLE_LABELS,
         "leg_documents": db.list_leg_documents(community_id),
-        "correspondence": db.list_correspondence(community_id),
+        "correspondence": correspondence,
         "vnb_submissions": vnb_submissions,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
@@ -314,27 +346,26 @@ def leg_overview(community_id: str, building_id: str) -> dict:
     }
 
 
-def _require_role(community_id: str, building_id: str, role: str):
-    """Return the member row if building_id has the given role, else None."""
+def _community_member(community_id: str, building_id: str):
     status = formation_wizard.get_community_status(community_id, building_id)
     if not status:
         return None
     return next(
-        (
-            m
-            for m in status["members"] or []
-            if m["building_id"] == building_id and m.get("role") == role
-        ),
+        (m for m in status["members"] or [] if m["building_id"] == building_id),
         None,
+    )
+
+
+def _is_confirmed_admin(member) -> bool:
+    return bool(
+        member and member.get("role") == "admin" and member.get("status") == "confirmed"
     )
 
 
 def _require_confirmed_admin(community_id: str, building_id: str):
     """Return the member row for a confirmed community admin, else None."""
-    member = _require_role(community_id, building_id, "admin")
-    if not member or member.get("status") != "confirmed":
-        return None
-    return member
+    member = _community_member(community_id, building_id)
+    return member if _is_confirmed_admin(member) else None
 
 
 def leg_export_archive(community_id: str, building_id: str) -> bytes | None:
@@ -368,19 +399,13 @@ def leg_restore_archive(
 
 def _require_capability(community_id: str, building_id: str, capability: str):
     """Return a confirmed member when the central access policy permits it."""
-    status = formation_wizard.get_community_status(community_id, building_id)
-    if not status:
-        return None
-    member = next(
-        (m for m in status["members"] or [] if m["building_id"] == building_id),
-        None,
-    )
+    member = _community_member(community_id, building_id)
     return member if community_access.allows(member, capability) else None
 
 
 def leg_billing_workspace_location(community_id: str) -> str:
     """Build the billing workspace path; quote keeps it a relative path."""
-    return "/leg/community/" + quote(community_id, safe="") + "/billing"
+    return leg_workspace_location(community_id, "billing")
 
 
 _BILLING_STATUS_LABELS = {
@@ -541,6 +566,7 @@ def leg_billing_workspace_view(
             for period in periods
         ],
         "invoices": invoices,
+        "statement_entries_loaded": include_statement_entries,
         "statement_entries": [
             {
                 **entry,
@@ -565,6 +591,7 @@ def leg_billing_workspace_view(
         ),
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
+        "can_import_bank_statement": _is_confirmed_admin(member),
     }
     view.update(extra)
     return view
@@ -732,7 +759,7 @@ def leg_prepare_billing_period(
 
 def leg_billing_policy_location(community_id: str) -> str:
     """Build the billing policy path; quote keeps it a relative path."""
-    return "/leg/community/" + quote(community_id, safe="") + "/billing-policy"
+    return leg_workspace_location(community_id, "billing-policy")
 
 
 def _internal_price_band(community_id: str, building_id: str) -> dict | None:
@@ -1092,7 +1119,9 @@ def leg_start_formation(community_id: str, building_id: str) -> dict:
     ok = formation_wizard.start_formation(community_id)
     if not ok:
         return {
-            "error": _N("Gründung noch nicht möglich (genug bestätigte Mitglieder?).")
+            "error": _N(
+                "Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten Mitgliedern starten."
+            )
         }
     return {"error": None}
 

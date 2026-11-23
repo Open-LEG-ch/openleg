@@ -154,7 +154,7 @@ def test_document_routes_in_source():
 
 
 def test_dashboard_template_has_documents_section_with_disclaimer():
-    path = os.path.join(PROJECT_ROOT, "templates", "leg_dashboard.html")
+    path = os.path.join(PROJECT_ROOT, "templates", "leg_workspace", "formation.html")
     with open(path, encoding="utf-8") as handle:
         html = handle.read()
     assert "/documents" in html
@@ -213,7 +213,9 @@ def test_replace_document_bundle_uses_one_transaction(monkeypatch):
 
     import store.formation_documents as repository
 
-    cur = _DictCursor(one={"has_signed": False})
+    cur = _DictCursor(
+        one={"status": "formation_started", "activated_at": None, "has_signed": False}
+    )
 
     @contextmanager
     def _conn():
@@ -298,7 +300,9 @@ def test_leg_overview_includes_correspondence(monkeypatch):
         "list_vnb_submission_cases",
         MagicMock(return_value=[]),
     )
-    result = dashboard_module.leg_overview("c0ffee", "b-admin")
+    result = dashboard_module.leg_overview(
+        "c0ffee", "b-admin", workspace_page="correspondence"
+    )
     assert result["correspondence"] == [{"id": 1, "subject": "Antwort VNB"}]
 
 
@@ -311,7 +315,9 @@ def test_correspondence_route_in_source():
 
 
 def test_dashboard_template_has_correspondence_section():
-    path = os.path.join(PROJECT_ROOT, "templates", "leg_dashboard.html")
+    path = os.path.join(
+        PROJECT_ROOT, "templates", "leg_workspace", "correspondence.html"
+    )
     with open(path, encoding="utf-8") as handle:
         html = handle.read()
     assert "/correspondence" in html

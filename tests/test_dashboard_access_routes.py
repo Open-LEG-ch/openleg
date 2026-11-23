@@ -624,8 +624,13 @@ def _correspondence_overview():
 
 
 def test_correspondence_post_success_is_private_and_redirects(app_module, monkeypatch):
-    log = MagicMock(return_value={"error": None, "entry_id": 5})
-    monkeypatch.setattr(app_module.dashboard_module, "leg_log_correspondence", log)
+    log = MagicMock(return_value=5)
+    monkeypatch.setattr(app_module.db, "log_correspondence", log)
+    monkeypatch.setattr(
+        app_module.dashboard_module.formation_wizard,
+        "get_community_status",
+        lambda _cid, _bid: _correspondence_overview()["community"],
+    )
     client = app_module.web.test_client()
     _set_session(client)
 
@@ -633,7 +638,7 @@ def test_correspondence_post_success_is_private_and_redirects(app_module, monkey
         "/leg/community/community-1/correspondence",
         data={
             "csrf_token": "csrf-secret",
-            "direction": "outbound",
+            "direction": "out",
             "channel": "email",
             "counterparty": "VNB",
             "subject": "Netzanschluss",
@@ -641,12 +646,17 @@ def test_correspondence_post_success_is_private_and_redirects(app_module, monkey
         },
     )
 
+    log.assert_called_once()
+    assert log.call_args.kwargs["direction"] == "out"
+    assert log.call_args.kwargs["community_id"] == "community-1"
+    assert log.call_args.kwargs["logged_by"] == "building-session"
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/leg/dashboard?cid=community-1")
+    assert response.headers["Location"].endswith(
+        "/leg/community/community-1/correspondence"
+    )
     assert "bid=" not in response.headers["Location"]
     assert "no-store" in response.headers["Cache-Control"]
     assert response.headers["Referrer-Policy"] == "no-referrer"
-    assert log.call_args.args[:2] == ("community-1", "building-session")
 
 
 def test_correspondence_post_validation_failure_is_private(app_module, monkeypatch):
@@ -658,7 +668,9 @@ def test_correspondence_post_validation_failure_is_private(app_module, monkeypat
         app_module.dashboard_module,
         "leg_overview",
         MagicMock(
-            side_effect=lambda community_id, building_id: _correspondence_overview()
+            side_effect=lambda community_id, building_id, **_kwargs: (
+                _correspondence_overview()
+            )
         ),
     )
     client = app_module.web.test_client()
@@ -699,7 +711,11 @@ def test_public_dashboard_response_stays_public_with_blank_session(app_module):
 
 
 def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch):
-    source = Path("templates/leg_dashboard.html").read_text(encoding="utf-8")
+    templates = [
+        Path("templates/leg_dashboard.html"),
+        *Path("templates/leg_workspace").glob("*.html"),
+    ]
+    source = "\n".join(path.read_text(encoding="utf-8") for path in templates)
 
     assert 'name="bid"' not in source
     assert source.count('name="csrf_token"') >= 5
@@ -725,7 +741,7 @@ def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch
 
     assert "Nächster Schritt: Ablehnung prüfen" in html
     assert "Nächster Schritt: Einleitung erneut möglich" in html
-    assert "Nächster Schritt: An VNB eskalieren" in html
+    assert "Nächster Schritt: An den Netzbetreiber eskalieren" in html
     assert "Nächster Schritt: download_package" not in html
     assert "Paket bereit" in html
 

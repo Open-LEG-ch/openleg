@@ -1154,15 +1154,6 @@ msgid "Aktive Mitglieder"
 msgstr "Membri attivi"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:310
-msgid ""
-"Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung "
-"brauchen Sie weiterhin vollständige Tarife, Messwerte und VNB-Zuteilungen."
-msgstr ""
-"Abilita la LEG non prima della data di inizio confermata. Per la fatturazione, hai "
-"ancora bisogno di tariffe complete, valori misurati e assegnazioni VNB."
-
-#. Draft translation; native language and domain review pending.
 #: templates/telemetry_dashboard.html:18 templates/telemetry_dashboard.html:24
 #: templates/telemetry_shared.html:14
 msgid "Aktualität unbekannt"
@@ -1417,11 +1408,6 @@ msgstr ""
 #, python-format
 msgid "An %(recipient)s"
 msgstr "A %(recipient)s"
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:276
-msgid "An VNB eskalieren"
-msgstr "Escalation a VNB"
 
 #. Draft translation; native language and domain review pending.
 #: templates/documents/dso_registration.html:14
@@ -2363,11 +2349,6 @@ msgstr ""
 #: templates/documents/dso_registration.html:25
 msgid "Beilagen"
 msgstr "Supplementi"
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:262
-msgid "Beim VNB einreichen"
-msgstr "Invia al VNB"
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/manage.html:10
@@ -4208,11 +4189,6 @@ msgstr ""
 "Mantenete per iscritto la rappresentanza, il consenso dei partecipanti, il prezzo "
 "interno dell'energia elettrica e la fatturazione e segnalate il vZEV al VNB."
 
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:236
-msgid "Der VNB-Austausch ist derzeit nicht verfügbar."
-msgstr "Lo scambio VNB non è attualmente disponibile."
-
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/index.html:10
 msgid ""
@@ -4995,17 +4971,6 @@ msgid ""
 msgstr ""
 "Il numero minimo non rende anonimi i singoli valori condivisi. La vista separa le "
 "fonti di diversi canali di misurazione."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:237
-msgid ""
-"Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen "
-"separat, was der Netzbetreiber verarbeitet. Eine VNB-Antwort ändert den LEG-Vertrag "
-"nicht."
-msgstr ""
-"L'elenco dei membri sopra riportato è lo stato del contratto di LEG. Le operazioni "
-"qui mostrano separatamente ciò che l'operatore di rete elabora. Una risposta VNB non "
-"modifica il contratto LEG."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:19
@@ -9020,11 +8985,6 @@ msgid "Gründung gestartet"
 msgstr "Creazione avviata"
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:1088
-msgid "Gründung noch nicht möglich (genug bestätigte Mitglieder?)."
-msgstr "Creazione non ancora possibile (membri sufficientemente confermati?)."
-
-#. Draft translation; native language and domain review pending.
 #: templates/emails/day_14_formation.html:71 templates/leg_dashboard.html:423
 #: templates/leg_dashboard.html:427 templates/leg_dashboard.html:433
 msgid "Gründung starten"
@@ -9655,11 +9615,6 @@ msgstr "I tuoi dati rimarranno con te"
 #: templates/how-it-works.html:157
 msgid "Ihre Daten, Ihre Kontrolle"
 msgstr "I tuoi dati, il tuo controllo"
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:189
-msgid "Ihre Einladung"
-msgstr "Il vostro invito"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_kalkulator.html:72
@@ -12336,11 +12291,6 @@ msgid "Mitglieder und LEG-Einstellungen verwalten"
 msgstr "Gestisci le impostazioni dei membri e LEG"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:240
-msgid "Mitgliedermutationen und deren VNB-Verarbeitungsstatus"
-msgstr "Mutazioni dei membri e loro status di trasformazione VNB"
-
-#. Draft translation; native language and domain review pending.
 #: community_access.py:61
 msgid "Mitgliederverwaltung"
 msgstr "Amministrazione dei membri"
@@ -12374,11 +12324,6 @@ msgstr "Iscrizione"
 #: templates/verein/index.html:11
 msgid "Mitgliedschaft beantragen"
 msgstr "Domanda di adesione"
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:235
-msgid "Mitgliedschaft: LEG und VNB"
-msgstr "Iscrizione: LEG e VNB"
 
 #. Draft translation; native language and domain review pending.
 #: templates/verein/index.html:13
@@ -15949,12 +15894,6 @@ msgid "Sie sind als Haushalt am Musterweg 1 angemeldet."
 msgstr "Siete iscritti come una famiglia sul modello 1."
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:190
-#, python-format
-msgid "Sie sind eingeladen, bei \"%(community)s\" mitzumachen."
-msgstr "Siete invitati a partecipare a \"%(community)s.\""
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/beanspruchen_bestaetigt.html:17
 #, python-format
 msgid "Sie sind jetzt als Betreiber von \"%(entry_name)s\" hinterlegt."
@@ -17360,11 +17299,6 @@ msgstr "VNB"
 msgid "VNB Monitor"
 msgstr "VNB Monitor"
 
-#. Draft checked against source; native language and domain review pending.
-#: templates/leg_dashboard.html:276
-msgid "VNB kontaktieren"
-msgstr "Contattare il VNB"
-
 #. Draft translation; native language and domain review pending.
 #: templates/admin/abrechnungen.html:82
 msgid "VNB-Abgleich"
@@ -17379,11 +17313,6 @@ msgstr "VNBmutazione temporaneamente non disponibile."
 #: templates/admin/ops.html:123
 msgid "VNB-Plausibilität"
 msgstr "VNB-Plavibilità"
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:241
-msgid "VNB-Status"
-msgstr "Stato VNB"
 
 #. Draft translation; native language and domain review pending.
 #: templates/api_docs.html:161
@@ -20028,11 +19957,6 @@ msgid "· Rang %(p_pv_rank)s CH"
 msgstr "· Grado %(p_pv_rank)s CH"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:243
-msgid "· Vertrag"
-msgstr "· Contratto"
-
-#. Draft translation; native language and domain review pending.
 #: templates/advisories.html:38
 msgid "· Zurückgezogen"
 msgstr "· Ritirato"
@@ -22665,3 +22589,145 @@ msgid ""
 " an vermutete oder ältere Kontodaten."
 msgstr ""
 "Le coordinate di pagamento verificate saranno pubblicate qui una volta autorizzate. Non inviare denaro sulla base di dati di conto ipotizzati o precedenti."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_dashboard.html:56
+msgid "Gründungsstand auf der Übersicht öffnen"
+msgstr "Vedi lo stato della costituzione nella panoramica"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_dashboard.html:60
+msgid "Bankzahlungen in der Abrechnung öffnen"
+msgstr "Apri i pagamenti bancari nella fatturazione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_dashboard.html:60
+msgid "Rechnungen in der Abrechnung öffnen"
+msgstr "Apri le fatture nella fatturazione"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace_base.html:9
+msgid "Übersicht"
+msgstr "Panoramica"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace_base.html:12
+msgid "Rechnungen"
+msgstr "Fatture"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/formation.html:71
+msgid "Netzbetreiber kontaktieren"
+msgstr "Contatta il gestore di rete"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/formation.html:71
+msgid "An den Netzbetreiber eskalieren"
+msgstr "Sottoponi il caso al gestore di rete"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/formation.html:105
+msgid ""
+"Aktivieren Sie die LEG frühestens am bestätigten Startdatum. Für die Abrechnung brauchen Sie "
+"weiterhin vollständige Tarife, Messwerte und Zuteilungen des Netzbetreibers."
+msgstr ""
+"Attiva la CLE a partire dalla data di avvio confermata. Per la fatturazione servono ancora "
+"tariffe, misure e ripartizioni complete del gestore di rete."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/members.html:54
+msgid "Mitgliedschaft und Netzbetreiber"
+msgstr "Partecipazione e gestore di rete"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/members.html:55
+msgid "Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar."
+msgstr "Lo scambio con il gestore di rete non è al momento disponibile."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/members.html:56
+msgid ""
+"Die Mitgliederliste oben ist der Vertragsstand der LEG. Die Vorgänge hier zeigen separat, was der"
+" Netzbetreiber verarbeitet. Die Antwort des Netzbetreibers ändert den LEG-Vertrag nicht."
+msgstr ""
+"L’elenco qui sopra mostra lo stato dei contratti della CLE. Le operazioni qui riportate indicano "
+"cosa tratta il gestore di rete. La sua risposta non modifica il contratto della CLE."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/members.html:59
+msgid "Mitgliedermutationen und Stand beim Netzbetreiber"
+msgstr "Variazioni dei partecipanti e stato presso il gestore di rete"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/members.html:60
+msgid "Status beim Netzbetreiber"
+msgstr "Stato presso il gestore di rete"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/members.html:62
+#, python-format
+msgid "Vertrag: %(id)s"
+msgstr "Contratto: %(id)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/members.html:81
+msgid "Beim Netzbetreiber einreichen"
+msgstr "Invia al gestore di rete"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/navigation.html:1
+msgid "LEG-Verwaltung"
+msgstr "Gestione della CLE"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/settings.html:15
+msgid "Integrationskonten öffnen"
+msgstr "Apri i conti di integrazione"
+
+#. Draft translation; native language and domain review pending.
+#: store/formation_documents.py:118
+msgid "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
+msgstr "Puoi creare bozze di contratto solo prima dell’avvio dell’attività."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/formation.html:55
+msgid "Für diese LEG liegen keine Vertragsdokumente vor."
+msgstr "Per questa CLE non sono disponibili documenti contrattuali."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:55
+msgid "Noch keine Bankzahlungen abgeglichen."
+msgstr "Non è ancora stato riconciliato alcun pagamento bancario."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:57
+msgid "Diese Ansicht lädt keine Zahlungsdaten."
+msgstr "Questa vista non carica i dati di pagamento."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:1119
+msgid ""
+"Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
+"Mitgliedern starten."
+msgstr ""
+"Puoi avviare la costituzione una sola volta, solo prima dell’avvio dell’attività e dopo la "
+"conferma di un numero sufficiente di membri."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_dashboard.html:45
+msgid "Hier finden Sie die Anmeldung beim Netzbetreiber und die Bestätigung des Betriebsstarts."
+msgstr "Qui trovi la registrazione presso il gestore di rete e la conferma dell’avvio dell’attività."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/header.html:14
+msgid "LEG und Sprache wechseln"
+msgstr "Cambia CLE o lingua"
+
+#. Draft translation; native language and domain review pending.
+#: store/formation_documents.py:123
+msgid ""
+"Der Netzbetreiber hat den Start bereits bestätigt. Die Vertragsentwürfe lassen sich deshalb nicht"
+" mehr ersetzen."
+msgstr ""
+"Il gestore di rete ha già confermato l’avvio dell’attività. Non puoi più sostituire le bozze di "
+"contratto."

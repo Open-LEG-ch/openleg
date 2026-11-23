@@ -3,7 +3,9 @@
 
 from psycopg2.extras import Json
 
+from store.formation import PRE_ACTIVATION_STATUSES
 from store.formation_signatures import bundle_fingerprint, participant_manifest
+from translation_markers import gettext_noop as _N
 
 
 def _manifest(document):
@@ -103,9 +105,25 @@ def replace_leg_document_bundle(community_id: str, documents: list[dict]) -> int
 
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT community_id FROM communities WHERE community_id = %s FOR UPDATE",
+            "SELECT status, activated_at FROM communities WHERE community_id = %s FOR UPDATE",
             (community_id,),
         )
+        community = cur.fetchone()
+        if (
+            not community
+            or community["status"] not in PRE_ACTIVATION_STATUSES
+            or community["activated_at"] is not None
+        ):
+            raise ValueError(
+                _N("Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen.")
+            )
+        if community["status"] == "dso_approved":
+            raise ValueError(
+                _N(
+                    "Der Netzbetreiber hat den Start bereits bestätigt. "
+                    "Die Vertragsentwürfe lassen sich deshalb nicht mehr ersetzen."
+                )
+            )
         cur.execute(
             """
                 SELECT EXISTS (
