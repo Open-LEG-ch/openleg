@@ -949,6 +949,11 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(result.get("error_status", 409))
         return _leg_dashboard_redirect(community_id, "members")
 
+    def payment_review_signer():
+        return URLSafeSerializer(
+            current_app.secret_key, salt="leg-payment-duplicate-review-set"
+        )
+
     def render_billing_workspace(community_id, building_id, **extra):
         statement_before = request.args.get("statement_before", type=int)
         payment_section = request.args.get("section") == "payments"
@@ -985,6 +990,29 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             feedback = {
                 "error": _("Sie dürfen in dieser LEG keine Zahlungen zuordnen."),
             }
+        if (
+            feedback
+            and feedback.get("duplicate_review_required")
+            and view.get("can_prepare_billing")
+        ):
+            entry_id, invoice_id = feedback["entry_id"], feedback["invoice_id"]
+            try:
+                current_review = dashboard_module.leg_payment_duplicate_review(
+                    community_id, entry_id
+                )
+            except psycopg2.Error:
+                abort(503)
+            feedback = {**feedback, **current_review}
+            if "reviewed_duplicates" in current_review:
+                feedback["duplicate_review"] = payment_review_signer().dumps(
+                    [
+                        community_id,
+                        building_id,
+                        entry_id,
+                        invoice_id,
+                        current_review["reviewed_duplicates"],
+                    ]
+                )
         page = render_leg_workspace(
             "leg_billing.html",
             csrf_token=_dashboard_csrf_token(),
@@ -1039,9 +1067,6 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         building_id = _require_dashboard_session()
         invoice_id = request.form.get("invoice_id", type=int)
         review_scope = [community_id, building_id, entry_id, invoice_id]
-        signer = URLSafeSerializer(
-            current_app.secret_key, salt="leg-payment-duplicate-review"
-        )
         if not _dashboard_csrf_valid():
             result = {
                 "error_status": 400,
@@ -1051,17 +1076,17 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             }
         else:
             receipt = request.form.get("duplicate_review")
-            reviewed_duplicate_id = None
+            reviewed_duplicates = None
             if receipt is not None:
-                # Zero signals an attempted override without valid review evidence.
-                reviewed_duplicate_id = 0
+                # An empty list signals an attempt without verified review evidence.
+                reviewed_duplicates = []
                 if request.form.get("confirm_distinct") == "yes":
                     try:
-                        claim = signer.loads(receipt)
+                        claim = payment_review_signer().loads(receipt)
                     except BadData:
                         claim = []
-                    if claim[:-1] == review_scope:
-                        reviewed_duplicate_id = claim[-1]
+                    if isinstance(claim, list) and claim[:-1] == review_scope:
+                        reviewed_duplicates = claim[-1]
             try:
                 result = dashboard_module.leg_assign_bank_payment(
                     community_id,
@@ -1069,7 +1094,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                     entry_id,
                     invoice_id,
                     request.form.get("confirm") == "yes",
-                    reviewed_duplicate_id=reviewed_duplicate_id,
+                    reviewed_duplicates=reviewed_duplicates,
                 )
             except (db.BillingStoreError, psycopg2.Error):
                 abort(503)
@@ -1080,13 +1105,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             "error": result.get("error"),
             "recovery": result.get("recovery"),
         }
-        if result.get("duplicate_entry_id") is not None:
+        if result.get("duplicate_review_required"):
             feedback.update(
-                duplicate_review=signer.dumps(
-                    [*review_scope, result["duplicate_entry_id"]]
-                ),
-                entry_id=entry_id,
-                invoice_id=invoice_id,
+                duplicate_review_required=True, entry_id=entry_id, invoice_id=invoice_id
             )
         receipt = secrets.token_urlsafe(16)
         pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})

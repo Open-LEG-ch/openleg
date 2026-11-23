@@ -36,6 +36,8 @@ class Cursor:
         return self.rows.pop(0) if self.rows else None
 
     def fetchall(self):
+        if self.rows and isinstance(self.rows[0], list):
+            return self.rows.pop(0)
         return list(self.rows)
 
     def __enter__(self):
@@ -210,6 +212,7 @@ def _payment_entry(**overrides):
         "amount": Decimal("42.50"),
         "payment_reference": "BANK-1",
         "booking_date": date(2026, 9, 1),
+        "bank_references": [],
     }
     return {**entry, **overrides}
 
@@ -221,7 +224,7 @@ def test_confirm_payment_locks_and_matches_only_inside_the_community(monkeypatch
             _payment_entry(),
             {"id": 3, "gross_chf": Decimal("42.50")},
             {"new_state": "delivered"},
-            None,
+            [],
             {"id": 77},
         ]
     )

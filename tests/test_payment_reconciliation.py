@@ -259,6 +259,14 @@ def _entry_insert_params(cursor):
     ]
 
 
+def _entry_decisions(cursor):
+    return [
+        params[:2]
+        for query, params in cursor.executed
+        if "UPDATE bank_statement_entries SET invoice_id" in query
+    ]
+
+
 def test_duplicate_statement_replay_returns_duplicate_without_second_paid_event(
     monkeypatch,
 ):
@@ -270,10 +278,11 @@ def test_duplicate_statement_replay_returns_duplicate_without_second_paid_event(
         for entry in payment_reconciliation.parse_statement(CAMT_053).entries
     ]
     cursor = _ReconcileCursor(
-        ones=[{"id": 7}, None, None, {"id": 7}],
+        ones=[{"id": 7}, {"id": 71}, None, {"id": 7}],
         rows=[
             [_delivered_invoice()],
             [{"invoice_id": 42, "new_state": "delivered"}],
+            [],
             [{"match_decision": "matched"}],
             [{"match_decision": "matched"}],
         ],
@@ -308,10 +317,11 @@ def test_other_community_invoice_is_never_a_match_candidate(monkeypatch):
     from store import billing
 
     cursor = _ReconcileCursor(
-        ones=[{"id": 9}],
+        ones=[{"id": 9}, {"id": 91}],
         rows=[
             [_delivered_invoice()],
             [{"invoice_id": 42, "new_state": "delivered"}],
+            [],
             [],
         ],
     )
@@ -343,9 +353,7 @@ def test_other_community_invoice_is_never_a_match_candidate(monkeypatch):
     assert "FOR UPDATE OF i" in invoices_sql
     assert invoices_params == ("community-a",)
     assert _event_inserts(cursor) == []
-    entry_params = _entry_insert_params(cursor)[0]
-    assert entry_params[2] is None
-    assert entry_params[10] == "unmatched"
+    assert _entry_decisions(cursor) == [(None, "unmatched")]
 
 
 def test_camt054_reversal_parses_end_to_end_and_books_nothing(monkeypatch):
@@ -365,7 +373,7 @@ def test_camt054_reversal_parses_end_to_end_and_books_nothing(monkeypatch):
     )
 
     cursor = _ReconcileCursor(
-        ones=[{"id": 5}],
+        ones=[{"id": 5}, {"id": 51}],
         rows=[
             [_delivered_invoice()],
             [{"invoice_id": 42, "new_state": "delivered"}],
@@ -385,7 +393,7 @@ def test_camt054_reversal_parses_end_to_end_and_books_nothing(monkeypatch):
 
     assert result["duplicate"] is False
     assert _event_inserts(cursor) == []
-    assert _entry_insert_params(cursor)[0][10] == "reversal"
+    assert _entry_decisions(cursor) == [(42, "reversal")]
 
 
 def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatch):
@@ -394,13 +402,15 @@ def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatc
 
     paid_invoice = {**_delivered_invoice(), "lifecycle_state": "paid"}
     cursor = _ReconcileCursor(
-        ones=[{"id": 7}, None, {"id": 8}],
+        ones=[{"id": 7}, {"id": 71}, {"id": 8}, {"id": 81}],
         rows=[
             [_delivered_invoice()],
             [{"invoice_id": 42, "new_state": "delivered"}],
+            [],
             [{"match_decision": "matched"}],
             [paid_invoice],
             [{"invoice_id": 42, "new_state": "paid"}],
+            [],
             [{"match_decision": "mismatch"}],
         ],
     )
@@ -428,8 +438,7 @@ def test_replayed_entry_reference_does_not_append_a_second_paid_event(monkeypatc
     assert event_params[:4] == (42, "community-a", "admin-a", "paid")
     assert event_params[9] == "bank:7:bank-entry-1"
     assert len(_event_inserts(cursor)) == 1
-    decisions = [params[10] for params in _entry_insert_params(cursor)]
-    assert decisions == ["matched", "mismatch"]
+    assert _entry_decisions(cursor) == [(42, "matched"), (42, "mismatch")]
 
 
 @pytest.mark.parametrize(

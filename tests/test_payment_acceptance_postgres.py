@@ -375,8 +375,8 @@ def test_two_reviewed_entries_cannot_pay_one_invoice_twice(payment_client):
             """INSERT INTO bank_statement_entries(
                    statement_import_id,community_id,entry_reference,booking_date,
                    amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision,booking_status,amount_basis)
-               SELECT statement_import_id,community_id,'bank-entry-2',booking_date,
-                      amount,currency,payment_reference,is_reversal,credit_debit_indicator,match_decision,booking_status,amount_basis
+               SELECT statement_import_id,community_id,'bank-entry-2',booking_date+10,
+                      amount,currency,'separate reference',is_reversal,credit_debit_indicator,match_decision,booking_status,amount_basis
                FROM bank_statement_entries WHERE id=%s RETURNING id""",
             (first_id,),
         )
@@ -496,7 +496,7 @@ def test_legacy_amounts_stay_untrusted_after_schema_upgrade(payment_client):
     assert _events("invoice.paid") == _events("payment.match.confirmed") == []
 
 
-def test_reconciled_chf_batch_pays_each_invoice_once(payment_client):
+def test_equal_amount_batch_payments_are_held_for_review(payment_client):
     from copy import deepcopy
     from xml.etree import ElementTree
 
@@ -534,7 +534,13 @@ def test_reconciled_chf_batch_pays_each_invoice_once(payment_client):
     replay = payment_reconciliation.import_statement(
         COMMUNITY, "operator-a", "batch.xml", content, db
     )
-    assert [row["match_decision"] for row in first["entries"]] == ["matched", "matched"]
+    assert [row["match_decision"] for row in first["entries"]] == [
+        "mismatch",
+        "mismatch",
+    ]
+    assert [row["duplicate_reason"] for row in first["entries"]] == [
+        "possible_duplicate_payment"
+    ] * 2
     assert [row["amount"] for row in first["entries"]] == [
         Decimal("9.67"),
         Decimal("9.67"),
@@ -543,7 +549,7 @@ def test_reconciled_chf_batch_pays_each_invoice_once(payment_client):
         row["amount_basis"] for row in db.list_bank_statement_entries(COMMUNITY)
     } == {"reconciled_batch"}
     assert replay["duplicate"] is True
-    assert len(_events("invoice.paid")) == 2
+    assert _events("invoice.paid") == []
 
 
 @pytest.mark.parametrize(

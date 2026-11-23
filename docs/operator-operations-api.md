@@ -406,11 +406,16 @@ executes confirmation.
 An eligible preview returns `dry_run: true`, `eligible: true`, `invoice_id`
 and `lifecycle_state: paid`. Ineligible payments return `invalid_payment` or
 `not_found`. An unreadable invoice total returns HTTP 409 with
-`invalid_invoice_total`. A credit without a payment reference returns HTTP 409
-with `missing_reference`. A confirmed or possible repeat returns HTTP 409 with
-`duplicate_payment` or `possible_duplicate_payment`, respectively. Possible
-duplicates require a human review in the billing workspace. The operator API
-and MCP provide no override. These responses reserve no match.
+`invalid_invoice_total`. A missing reference returns HTTP 409 with
+`missing_reference` when the entry passes the preceding status, direction,
+currency and amount-evidence checks. For example, a booked EUR credit without a
+reference returns `invalid_payment`.
+
+An identical booked entry returns HTTP 409 with `duplicate_payment`. Other
+plausible matches return HTTP 409 with `possible_duplicate_payment` and
+`matching_entry_ids`, the sorted IDs of every matching statement entry, including
+unresolved entries. Only the billing workspace permits a human to confirm a
+distinct payment after reviewing the whole set.
 Preview writes no business rows, events, deliveries or idempotency ledger entry.
 Credential usage accounting still applies. Confirmation rechecks eligibility:
 only booked (`BOOK`), non-reversed CHF credits for the exact invoice amount

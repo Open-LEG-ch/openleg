@@ -1274,16 +1274,14 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS debtor_name TEXT,
                 ADD COLUMN IF NOT EXISTS remittance_information TEXT,
                 ADD COLUMN IF NOT EXISTS bank_account_key TEXT NOT NULL DEFAULT '',
-                ADD COLUMN IF NOT EXISTS bank_servicer_key TEXT,
-                ADD COLUMN IF NOT EXISTS bank_reference_keys TEXT[],
-                ADD COLUMN IF NOT EXISTS bank_typed_reference_keys TEXT[],
-                ADD COLUMN IF NOT EXISTS duplicate_reason TEXT,
-                ADD COLUMN IF NOT EXISTS duplicate_of_entry_id INTEGER
+                ADD COLUMN IF NOT EXISTS bank_reference TEXT,
+                ADD COLUMN IF NOT EXISTS bank_references TEXT[] NOT NULL DEFAULT '{}',
+                ADD COLUMN IF NOT EXISTS source_statement_reference TEXT,
+                ADD COLUMN IF NOT EXISTS duplicate_reason TEXT
             """)
             cur.execute("""
-                CREATE INDEX IF NOT EXISTS ix_bank_statement_booked_servicer
-                ON bank_statement_entries (community_id, bank_servicer_key)
-                WHERE match_decision = 'matched' AND bank_servicer_key IS NOT NULL
+                CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_payment_facts
+                ON bank_statement_entries (community_id, amount, currency, credit_debit_indicator)
             """)
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_entries_community_id

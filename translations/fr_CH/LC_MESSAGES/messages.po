@@ -20182,12 +20182,6 @@ msgid "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestell
 msgstr "La facture sélectionnée est absente ou non valide. Choisissez une facture déjà envoyée."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:768
-#, python-format
-msgid "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein."
-msgstr "Ce paiement a peut-être déjà été comptabilisé pour la facture %(invoice)s."
-
-#. Draft translation; native language and domain review pending.
 #: dashboard.py:782
 msgid "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
 msgstr "Comparez cette écriture avec le paiement déjà comptabilisé."
@@ -20277,12 +20271,6 @@ msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende 
 msgstr "Aucune facture envoyée ne peut être sélectionnée. Envoyez d’abord la facture concernée."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:781
-#, python-format
-msgid "Prüfen Sie die frühere Buchung mit der Referenz %(reference)s."
-msgstr "Vérifiez l’écriture précédente avec la référence %(reference)s."
-
-#. Draft translation; native language and domain review pending.
 #: dashboard.py:789
 #, python-format
 msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
@@ -20294,11 +20282,6 @@ msgid "Prüfen Sie die Buchung erneut."
 msgstr "Vérifiez de nouveau l’écriture."
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:45
-msgid "Ich habe beide Kontoauszüge geprüft. Es ist eine andere Zahlung."
-msgstr "J’ai vérifié les deux relevés bancaires. Il s’agit d’un autre paiement."
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:47
 msgid "Trotzdem zuordnen"
 msgstr "Attribuer quand même"
@@ -20308,3 +20291,12 @@ msgstr "Le montant total de la facture est invalide."
 
 msgid "Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."
 msgstr "Vérifiez la facture ou sélectionnez une autre facture transmise."
+
+msgid "Mögliche Doppelzahlung."
+msgstr "Paiement potentiellement en double."
+
+msgid "Kontoauszug"
+msgstr "Relevé bancaire"
+
+msgid "Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung."
+msgstr "J’ai vérifié tous les paiements affichés. Il s’agit d’un autre paiement."

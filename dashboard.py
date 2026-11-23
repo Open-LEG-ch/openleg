@@ -572,7 +572,12 @@ def _billing_statement_entry(entry, invoices_by_id):
         )
     return {
         **entry,
-        "heading": heading or _PAYMENT_TITLES[decision],
+        "heading": heading
+        or (
+            _N("Mögliche Doppelzahlung.")
+            if entry.get("duplicate_reason")
+            else _PAYMENT_TITLES[decision]
+        ),
         "recovery": recovery,
         "display_amount": _display_statement_amount(entry["amount"]),
         "related_invoice": related_invoice,
@@ -734,6 +739,39 @@ def leg_import_bank_statement(community_id, building_id, source_name, content):
     return {"error": None, **result}
 
 
+def _payment_duplicate_feedback(duplicate):
+    if duplicate.possible:
+        return {
+            "error_status": 409,
+            "error": _N("Mögliche Doppelzahlung."),
+            "duplicate_review_required": True,
+        }
+    return {
+        "error_status": 409,
+        "error": _(
+            "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht.",
+            invoice=duplicate.invoice_number,
+        ),
+        "recovery": _N(
+            "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
+        ),
+    }
+
+
+def leg_payment_duplicate_review(community_id, entry_id):
+    duplicate = db.read_payment_duplicate_review(community_id, entry_id)
+    if duplicate is None:
+        return {"error": _N("Prüfen Sie die Buchung erneut.")}
+    feedback = _payment_duplicate_feedback(duplicate)
+    if duplicate.possible:
+        feedback["reviewed_duplicates"] = duplicate.review
+        feedback["matches"] = [
+            {**row, "display_amount": _display_statement_amount(row["amount"])}
+            for row in duplicate.matches
+        ]
+    return feedback
+
+
 def leg_assign_bank_payment(
     community_id,
     building_id,
@@ -741,7 +779,7 @@ def leg_assign_bank_payment(
     invoice_id,
     confirmed,
     *,
-    reviewed_duplicate_id=None,
+    reviewed_duplicates=None,
 ):
     """Submit a signed-in billing preparer's reviewed payment."""
     if not _require_capability(
@@ -771,32 +809,10 @@ def leg_assign_bank_payment(
                 community_id,
                 building_id,
                 f"{_DASHBOARD_PAYMENT_KEY_PREFIX}{entry_id}",
-                reviewed_duplicate_id=reviewed_duplicate_id,
+                reviewed_duplicates=reviewed_duplicates,
             )
     except payment_reconciliation.BankPaymentDuplicate as exc:
-        if exc.possible:
-            return {
-                "error_status": 409,
-                "error": _(
-                    "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein.",
-                    invoice=exc.invoice_number,
-                ),
-                "recovery": _(
-                    "Prüfen Sie die frühere Buchung mit der Referenz %(reference)s.",
-                    reference=exc.reference,
-                ),
-                "duplicate_entry_id": exc.entry_id,
-            }
-        return {
-            "error_status": 409,
-            "error": _(
-                "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht.",
-                invoice=exc.invoice_number,
-            ),
-            "recovery": _N(
-                "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
-            ),
-        }
+        return _payment_duplicate_feedback(exc)
     except payment_reconciliation.PaymentMatchRefused as exc:
         error, recovery = _PAYMENT_REFUSALS[exc.detail]
         return {"error_status": 409, "error": error, "recovery": recovery}

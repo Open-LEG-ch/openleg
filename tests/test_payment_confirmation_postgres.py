@@ -442,8 +442,8 @@ def test_real_confirmation_keeps_payment_locks(
                        statement_import_id,community_id,entry_reference,booking_date,
                        amount,currency,payment_reference,credit_debit_indicator,
                        match_decision,booking_status,amount_basis)
-                   SELECT statement_import_id,community_id,'ENTRY-2',booking_date,
-                          amount,currency,payment_reference,credit_debit_indicator,
+                   SELECT statement_import_id,community_id,'ENTRY-2',booking_date+10,
+                          amount,currency,'separate reference',credit_debit_indicator,
                           match_decision,booking_status,amount_basis
                    FROM bank_statement_entries WHERE id=%s RETURNING id""",
                 (ids["entry_id"],),
@@ -462,34 +462,43 @@ def test_real_confirmation_keeps_payment_locks(
 
 
 @pytest.mark.parametrize("adapter", ["api", "mcp"])
-@pytest.mark.parametrize("case", ["same-level", "cross-level", "unknown-account"])
+@pytest.mark.parametrize("case", ["identical", "plausible"])
 def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, case):
     import asyncio
 
     import payment_reconciliation
     from mcp_sidecar.server import create_app
-    from tests.test_billing_payment_assignment_postgres import (
-        _statement_xml,
-        _with_entry_servicer,
-    )
+    from tests.test_billing_payment_assignment_postgres import _statement_xml
     from tests.test_mcp_sidecar import session
     from tests.test_mcp_sidecar_postgres import operator_server
 
     http = operator_http
     ids = seed_operator_resources(http)
-    original = _statement_xml(
-        reference="CONTRACT-1",
-        servicer="shared-entry-reference" if case == "cross-level" else "bank-entry-1",
-        account="" if case == "unknown-account" else "fictional-account",
-    )
-    repeat = _statement_xml(
-        statement="statement-2",
-        reference="unknown",
-        servicer="" if case == "cross-level" else "bank-entry-1",
-    )
-    if case == "cross-level":
-        repeat = _with_entry_servicer(repeat)
-    for xml in (original, repeat):
+    with http.db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE bank_statement_entries SET payment_reference='separate reference' WHERE id=%s",
+            (ids["entry_id"],),
+        )
+    account = {"account": "CH0000000000000000000", "account_is_iban": True}
+    statements = [
+        _statement_xml(reference="CONTRACT-1", **account),
+        _statement_xml(
+            statement="statement-2",
+            reference="unknown",
+            servicer="other-credit" if case == "plausible" else "bank-entry-1",
+            **account,
+        ),
+    ]
+    if case == "plausible":
+        statements.append(
+            _statement_xml(
+                statement="statement-3",
+                reference="third credit",
+                servicer="third-credit",
+                **account,
+            )
+        )
+    for xml in statements:
         payment_reconciliation.import_statement(
             http.community_id,
             "contract-admin",
@@ -497,8 +506,12 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, cas
             xml.replace(b"9.67", b"42.50"),
             http.db,
         )
-    ids["entry_id"] = http.db.list_bank_statement_entries(http.community_id)[0]["id"]
-    code = "duplicate_payment" if case == "same-level" else "possible_duplicate_payment"
+    entries = http.db.list_bank_statement_entries(http.community_id)
+    ids["entry_id"] = entries[0]["id"]
+    code = "duplicate_payment" if case == "identical" else "possible_duplicate_payment"
+    expected_ids = (
+        sorted(row["id"] for row in entries[1:3]) if case == "plausible" else None
+    )
     before = rows(http)
     if adapter == "api":
         from tests.test_operator_contract import load_contract
@@ -508,6 +521,7 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, cas
         )
         assert response.status_code == 409
         assert response.json["code"] == code
+        assert response.json.get("matching_entry_ids") == expected_ids
         operator_contract_helpers.validate_response(
             load_contract(),
             "/api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm",
@@ -535,6 +549,10 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, cas
                     result = await sdk.call_tool("confirm_payment_match", args)
                     assert result.is_error
                     assert result.structured_content["code"] == code
+                    assert (
+                        result.structured_content.get("matching_entry_ids")
+                        == expected_ids
+                    )
                     forged = await sdk.call_tool(
                         "confirm_payment_match", {**args, "confirm_distinct": True}
                     )

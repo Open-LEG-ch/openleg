@@ -22567,12 +22567,6 @@ msgid "Die Rechnungsauswahl fehlt oder ist ungültig. Wählen Sie eine zugestell
 msgstr "The invoice selection is missing or invalid. Choose a delivered invoice."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:768
-#, python-format
-msgid "Diese Zahlung könnte bereits auf Rechnung %(invoice)s verbucht sein."
-msgstr "This payment may already be recorded against invoice %(invoice)s."
-
-#. Draft translation; native language and domain review pending.
 #: dashboard.py:782
 msgid "Gleichen Sie diesen Eintrag mit der bereits verbuchten Zahlung ab."
 msgstr "Compare this entry with the payment already recorded."
@@ -22660,12 +22654,6 @@ msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende 
 msgstr "There are no delivered invoices to choose from. Deliver the relevant invoice first."
 
 #. Draft translation; native language and domain review pending.
-#: dashboard.py:781
-#, python-format
-msgid "Prüfen Sie die frühere Buchung mit der Referenz %(reference)s."
-msgstr "Check the earlier booking with reference %(reference)s."
-
-#. Draft translation; native language and domain review pending.
 #: dashboard.py:789
 #, python-format
 msgid "Diese Zahlung ist bereits auf Rechnung %(invoice)s gebucht."
@@ -22677,11 +22665,6 @@ msgid "Prüfen Sie die Buchung erneut."
 msgstr "Check the booking again."
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:45
-msgid "Ich habe beide Kontoauszüge geprüft. Es ist eine andere Zahlung."
-msgstr "I checked both bank statements. This is a different payment."
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_billing.html:47
 msgid "Trotzdem zuordnen"
 msgstr "Assign anyway"
@@ -22691,3 +22674,12 @@ msgstr "The invoice has no valid total."
 
 msgid "Prüfen Sie die Rechnung oder wählen Sie eine andere zugestellte Rechnung."
 msgstr "Check the invoice or select another delivered invoice."
+
+msgid "Mögliche Doppelzahlung."
+msgstr "Possible duplicate payment."
+
+msgid "Kontoauszug"
+msgstr "Bank statement"
+
+msgid "Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung."
+msgstr "I checked every listed payment. This is a different payment."
