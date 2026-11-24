@@ -9,7 +9,7 @@ import os
 import re
 import secrets
 import uuid
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from flask import (
     Blueprint,
@@ -41,6 +41,9 @@ PROTOCOL_FIELDS = frozenset(
         "resource",
     }
 )
+RESPONSE_PARAMETERS = frozenset(
+    {"code", "state", "error", "error_description", "error_uri", "iss"}
+)
 CONSENT_FIELDS = frozenset(
     {
         "capabilities",
@@ -63,6 +66,8 @@ def metadata():
         grant_types_supported=["authorization_code", "refresh_token"],
         code_challenge_methods_supported=["S256"],
         token_endpoint_auth_methods_supported=["none"],
+        # RFC 9207: every redirect to the client names this issuer.
+        authorization_response_iss_parameter_supported=True,
     )
 
 
@@ -121,6 +126,8 @@ def authorize():
     def callback(**query):
         if "state" in p:
             query["state"] = p["state"]
+        # RFC 9207 lets the client reject a response from a mixed-up issuer.
+        query["iss"] = current_app.config["OAUTH_ISSUER"]
         # Redirect only to the registered URI that the request matched exactly.
         registered = client["redirect_uris"]
         uri = registered[registered.index(p["redirect_uri"])]
@@ -377,6 +384,9 @@ def init_oauth(app):
             u = urlsplit(uri)
             if (
                 u.fragment
+                # The callback adds these once; a preset copy would repeat them.
+                or {k for k, _ in parse_qsl(u.query, keep_blank_values=True)}
+                & RESPONSE_PARAMETERS
                 or u.username
                 or u.password
                 or not u.hostname

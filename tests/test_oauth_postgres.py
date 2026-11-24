@@ -93,6 +93,7 @@ def grant(f):
     assert response.status_code == 302
     query = parse_qs(urlsplit(response.location).query)
     assert query["state"] == ["state"]
+    assert query["iss"] == ["https://auth.example"]
     return query["code"][0]
 
 
@@ -191,6 +192,7 @@ def test_authorization_rejects_invalid_request(oauth, change):
         assert parse_qs(urlsplit(r.location).query) == {
             "error": [error],
             "state": ["state"],
+            "iss": ["https://auth.example"],
         }
 
 
@@ -205,6 +207,7 @@ def test_admin_and_csrf_required(oauth):
     assert parse_qs(urlsplit(response.location).query) == {
         "error": ["access_denied"],
         "state": ["state"],
+        "iss": ["https://auth.example"],
     }
     with oauth.db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
@@ -215,6 +218,7 @@ def test_admin_and_csrf_required(oauth):
     assert parse_qs(urlsplit(response.location).query) == {
         "error": ["access_denied"],
         "state": ["state"],
+        "iss": ["https://auth.example"],
     }
 
 
@@ -337,6 +341,7 @@ def test_expired_code_and_foreign_administrator(oauth):
     assert parse_qs(urlsplit(r.location).query) == {
         "error": ["access_denied"],
         "state": ["state"],
+        "iss": ["https://auth.example"],
     }
 
 
@@ -794,6 +799,7 @@ def test_consent_rejects_invalid_selection(oauth, changes):
     assert parse_qs(urlsplit(response.location).query) == {
         "error": ["access_denied" if "community_id" in changes else "invalid_scope"],
         "state": ["state"],
+        "iss": ["https://auth.example"],
     }
 
 
@@ -883,6 +889,7 @@ def test_consent_post_rejects_unknown_fields(oauth):
     assert parse_qs(urlsplit(response.location).query) == {
         "error": ["invalid_request"],
         "state": ["state"],
+        "iss": ["https://auth.example"],
     }
 
 
@@ -896,6 +903,7 @@ def test_consent_requires_explicit_capability_selection(oauth):
     assert parse_qs(urlsplit(response.location).query) == {
         "error": ["invalid_scope"],
         "state": ["state"],
+        "iss": ["https://auth.example"],
     }
 
 
@@ -941,6 +949,7 @@ def test_deny_without_capabilities_returns_access_denied(oauth, csrf):
     assert parse_qs(urlsplit(response.location).query) == {
         "error": ["access_denied"],
         "state": ["state"],
+        "iss": ["https://auth.example"],
     }
 
 
@@ -986,7 +995,11 @@ def test_authorization_error_preserves_registered_query(oauth, with_state):
         del data["state"]
     response = oauth.client.get("/oauth/authorize", query_string=data)
     assert response.status_code == 302
-    expected = {"registered": ["yes"], "error": ["unsupported_response_type"]}
+    expected = {
+        "registered": ["yes"],
+        "error": ["unsupported_response_type"],
+        "iss": ["https://auth.example"],
+    }
     if with_state:
         expected["state"] = ["state"]
     assert parse_qs(urlsplit(response.location).query) == expected
@@ -1002,4 +1015,5 @@ def test_csrf_precedes_approval_selection_validation(oauth):
     assert parse_qs(urlsplit(response.location).query) == {
         "error": ["access_denied"],
         "state": ["state"],
+        "iss": ["https://auth.example"],
     }
