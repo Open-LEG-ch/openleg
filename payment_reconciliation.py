@@ -147,35 +147,47 @@ def _account_currency(container):
     return value
 
 
+def _account_details(element, path):
+    """Return every non-empty leaf below element as (path, text) pairs."""
+    children = list(element)
+    if children:
+        return [
+            detail
+            for child in children
+            for detail in _account_details(child, f"{path}/{_local(child)}")
+        ]
+    value = (element.text or "").strip()
+    # An 11-character BIC ending in XXX names the same bank as its 8-character form.
+    if (
+        _local(element) in {"BIC", "BICFI"}
+        and len(value) == 11
+        and value.endswith("XXX")
+    ):
+        value = value[:8]
+    return [(path, value)] if value else []
+
+
 def _bank_account(container):
     """Identify the statement account by its IBAN or a typed proprietary ID.
 
-    A proprietary ID is unique only within its scheme, issuer and servicing bank.
+    A proprietary ID is unique only together with its scheme, issuer and
+    servicing bank, so the key keeps every reported detail of those elements.
     """
     iban = container.findtext("./{*}Acct/{*}Id/{*}IBAN", default="").strip()
     if iban:
         return iban
-    other = "./{*}Acct/{*}Id/{*}Othr/{*}"
-    servicer = "./{*}Acct/{*}Svcr/{*}FinInstnId/{*}"
-    paths = {
-        "Id": (other + "Id",),
-        "SchmeNm/Cd": (other + "SchmeNm/{*}Cd",),
-        "SchmeNm/Prtry": (other + "SchmeNm/{*}Prtry",),
-        "Issr": (other + "Issr",),
-        # camt .08 names the servicer's BIC BICFI; older versions name it BIC.
-        "Svcr": (servicer + "BICFI", servicer + "BIC"),
-    }
-    account = {}
-    for key, candidates in paths.items():
-        for path in candidates:
-            if value := container.findtext(path, default="").strip():
-                account[key] = value
-                break
-    if "Id" not in account:
+    if not container.findtext("./{*}Acct/{*}Id/{*}Othr/{*}Id", default="").strip():
         return ""
-    return json.dumps(
-        account, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+    details = sorted(
+        detail
+        for name, path in (
+            ("Othr", "./{*}Acct/{*}Id/{*}Othr"),
+            ("Svcr", "./{*}Acct/{*}Svcr"),
+        )
+        for element in container.findall(path)
+        for detail in _account_details(element, name)
     )
+    return json.dumps(details, ensure_ascii=False, separators=(",", ":"))
 
 
 def _bank_references(element, *paths):

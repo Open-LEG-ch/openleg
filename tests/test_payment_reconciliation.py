@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Public contract for ISO 20022 payment reconciliation."""
 
+import json
 from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import date
@@ -724,53 +725,80 @@ def _statement_for_accounts(*accounts, message="camt.053"):
 _IBAN_1 = "<Id><IBAN>CH0000000000000000001</IBAN></Id>"
 _OTHR_1000 = "<Id><Othr><Id>1000</Id>{}</Othr></Id>"
 _SERVICER = "<Svcr><FinInstnId>{}</FinInstnId></Svcr>"
+_CLEARING = (
+    "<ClrSysMmbId><ClrSysId><Cd>CHBCC</Cd></ClrSysId><MmbId>{}</MmbId></ClrSysMmbId>"
+)
 
 
 @pytest.mark.parametrize("message", ["camt.053", "camt.054"])
 @pytest.mark.parametrize(
-    ("first", "second", "accounts"),
+    ("first", "second"),
     [
-        (
-            _IBAN_1,
-            "<Id><IBAN>CH0000000000000000002</IBAN></Id>",
-            ["CH0000000000000000001", "CH0000000000000000002"],
-        ),
-        (
-            _IBAN_1,
-            "<Id><Othr><Id>local-2</Id></Othr></Id>",
-            ["CH0000000000000000001", '{"Id":"local-2"}'],
-        ),
+        (_IBAN_1, "<Id><IBAN>CH0000000000000000002</IBAN></Id>"),
+        (_IBAN_1, "<Id><Othr><Id>local-2</Id></Othr></Id>"),
         (
             _OTHR_1000.format("<Issr>Bank A</Issr>"),
             _OTHR_1000.format("<SchmeNm><Cd>BBAN</Cd></SchmeNm><Issr>Bank B</Issr>"),
-            [
-                '{"Id":"1000","Issr":"Bank A"}',
-                '{"Id":"1000","Issr":"Bank B","SchmeNm/Cd":"BBAN"}',
-            ],
         ),
         (
             _OTHR_1000.format("") + _SERVICER.format("<BICFI>TSTACHZZ</BICFI>"),
             _OTHR_1000.format("") + _SERVICER.format("<BIC>TSTBCHZZ</BIC>"),
-            ['{"Id":"1000","Svcr":"TSTACHZZ"}', '{"Id":"1000","Svcr":"TSTBCHZZ"}'],
+        ),
+        (
+            _OTHR_1000.format("") + _SERVICER.format(_CLEARING.format("9000")),
+            _OTHR_1000.format("") + _SERVICER.format(_CLEARING.format("9001")),
         ),
     ],
 )
-def test_accounts_sharing_a_local_reference_keep_the_bank_value(
-    first, second, accounts, message
-):
+def test_accounts_sharing_a_local_reference_keep_the_bank_value(first, second, message):
     entries = payment_reconciliation.parse_statement(
         _statement_for_accounts(first, second, message=message)
     ).entries
 
-    assert [(entry.bank_account, entry.entry_reference) for entry in entries] == [
-        (accounts[0], "bank-entry-1"),
-        (accounts[1], "bank-entry-1"),
-    ]
+    assert [entry.entry_reference for entry in entries] == ["bank-entry-1"] * 2
+    assert len({entry.bank_account for entry in entries}) == 2
 
 
-def test_one_account_reusing_a_local_reference_still_gets_distinct_rows():
+@pytest.mark.parametrize(
+    ("account", "key"),
+    [
+        (_IBAN_1, "CH0000000000000000001"),
+        (
+            _OTHR_1000.format("<Issr>Bank A</Issr>")
+            + _SERVICER.format("<BICFI>TSTACHZZXXX</BICFI>"),
+            json.dumps(
+                [
+                    ["Othr/Id", "1000"],
+                    ["Othr/Issr", "Bank A"],
+                    ["Svcr/FinInstnId/BICFI", "TSTACHZZ"],
+                ],
+                separators=(",", ":"),
+            ),
+        ),
+        ("<Id><Othr><SchmeNm><Cd>BBAN</Cd></SchmeNm></Othr></Id>", ""),
+    ],
+)
+def test_bank_account_key_is_the_iban_or_the_typed_proprietary_id(account, key):
+    (entry,) = payment_reconciliation.parse_statement(
+        _statement_for_accounts(account)
+    ).entries
+
+    assert entry.bank_account == key
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (_IBAN_1, _IBAN_1),
+        (
+            _OTHR_1000.format("") + _SERVICER.format("<BICFI>POFICHBE</BICFI>"),
+            _OTHR_1000.format("") + _SERVICER.format("<BICFI>POFICHBEXXX</BICFI>"),
+        ),
+    ],
+)
+def test_one_account_reusing_a_local_reference_still_gets_distinct_rows(first, second):
     entries = payment_reconciliation.parse_statement(
-        _statement_for_accounts(_IBAN_1, _IBAN_1)
+        _statement_for_accounts(first, second)
     ).entries
 
     assert [entry.entry_reference for entry in entries] == [
