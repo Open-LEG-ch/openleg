@@ -65,7 +65,7 @@ STATE_TEXT = {
         "no_eligibility": "OpenLEG prüft keine Netz-Topologie und bestätigt nicht",
         "past_last_page": "Die Ergebnisseite ist ungültig.",
         "unclaimed": "Kein Betreiber hat ihn beansprucht.",
-        "not_by_claimant": ", aber nicht durch einen beanspruchten Betreiber.",
+        "not_by_claimant": ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat.",
         "lead": "Einträge sind moderierte Selbstauskünfte",
     },
     "en": {
@@ -464,23 +464,38 @@ def profile_page(directory, monkeypatch):
     return client, db, store
 
 
-def test_municipality_profile_links_published_details_without_submission(
-    profile_page,
-):
-    client, _db, _store = profile_page
+def test_municipality_profile_links_its_bfs_entries_without_submission(profile_page):
+    client, db, _store = profile_page
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO leg_registry(slug,name,ort,bfs_number,contact_email,
+            moderation_status) VALUES
+            ('other-bfs','Fictional neighbour LEG','Fictional Baden',9999,
+            'private@example.invalid','published'),
+            ('same-bfs','Fictional hamlet LEG','Hamlet',4021,
+            'private@example.invalid','published')"""
+        )
     page = client.get("/gemeinde/profil/4021")
     assert page.status_code == 200
-    links = re.findall(r'href="(/leg-verzeichnis[^"]*)"', page.text)
-    # 26 published entries match: the newest 25 and a link to all of them.
-    assert "/leg-verzeichnis/fictional-01" in links
-    assert "/leg-verzeichnis/fictional-00" not in links
-    assert "/leg-verzeichnis?q=Fictional+Baden" in links
-    more = client.get("/leg-verzeichnis?q=Fictional+Baden")
+    assert "Fictional neighbour LEG" not in page.text
+    links = [
+        html.unescape(link)
+        for link in re.findall(r'href="(/leg-verzeichnis[^"]*)"', page.text)
+    ]
+    # 27 published entries carry BFS 4021: the newest 25 and a link to all.
+    assert "/leg-verzeichnis/same-bfs?bfs=4021" in links
+    assert "/leg-verzeichnis/fictional-02?bfs=4021" in links
+    assert not any(link.startswith("/leg-verzeichnis/fictional-01") for link in links)
+    assert "/leg-verzeichnis?bfs=4021" in links
+    more = client.get("/leg-verzeichnis?bfs=4021")
     assert more.text.count("data-directory-entry=") == 25
+    detail = client.get("/leg-verzeichnis/same-bfs?bfs=4021")
+    assert detail.status_code == 200
+    back = parse_qs(urlsplit(_href(detail, "data-directory-back")).query)
+    assert back["bfs"] == ["4021"]
     assert "fictional-26" not in page.text and "fictional-27" not in page.text
     assert "/leg-verzeichnis/eintragen" not in page.text
     assert "/beanspruchen" not in page.text
-    assert client.get("/leg-verzeichnis/fictional-01").status_code == 200
 
 
 def test_profile_shows_moderation_changes_and_caches_no_registry_rows(profile_page):

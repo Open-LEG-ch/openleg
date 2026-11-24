@@ -229,7 +229,7 @@ def profile_context(bfs, *, site_url):
 
 
 def _with_published_entries(context):
-    """Read registry entries per request through the public projection.
+    """Read the municipality's registry entries per request by BFS number.
 
     Moderation decisions apply on the next request, and private registry
     columns never enter the shared profile cache. ``None`` marks a failed read,
@@ -237,11 +237,11 @@ def _with_published_entries(context):
     """
     if context is None:
         return None
-    name = (context["profile"].get("name") or "").strip()
+    bfs = context["profile"].get("bfs_number")
     try:
         result = (
-            db.read_public_registry(filters={"q": name})
-            if name
+            db.read_public_registry(filters={"bfs_number": bfs})
+            if bfs
             else {"entries": [], "has_next": False}
         )
     except db.PublicRegistryUnavailable:

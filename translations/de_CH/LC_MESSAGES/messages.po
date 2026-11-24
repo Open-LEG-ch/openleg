@@ -281,10 +281,6 @@ msgstr ", Seiten in"
 msgid ", Stand %(profile_pv_snapshot_year)s"
 msgstr ", Stand %(profile_pv_snapshot_year)s"
 
-#: templates/partials/registry_trust.html:16
-msgid ", aber nicht durch einen beanspruchten Betreiber."
-msgstr ", aber nicht durch einen beanspruchten Betreiber."
-
 #: templates/gemeinde/rangliste.html:76 templates/gemeinde/rangliste_fortschritte.html:80
 #, python-format
 msgid ", angezeigt die ersten %(rows_length)s"
@@ -19404,3 +19400,7 @@ msgstr "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
 #: templates/leg_workspace/formation.html:82
 msgid "Erneut einleiten"
 msgstr "Erneut einleiten"
+
+#: templates/partials/registry_trust.html:16
+msgid ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
+msgstr ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
