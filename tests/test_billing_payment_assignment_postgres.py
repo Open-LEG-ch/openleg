@@ -1110,6 +1110,46 @@ def test_duplicate_guard_holds_equal_credits_on_two_accounts(workspace, second_d
     assert len(_paid_events()) == 1
 
 
+def test_long_servicer_details_cannot_break_the_account_index(workspace):
+    from hashlib import sha256
+
+    def text(seed):
+        # Varied multibyte text, so PostgreSQL cannot compress the index row.
+        digest = "".join(sha256(f"{seed}:{n}".encode()).hexdigest() for n in range(5))
+        return "".join(
+            chr(0x4E00 + int(digest[i : i + 4], 16) % 0x5000) for i in range(0, 280, 4)
+        )
+
+    def statement(name, account, reference):
+        address = "".join(
+            f"<AdrLine>{text(f'{name}:{line}')}</AdrLine>" for line in range(7)
+        )
+        branch = "".join(
+            f"<AdrLine>{text(f'{name}:branch:{line}')}</AdrLine>" for line in range(7)
+        )
+        servicer = (
+            f"<Svcr><FinInstnId><PstlAdr>{address}</PstlAdr></FinInstnId>"
+            f"<BrnchId><PstlAdr>{branch}</PstlAdr></BrnchId></Svcr></Acct>"
+        )
+        return _statement_xml(
+            statement=name,
+            reference=reference,
+            servicer="shared-entry",
+            account=account,
+        ).replace(b"</Acct>", servicer.encode())
+
+    upload = _one_upload(
+        statement("first-account", "1000", "FIRST-INVOICE"),
+        statement("second-account", "1000", "SECOND-INVOICE"),
+    )
+    response = _post_statement(workspace, upload)
+    assert response.status_code == 302
+    assert response.location.endswith("?statement=imported")
+    rows = db.list_bank_statement_entries(COMMUNITY)
+    assert [row["entry_reference"] for row in rows] == ["shared-entry"] * 2
+    assert len({row["bank_account"] for row in rows}) == 2
+
+
 def test_upgrade_scopes_entry_references_by_account_without_a_rewrite(workspace):
     _invoice("FIRST-INVOICE")
     _upload_xml(

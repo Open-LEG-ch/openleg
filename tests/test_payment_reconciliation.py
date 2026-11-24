@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import date
 from decimal import Decimal
+from hashlib import sha256
 
 import pytest
 
@@ -766,14 +767,17 @@ def test_accounts_sharing_a_local_reference_keep_the_bank_value(first, second, m
         (
             _OTHR_1000.format("<Issr>Bank A</Issr>")
             + _SERVICER.format("<BICFI>TSTACHZZXXX</BICFI>"),
-            json.dumps(
-                [
-                    ["Othr/Id", "1000"],
-                    ["Othr/Issr", "Bank A"],
-                    ["Svcr/FinInstnId/BICFI", "TSTACHZZ"],
-                ],
-                separators=(",", ":"),
-            ),
+            "sha256:"
+            + sha256(
+                json.dumps(
+                    [
+                        ["Othr/Id", "1000"],
+                        ["Othr/Issr", "Bank A"],
+                        ["Svcr/FinInstnId/BICFI", "TSTACHZZ"],
+                    ],
+                    separators=(",", ":"),
+                ).encode()
+            ).hexdigest(),
         ),
         ("<Id><Othr><SchmeNm><Cd>BBAN</Cd></SchmeNm></Othr></Id>", ""),
     ],
@@ -793,6 +797,10 @@ def test_bank_account_key_is_the_iban_or_the_typed_proprietary_id(account, key):
         (
             _OTHR_1000.format("") + _SERVICER.format("<BICFI>POFICHBE</BICFI>"),
             _OTHR_1000.format("") + _SERVICER.format("<BICFI>POFICHBEXXX</BICFI>"),
+        ),
+        (
+            _OTHR_1000.format("") + _SERVICER.format("<BICFI>POFICHBE</BICFI>"),
+            _OTHR_1000.format("") + _SERVICER.format("<BIC>POFICHBE</BIC>"),
         ),
     ],
 )

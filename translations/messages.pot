@@ -1365,7 +1365,7 @@ msgstr ""
 msgid "Angaben können nicht verarbeitet werden"
 msgstr ""
 
-#: payment_reconciliation.py:55
+#: payment_reconciliation.py:56
 msgid "Angaben stimmen nicht überein"
 msgstr ""
 
@@ -1824,7 +1824,7 @@ msgstr ""
 msgid "Auszug in der Abrechnungsübersicht importieren"
 msgstr ""
 
-#: payment_reconciliation.py:49
+#: payment_reconciliation.py:50
 msgid "Automatisch verbucht"
 msgstr ""
 
@@ -3405,11 +3405,11 @@ msgid ""
 " Beschwerdemöglichkeit vorgesehen."
 msgstr ""
 
-#: payment_reconciliation.py:413
+#: payment_reconciliation.py:460
 msgid "Der Kontoauszug enthält keine Zahlungseinträge."
 msgstr ""
 
-#: payment_reconciliation.py:277
+#: payment_reconciliation.py:321
 msgid "Der Kontoauszug enthält keinen Auszug."
 msgstr ""
 
@@ -3645,26 +3645,26 @@ msgid ""
 " Ende des angegebenen Jahres."
 msgstr ""
 
-#: payment_reconciliation.py:298 payment_reconciliation.py:305
+#: payment_reconciliation.py:344 payment_reconciliation.py:351
 msgid "Der Zahlungseintrag enthält kein gültiges Buchungsdatum."
 msgstr ""
 
-#: payment_reconciliation.py:198 payment_reconciliation.py:311 payment_reconciliation.py:330
+#: payment_reconciliation.py:242 payment_reconciliation.py:357 payment_reconciliation.py:376
 msgid "Der Zahlungseintrag enthält keine gültige Richtung."
 msgstr ""
 
-#: payment_reconciliation.py:133 payment_reconciliation.py:144 payment_reconciliation.py:246
-#: payment_reconciliation.py:319
+#: payment_reconciliation.py:135 payment_reconciliation.py:146 payment_reconciliation.py:290
+#: payment_reconciliation.py:365
 msgid "Der Zahlungseintrag enthält keine gültige Währung."
 msgstr ""
 
-#: payment_reconciliation.py:234
+#: payment_reconciliation.py:278
 msgid "Der Zahlungseintrag enthält keinen Betrag."
 msgstr ""
 
-#: payment_reconciliation.py:214 payment_reconciliation.py:226 payment_reconciliation.py:240
-#: payment_reconciliation.py:243 payment_reconciliation.py:251 payment_reconciliation.py:254
-#: payment_reconciliation.py:341 payment_reconciliation.py:352
+#: payment_reconciliation.py:258 payment_reconciliation.py:270 payment_reconciliation.py:284
+#: payment_reconciliation.py:287 payment_reconciliation.py:295 payment_reconciliation.py:298
+#: payment_reconciliation.py:387 payment_reconciliation.py:398
 msgid "Der Zahlungseintrag enthält keinen gültigen Betrag."
 msgstr ""
 
@@ -3985,11 +3985,11 @@ msgstr ""
 msgid "Die Interessenmeldung konnte nicht gespeichert werden."
 msgstr ""
 
-#: payment_reconciliation.py:266
+#: payment_reconciliation.py:310
 msgid "Die Kontoauszugsdatei ist kein gültiges XML."
 msgstr ""
 
-#: payment_reconciliation.py:261
+#: payment_reconciliation.py:305
 msgid "Die Kontoauszugsdatei ist leer."
 msgstr ""
 
@@ -9008,7 +9008,7 @@ msgid ""
 "Gemeinde anmelden."
 msgstr ""
 
-#: payment_reconciliation.py:50
+#: payment_reconciliation.py:51
 msgid "Keine passende Rechnung"
 msgstr ""
 
@@ -9970,7 +9970,7 @@ msgstr ""
 msgid "Mehrere Gemeinden gefunden"
 msgstr ""
 
-#: payment_reconciliation.py:51
+#: payment_reconciliation.py:52
 msgid "Mehrere mögliche Rechnungen"
 msgstr ""
 
@@ -12965,7 +12965,7 @@ msgstr ""
 msgid "Rundungsausgleich"
 msgstr ""
 
-#: payment_reconciliation.py:54 sandbox_payments.py:29
+#: payment_reconciliation.py:55 sandbox_payments.py:29
 msgid "Rückbuchung"
 msgstr ""
 
@@ -14241,7 +14241,7 @@ msgstr ""
 msgid "Teilnehmerverträge (unterzeichnet)"
 msgstr ""
 
-#: payment_reconciliation.py:52
+#: payment_reconciliation.py:53
 msgid "Teilzahlung"
 msgstr ""
 
@@ -14555,7 +14555,7 @@ msgstr ""
 msgid "Unterschriften ausstehend"
 msgstr ""
 
-#: payment_reconciliation.py:274
+#: payment_reconciliation.py:318
 msgid "Unterstützt werden nur camt.053 und camt.054."
 msgstr ""
 
@@ -17138,7 +17138,7 @@ msgid ""
 "bei Ihrer Bank einen Dauerauftrag einrichten. Es entsteht hier kein Abonnement."
 msgstr ""
 
-#: payment_reconciliation.py:53
+#: payment_reconciliation.py:54
 msgid "Überzahlung"
 msgstr ""
 

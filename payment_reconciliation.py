@@ -151,18 +151,15 @@ def _account_details(element, path):
     """Return every non-empty leaf below element as (path, text) pairs."""
     children = list(element)
     if children:
-        return [
-            detail
-            for child in children
-            for detail in _account_details(child, f"{path}/{_local(child)}")
-        ]
+        details = []
+        for child in children:
+            # Older camt versions name the servicer's BIC "BIC" instead of "BICFI".
+            name = "BICFI" if _local(child) == "BIC" else _local(child)
+            details.extend(_account_details(child, f"{path}/{name}"))
+        return details
     value = (element.text or "").strip()
     # An 11-character BIC ending in XXX names the same bank as its 8-character form.
-    if (
-        _local(element) in {"BIC", "BICFI"}
-        and len(value) == 11
-        and value.endswith("XXX")
-    ):
+    if path.endswith("/BICFI") and len(value) == 11 and value.endswith("XXX"):
         value = value[:8]
     return [(path, value)] if value else []
 
@@ -171,7 +168,8 @@ def _bank_account(container):
     """Identify the statement account by its IBAN or a typed proprietary ID.
 
     A proprietary ID is unique only together with its scheme, issuer and
-    servicing bank, so the key keeps every reported detail of those elements.
+    servicing bank, so the key covers every reported detail of those elements.
+    Servicer names and addresses are unbounded, so the indexed key is a digest.
     """
     iban = container.findtext("./{*}Acct/{*}Id/{*}IBAN", default="").strip()
     if iban:
@@ -187,7 +185,8 @@ def _bank_account(container):
         for element in container.findall(path)
         for detail in _account_details(element, name)
     )
-    return json.dumps(details, ensure_ascii=False, separators=(",", ":"))
+    canonical = json.dumps(details, ensure_ascii=False, separators=(",", ":"))
+    return "sha256:" + sha256(canonical.encode()).hexdigest()
 
 
 def _bank_references(element, *paths):

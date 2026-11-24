@@ -22,10 +22,12 @@ evidence. Do not edit an old entry to invent booking status.
 
 One upload can hold statements for several accounts. Banks number entries per
 account, so an entry reference is unique per import and account. The account is
-the statement's IBAN. Without one, it is the proprietary account ID with every
-detail reported for its scheme, issuer and servicing bank, stored as JSON,
-because a proprietary ID is unique only within those. An 11-character BIC
-ending in `XXX` counts as its 8-character form. Two accounts may report the same
+the statement's IBAN. Without one, it is a SHA-256 digest of the proprietary
+account ID and every detail reported for its scheme, issuer and servicing bank,
+because a proprietary ID is unique only within those. The digest keeps the
+indexed key short when a bank sends long names or addresses. An 11-character
+BIC ending in `XXX` counts as its 8-character form, and `BIC` counts as
+`BICFI`. Two accounts may report the same
 reference, and both entries keep it unchanged. Only a reference that one account
 reuses gets a numeric suffix. `bank_references` always keeps the values the bank
 sent. The upgrade adds `bank_account`, which stays empty for older rows. It
