@@ -42,7 +42,6 @@ PUBLIC_URLS = (
     "/verein?lang=en",
     "/verein/finanzen",
     "/verein/spenden",
-    "/verein/beitreten",
     "/veranstaltungen",
     "/leg-verzeichnis",
     "/wissen/glossar",
@@ -60,6 +59,7 @@ EXCLUDED_URLS = (
     "/leg/community/create",
     "/leg/community/c1/members",
     "/leg/community/c1/billing",
+    "/leg/document/1",
     # Private Verein areas
     "/verein/vorstand/antraege",
     "/verein/vorstand/login",

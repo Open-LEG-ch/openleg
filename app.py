@@ -413,6 +413,7 @@ _ROBOTS_RULES = (
     "Disallow: /admin/",
     "Disallow: /utility/admin/",
     "Disallow: /leg/community/",
+    "Disallow: /leg/document/",
     "Disallow: /verein/vorstand/",
     "Disallow: /verein/mitglied",
     "Disallow: /confirm/",
