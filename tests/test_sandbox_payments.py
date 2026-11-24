@@ -2,6 +2,7 @@
 """Fictional bank imports and reviewed matches use the real payment commands."""
 
 import io
+import re
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
@@ -62,8 +63,6 @@ def _statement(client, prefix, fixture, *, booking_date=None):
     """Upload a synthetic statement through the ordinary billing form."""
     content = fixture.data
     if booking_date:
-        import re
-
         content = re.sub(rb"(?<=<BookgDt><Dt>)[0-9-]+", booking_date.encode(), content)
     page = client.get(prefix + COMMUNITY + "/billing")
     return client.post(
@@ -419,6 +418,48 @@ def test_payment_event_remains_visible_after_newer_unrelated_activity(village):
     assert page.status_code == 200
     assert event_id in page.text
     assert "invoice.delivered" not in page.text
+
+
+def test_refused_confirmation_keeps_the_submitted_invoice_on_the_guide(village):
+    """Each refusal shows the submitted invoice and its fixtures, not the first one."""
+    client = village.test_client()
+    prefix, _ = _issued(village, client)
+    path = prefix + "/sandbox/payments"
+    page = client.get(path)
+    listed = re.findall(
+        r'<option value="(\d+)"[^>]*>([^ <]+) ·',
+        page.text.split('id="payment-invoice"')[1].split("</select>")[0],
+    )
+    (first, _), (second, number) = listed[:2]
+    assert f"Gewählte Rechnung: {number} ·" not in page.text
+
+    def refused(entry, message):
+        """Submit the second invoice for an entry and expect one refusal."""
+        response = client.post(
+            path + f"/confirm/{entry}",
+            data={"csrf_token": _csrf(page), "invoice_id": second, "confirm": "yes"},
+        )
+        assert response.status_code == 409 and message in response.text
+        assert f"Gewählte Rechnung: {number} ·" in response.text
+        assert f"{path}/fixtures/{second}/exact/053.xml" in response.text
+        assert f"{path}/fixtures/{first}/exact/053.xml" not in response.text
+
+    def imported(message):
+        """Import the second invoice's unknown-reference credit and return its entry."""
+        fixture = client.get(
+            path + f"/fixtures/{second}/unknown-reference/{message}.xml"
+        )
+        assert _statement(client, prefix, fixture).status_code == 302
+        with (
+            _workspace_connection(village, prefix) as connection,
+            connection.cursor() as cur,
+        ):
+            cur.execute("SELECT MAX(id) FROM bank_statement_entries")
+            return cur.fetchone()[0]
+
+    refused(2147483647, "Dieser Eintrag fehlt")
+    refused(imported("053"), "Diese Auswahl ist nicht zulässig.")
+    refused(imported("054"), "Mögliche Doppelzahlung.")
 
 
 def test_payment_replay_form_requires_its_existing_confirmation_record(village):
