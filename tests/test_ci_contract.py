@@ -380,6 +380,67 @@ def test_release_image_is_immutable_and_attested():
     assert "test -f /app/static/css/openleg.css" in dockerfile
 
 
+def test_mcp_sidecar_image_is_scanned_and_attested_like_the_release_image():
+    data = yaml.safe_load((WORKFLOWS_DIR / "image.yml").read_text(encoding="utf-8"))
+    main, job = data["jobs"]["publish"], data["jobs"]["publish-mcp"]
+    steps = {step.get("name"): step for step in job["steps"]}
+    order = [step.get("name") for step in job["steps"]]
+
+    assert job["name"] == "publish-mcp-image"
+    assert job["permissions"] == main["permissions"]
+    assert job["env"] == main["env"]
+    assert "needs" not in job
+    assert (
+        "${GITHUB_REPOSITORY_OWNER,,}/openleg-mcp" in steps["Define image name"]["run"]
+    )
+    build = steps["Build image"]
+    main_build = next(s for s in main["steps"] if s.get("name") == "Build image")
+    assert build["uses"] == main_build["uses"]
+    assert build["with"]["file"] == "Dockerfile.mcp"
+    assert "file" not in main_build["with"]
+    assert build["with"]["load"] is True
+    assert build["with"].get("push") is not True
+
+    checks = steps["Verify sidecar image"]
+    ref = "${{ steps.image.outputs.name }}:${{ steps.meta.outputs.version }}"
+    assert checks["env"]["IMAGE_REF"] == ref
+    for fragment in (
+        '--entrypoint id "${IMAGE_REF}" -u',
+        "/app/app.py",
+        "import mcp_sidecar.server",
+        "MCP sidecar is disabled",
+    ):
+        assert fragment in checks["run"]
+
+    scan = steps["Block high-severity image vulnerabilities"]
+    assert scan["with"]["image-ref"] == ref
+    assert scan["with"]["exit-code"] == "1"
+    assert scan["with"]["severity"] == "HIGH,CRITICAL"
+    for name in ("Generate SBOM", "Push scanned image", "Attest image provenance"):
+        main_step = next(s for s in main["steps"] if s.get("name") == name)
+        assert steps[name] == main_step
+    assert steps["Attest SBOM"] == next(
+        s for s in main["steps"] if s.get("name") == "Attest SBOM"
+    )
+    assert (
+        "image=${{ steps.image.outputs.name }}@${{ steps.push.outputs.digest }}"
+        in (steps["Record immutable release identity"]["run"])
+    )
+    assert (
+        order.index("Build image")
+        < order.index("Verify sidecar image")
+        < order.index("Block high-severity image vulnerabilities")
+        < order.index("Push scanned image")
+        < order.index("Attest image provenance")
+    )
+
+    dockerfile = (PROJECT_ROOT / "Dockerfile.mcp").read_text(encoding="utf-8")
+    assert "apt-get upgrade -y" in dockerfile
+    assert "USER 65534:65534" in dockerfile
+    assert "COPY *.py" not in dockerfile
+    assert "Local development only" not in dockerfile
+
+
 def test_release_announcement_watchdog_contract():
     text = (WORKFLOWS_DIR / "release-announcement-watchdog.yml").read_text(
         encoding="utf-8"

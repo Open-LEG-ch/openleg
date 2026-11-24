@@ -1,8 +1,20 @@
-# Local development only. No Flask dependencies or database configuration.
+# Production MCP sidecar image, published and attested by image.yml.
+# No Flask code or database configuration. The sidecar refuses to start unless
+# OPENLEG_MCP_ENABLED=true; production enables it only through the private
+# operations repository.
 FROM python:3.11-slim
+
+# Apply security fixes published since the Python base image was built.
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY requirements-mcp.txt .
 RUN pip install --no-cache-dir -r requirements-mcp.txt
+
+# CVE-2026-23949 (jaraco.context), CVE-2026-24049 (wheel): upgrade the
+# base-image package that vendors both dependencies, as in Dockerfile.
+RUN pip install --no-cache-dir --upgrade "setuptools>=84.0.0"
+
 COPY mcp_sidecar/ mcp_sidecar/
 COPY docs/openapi/operator-v1.yaml docs/openapi/operator-v1.yaml
 COPY docs/openapi/public-v1.json docs/openapi/public-v1.json
