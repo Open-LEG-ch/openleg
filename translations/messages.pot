@@ -11167,7 +11167,7 @@ msgstr ""
 msgid "Not found"
 msgstr ""
 
-#: templates/leg_workspace/correspondence.html:46
+#: templates/leg_workspace/correspondence.html:21 templates/leg_workspace/correspondence.html:46
 msgid "Notiz"
 msgstr ""
 

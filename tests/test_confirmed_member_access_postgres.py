@@ -152,3 +152,41 @@ def test_journal_lists_attachment_metadata_without_pdf_bytes(community):
     assert bytes(db.get_correspondence_attachment(entry, cid)["attachment_data"]) == (
         b"%PDF-private-record"
     )
+
+
+@pytest.mark.parametrize("release", [False, True], ids=["legacy", "release"])
+def test_journal_note_saved_through_form_reaches_confirmed_members_only(
+    community, monkeypatch, release
+):
+    client, db, cid, _doc, _entry = community
+    monkeypatch.setitem(client.application.config, "SITE_RELEASE_ENABLED", release)
+    note = "Rückruf des Netzbetreibers am Montag"
+    journal = f"/leg/community/{cid}/correspondence"
+    _set_session(client, "owner")
+    response = client.post(
+        journal,
+        data={
+            "csrf_token": "csrf-secret",
+            "direction": "out",
+            "channel": "post",
+            "counterparty": "Netzbetreiber",
+            "subject": "Anmeldung LEG",
+            "notes": note,
+        },
+    )
+    assert response.status_code == 302
+    rows = client.get(journal).text.split("<tr")[1:]
+    assert note in next(row for row in rows if "Anmeldung LEG" in row)
+    assert not any(note in row for row in rows if "Anmeldung LEG" not in row)
+
+    _set_session(client, "guest")
+    for status in ("invited", "rejected", "confirmed"):
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE community_members SET status=%s WHERE community_id=%s AND building_id='guest'",
+                (status, cid),
+            )
+        for page in (journal, f"/leg/dashboard?cid={cid}"):
+            assert (note in client.get(page).text) is (
+                status == "confirmed" and page == journal
+            )

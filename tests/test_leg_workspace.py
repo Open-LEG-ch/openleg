@@ -367,3 +367,34 @@ def test_billing_approval_error_distinguishes_unloaded_payments(workspace, monke
     assert response.status_code == 409
     assert "Diese Ansicht lädt keine Zahlungsdaten." in response.text
     assert "Noch keine Bankzahlungen abgeglichen." not in response.text
+
+
+@pytest.mark.parametrize("release", [False, True], ids=["legacy", "release"])
+def test_journal_row_shows_its_note(workspace, monkeypatch, release):
+    import dashboard
+
+    client, _ = workspace
+    entry = {
+        "id": 7,
+        "direction": "out",
+        "channel": "post",
+        "counterparty": "Netzbetreiber",
+        "subject": "Anmeldung LEG",
+        "attachment_filename": None,
+        "created_at": "2026-11-20",
+    }
+    journal = [
+        {**entry, "notes": "Rückruf am Montag vereinbart"},
+        {**entry, "id": 8, "subject": "Ohne Notiz", "notes": ""},
+    ]
+    monkeypatch.setattr(dashboard.db, "list_correspondence", lambda _cid: journal)
+    monkeypatch.setitem(client.application.config, "SITE_RELEASE_ENABLED", release)
+    _set_session(client, "reader")
+
+    page = client.get(ROOT + "/correspondence").text
+    rows = page.split("<tbody", 1)[1].split("</tbody>", 1)[0].split("<tr")[1:]
+    noted = next(row for row in rows if "Anmeldung LEG" in row)
+    assert "Rückruf am Montag vereinbart" in noted
+    plain = next(row for row in rows if "Ohne Notiz" in row)
+    assert "Notiz" not in plain.replace("Ohne Notiz", "")
+    assert len(rows) == 2
