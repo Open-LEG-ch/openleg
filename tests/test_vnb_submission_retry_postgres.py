@@ -262,17 +262,17 @@ def test_non_retryable_failure_offers_and_accepts_no_retry(signed):
 
 def test_existing_database_migrates_to_keep_failed_attempts(signed):
     client, db, cid, failed_with = signed
-    with db.get_connection() as conn, conn.cursor() as cur:
-        # Before #959 the table kept one case per payload in every state.
-        cur.execute("DROP INDEX uq_vnb_submission_payload")
-        cur.execute(
-            """ALTER TABLE vnb_submission_cases ADD CONSTRAINT
-               vnb_submission_cases_community_id_contract_version_payload__key
-               UNIQUE (community_id, contract_version, payload_fingerprint)"""
-        )
-    db.create_tables()
     adapter = ScriptedAdapter(OUTAGE, DELIVERED)
     failed = failed_with(adapter)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        # Before #959 the table kept one case per payload in every state,
+        # under the constraint name PostgreSQL generates.
+        cur.execute("DROP INDEX uq_vnb_submission_payload")
+        cur.execute(
+            """ALTER TABLE vnb_submission_cases
+               ADD UNIQUE (community_id, contract_version, payload_fingerprint)"""
+        )
+    db.create_tables()
 
     response = client.post(_retry_path(cid, failed), data={"csrf_token": "csrf-secret"})
 
@@ -318,3 +318,66 @@ def test_attempts_are_ordered_by_claim_not_by_transaction_start(signed):
     assert newest_first[-1] == failed
     page = client.get(f"/leg/dashboard?cid={cid}").text
     assert "/retry" not in page
+
+
+def _claim(db, cid, failed, actor, retry_of=None):
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT contract_version, payload_fingerprint
+               FROM vnb_submission_cases WHERE case_id = %s""",
+            (failed,),
+        )
+        identity = cur.fetchone()
+    return vnb_exchange.SubmissionClaim(
+        community_id=cid,
+        actor_building_id=actor,
+        adapter_key=ADAPTER_KEY,
+        contract_version=identity["contract_version"],
+        capability_snapshot=(),
+        payload_fingerprint=identity["payload_fingerprint"],
+        retry_of=retry_of,
+    )
+
+
+@pytest.mark.parametrize("named", [True, False])
+def test_new_attempt_rechecks_the_role_under_the_community_lock(signed, named):
+    from store import vnb_exchange as cases
+
+    _client, db, cid, failed_with = signed
+    failed = failed_with(ScriptedAdapter(OUTAGE))
+    before = _cases(db, cid)
+    # The domain read the role before an administrator removed it; the claim
+    # must refuse a member who lacks the documents role.
+    claim = _claim(db, cid, failed, "member", failed if named else None)
+
+    with pytest.raises(db.VnbSubmissionConflict):
+        cases.claim(claim)
+
+    assert _cases(db, cid) == before
+
+
+def test_stale_retry_stays_single_after_the_clock_steps_back(signed):
+    client, db, cid, failed_with = signed
+    adapter = ScriptedAdapter(OUTAGE, OUTAGE)
+    failed = failed_with(adapter)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        # The failure was stamped before the server clock stepped back.
+        cur.execute(
+            """UPDATE vnb_submission_cases
+               SET created_at = clock_timestamp() + interval '1 hour'
+               WHERE case_id = %s""",
+            (failed,),
+        )
+    path = _retry_path(cid, failed)
+
+    assert client.post(path, data={"csrf_token": "csrf-secret"}).status_code == 302
+    attempts = _cases(db, cid)
+    stale = client.post(path, data={"csrf_token": "csrf-secret"})
+
+    assert attempts[0]["case_id"] == failed
+    assert stale.status_code == 302
+    assert _cases(db, cid) == attempts
+    assert adapter.calls == 2
+    page = client.get(f"/leg/dashboard?cid={cid}").text
+    assert _retry_form(page, cid, failed) is None
+    assert _retry_form(page, cid, attempts[1]["case_id"]) is not None

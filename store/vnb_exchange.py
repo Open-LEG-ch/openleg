@@ -418,6 +418,24 @@ def lock_confirmation_facts(community_id, kind):
             cur.fetchall()
 
 
+def _require_document_manager(cursor, submission):
+    """Hold the actor's membership and require the documents capability."""
+    cursor.execute(
+        """SELECT role, access_roles, status FROM community_members
+           WHERE community_id = %s AND building_id = %s FOR SHARE""",
+        (submission.community_id, submission.actor_building_id),
+    )
+    actor = cursor.fetchone()
+    if (
+        not actor
+        or actor["status"] != "confirmed"
+        or not community_access.allows(actor, community_access.MANAGE_DOCUMENTS)
+    ):
+        raise VnbSubmissionConflict(
+            _N("Keine Berechtigung für die Netzbetreiber-Anmeldung.")
+        )
+
+
 def _guard_current_formation_bundle(cursor, submission):
     """Serialize a new package claim with document replacement before delivery."""
     if not submission.document_ids:
@@ -455,20 +473,7 @@ def _guard_current_formation_bundle(cursor, submission):
         raise VnbSubmissionConflict(changed)
     if not community or community["status"] != "signatures_pending":
         raise VnbSubmissionConflict(changed)
-    cursor.execute(
-        """SELECT role, access_roles, status FROM community_members
-           WHERE community_id = %s AND building_id = %s FOR SHARE""",
-        (submission.community_id, submission.actor_building_id),
-    )
-    actor = cursor.fetchone()
-    if (
-        not actor
-        or actor["status"] != "confirmed"
-        or not community_access.allows(actor, community_access.MANAGE_DOCUMENTS)
-    ):
-        raise VnbSubmissionConflict(
-            _N("Keine Berechtigung für die Netzbetreiber-Anmeldung.")
-        )
+    _require_document_manager(cursor, submission)
     cursor.execute(
         """SELECT id, signing_status FROM leg_documents
            WHERE community_id = %s AND signing_status IS DISTINCT FROM 'superseded'
@@ -515,23 +520,30 @@ def _current_attempt(cursor, submission):
     )
     latest = cursor.fetchone()
     retry_of = submission.retry_of
-    if retry_of is None:
-        if latest and not (latest["state"] == "failed" and latest["retryable"]):
-            return dict(latest)
+    if retry_of is not None and (latest is None or latest["case_id"] != retry_of):
+        return _earlier_failure(cursor, submission)
+    if latest is None:
         return None
-    if latest and latest["case_id"] == retry_of:
-        if latest["state"] == "failed" and latest["retryable"]:
-            return None
+    if not (latest["state"] == "failed" and latest["retryable"]):
+        if retry_of is None:
+            return dict(latest)
         raise VnbSubmissionConflict("This VNB submission cannot be retried")
-    # Another tab or a double click already retried this attempt. Return the
-    # earlier failure unchanged, so the caller delivers nothing.
+    # The bundle guard checks the role only for the first case. A new attempt
+    # checks it again under the community lock.
+    _require_document_manager(cursor, submission)
+    return None
+
+
+def _earlier_failure(cursor, submission):
+    """Return an already retried failure unchanged, so nothing is delivered."""
+    # Another tab or a double click retried this attempt first.
     cursor.execute(
         """SELECT * FROM vnb_submission_cases
            WHERE community_id = %s AND case_id = %s AND state = 'failed'
              AND contract_version = %s AND payload_fingerprint = %s""",
         (
             submission.community_id,
-            retry_of,
+            submission.retry_of,
             submission.contract_version,
             submission.payload_fingerprint,
         ),
@@ -551,8 +563,9 @@ def claim(submission: SubmissionClaim) -> dict:
     case_id = str(uuid.uuid4())
     try:
         with _get_connection() as conn, conn.cursor() as cur:
-            # The insert stamps clock time under this lock, so the newest case
-            # is the last claim even when a transaction started earlier.
+            # Under this lock the insert stamps a time after every earlier case
+            # of the community, even if this transaction started earlier or the
+            # server clock stepped back.
             _lock_community(cur, submission.community_id)
             existing = _guard_current_formation_bundle(cur, submission)
             if existing is not None:
@@ -566,8 +579,14 @@ def claim(submission: SubmissionClaim) -> dict:
                     case_id, community_id, created_by, adapter_key,
                     contract_version, payload_fingerprint,
                     capability_snapshot, actor, state, next_action, created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'claimed', 'deliver',
-                          clock_timestamp())
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, 'claimed', 'deliver',
+                    GREATEST(
+                        clock_timestamp(),
+                        (SELECT max(created_at) + interval '1 microsecond'
+                         FROM vnb_submission_cases WHERE community_id = %s)
+                    )
+                )
                 RETURNING *
             """,
                 (
@@ -579,6 +598,7 @@ def claim(submission: SubmissionClaim) -> dict:
                     submission.payload_fingerprint,
                     Json(list(submission.capability_snapshot)),
                     Json(operator_actor.snapshot()),
+                    submission.community_id,
                 ),
             )
             row = cur.fetchone()
