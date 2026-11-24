@@ -7,11 +7,12 @@ import threading
 import pytest
 
 import vnb_exchange
-from tests import test_community_create_postgres
+from tests import test_community_create_postgres, test_sandbox_http
 from tests.test_dashboard_access_routes import _set_session
 
 interest_database = test_community_create_postgres.interest_database
 founder = test_community_create_postgres.founder
+village = test_sandbox_http.village
 pytestmark = pytest.mark.integration
 
 ADAPTER_KEY = "synthetic-vnb"
@@ -460,3 +461,36 @@ def test_retry_is_not_offered_when_the_post_would_refuse_it(signed):
     assert "/retry" not in page
     assert response.status_code == 403
     assert adapter.calls == 1
+
+
+def test_retry_offer_follows_the_signed_bundle(village, monkeypatch):
+    import database
+    from tests.test_sandbox_formation import _signed
+    from tests.test_sandbox_formation_recovery import _native_factory
+
+    client = village.test_client()
+    prefix, cid = _signed(client)
+    connect = _native_factory(village, prefix)
+    monkeypatch.setattr(database, "get_connection", connect)
+    monkeypatch.setitem(vnb_exchange.ADAPTERS, ADAPTER_KEY, ScriptedAdapter(OUTAGE))
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET vnb_adapter_key = %s WHERE community_id = %s",
+            (ADAPTER_KEY, cid),
+        )
+    command = vnb_exchange.FormationSubmission(cid, "sonnwil-founder")
+    failed = vnb_exchange.submit_formation(command)
+    assert (failed.state, failed.next_action) == ("failed", "retry")
+    assert vnb_exchange.may_submit_formation(cid, "sonnwil-founder")
+
+    with connect() as conn, conn.cursor() as cur:
+        # Another signer stops sharing with neighbours, so the signed bundle no
+        # longer lists every current participant.
+        cur.execute(
+            """UPDATE consents SET share_with_neighbors = FALSE
+               WHERE building_id = 'sonnwil-resident'"""
+        )
+
+    assert not vnb_exchange.may_submit_formation(cid, "sonnwil-founder")
+    with pytest.raises(vnb_exchange.FormationSubmissionInvalid):
+        vnb_exchange.submit_formation(command, retry_of=failed.case_id)

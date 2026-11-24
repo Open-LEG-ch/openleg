@@ -20,7 +20,7 @@ An authorized document operator downloads the package, sends it through the VNB'
 
 A failed case stays in the history. `POST /leg/community/{community_id}/vnb-submissions/{case_id}/retry` requires a dashboard session, CSRF protection and the document capability, like the first submission. It claims a new case for the same package only while the named case is the newest attempt and its failure is retryable. Under the community lock it first checks the actor's documents capability, the signed documents and the signature receipts again. A repeated retry of an older attempt, from a double click or a second tab, returns that attempt unchanged and delivers nothing. A failure that is not retryable returns `409`. A replay that names no case also starts a new attempt after a retryable failure.
 
-The Gründung page offers «Erneut einleiten» on the newest retryable failure only to a viewer with a full session whom the submission would accept: `vnb_exchange.may_submit_formation` applies the same member read and documents capability as the POST. Other viewers do not see the retry note.
+The Gründung page offers «Erneut einleiten» on the newest retryable failure only to a viewer with a full session whom the submission would accept: `vnb_exchange.may_submit_formation` runs the submission's read-only preview, so the offer applies the same member read, documents capability, signed documents and signature receipts as the POST. Other viewers do not see the retry note.
 
 The partial unique index `uq_vnb_submission_payload` keeps one case per package for every state except `failed`. It replaces the former table constraint, so the previous release still starts but cannot claim a submission. An image rollback needs a recovery plan.
 
