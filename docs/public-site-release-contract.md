@@ -39,7 +39,8 @@ contents are covered by `tests/test_ci_contract.py`.
 
 ## Crawl Rules
 
-`GET /robots.txt` gives every user-agent group the same rules. A crawler that
+`GET /robots.txt` gives every user-agent group the same rules, which
+`robots_policy.py` owns. A crawler that
 matches a named group ignores `User-agent: *`, so a named group without the
 shared exclusions would open the API, administration, private Verein,
 confirmation, unsubscribe and credential paths to that crawler.

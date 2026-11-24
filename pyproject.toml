@@ -184,6 +184,7 @@ also_copy = [
     "release_identity.py",
     "verein_facts.py",
     "release_mode.py",
+    "robots_policy.py",
     "registry_intake.py",
     "scripts",
     "sdat_datahub.py",
