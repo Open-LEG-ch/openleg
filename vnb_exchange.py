@@ -683,6 +683,29 @@ def submit_package(
     return _outcome_from_row(cases.record_outcome(row["case_id"], outcome))
 
 
+def _may_submit(community: dict, actor_building_id: str) -> bool:
+    actor = next(
+        (
+            member
+            for member in community.get("members") or []
+            if member.get("building_id") == actor_building_id
+            and member.get("status") == "confirmed"
+        ),
+        None,
+    )
+    return community_access.allows(actor, community_access.MANAGE_DOCUMENTS)
+
+
+def may_submit_formation(community_id: str, actor_building_id: str) -> bool:
+    """Read whether submit_formation would accept this actor now, writing nothing."""
+    community = db.fetch_community_with_members(community_id)
+    return bool(
+        community
+        and community.get("status") == "signatures_pending"
+        and _may_submit(community, actor_building_id)
+    )
+
+
 def submit_formation(
     command: FormationSubmission,
     adapter: VnbAdapter | None = None,
@@ -695,16 +718,7 @@ def submit_formation(
     community = db.fetch_community_with_members(command.community_id)
     if not community:
         raise FormationSubmissionInvalid("Community was not found")
-    actor = next(
-        (
-            member
-            for member in community.get("members") or []
-            if member.get("building_id") == command.actor_building_id
-            and member.get("status") == "confirmed"
-        ),
-        None,
-    )
-    if not community_access.allows(actor, community_access.MANAGE_DOCUMENTS):
+    if not _may_submit(community, command.actor_building_id):
         raise FormationSubmissionForbidden
     if community.get("status") != "signatures_pending":
         raise FormationSubmissionInvalid("Formation signatures are not complete")

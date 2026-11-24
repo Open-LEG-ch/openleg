@@ -102,12 +102,26 @@ def signed(founder, monkeypatch):
     )
     assert db.insert_invited_member(cid, "member", "founder")
     assert db.confirm_invited_member(cid, "member")
+    assert db.save_building(
+        "manager",
+        "manager@example.invalid",
+        {"address": "Synthetic 3", "lat": 47.2, "lon": 8.2},
+        {},
+        verified=True,
+    )
+    assert db.insert_invited_member(cid, "manager", "founder")
+    assert db.confirm_invited_member(cid, "manager")
     with db.get_connection() as conn, conn.cursor() as cur:
-        # The submission reads members with discovery consent; both are visible,
+        cur.execute(
+            """UPDATE community_members SET access_roles = '["documents"]'
+               WHERE community_id = %s AND building_id = 'manager'""",
+            (cid,),
+        )
+        # The submission reads members with discovery consent; all are visible,
         # so a refusal comes from the role, not from visibility.
         cur.execute(
             """UPDATE consents SET share_with_neighbors = TRUE
-               WHERE building_id IN ('founder', 'member')"""
+               WHERE building_id IN ('founder', 'member', 'manager')"""
         )
 
     def failed_with(adapter):
@@ -328,6 +342,11 @@ def _claim(db, cid, failed, actor, retry_of=None):
             (failed,),
         )
         identity = cur.fetchone()
+        cur.execute(
+            "SELECT id FROM leg_documents WHERE community_id = %s ORDER BY id",
+            (cid,),
+        )
+        documents = tuple(row["id"] for row in cur.fetchall())
     return vnb_exchange.SubmissionClaim(
         community_id=cid,
         actor_building_id=actor,
@@ -335,6 +354,7 @@ def _claim(db, cid, failed, actor, retry_of=None):
         contract_version=identity["contract_version"],
         capability_snapshot=(),
         payload_fingerprint=identity["payload_fingerprint"],
+        document_ids=documents,
         retry_of=retry_of,
     )
 
@@ -381,3 +401,62 @@ def test_stale_retry_stays_single_after_the_clock_steps_back(signed):
     page = client.get(f"/leg/dashboard?cid={cid}").text
     assert _retry_form(page, cid, failed) is None
     assert _retry_form(page, cid, attempts[1]["case_id"]) is not None
+
+
+def test_new_attempt_rechecks_the_bundle_under_the_community_lock(signed):
+    from store import vnb_exchange as cases
+
+    _client, db, cid, failed_with = signed
+    failed = failed_with(ScriptedAdapter(OUTAGE))
+    claim = _claim(db, cid, failed, "founder", failed)
+    document_id = db.store_leg_document(
+        cid, "teilnehmervertrag", b"%PDF synthetic later", "later.pdf"
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        # The bundle changed after the retry read it and before it claimed.
+        cur.execute(
+            "UPDATE leg_documents SET signing_status = 'completed' WHERE id = %s",
+            (document_id,),
+        )
+    before = _cases(db, cid)
+
+    with pytest.raises(db.VnbSubmissionConflict):
+        cases.claim(claim)
+
+    assert _cases(db, cid) == before
+
+
+def test_document_manager_is_offered_the_retry_and_can_use_it(signed):
+    client, db, cid, failed_with = signed
+    adapter = ScriptedAdapter(OUTAGE, DELIVERED)
+    failed = failed_with(adapter)
+    _set_session(client, "manager")
+
+    form = _retry_form(client.get(f"/leg/dashboard?cid={cid}").text, cid, failed)
+    response = client.post(_retry_path(cid, failed), data={"csrf_token": "csrf-secret"})
+
+    assert form is not None
+    assert response.status_code == 302
+    assert [case["state"] for case in _cases(db, cid)] == ["failed", "delivered"]
+
+
+def test_retry_is_not_offered_when_the_post_would_refuse_it(signed):
+    client, db, cid, failed_with = signed
+    adapter = ScriptedAdapter(OUTAGE, DELIVERED)
+    failed = failed_with(adapter)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        # The administrator stops sharing with neighbours; the submission's
+        # member read then no longer lists them.
+        cur.execute(
+            """UPDATE consents SET share_with_neighbors = FALSE
+               WHERE building_id = 'founder'"""
+        )
+
+    page = client.get(f"/leg/dashboard?cid={cid}").text
+    response = client.post(_retry_path(cid, failed), data={"csrf_token": "csrf-secret"})
+
+    assert "Fehlgeschlagen" in page
+    assert "Einleitung erneut möglich" not in page
+    assert "/retry" not in page
+    assert response.status_code == 403
+    assert adapter.calls == 1

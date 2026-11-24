@@ -723,6 +723,7 @@ def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch
 
     overview = _correspondence_overview()
     overview["community"]["status"] = "signatures_pending"
+    overview["can_retry_vnb_submission"] = True
     overview["vnb_submissions"] = [
         {"state": "failed", "next_action": "retry", "retryable": True, "case_id": "c0"},
         {"state": "failed", "next_action": "review_rejection"},

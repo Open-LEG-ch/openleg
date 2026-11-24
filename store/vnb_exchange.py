@@ -418,6 +418,11 @@ def lock_confirmation_facts(community_id, kind):
             cur.fetchall()
 
 
+_BUNDLE_CHANGED = _N(
+    "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
+)
+
+
 def _require_document_manager(cursor, submission):
     """Hold the actor's membership and require the documents capability."""
     cursor.execute(
@@ -451,14 +456,6 @@ def _guard_current_formation_bundle(cursor, submission):
     )
     if cursor.fetchone():
         return None
-    changed = _N(
-        "Die Dokumente oder Teilnehmenden wurden geändert. Prüfen Sie den aktuellen Entwurf."
-    )
-    cursor.execute(
-        "SELECT status FROM communities WHERE community_id = %s FOR UPDATE",
-        (submission.community_id,),
-    )
-    community = cursor.fetchone()
     cursor.execute(
         "SELECT * FROM vnb_submission_cases WHERE community_id = %s LIMIT 1",
         (submission.community_id,),
@@ -470,10 +467,24 @@ def _guard_current_formation_bundle(cursor, submission):
             and existing["payload_fingerprint"] == submission.payload_fingerprint
         ):
             return dict(existing)
-        raise VnbSubmissionConflict(changed)
+        raise VnbSubmissionConflict(_BUNDLE_CHANGED)
+    _require_current_bundle(cursor, submission)
+    return None
+
+
+def _require_current_bundle(cursor, submission):
+    """Recheck, under the community lock, the facts the package was built from."""
+    changed = _BUNDLE_CHANGED
+    cursor.execute(
+        "SELECT status FROM communities WHERE community_id = %s FOR UPDATE",
+        (submission.community_id,),
+    )
+    community = cursor.fetchone()
     if not community or community["status"] != "signatures_pending":
         raise VnbSubmissionConflict(changed)
     _require_document_manager(cursor, submission)
+    if not submission.document_ids:
+        return
     cursor.execute(
         """SELECT id, signing_status FROM leg_documents
            WHERE community_id = %s AND signing_status IS DISTINCT FROM 'superseded'
@@ -502,7 +513,6 @@ def _guard_current_formation_bundle(cursor, submission):
             )
         except (SignatureConflict, SignatureDenied) as error:
             raise VnbSubmissionConflict(changed) from error
-    return None
 
 
 def _current_attempt(cursor, submission):
@@ -528,9 +538,9 @@ def _current_attempt(cursor, submission):
         if retry_of is None:
             return dict(latest)
         raise VnbSubmissionConflict("This VNB submission cannot be retried")
-    # The bundle guard checks the role only for the first case. A new attempt
-    # checks it again under the community lock.
-    _require_document_manager(cursor, submission)
+    # The bundle guard checks the role and bundle only for the first case. A
+    # new attempt checks them again under the community lock.
+    _require_current_bundle(cursor, submission)
     return None
 
 
