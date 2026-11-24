@@ -1651,7 +1651,6 @@ def create_tables():
                     delivered_at TIMESTAMPTZ,
                     acknowledged_at TIMESTAMPTZ,
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE (community_id, contract_version, payload_fingerprint),
                     CHECK (state IN ('claimed', 'prepared', 'delivered', 'acknowledged', 'rejected', 'failed'))
                 )
             """)
@@ -1662,6 +1661,18 @@ def create_tables():
                 CREATE UNIQUE INDEX IF NOT EXISTS uq_vnb_submission_active_community
                 ON vnb_submission_cases(community_id)
                 WHERE state IN ('claimed', 'prepared', 'delivered', 'acknowledged')
+            """)
+            # A failed attempt stays in the history and a retry claims a new
+            # case for the same payload. Every other state keeps one case per
+            # payload, as the former table constraint did.
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_vnb_submission_payload
+                ON vnb_submission_cases(community_id, contract_version, payload_fingerprint)
+                WHERE state <> 'failed'
+            """)
+            cur.execute("""
+                ALTER TABLE vnb_submission_cases DROP CONSTRAINT IF EXISTS
+                    vnb_submission_cases_community_id_contract_version_payload__key
             """)
 
             cur.execute("""
@@ -1896,7 +1907,6 @@ def create_tables():
                     delivered_at TIMESTAMPTZ,
                     acknowledged_at TIMESTAMPTZ,
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE (community_id, contract_version, payload_fingerprint),
                     CHECK (state IN ('claimed', 'prepared', 'delivered', 'acknowledged', 'rejected', 'failed'))
                 )
             """)

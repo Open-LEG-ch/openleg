@@ -107,6 +107,7 @@ class SubmissionClaim:
     capability_snapshot: tuple[str, ...]
     payload_fingerprint: str
     document_ids: tuple[int, ...] = ()
+    retry_of: str | None = None
 
 
 @dataclass(frozen=True)
@@ -595,8 +596,13 @@ def submit_package(
     cases: SubmissionCases,
     *,
     dry_run: bool = False,
+    retry_of: str | None = None,
 ) -> SubmissionOutcome | SubmissionPreview:
-    """Claim and deliver one immutable formation package idempotently."""
+    """Claim and deliver one immutable formation package idempotently.
+
+    ``retry_of`` names the failed case a person chose to retry. Only the latest
+    retryable failure starts a new attempt; a repeated retry delivers nothing.
+    """
     contract = adapter.contract()
     if contract.contract_version != SUPPORTED_CONTRACT_VERSION:
         raise ValueError("Unsupported VNB exchange contract version")
@@ -615,6 +621,7 @@ def submit_package(
         document_ids=tuple(
             sorted(document.document_id for document in package.documents)
         ),
+        retry_of=retry_of,
     )
     if dry_run:
         cases.check_submission(submission)
@@ -682,6 +689,7 @@ def submit_formation(
     *,
     cases: SubmissionCases | None = None,
     dry_run: bool = False,
+    retry_of: str | None = None,
 ) -> SubmissionOutcome | SubmissionPreview:
     """Authorize, assemble and submit one community's signed formation bundle."""
     community = db.fetch_community_with_members(command.community_id)
@@ -749,6 +757,7 @@ def submit_formation(
         adapter,
         cases,
         **({"dry_run": True} if dry_run else {}),
+        **({"retry_of": retry_of} if retry_of else {}),
     )
 
 

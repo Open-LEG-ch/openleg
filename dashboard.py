@@ -1358,11 +1358,17 @@ def leg_generate_documents(community_id: str, building_id: str) -> dict:
     return formation_documents.generate(community_id, building_id)
 
 
-def leg_submit_vnb_formation(community_id: str, building_id: str) -> dict:
-    """Prepare or deliver the signed formation package through the VNB seam."""
+def leg_submit_vnb_formation(
+    community_id: str, building_id: str, retry_of: str | None = None
+) -> dict:
+    """Prepare or deliver the signed formation package through the VNB seam.
+
+    ``retry_of`` names the failed case the administrator retries.
+    """
     try:
         outcome = vnb_exchange.submit_formation(
             vnb_exchange.FormationSubmission(community_id, building_id),
+            **({"retry_of": retry_of} if retry_of else {}),
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return {

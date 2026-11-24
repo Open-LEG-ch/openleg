@@ -863,6 +863,20 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(result.get("error_status", 409))
         return _leg_formation_redirect(community_id, building_id)
 
+    @bp.route(
+        "/leg/community/<community_id>/vnb-submissions/<case_id>/retry",
+        methods=["POST"],
+    )
+    def leg_community_vnb_retry(community_id, case_id):
+        building_id = _require_dashboard_session()
+        _require_dashboard_csrf()
+        result = dashboard_module.leg_submit_vnb_formation(
+            community_id, building_id, retry_of=case_id
+        )
+        if result["error"]:
+            abort(result.get("error_status", 409))
+        return _leg_formation_redirect(community_id, building_id)
+
     @bp.route("/leg/community/<community_id>/vnb-submissions/<case_id>/handover")
     def leg_community_vnb_handover(community_id, case_id):
         building_id = _require_dashboard_session()

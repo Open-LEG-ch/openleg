@@ -500,13 +500,62 @@ def _guard_current_formation_bundle(cursor, submission):
     return None
 
 
+def _current_attempt(cursor, submission):
+    """Return the payload's newest case, or the named stale case of a retry."""
+    cursor.execute(
+        """SELECT * FROM vnb_submission_cases
+           WHERE community_id = %s AND contract_version = %s
+             AND payload_fingerprint = %s
+           ORDER BY created_at DESC, case_id DESC LIMIT 1""",
+        (
+            submission.community_id,
+            submission.contract_version,
+            submission.payload_fingerprint,
+        ),
+    )
+    latest = cursor.fetchone()
+    retry_of = submission.retry_of
+    if retry_of is None:
+        if latest and not (latest["state"] == "failed" and latest["retryable"]):
+            return dict(latest)
+        return None
+    if latest and latest["case_id"] == retry_of:
+        if latest["state"] == "failed" and latest["retryable"]:
+            return None
+        raise VnbSubmissionConflict("This VNB submission cannot be retried")
+    # Another tab or a double click already retried this attempt. Return the
+    # earlier failure unchanged, so the caller delivers nothing.
+    cursor.execute(
+        """SELECT * FROM vnb_submission_cases
+           WHERE community_id = %s AND case_id = %s AND state = 'failed'
+             AND contract_version = %s AND payload_fingerprint = %s""",
+        (
+            submission.community_id,
+            retry_of,
+            submission.contract_version,
+            submission.payload_fingerprint,
+        ),
+    )
+    earlier = cursor.fetchone()
+    if not earlier:
+        raise VnbSubmissionConflict("This VNB submission cannot be retried")
+    return dict(earlier)
+
+
 def claim(submission: SubmissionClaim) -> dict:
-    """Claim one stable formation submission or return its existing case."""
+    """Claim one stable formation submission or return its existing case.
+
+    A retryable failure stays in the history. Retrying it claims a new case,
+    and a repeated retry of the same failure returns that failure unchanged.
+    """
     case_id = str(uuid.uuid4())
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             _lock_community(cur, submission.community_id)
             existing = _guard_current_formation_bundle(cur, submission)
+            if existing is not None:
+                return existing
+            existing = _current_attempt(cur, submission)
             if existing is not None:
                 return existing
             cur.execute(
@@ -516,21 +565,6 @@ def claim(submission: SubmissionClaim) -> dict:
                     contract_version, payload_fingerprint,
                     capability_snapshot, actor, state, next_action
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'claimed', 'deliver')
-                ON CONFLICT (community_id, contract_version, payload_fingerprint)
-                DO UPDATE SET
-                    state = CASE
-                        WHEN vnb_submission_cases.state = 'failed'
-                             AND vnb_submission_cases.retryable
-                        THEN 'claimed'
-                        ELSE vnb_submission_cases.state
-                    END,
-                    next_action = CASE
-                        WHEN vnb_submission_cases.state = 'failed'
-                             AND vnb_submission_cases.retryable
-                        THEN 'deliver'
-                        ELSE vnb_submission_cases.next_action
-                    END,
-                    updated_at = CURRENT_TIMESTAMP
                 RETURNING *
             """,
                 (

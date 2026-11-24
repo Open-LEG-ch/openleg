@@ -6,7 +6,7 @@ OpenLEG keeps LEG-controlled records separate from the duties of the distributio
 
 An adapter declares its key, contract version and capabilities. Automated formation submission is available only when the adapter explicitly declares `formation_submission`. OpenLEG does not infer support from another operation or from the presence of a method.
 
-The formation package contains a canonical manifest and the stored signed documents. Its SHA-256 fingerprint binds the community, adapter, contract version, ordered document identifiers, types, filenames and content hashes. Repeating the same package returns the existing case.
+The formation package contains a canonical manifest and the stored signed documents. Its SHA-256 fingerprint binds the community, adapter, contract version, ordered document identifiers, types, filenames and content hashes. Repeating the same package returns the existing case, unless that case failed with a retryable error.
 
 An adapter returns one of `delivered`, `acknowledged`, `rejected` or `failed`. It cannot read or change OpenLEG's database. OpenLEG alone checks authorization, document state and the guarded formation transition.
 
@@ -15,6 +15,14 @@ An adapter returns one of `delivered`, `acknowledged`, `rejected` or `failed`. I
 `manual-handover` is the fallback when no automated transport is configured. It declares no automated capability. OpenLEG creates a private ZIP containing `manifest.json` and the signed documents, then records the case as `prepared`.
 
 An authorized document operator downloads the package, sends it through the VNB's accepted channel and confirms delivery. Confirmation and the transition from `signatures_pending` to `dso_submitted` occur in one database transaction. Merely preparing or downloading a package never marks it as sent.
+
+## Retrying a failed submission
+
+A failed case stays in the history. `POST /leg/community/{community_id}/vnb-submissions/{case_id}/retry` requires a dashboard session, CSRF protection and the document capability, like the first submission. It claims a new case for the same package only while the named case is the newest attempt and its failure is retryable. A repeated retry of an older attempt, from a double click or a second tab, returns that attempt unchanged and delivers nothing. A failure that is not retryable returns `409`. A replay that names no case also starts a new attempt after a retryable failure.
+
+The Gründung page offers «Erneut einleiten» on the newest retryable failure to an administrator with a full session while the community is in `signatures_pending`. Other viewers do not see the retry note.
+
+The partial unique index `uq_vnb_submission_payload` keeps one case per package for every state except `failed`. It replaces the former table constraint, so the previous release still starts but cannot claim a submission. An image rollback needs a recovery plan.
 
 ## Confirmed operating start
 

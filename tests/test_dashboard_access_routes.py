@@ -722,7 +722,9 @@ def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch
     assert "?bid=" not in source
 
     overview = _correspondence_overview()
+    overview["community"]["status"] = "signatures_pending"
     overview["vnb_submissions"] = [
+        {"state": "failed", "next_action": "retry", "retryable": True, "case_id": "c0"},
         {"state": "failed", "next_action": "review_rejection"},
         {"state": "rejected", "next_action": "retry"},
         {"state": "failed", "next_action": "escalate"},
@@ -741,6 +743,8 @@ def test_leg_forms_use_csrf_and_never_submit_building_id(app_module, monkeypatch
 
     assert "Nächster Schritt: Ablehnung prüfen" in html
     assert "Nächster Schritt: Einleitung erneut möglich" in html
+    # Only the newest retryable failure says a retry is possible (#959).
+    assert html.count("Nächster Schritt: Einleitung erneut möglich") == 1
     assert "Nächster Schritt: An den Netzbetreiber eskalieren" in html
     assert "Nächster Schritt: download_package" not in html
     assert "Paket bereit" in html

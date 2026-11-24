@@ -211,6 +211,10 @@ index name `uq_billing_period_community_window`. The previous application's
 initialization therefore skips recreating a full unique index over invalidated
 and replacement periods.
 
+VNB formation cases replace their full payload constraint with the partial
+index `uq_vnb_submission_payload`, which excludes failed attempts. The previous
+application starts, but its submission upsert cannot infer that index.
+
 This preserves startup and tested record reads. Older billing code does not
 understand VNB withdrawals or the new source certificates. Successful startup
 does not establish financial-write compatibility or authorize image rollback
