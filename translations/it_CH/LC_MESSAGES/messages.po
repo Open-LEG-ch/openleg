@@ -23098,3 +23098,8 @@ msgstr "Il valore nella vista dei progressi considera solo gli impianti entrati 
 #: templates/leg_billing.html:112 templates/leg_billing.html:272
 msgid "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
 msgstr "Riferimento bancario (AcctSvcrRef) al posto del riferimento di pagamento"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/formation.html:82
+msgid "Erneut einleiten"
+msgstr "Invia di nuovo"

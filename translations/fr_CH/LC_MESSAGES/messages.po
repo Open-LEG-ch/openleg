@@ -20448,3 +20448,8 @@ msgstr "La valeur affichée dans la vue des progressions tient compte uniquement
 #: templates/leg_billing.html:112 templates/leg_billing.html:272
 msgid "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
 msgstr "Référence bancaire (AcctSvcrRef) à la place de la référence de paiement"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/formation.html:82
+msgid "Erneut einleiten"
+msgstr "Soumettre à nouveau"

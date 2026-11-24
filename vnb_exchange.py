@@ -6,14 +6,19 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import logging
 import zipfile
 from dataclasses import dataclass
 from datetime import date
 from typing import Protocol
 
+import psycopg2
+
 import community_access
 import database as db
 from operator_errors import ErrorCode
+
+logger = logging.getLogger(__name__)
 
 FORMATION_SUBMISSION = "formation_submission"
 SUPPORTED_CONTRACT_VERSION = "vnb-formation/1"
@@ -695,6 +700,10 @@ def may_submit_formation(community_id: str, actor_building_id: str) -> bool:
         ValueError,
         db.VnbExchangeStoreError,
     ):
+        return False
+    except psycopg2.Error:
+        # The page still renders; it only leaves out the retry offer.
+        logger.exception("VNB submission preview failed")
         return False
     return True
 

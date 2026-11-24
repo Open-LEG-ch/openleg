@@ -494,3 +494,24 @@ def test_retry_offer_follows_the_signed_bundle(village, monkeypatch):
     assert not vnb_exchange.may_submit_formation(cid, "sonnwil-founder")
     with pytest.raises(vnb_exchange.FormationSubmissionInvalid):
         vnb_exchange.submit_formation(command, retry_of=failed.case_id)
+
+
+def test_page_renders_without_the_offer_when_the_preview_cannot_read(
+    signed, monkeypatch
+):
+    import psycopg2
+
+    from store import vnb_exchange as cases
+
+    client, _db, cid, failed_with = signed
+    failed_with(ScriptedAdapter(OUTAGE))
+
+    def unavailable(_submission):
+        raise psycopg2.OperationalError("synthetic connection loss")
+
+    monkeypatch.setattr(cases, "check_submission", unavailable)
+    page = client.get(f"/leg/dashboard?cid={cid}")
+
+    assert page.status_code == 200
+    assert "Fehlgeschlagen" in page.text
+    assert "/retry" not in page.text
