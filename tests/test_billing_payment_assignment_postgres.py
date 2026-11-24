@@ -1016,7 +1016,7 @@ def _one_upload(*statements):
     return first.replace(b"</BkToCstmrStmt>", extra + b"</BkToCstmrStmt>")
 
 
-def _accounts_sharing_a_reference(second_amount="9.67"):
+def _accounts_sharing_a_reference(second_amount="9.67", second_date="2026-09-14"):
     return _one_upload(
         _statement_xml(
             reference="FIRST-INVOICE",
@@ -1024,13 +1024,16 @@ def _accounts_sharing_a_reference(second_amount="9.67"):
             account="CH0000000000000000001",
             account_is_iban=True,
         ),
-        _statement_xml(
-            statement="second-account",
-            reference="SECOND-INVOICE",
-            servicer="shared-entry",
-            account="CH0000000000000000002",
-            account_is_iban=True,
-        ).replace(b"9.67", second_amount.encode()),
+        _booking_on(
+            _statement_xml(
+                statement="second-account",
+                reference="SECOND-INVOICE",
+                servicer="shared-entry",
+                account="CH0000000000000000002",
+                account_is_iban=True,
+            ).replace(b"9.67", second_amount.encode()),
+            second_date,
+        ),
     )
 
 
@@ -1074,11 +1077,11 @@ def test_accounts_sharing_a_local_reference_import_from_one_upload(workspace):
     assert len(_paid_events()) == 2
 
 
-def test_duplicate_guard_holds_equal_credits_on_two_accounts(workspace):
+@pytest.mark.parametrize("second_date", ["2026-09-14", "2026-09-24"])
+def test_duplicate_guard_holds_equal_credits_on_two_accounts(workspace, second_date):
     first, second = _invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")
-    assert _post_statement(workspace, _accounts_sharing_a_reference()).status_code == (
-        302
-    )
+    upload = _accounts_sharing_a_reference(second_date=second_date)
+    assert _post_statement(workspace, upload).status_code == 302
     newer, earlier = db.list_bank_statement_entries(COMMUNITY)
     assert [newer["bank_account"], earlier["bank_account"]] == [
         "CH0000000000000000002",
@@ -1101,7 +1104,9 @@ def test_duplicate_guard_holds_equal_credits_on_two_accounts(workspace):
         == "assigned"
     )
     review = _follow_assignment(workspace, _assign(workspace, newer["id"], second))
-    assert "Sehr wahrscheinlich dieselbe Zahlung" in review.text
+    assert "gleiche Bankreferenz" in review.text
+    same_day = second_date == "2026-09-14"
+    assert ("Sehr wahrscheinlich dieselbe Zahlung" in review.text) is same_day
     assert len(_paid_events()) == 1
 
 

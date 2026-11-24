@@ -21,8 +21,10 @@ identical old file returns its existing import result and does not upgrade its
 evidence. Do not edit an old entry to invent booking status.
 
 One upload can hold statements for several accounts. Banks number entries per
-account, so an entry reference is unique per import and account, identified by
-the statement's IBAN or other account ID. Two accounts may report the same
+account, so an entry reference is unique per import and account. The account is
+the statement's IBAN. Without one, it is the proprietary account ID together
+with its scheme, issuer and servicing bank BIC, stored as JSON, because a
+proprietary ID is unique only within those. Two accounts may report the same
 reference, and both entries keep it unchanged. Only a reference that one account
 reuses gets a numeric suffix. `bank_references` always keeps the values the bank
 sent. The upgrade adds `bank_account`, which stays empty for older rows. It

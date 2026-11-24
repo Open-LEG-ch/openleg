@@ -699,42 +699,78 @@ def test_statement_amount_must_fit_bank_entry_storage(amount, accepted):
             payment_reconciliation.parse_statement(xml)
 
 
-def _statement_for_accounts(*accounts):
-    """One camt.053 upload whose statements reuse one bank-local reference."""
+def _statement_for_accounts(*accounts, message="camt.053"):
+    """One upload whose statements or notifications reuse one bank-local reference."""
     start = CAMT_053.index(b"<Stmt>")
     end = CAMT_053.index(b"</Stmt>") + len(b"</Stmt>")
     statements = b"".join(
         CAMT_053[start:end].replace(
             b"statement-1</Id>",
-            f"statement-{number}</Id><Acct><Id>{account}</Id></Acct>".encode(),
+            f"statement-{number}</Id><Acct>{account}</Acct>".encode(),
         )
         for number, account in enumerate(accounts, start=1)
     )
-    return CAMT_053[:start] + statements + CAMT_053[end:]
+    xml = CAMT_053[:start] + statements + CAMT_053[end:]
+    if message == "camt.054":
+        xml = (
+            xml.replace(b"camt.053.001.08", b"camt.054.001.08")
+            .replace(b"BkToCstmrStmt", b"BkToCstmrDbtCdtNtfctn")
+            .replace(b"<Stmt>", b"<Ntfctn>")
+            .replace(b"</Stmt>", b"</Ntfctn>")
+        )
+    return xml
 
 
+_IBAN_1 = "<Id><IBAN>CH0000000000000000001</IBAN></Id>"
+_OTHR_1000 = "<Id><Othr><Id>1000</Id>{}</Othr></Id>"
+_SERVICER = "<Svcr><FinInstnId>{}</FinInstnId></Svcr>"
+
+
+@pytest.mark.parametrize("message", ["camt.053", "camt.054"])
 @pytest.mark.parametrize(
-    ("second", "second_account"),
+    ("first", "second", "accounts"),
     [
-        ("<IBAN>CH0000000000000000002</IBAN>", "CH0000000000000000002"),
-        ("<Othr><Id>local-2</Id></Othr>", "local-2"),
+        (
+            _IBAN_1,
+            "<Id><IBAN>CH0000000000000000002</IBAN></Id>",
+            ["CH0000000000000000001", "CH0000000000000000002"],
+        ),
+        (
+            _IBAN_1,
+            "<Id><Othr><Id>local-2</Id></Othr></Id>",
+            ["CH0000000000000000001", '{"Id":"local-2"}'],
+        ),
+        (
+            _OTHR_1000.format("<Issr>Bank A</Issr>"),
+            _OTHR_1000.format("<SchmeNm><Cd>BBAN</Cd></SchmeNm><Issr>Bank B</Issr>"),
+            [
+                '{"Id":"1000","Issr":"Bank A"}',
+                '{"Id":"1000","Issr":"Bank B","SchmeNm/Cd":"BBAN"}',
+            ],
+        ),
+        (
+            _OTHR_1000.format("") + _SERVICER.format("<BICFI>TSTACHZZ</BICFI>"),
+            _OTHR_1000.format("") + _SERVICER.format("<BIC>TSTBCHZZ</BIC>"),
+            ['{"Id":"1000","Svcr":"TSTACHZZ"}', '{"Id":"1000","Svcr":"TSTBCHZZ"}'],
+        ),
     ],
 )
-def test_accounts_sharing_a_local_reference_keep_the_bank_value(second, second_account):
+def test_accounts_sharing_a_local_reference_keep_the_bank_value(
+    first, second, accounts, message
+):
     entries = payment_reconciliation.parse_statement(
-        _statement_for_accounts("<IBAN>CH0000000000000000001</IBAN>", second)
+        _statement_for_accounts(first, second, message=message)
     ).entries
 
     assert [(entry.bank_account, entry.entry_reference) for entry in entries] == [
-        ("CH0000000000000000001", "bank-entry-1"),
-        (second_account, "bank-entry-1"),
+        (accounts[0], "bank-entry-1"),
+        (accounts[1], "bank-entry-1"),
     ]
 
 
 def test_one_account_reusing_a_local_reference_still_gets_distinct_rows():
-    account = "<IBAN>CH0000000000000000001</IBAN>"
     entries = payment_reconciliation.parse_statement(
-        _statement_for_accounts(account, account)
+        _statement_for_accounts(_IBAN_1, _IBAN_1)
     ).entries
 
     assert [entry.entry_reference for entry in entries] == [

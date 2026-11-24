@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Parse ISO 20022 statements and submit canonical payments for reconciliation."""
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -147,12 +148,34 @@ def _account_currency(container):
 
 
 def _bank_account(container):
-    """Return the statement account's IBAN or other identifier, if reported."""
-    for path in ("./{*}Acct/{*}Id/{*}IBAN", "./{*}Acct/{*}Id/{*}Othr/{*}Id"):
-        value = container.findtext(path, default="").strip()
-        if value:
-            return value
-    return ""
+    """Identify the statement account by its IBAN or a typed proprietary ID.
+
+    A proprietary ID is unique only within its scheme, issuer and servicing bank.
+    """
+    iban = container.findtext("./{*}Acct/{*}Id/{*}IBAN", default="").strip()
+    if iban:
+        return iban
+    other = "./{*}Acct/{*}Id/{*}Othr/{*}"
+    servicer = "./{*}Acct/{*}Svcr/{*}FinInstnId/{*}"
+    paths = {
+        "Id": (other + "Id",),
+        "SchmeNm/Cd": (other + "SchmeNm/{*}Cd",),
+        "SchmeNm/Prtry": (other + "SchmeNm/{*}Prtry",),
+        "Issr": (other + "Issr",),
+        # camt .08 names the servicer's BIC BICFI; older versions name it BIC.
+        "Svcr": (servicer + "BICFI", servicer + "BIC"),
+    }
+    account = {}
+    for key, candidates in paths.items():
+        for path in candidates:
+            if value := container.findtext(path, default="").strip():
+                account[key] = value
+                break
+    if "Id" not in account:
+        return ""
+    return json.dumps(
+        account, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+    )
 
 
 def _bank_references(element, *paths):
