@@ -326,7 +326,7 @@ msgstr ", status %(profile_pv_snapshot_year)s"
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:16
 msgid ", aber nicht durch einen beanspruchten Betreiber."
-msgstr ", but not by a claimed operator."
+msgstr ", but not by an operator who has claimed the entry."
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/rangliste.html:76 templates/gemeinde/rangliste_fortschritte.html:80
@@ -466,7 +466,7 @@ msgstr ". No vendor lock-in: You can change the operating model."
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/detail.html:8
 msgid ". Moderierte Selbstauskunft, unabhängig von der Gründungsplattform."
-msgstr ". Moderated self-information, independent of the foundation platform."
+msgstr ". Moderated self-report, independent of the founding platform."
 
 #. Draft translation; native language and domain review pending.
 #: templates/open_source.html:139
@@ -11770,7 +11770,7 @@ msgstr "Modelled saving share"
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:13
 msgid "Moderierte Selbstauskunft"
-msgstr "Moderated self-information"
+msgstr "Moderated self-report"
 
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:216
@@ -12024,7 +12024,7 @@ msgstr "Network operators"
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/detail.html:44
 msgid "Netzbetreiber (Selbstauskunft)"
-msgstr "Network operator (self-information)"
+msgstr "Network operator (self-reported)"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/eintragen.html:74
@@ -12733,10 +12733,7 @@ msgid ""
 "Offen für jede LEG, unabhängig davon, welche Plattform bei der Gründung half. "
 "Einträge sind moderierte Selbstauskünfte: OpenLEG prüft keine Netz-Topologie und "
 "keine Eignung einzelner Adressen. Details dazu stehen bei jedem Eintrag."
-msgstr ""
-"Open for each LEG, regardless of which platform helped with the creation. Entries are"
-" moderated self-information: OpenLEG does not check net topology or the suitability "
-"of individual addresses. Details are available for each entry."
+msgstr "Open for each LEG, regardless of which platform helped with the creation. Entries are moderated self-reports: OpenLEG does not check net topology or the suitability of individual addresses. Details are available for each entry."
 
 #. Draft translation; native language and domain review pending.
 #: templates/self_host.html:78

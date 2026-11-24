@@ -63,18 +63,26 @@ STATE_TEXT = {
         "last_confirmed": "Zuletzt bestätigt am",
         "never_reconfirmed": "Noch nie erneut bestätigt.",
         "no_eligibility": "OpenLEG prüft keine Netz-Topologie und bestätigt nicht",
+        "past_last_page": "Die Ergebnisseite ist ungültig.",
+        "unclaimed": "Kein Betreiber hat ihn beansprucht.",
+        "not_by_claimant": ", aber nicht durch einen beanspruchten Betreiber.",
+        "lead": "Einträge sind moderierte Selbstauskünfte",
     },
     "en": {
         "not_found": "Page not found",
         "empty": "No LEGs found",
         "undated": "Not specified",
-        "self_report": "Moderated self-information",
+        "self_report": "Moderated self-report",
         "unavailable": "Service temporarily unavailable",
         "claimed": "Confirmed by the operator",
         "claimed_on": "Claimed by the operator on",
         "last_confirmed": "Last confirmed on",
         "never_reconfirmed": "Never reconfirmed.",
         "no_eligibility": "OpenLEG does not check a network topology",
+        "past_last_page": "This results page is invalid.",
+        "unclaimed": "No operator has claimed it.",
+        "not_by_claimant": ", but not by an operator who has claimed the entry.",
+        "lead": "Entries are moderated self-reports",
     },
     "fr-CH": {
         "not_found": "Page introuvable",
@@ -87,18 +95,26 @@ STATE_TEXT = {
         "last_confirmed": "Dernière confirmation le",
         "never_reconfirmed": "Jamais reconfirmé.",
         "no_eligibility": "OpenLEG ne vérifie pas la topologie du réseau",
+        "past_last_page": "Cette page de résultats est invalide.",
+        "unclaimed": "Aucun exploitant ne l’a revendiquée.",
+        "not_by_claimant": ", mais pas par un exploitant ayant revendiqué l’entrée.",
+        "lead": "Les fiches sont des déclarations modérées",
     },
     "it-CH": {
         "not_found": "Pagina non trovata",
         "empty": "Nessun LEGs trovato",
         "undated": "non specificato",
-        "self_report": "L'autoinformazione moderato",
+        "self_report": "Autodichiarazione moderata",
         "unavailable": "Servizio temporaneamente non disponibile",
         "claimed": "Confermata dall'operatore",
         "claimed_on": "Rivendicata dall'operatore il",
         "last_confirmed": "Ultimo confermato il",
         "never_reconfirmed": "Mai riconfermata.",
         "no_eligibility": "OpenLEG non verifica la topologia della rete",
+        "past_last_page": "Questa pagina dei risultati non è valida.",
+        "unclaimed": "Nessun operatore l'ha rivendicata.",
+        "not_by_claimant": ", ma non da un operatore che ha rivendicato la voce.",
+        "lead": "Le voci sono autodichiarazioni moderate",
     },
 }
 
@@ -181,7 +197,7 @@ def test_sparse_entry_lists_and_details_without_missing_values_in_every_language
     )
     assert result.status_code == 200
     page = _localized(result, language)
-    assert page.count("data-directory-entry=") == 1
+    assert page.count("data-directory-entry=") == 1 and text["lead"] in page
     assert text["self_report"] in page and ">None<" not in page
     detail = client.get(_href(result, "data-directory-entry"))
     assert detail.status_code == 200
@@ -189,6 +205,7 @@ def test_sparse_entry_lists_and_details_without_missing_values_in_every_language
     assert "Fictional sparse LEG" in page and text["undated"] in page
     assert text["self_report"] in page and ">None<" not in page
     assert text["never_reconfirmed"] in page and text["no_eligibility"] in page
+    assert text["unclaimed"] in page
     assert "private@example.invalid" not in page
     back = _href(detail, "data-directory-back")
     assert parse_qs(urlsplit(back).query)["q"] == ["sparse"]
@@ -198,7 +215,7 @@ def test_sparse_entry_lists_and_details_without_missing_values_in_every_language
 def test_claimed_entry_explains_ownership_freshness_and_no_eligibility(
     directory, language
 ):
-    client, _db = directory
+    client, db = directory
     text = STATE_TEXT[language]
     detail = client.get(
         "/leg-verzeichnis/fictional-00", query_string={"lang": language}
@@ -210,6 +227,19 @@ def test_claimed_entry_explains_ownership_freshness_and_no_eligibility(
         assert text[key] in trust, key
     assert text["self_report"] not in trust and text["never_reconfirmed"] not in trust
     assert text["no_eligibility"] in page
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE leg_registry SET source='self_submitted', claimed_at=NULL "
+            "WHERE slug='fictional-01'"
+        )
+    detail = client.get(
+        "/leg-verzeichnis/fictional-01", query_string={"lang": language}
+    )
+    page = _localized(detail, language)
+    trust = re.search(r'data-testid="registry-trust"(.*?)</div>', page, re.DOTALL)[1]
+    for key in ["self_report", "unclaimed", "not_by_claimant"]:
+        assert text[key] in trust, key
+    assert text["claimed"] not in trust
 
 
 @pytest.mark.parametrize("language", sorted(STATE_TEXT))
@@ -415,20 +445,148 @@ def test_leg_check_links_published_entries_and_reports_a_failed_read(
     assert "data-registry-unavailable" in failed.text
 
 
-def test_municipality_profile_links_published_details_without_submission(
-    directory, monkeypatch
-):
+@pytest.fixture
+def profile_page(directory, monkeypatch):
+    """Municipality profile over the native registry, with a warm-able cache."""
+    import cache
+
     client, db = directory
     profile = {"bfs_number": 4021, "name": "Fictional Baden", "kanton": "AG"}
     monkeypatch.setattr(db, "get_municipality_profile", lambda bfs: profile)
     monkeypatch.setattr(db, "get_elcom_tariffs", lambda *args, **kwargs: [])
     monkeypatch.setattr(db, "get_sonnendach_municipal", lambda bfs: None)
     monkeypatch.setattr(db, "get_interest_count", lambda bfs, **kwargs: 0)
+    store = {}
+    monkeypatch.setattr(cache, "cache_get", store.get)
+    monkeypatch.setattr(
+        cache, "cache_set", lambda key, value, ttl=None: store.update({key: value})
+    )
+    return client, db, store
+
+
+def test_municipality_profile_links_published_details_without_submission(
+    profile_page,
+):
+    client, _db, _store = profile_page
     page = client.get("/gemeinde/profil/4021")
     assert page.status_code == 200
     links = re.findall(r'href="(/leg-verzeichnis[^"]*)"', page.text)
-    assert "/leg-verzeichnis/fictional-00" in links
+    # 26 published entries match: the newest 25 and a link to all of them.
+    assert "/leg-verzeichnis/fictional-01" in links
+    assert "/leg-verzeichnis/fictional-00" not in links
+    assert "/leg-verzeichnis?q=Fictional+Baden" in links
+    more = client.get("/leg-verzeichnis?q=Fictional+Baden")
+    assert more.text.count("data-directory-entry=") == 25
     assert "fictional-26" not in page.text and "fictional-27" not in page.text
     assert "/leg-verzeichnis/eintragen" not in page.text
     assert "/beanspruchen" not in page.text
-    assert client.get("/leg-verzeichnis/fictional-00").status_code == 200
+    assert client.get("/leg-verzeichnis/fictional-01").status_code == 200
+
+
+def test_profile_shows_moderation_changes_and_caches_no_registry_rows(profile_page):
+    import municipality_profile
+
+    client, db, store = profile_page
+    assert "/leg-verzeichnis/fictional-01" in client.get("/gemeinde/profil/4021").text
+    cached = [v for k, v in store.items() if k.startswith("municipality-profile:")]
+    assert len(cached) == 1
+    for marker in ["private-contact", "private-claim", "private-verify"]:
+        assert marker not in cached[0]
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE leg_registry SET moderation_status='rejected' "
+            "WHERE slug='fictional-01'"
+        )
+    hits = municipality_profile.profile_cache_metrics()["hits"]
+    page = client.get("/gemeinde/profil/4021")
+    assert municipality_profile.profile_cache_metrics()["hits"] == hits + 1
+    assert page.status_code == 200
+    assert (
+        "fictional-01" not in page.text and "/leg-verzeichnis/fictional-00" in page.text
+    )
+
+
+DIRECTORY_REFERRERS = ["/leg-gruenden", "/fuer-gemeinden", "/llms.txt"]
+
+
+def test_released_pages_link_to_the_directory(directory):
+    client, _db = directory
+    for path in DIRECTORY_REFERRERS:
+        page = client.get(path)
+        assert page.status_code == 200 and "/leg-verzeichnis" in page.text, path
+
+
+def test_pages_do_not_link_to_the_directory_while_the_site_gate_is_off(
+    web, monkeypatch
+):
+    import cache
+    import database
+
+    monkeypatch.setattr(cache, "cache_get", lambda key: None)
+    monkeypatch.setattr(cache, "cache_set", lambda key, value, ttl=None: None)
+    monkeypatch.setattr(
+        database,
+        "get_municipality_profile",
+        lambda bfs: {"bfs_number": 4021, "name": "Fictional Baden", "kanton": "AG"},
+    )
+    monkeypatch.setattr(database, "get_elcom_tariffs", lambda *args, **kwargs: [])
+    monkeypatch.setattr(database, "get_sonnendach_municipal", lambda bfs: None)
+    monkeypatch.setattr(database, "get_interest_count", lambda bfs, **kwargs: 0)
+    monkeypatch.setattr(
+        database,
+        "read_public_registry",
+        lambda **kwargs: {
+            "entries": [{"slug": "fictional-00", "name": "Fictional LEG 00"}],
+            "has_next": True,
+        },
+    )
+    client = web.test_client()
+    for path in [*DIRECTORY_REFERRERS, "/gemeinde/profil/4021"]:
+        page = client.get(path)
+        assert page.status_code == 200 and "/leg-verzeichnis" not in page.text, path
+    assert "Fictional LEG 00" in page.text
+
+
+def test_leg_check_directory_list_link_keeps_the_originating_search(
+    directory, monkeypatch
+):
+    client, db = directory
+    monkeypatch.setattr(
+        db,
+        "search_municipality_profiles",
+        lambda query: [
+            {
+                "name": "Fictional Baden",
+                "bfs_number": 4021,
+                "kanton": "AG",
+                "pv_score_pct": None,
+            }
+        ],
+    )
+    monkeypatch.setattr(db, "get_elcom_tariffs", lambda bfs: [])
+    check = client.get("/leg-check?q=Fictional+Baden&bfs=4021&lang=en")
+    listing = client.get(
+        html.unescape(re.search(r'href="(/leg-verzeichnis\?bfs=[^"]+)"', check.text)[1])
+    )
+    assert listing.text.count("data-directory-entry=") == 25
+    back = parse_qs(urlsplit(_href(listing, "data-directory-check")).query)
+    assert back["q"] == ["Fictional Baden"] and back["bfs"] == ["4021"]
+    assert back["lang"] == ["en"]
+
+
+@pytest.mark.parametrize("language", sorted(STATE_TEXT))
+def test_page_past_the_last_result_is_not_found_and_offers_the_first_page(
+    directory, language
+):
+    client, _db = directory
+    text = STATE_TEXT[language]
+    query = {"q": "Fictional", "bfs": "4021", "page": "3", "lang": language}
+    past = client.get("/leg-verzeichnis", query_string=query)
+    assert past.status_code == 404
+    page = _localized(past, language)
+    assert text["past_last_page"] in page and text["empty"] not in page
+    first = _href(past, "data-directory-first")
+    arguments = parse_qs(urlsplit(first).query)
+    assert arguments["page"] == ["1"] and arguments["q"] == ["Fictional"]
+    assert arguments["bfs"] == ["4021"]
+    assert client.get(first).text.count("data-directory-entry=") == 25

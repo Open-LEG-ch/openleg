@@ -146,7 +146,7 @@
             <div data-stage-slot="start"><dt class="font-semibold text-ink">{{ _('Start, wenn') }}</dt><dd class="text-ink-muted mt-1">{{ _('Das mögliche Gebiet feststeht.') }}</dd></div>
             <div data-stage-slot="action"><dt class="font-semibold text-ink">{{ _('Ihre Aufgabe') }}</dt><dd class="text-ink-muted mt-1">{{ _('Sammeln Sie Zusagen, Anschlussadressen und Angaben zu den eingebrachten Anlagen.') }}</dd></div>
             <div data-stage-slot="evidence"><dt class="font-semibold text-ink">{{ _('Nachweis') }}</dt><dd class="text-ink-muted mt-1">{{ _('Eine abgestimmte Teilnehmenden- und Anlagenliste.') }}</dd></div>
-            <div data-stage-slot="next"><dt class="font-semibold text-ink">{{ _('Nächste Aktion') }}</dt><dd class="mt-1"><a href="/leg-verzeichnis" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Bestehende LEGs im Verzeichnis prüfen') }}</a></dd></div>
+            <div data-stage-slot="next"><dt class="font-semibold text-ink">{{ _('Nächste Aktion') }}</dt><dd class="mt-1">{% if site_release_enabled %}<a href="{{ '/leg-verzeichnis'|localized_url }}" class="text-brand font-semibold underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">{{ _('Bestehende LEGs im Verzeichnis prüfen') }}</a>{% else %}{{ _('Bestehende LEGs im Verzeichnis prüfen') }}{% endif %}</dd></div>
           </dl>
         </article>
       </li>

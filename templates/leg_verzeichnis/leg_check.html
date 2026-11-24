@@ -63,7 +63,7 @@
         {% endif %}
       </div>
 
-      {% if site_release_enabled %}<p class="mb-8"><a href="{{ ('/leg-verzeichnis?bfs=' ~ profile.bfs_number)|localized_url }}" class="text-brand underline">{{ _('LEG-Verzeichnis') }}</a></p>{% endif %}
+      {% if site_release_enabled %}<p class="mb-8"><a href="{{ ('/leg-verzeichnis?bfs=' ~ profile.bfs_number ~ '&check_q=' ~ (q|urlencode))|localized_url }}" class="text-brand underline">{{ _('LEG-Verzeichnis') }}</a></p>{% endif %}
       {{ data_provenance(_("Datenstand"), _("laufend aktualisiert"), ["ElCom / LINDAS", _("BFE Sonnendach"), _("OpenLEG Registereinträge")]) }}
 
       <div class="bg-brand/5 border border-brand/20 rounded-xl p-5 mb-6">

@@ -104,7 +104,7 @@
   <section aria-labelledby="next-title" class="py-12 grid md:grid-cols-2 gap-8">
     <div>
       <h2 id="next-title" class="text-2xl font-bold mb-2">{{ _("Mit einem prüfbaren Schritt beginnen") }}</h2>
-      <p class="text-ink-muted mb-5">{{ _("Prüfen Sie zuerst die Solarnutzung oder bestehende Gemeinschaften im") }} <a href="/leg-verzeichnis" class="text-brand underline">{{ _("LEG-Verzeichnis") }}</a>{{ _(". Kein Anbieter-Lock-in: Sie können das Betriebsmodell wechseln.") }}</p>
+      <p class="text-ink-muted mb-5">{{ _("Prüfen Sie zuerst die Solarnutzung oder bestehende Gemeinschaften im") }} {% if site_release_enabled %}<a href="{{ '/leg-verzeichnis'|localized_url }}" class="text-brand underline">{{ _("LEG-Verzeichnis") }}</a>{% else %}{{ _("LEG-Verzeichnis") }}{% endif %}{{ _(". Kein Anbieter-Lock-in: Sie können das Betriebsmodell wechseln.") }}</p>
       <div class="flex flex-col sm:flex-row gap-3">
         <a href="/gemeinde/onboarding" class="text-center bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _("Gemeinde anmelden") }}</a>
         <a href="/rangliste" class="text-center border border-slate-200 bg-white text-ink px-6 py-3 rounded-lg font-semibold hover:bg-slate-50">{{ _("Rangliste ansehen") }}</a>
