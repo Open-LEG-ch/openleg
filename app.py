@@ -402,39 +402,54 @@ def datenschutz():
     return render_city_template("datenschutz.html")
 
 
+# Crawlers that match a named group ignore the * group, so every group repeats
+# these rules.
+_ROBOTS_RULES = (
+    "Allow: /",
+    "Allow: /api/v1/docs",
+    "Allow: /api/v1/openapi.json",
+    "Disallow: /api/",
+    "Disallow: /gemeinde/api/",
+    "Disallow: /admin/",
+    "Disallow: /utility/admin/",
+    "Disallow: /leg/community/",
+    "Disallow: /verein/vorstand/",
+    "Disallow: /verein/mitglied",
+    "Disallow: /confirm/",
+    "Disallow: /interest/confirm/",
+    "Disallow: /verein/bestaetigen/",
+    "Disallow: /registry/verify/",
+    "Disallow: /unsubscribe/",
+    "Disallow: /dashboard/access/",
+    "Disallow: /gemeinde/access/",
+    "Disallow: /utility/access/",
+    "Disallow: /oauth/",
+)
+
+
 @main_bp.route("/robots.txt")
 def robots_txt():
     lines = [
+        "# Default group, also used by Googlebot, Bingbot and Claude-SearchBot.",
         "User-agent: *",
-        "Allow: /",
-        "Allow: /api/v1/docs",
-        "Disallow: /api/",
-        "Disallow: /admin/",
-        "Disallow: /confirm/",
-        "Disallow: /unsubscribe/",
+        *_ROBOTS_RULES,
         "",
-        "# LLM and AI crawlers are welcome.",
-        "User-agent: GPTBot",
-        "Allow: /",
-        "",
-        "User-agent: OAI-SearchBot",
-        "Allow: /",
-        "",
-        "User-agent: ChatGPT-User",
-        "Allow: /",
-        "",
-        "User-agent: ClaudeBot",
-        "Allow: /",
-        "",
-        "User-agent: PerplexityBot",
-        "Allow: /",
-        "",
-        "User-agent: Google-Extended",
-        "Allow: /",
-        "",
-        "User-agent: Applebot-Extended",
-        "Allow: /",
-        "",
+    ]
+    for label, agents in (
+        ("AI search crawlers.", ("OAI-SearchBot", "PerplexityBot")),
+        (
+            "User-initiated fetchers. Their vendors say robots.txt may not apply.",
+            ("ChatGPT-User",),
+        ),
+        (
+            "AI training crawlers and control tokens are welcome on public pages.",
+            ("GPTBot", "ClaudeBot", "Google-Extended", "Applebot-Extended"),
+        ),
+    ):
+        lines.append(f"# {label}")
+        for agent in agents:
+            lines.extend((f"User-agent: {agent}", *_ROBOTS_RULES, ""))
+    lines += [
         f"Sitemap: {current_app.config['SITE_URL']}/sitemap.xml",
         f"# LLM summary: {current_app.config['SITE_URL']}/llms.txt",
     ]
