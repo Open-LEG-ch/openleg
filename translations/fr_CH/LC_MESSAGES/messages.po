@@ -18038,11 +18038,6 @@ msgstr "Quartier fictif avec maisons, immeuble et atelier."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/homepage.html:34
-msgid "Illustration: erfundenes Quartier"
-msgstr "Illustration : quartier fictif"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/homepage.html:34
 #, python-format
 msgid "Version %(tag)s"
 msgstr "Version %(tag)s"
