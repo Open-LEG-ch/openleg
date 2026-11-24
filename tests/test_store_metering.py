@@ -916,10 +916,6 @@ def test_save_metering_point_readings_logs_the_database_error(monkeypatch, caplo
             lambda: metering.get_sdat_import("DOC-1"),
             "[DB] Error getting SDAT import: db down",
         ),
-        (
-            metering.get_sdat_import_index,
-            "[DB] Error getting SDAT import index: db down",
-        ),
     ],
 )
 def test_repository_failures_log_the_operation(monkeypatch, caplog, call, message):
@@ -989,14 +985,15 @@ def test_import_index_tolerates_rows_without_a_file_name(monkeypatch):
     assert index["document_ids"] == frozenset({"DOC-1"})
 
 
-def test_import_index_is_empty_when_the_ledger_cannot_be_read(monkeypatch):
-    # Empty means "do the work". Anything else would skip a delivery because a
-    # query failed.
+def test_import_index_raises_when_the_ledger_cannot_be_read(monkeypatch, caplog):
+    # #941: an unreadable ledger must not look empty. Empty would replay every
+    # settled delivery and could overwrite a later correction.
     monkeypatch.setattr(database, "get_connection", _broken_conn())
 
-    index = metering.get_sdat_import_index()
+    with caplog.at_level(logging.ERROR), pytest.raises(RuntimeError, match="db down"):
+        metering.get_sdat_import_index()
 
-    assert index == {"document_ids": frozenset(), "file_names": frozenset()}
+    assert caplog.messages == ["[DB] Error getting SDAT import index: db down"]
 
 
 # ==== Billable period snapshot ====
