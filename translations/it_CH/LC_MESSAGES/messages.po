@@ -2522,11 +2522,6 @@ msgid "Beschwerderecht bei einer Aufsichtsbehörde"
 msgstr "Diritto di ricorso presso un'autorità di controllo"
 
 #. Draft translation; native language and domain review pending.
-#: templates/gemeinde/profil.html:132
-msgid "Bestehende LEG eintragen"
-msgstr "LEGImpostazione esistente"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
 msgstr "Controllare LEGs esistente nella directory"
@@ -12666,7 +12661,7 @@ msgstr "Non ancora controllato pubblicamente o sbloccato."
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:11 templates/partials/registry_trust.html:17
 msgid "Noch nie erneut bestätigt."
-msgstr "Mai più confermato."
+msgstr "Mai riconfermata."
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/finance_edit.html:11
@@ -17129,7 +17124,7 @@ msgstr "Richiedi scorciatoia nella dashboard personale"
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:8
 msgid "Vom Betreiber beansprucht am"
-msgstr "L'operatore chiede:"
+msgstr "Rivendicata dall'operatore il"
 
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:7

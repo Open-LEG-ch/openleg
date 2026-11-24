@@ -50,6 +50,201 @@ def _href(response, attribute):
     return html.unescape(re.search(attribute + r'="([^"]+)"', response.text)[1])
 
 
+# Current catalogue wording for each directory state, per display language.
+STATE_TEXT = {
+    "de-CH": {
+        "not_found": "Seite nicht gefunden",
+        "empty": "Keine LEGs gefunden",
+        "undated": "nicht angegeben",
+        "self_report": "Moderierte Selbstauskunft",
+        "unavailable": "Dienst vorübergehend nicht verfügbar",
+        "claimed": "Vom Betreiber bestätigt",
+        "claimed_on": "Vom Betreiber beansprucht am",
+        "last_confirmed": "Zuletzt bestätigt am",
+        "never_reconfirmed": "Noch nie erneut bestätigt.",
+        "no_eligibility": "OpenLEG prüft keine Netz-Topologie und bestätigt nicht",
+    },
+    "en": {
+        "not_found": "Page not found",
+        "empty": "No LEGs found",
+        "undated": "Not specified",
+        "self_report": "Moderated self-information",
+        "unavailable": "Service temporarily unavailable",
+        "claimed": "Confirmed by the operator",
+        "claimed_on": "Claimed by the operator on",
+        "last_confirmed": "Last confirmed on",
+        "never_reconfirmed": "Never reconfirmed.",
+        "no_eligibility": "OpenLEG does not check a network topology",
+    },
+    "fr-CH": {
+        "not_found": "Page introuvable",
+        "empty": "Aucune CEL trouvée",
+        "undated": "non renseigné",
+        "self_report": "Déclaration modérée",
+        "unavailable": "Service temporairement indisponible",
+        "claimed": "Confirmé par l’exploitant",
+        "claimed_on": "Revendiqué par l’exploitant le",
+        "last_confirmed": "Dernière confirmation le",
+        "never_reconfirmed": "Jamais reconfirmé.",
+        "no_eligibility": "OpenLEG ne vérifie pas la topologie du réseau",
+    },
+    "it-CH": {
+        "not_found": "Pagina non trovata",
+        "empty": "Nessun LEGs trovato",
+        "undated": "non specificato",
+        "self_report": "L'autoinformazione moderato",
+        "unavailable": "Servizio temporaneamente non disponibile",
+        "claimed": "Confermata dall'operatore",
+        "claimed_on": "Rivendicata dall'operatore il",
+        "last_confirmed": "Ultimo confermato il",
+        "never_reconfirmed": "Mai riconfermata.",
+        "no_eligibility": "OpenLEG non verifica la topologia della rete",
+    },
+}
+
+
+def _localized(response, language):
+    assert response.headers["Content-Language"] == language
+    return html.unescape(response.text)
+
+
+@pytest.mark.parametrize("language", sorted(STATE_TEXT))
+def test_language_change_keeps_search_and_bfs_on_results_and_details(
+    directory, language
+):
+    client, _db = directory
+    query = {"q": "Fictional", "bfs": "4021", "check_q": "Baden", "page": "2"}
+    origin = "fr-CH" if language == "en" else "en"
+    result = client.get("/leg-verzeichnis", query_string={**query, "lang": origin})
+    detail = client.get(_href(result, "data-directory-entry"))
+    for page, attribute in [
+        (result, "data-directory-entry"),
+        (detail, "data-directory-back"),
+    ]:
+        switch = html.unescape(
+            re.search(
+                r'href="([^"]+)" data-language-choice lang="' + language + '"',
+                page.text,
+            )[1]
+        )
+        switched = client.get(switch)
+        assert switched.status_code == 200
+        _localized(switched, language)
+        assert urlsplit(switch).path == urlsplit(page.request.url).path
+        link = parse_qs(urlsplit(_href(switched, attribute)).query)
+        # German-default installations keep historical links without lang.
+        assert link.get("lang", ["de-CH"]) == [language] and link["page"] == ["2"]
+        assert link["q"] == ["Fictional"] and link["bfs"] == ["4021"]
+        assert link["check_q"] == ["Baden"] and link["check_bfs"] == ["4021"]
+
+
+@pytest.mark.parametrize("language", sorted(STATE_TEXT))
+def test_pending_rejected_and_missing_entries_stay_hidden_in_every_language(
+    directory, language
+):
+    client, _db = directory
+    text = STATE_TEXT[language]
+    missing = client.get("/leg-verzeichnis/missing", query_string={"lang": language})
+    assert missing.status_code == 404
+    assert text["not_found"] in _localized(missing, language)
+    # fictional-26 is pending and fictional-27 rejected in the fixture.
+    for slug, name in [
+        ("fictional-26", "Fictional LEG 26"),
+        ("fictional-27", "Fictional LEG 27"),
+    ]:
+        detail = client.get("/leg-verzeichnis/" + slug, query_string={"lang": language})
+        assert detail.status_code == 404
+        page = _localized(detail, language)
+        assert text["not_found"] in page and name not in page
+        search = client.get(
+            "/leg-verzeichnis", query_string={"q": name, "lang": language}
+        )
+        assert search.status_code == 200
+        page = _localized(search, language)
+        assert text["empty"] in page and slug not in page
+        assert "data-directory-entry=" not in page
+
+
+@pytest.mark.parametrize("language", sorted(STATE_TEXT))
+def test_sparse_entry_lists_and_details_without_missing_values_in_every_language(
+    directory, language
+):
+    client, db = directory
+    text = STATE_TEXT[language]
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("""INSERT INTO leg_registry(slug,name,contact_email,
+            moderation_status,leg_status,created_at,updated_at)
+            VALUES ('sparse','Fictional sparse LEG','private@example.invalid',
+            'published',NULL,NULL,NULL)""")
+    result = client.get(
+        "/leg-verzeichnis", query_string={"q": "sparse", "lang": language}
+    )
+    assert result.status_code == 200
+    page = _localized(result, language)
+    assert page.count("data-directory-entry=") == 1
+    assert text["self_report"] in page and ">None<" not in page
+    detail = client.get(_href(result, "data-directory-entry"))
+    assert detail.status_code == 200
+    page = _localized(detail, language)
+    assert "Fictional sparse LEG" in page and text["undated"] in page
+    assert text["self_report"] in page and ">None<" not in page
+    assert text["never_reconfirmed"] in page and text["no_eligibility"] in page
+    assert "private@example.invalid" not in page
+    back = _href(detail, "data-directory-back")
+    assert parse_qs(urlsplit(back).query)["q"] == ["sparse"]
+
+
+@pytest.mark.parametrize("language", sorted(STATE_TEXT))
+def test_claimed_entry_explains_ownership_freshness_and_no_eligibility(
+    directory, language
+):
+    client, _db = directory
+    text = STATE_TEXT[language]
+    detail = client.get(
+        "/leg-verzeichnis/fictional-00", query_string={"lang": language}
+    )
+    assert detail.status_code == 200
+    page = _localized(detail, language)
+    trust = re.search(r'data-testid="registry-trust"(.*?)</div>', page, re.DOTALL)[1]
+    for key in ["claimed", "claimed_on", "last_confirmed"]:
+        assert text[key] in trust, key
+    assert text["self_report"] not in trust and text["never_reconfirmed"] not in trust
+    assert text["no_eligibility"] in page
+
+
+@pytest.mark.parametrize("language", sorted(STATE_TEXT))
+def test_unavailable_storage_is_not_reported_as_empty_in_every_language(
+    directory, language, monkeypatch
+):
+    client, db = directory
+    text = STATE_TEXT[language]
+    monkeypatch.setattr(
+        db,
+        "search_municipality_profiles",
+        lambda query: [
+            {
+                "name": "Fictional Baden",
+                "bfs_number": 4021,
+                "kanton": "AG",
+                "pv_score_pct": None,
+            }
+        ],
+    )
+    monkeypatch.setattr(db, "get_elcom_tariffs", lambda bfs: [])
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("DROP TABLE leg_registry")
+    for path, query in [
+        ("/leg-verzeichnis", {"q": "Fictional"}),
+        ("/leg-verzeichnis/fictional-00", {}),
+        ("/leg-check", {"q": "Fictional Baden", "bfs": "4021"}),
+    ]:
+        response = client.get(path, query_string={**query, "lang": language})
+        assert response.status_code == 503
+        page = _localized(response, language)
+        assert text["unavailable"] in page and text["empty"] not in page
+        assert "data-directory-entry=" not in page
+
+
 @pytest.mark.parametrize("language", ["de-CH", "en", "fr-CH", "it-CH"])
 def test_published_results_preserve_search_and_identity_without_private_fields(
     directory, language
@@ -218,3 +413,22 @@ def test_leg_check_links_published_entries_and_reports_a_failed_read(
     failed = client.get("/leg-check?q=Fictional+Baden&bfs=4021")
     assert failed.status_code == 503
     assert "data-registry-unavailable" in failed.text
+
+
+def test_municipality_profile_links_published_details_without_submission(
+    directory, monkeypatch
+):
+    client, db = directory
+    profile = {"bfs_number": 4021, "name": "Fictional Baden", "kanton": "AG"}
+    monkeypatch.setattr(db, "get_municipality_profile", lambda bfs: profile)
+    monkeypatch.setattr(db, "get_elcom_tariffs", lambda *args, **kwargs: [])
+    monkeypatch.setattr(db, "get_sonnendach_municipal", lambda bfs: None)
+    monkeypatch.setattr(db, "get_interest_count", lambda bfs, **kwargs: 0)
+    page = client.get("/gemeinde/profil/4021")
+    assert page.status_code == 200
+    links = re.findall(r'href="(/leg-verzeichnis[^"]*)"', page.text)
+    assert "/leg-verzeichnis/fictional-00" in links
+    assert "fictional-26" not in page.text and "fictional-27" not in page.text
+    assert "/leg-verzeichnis/eintragen" not in page.text
+    assert "/beanspruchen" not in page.text
+    assert client.get("/leg-verzeichnis/fictional-00").status_code == 200

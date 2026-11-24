@@ -2092,10 +2092,6 @@ msgstr ""
 msgid "Beschwerderecht bei einer Aufsichtsbehörde"
 msgstr "Beschwerderecht bei einer Aufsichtsbehörde"
 
-#: templates/gemeinde/profil.html:132
-msgid "Bestehende LEG eintragen"
-msgstr "Bestehende LEG eintragen"
-
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
 msgstr "Bestehende LEGs im Verzeichnis prüfen"

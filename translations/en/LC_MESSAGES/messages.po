@@ -2498,11 +2498,6 @@ msgid "Beschwerderecht bei einer Aufsichtsbehörde"
 msgstr "Right to lodge a complaint with a supervisory authority"
 
 #. Draft translation; native language and domain review pending.
-#: templates/gemeinde/profil.html:132
-msgid "Bestehende LEG eintragen"
-msgstr "Enter existing LEG"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
 msgstr "Check existing LEGs in the directory"
@@ -12528,7 +12523,7 @@ msgstr "Not yet publicly tested or unlocked."
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:11 templates/partials/registry_trust.html:17
 msgid "Noch nie erneut bestätigt."
-msgstr "Never confirmed again."
+msgstr "Never reconfirmed."
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/finance_edit.html:11

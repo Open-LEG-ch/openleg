@@ -2189,10 +2189,6 @@ msgstr ""
 msgid "Beschwerderecht bei einer Aufsichtsbehörde"
 msgstr "Droit de déposer une réclamation auprès d’une autorité de surveillance"
 
-#: templates/gemeinde/profil.html:132
-msgid "Bestehende LEG eintragen"
-msgstr "Inscrire une CEL existante"
-
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
 msgstr "Consulter les CEL existantes dans le répertoire"

@@ -2307,10 +2307,6 @@ msgstr ""
 msgid "Beschädigtes Manifest simulieren"
 msgstr ""
 
-#: templates/gemeinde/profil.html:132
-msgid "Bestehende LEG eintragen"
-msgstr ""
-
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
 msgstr ""
