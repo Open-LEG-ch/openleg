@@ -20,6 +20,15 @@ new bank statement that explicitly reports the booked credit. Replaying the
 identical old file returns its existing import result and does not upgrade its
 evidence. Do not edit an old entry to invent booking status.
 
+One upload can hold statements for several accounts. Banks number entries per
+account, so an entry reference is unique per import and account, identified by
+the statement's IBAN or other account ID. Two accounts may report the same
+reference, and both entries keep it unchanged. Only a reference that one account
+reuses gets a numeric suffix. `bank_references` always keeps the values the bank
+sent. The upgrade adds `bank_account`, which stays empty for older rows. It
+creates the account-scoped unique index before it drops the per-import
+constraint, and neither step rewrites the table.
+
 SIX's [Swiss Payment Standards 2025, cash-management guidelines, pages 64-65](https://www.six-group.com/dam/download/banking-services/standardization/sps/ig-cash-management-sps-2025-en.pdf)
 define `Ntry/Sts/Cd`, with `BOOK` for booked entries and `PDNG` for pending
 entries. camt.054 may contain either. The legacy direct-code form is retained

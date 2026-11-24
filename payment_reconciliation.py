@@ -73,6 +73,7 @@ class PaymentEntry:
     bank_references: tuple[str, ...] = ()
     creditor_references: tuple[str, ...] = ()
     source_statement_reference: str | None = None
+    bank_account: str = ""
 
 
 @dataclass(frozen=True)
@@ -143,6 +144,15 @@ def _account_currency(container):
     ):
         raise StatementError(_N("Der Zahlungseintrag enthält keine gültige Währung."))
     return value
+
+
+def _bank_account(container):
+    """Return the statement account's IBAN or other identifier, if reported."""
+    for path in ("./{*}Acct/{*}Id/{*}IBAN", "./{*}Acct/{*}Id/{*}Othr/{*}Id"):
+        value = container.findtext(path, default="").strip()
+        if value:
+            return value
+    return ""
 
 
 def _bank_references(element, *paths):
@@ -282,8 +292,9 @@ def parse_statement(content: bytes) -> Statement:
     for container in containers:
         account_currency = _account_currency(container)
         source_statement = container.findtext("./{*}Id", default="").strip()
+        bank_account = _bank_account(container)
         scoped_entries.extend(
-            (entry, account_currency, source_statement)
+            (entry, account_currency, source_statement, bank_account)
             for entry in container
             if _local(entry) == "Ntry"
         )
@@ -291,6 +302,7 @@ def parse_statement(content: bytes) -> Statement:
         entry,
         account_currency,
         source_statement,
+        bank_account,
     ) in enumerate(scoped_entries, start=1):
         booking_elements = _children(entry, "BookgDt")
         if not booking_elements:
@@ -386,11 +398,11 @@ def parse_statement(content: bytes) -> Statement:
                 entry_reference = f"{source_statement or 'statement'}:{entry_number}:{transaction_number}"
             elif len(transactions) > 1:
                 entry_reference = f"{entry_reference}:{transaction_number}"
-            # Keep import-row IDs unique even when banks reuse the same local reference.
-            # The original bank references are retained separately for duplicate review.
-            while entry_reference in seen_references:
+            # Bank-local references are unique per account. Suffix only a reference
+            # one account reuses; bank_references keeps the original values.
+            while (bank_account, entry_reference) in seen_references:
                 entry_reference += f":{entry_number}:{transaction_number}"
-            seen_references.add(entry_reference)
+            seen_references.add((bank_account, entry_reference))
             entries.append(
                 PaymentEntry(
                     entry_reference=entry_reference,
@@ -407,6 +419,7 @@ def parse_statement(content: bytes) -> Statement:
                     bank_references=references,
                     creditor_references=_creditor_references(transaction),
                     source_statement_reference=source_statement or None,
+                    bank_account=bank_account,
                 )
             )
     if not entries:

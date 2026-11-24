@@ -1256,7 +1256,6 @@ def create_tables():
                     credit_debit_indicator CHAR(4) NOT NULL,
                     match_decision VARCHAR(32) NOT NULL,
                     decided_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE (statement_import_id, entry_reference),
                     CHECK (match_decision IN (
                         'matched', 'unmatched', 'ambiguous', 'split_payment',
                         'overpayment', 'reversal', 'mismatch'
@@ -1277,7 +1276,19 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS legacy_bank_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS creditor_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS source_statement_reference TEXT,
-                ADD COLUMN IF NOT EXISTS duplicate_reason TEXT
+                ADD COLUMN IF NOT EXISTS duplicate_reason TEXT,
+                ADD COLUMN IF NOT EXISTS bank_account TEXT NOT NULL DEFAULT ''
+            """)
+            # Migration: one upload can hold statements for several accounts, and
+            # each bank numbers its entries per account. Replace the per-import
+            # constraint only after its account-scoped successor exists.
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_bank_statement_entries_account_reference
+                ON bank_statement_entries (statement_import_id, bank_account, entry_reference)
+            """)
+            cur.execute("""
+                ALTER TABLE bank_statement_entries DROP CONSTRAINT IF EXISTS
+                    bank_statement_entries_statement_import_id_entry_reference_key
             """)
             # Legacy entry IDs do not distinguish bank values from importer suffixes.
             # With the same amount, currency and direction, an extra reference can

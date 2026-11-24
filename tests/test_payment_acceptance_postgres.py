@@ -607,3 +607,44 @@ def test_contradictory_bank_metadata_cannot_create_a_payment(
         invoice = db.get_invoices_for_participant("member-building")[0]
         assert invoice["lifecycle_state"] == "delivered"
         assert invoice["gross_chf"] == Decimal("9.67")
+
+
+def test_entry_references_are_unique_per_import_and_bank_account(billing_database):
+    def reconcile(fingerprint, *accounts):
+        return db.reconcile_bank_statement(
+            community_id=COMMUNITY,
+            actor_id="operator-a",
+            source_name="fictional.xml",
+            message_type="camt.053",
+            statement_reference="fictional-1",
+            fingerprint=fingerprint,
+            entries=[
+                {
+                    "entry_reference": "shared-entry",
+                    "booking_date": date(2026, 11, 4),
+                    "amount": Decimal("9.67"),
+                    "currency": "CHF",
+                    "payment_reference": "unknown reference",
+                    "is_reversal": False,
+                    "credit_debit_indicator": "CRDT",
+                    "booking_status": "BOOK",
+                    "amount_basis": "entry",
+                    "bank_references": ("shared-entry",),
+                    "bank_account": account,
+                }
+                for account in accounts
+            ],
+        )
+
+    result = reconcile("1" * 64, "CH0000000000000000001", "CH0000000000000000002")
+    assert [
+        (entry["bank_account"], entry["entry_reference"]) for entry in result["entries"]
+    ] == [
+        ("CH0000000000000000001", "shared-entry"),
+        ("CH0000000000000000002", "shared-entry"),
+    ]
+    with pytest.raises(db.BillingStoreError):
+        reconcile("2" * 64, "CH0000000000000000001", "CH0000000000000000001")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT count(*) AS n FROM bank_statement_imports")
+        assert cur.fetchone()["n"] == 1

@@ -1007,6 +1007,150 @@ def test_equal_local_references_in_one_file_keep_both_statement_origins(workspac
     assert len(_paid_events()) == 2
 
 
+def _one_upload(*statements):
+    first, *others = statements
+    extra = b"".join(
+        xml[xml.index(b"<Stmt>") : xml.index(b"</Stmt>") + len(b"</Stmt>")]
+        for xml in others
+    )
+    return first.replace(b"</BkToCstmrStmt>", extra + b"</BkToCstmrStmt>")
+
+
+def _accounts_sharing_a_reference(second_amount="9.67"):
+    return _one_upload(
+        _statement_xml(
+            reference="FIRST-INVOICE",
+            servicer="shared-entry",
+            account="CH0000000000000000001",
+            account_is_iban=True,
+        ),
+        _statement_xml(
+            statement="second-account",
+            reference="SECOND-INVOICE",
+            servicer="shared-entry",
+            account="CH0000000000000000002",
+            account_is_iban=True,
+        ).replace(b"9.67", second_amount.encode()),
+    )
+
+
+def _post_statement(client, body):
+    from io import BytesIO
+
+    _set_session(client, ADMIN)
+    response = client.post(
+        f"{BILLING}/statements",
+        data={"csrf_token": "csrf-secret", "statement": (BytesIO(body), "same.xml")},
+    )
+    _set_session(client, ACTOR)
+    return response
+
+
+def test_accounts_sharing_a_local_reference_import_from_one_upload(workspace):
+    first, second = _invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("ALTER TABLE invoices DISABLE TRIGGER USER")
+        cur.execute("UPDATE invoices SET gross_chf=12.00 WHERE id=%s", (second,))
+        cur.execute("ALTER TABLE invoices ENABLE TRIGGER USER")
+    upload = _accounts_sharing_a_reference(second_amount="12.00")
+
+    for outcome in ("imported", "duplicate"):
+        response = _post_statement(workspace, upload)
+        assert response.status_code == 302
+        assert response.location.endswith(f"?statement={outcome}")
+
+    rows = db.list_bank_statement_entries(COMMUNITY)
+    assert sorted(
+        (row["bank_account"], row["entry_reference"], row["bank_references"])
+        for row in rows
+    ) == [
+        ("CH0000000000000000001", "shared-entry", ["shared-entry"]),
+        ("CH0000000000000000002", "shared-entry", ["shared-entry"]),
+    ]
+    assert len({row["statement_import_id"] for row in rows}) == 1
+    assert sorted(_entry_booking(row["id"]) for row in rows) == sorted(
+        [("matched", first), ("matched", second)]
+    )
+    assert len(_paid_events()) == 2
+
+
+def test_duplicate_guard_holds_equal_credits_on_two_accounts(workspace):
+    first, second = _invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")
+    assert _post_statement(workspace, _accounts_sharing_a_reference()).status_code == (
+        302
+    )
+    newer, earlier = db.list_bank_statement_entries(COMMUNITY)
+    assert [newer["bank_account"], earlier["bank_account"]] == [
+        "CH0000000000000000002",
+        "CH0000000000000000001",
+    ]
+    assert [newer["duplicate_reason"], earlier["duplicate_reason"]] == [
+        "possible_duplicate_payment"
+    ] * 2
+    assert not _paid_events()
+    review = _follow_assignment(workspace, _assign(workspace, earlier["id"], first))
+    matches = review.text.split('id="duplicate-review-matches"', 1)[1].split(
+        "</ul>", 1
+    )[0]
+    assert "second-account" in matches
+    assert "gleiche Bankreferenz" in matches
+    assert (
+        _assignment_outcome(
+            workspace, _override(workspace, earlier["id"], first, _review_token(review))
+        )
+        == "assigned"
+    )
+    review = _follow_assignment(workspace, _assign(workspace, newer["id"], second))
+    assert "Sehr wahrscheinlich dieselbe Zahlung" in review.text
+    assert len(_paid_events()) == 1
+
+
+def test_upgrade_scopes_entry_references_by_account_without_a_rewrite(workspace):
+    _invoice("FIRST-INVOICE")
+    _upload_xml(
+        workspace, _statement_xml(reference="FIRST-INVOICE", servicer="legacy-entry")
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        # Restore the 32e5a836 shape: entry references unique per import only.
+        cur.execute("DROP INDEX IF EXISTS uq_bank_statement_entries_account_reference")
+        cur.execute("ALTER TABLE bank_statement_entries DROP COLUMN bank_account")
+        cur.execute("""
+            ALTER TABLE bank_statement_entries
+            ADD CONSTRAINT bank_statement_entries_statement_import_id_entry_reference_key
+            UNIQUE (statement_import_id, entry_reference)
+        """)
+        cur.execute("SELECT pg_relation_filenode('bank_statement_entries') AS node")
+        before = cur.fetchone()["node"]
+    db.create_tables()
+    db.create_tables()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT pg_relation_filenode('bank_statement_entries') AS node")
+        assert cur.fetchone()["node"] == before
+        cur.execute("""
+            SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
+            WHERE conrelid = 'bank_statement_entries'::regclass AND contype = 'u'
+        """)
+        assert cur.fetchall() == []
+        cur.execute("""
+            SELECT indexdef FROM pg_indexes
+            WHERE tablename = 'bank_statement_entries' AND indexdef LIKE 'CREATE UNIQUE%%'
+              AND indexname <> 'bank_statement_entries_pkey'
+        """)
+        assert [row["indexdef"] for row in cur.fetchall()] == [
+            (
+                "CREATE UNIQUE INDEX uq_bank_statement_entries_account_reference "
+                "ON public.bank_statement_entries USING btree "
+                "(statement_import_id, bank_account, entry_reference)"
+            )
+        ]
+    (legacy,) = db.list_bank_statement_entries(COMMUNITY)
+    assert (legacy["bank_account"], legacy["entry_reference"]) == ("", "legacy-entry")
+    assert _post_statement(workspace, _accounts_sharing_a_reference()).status_code == (
+        302
+    )
+    assert len(db.list_bank_statement_entries(COMMUNITY)) == 3
+
+
 def test_bank_references_match_across_kinds_and_dates(workspace):
     first = _invoice("FIRST-INVOICE")
     second = _invoice("SECOND-INVOICE")

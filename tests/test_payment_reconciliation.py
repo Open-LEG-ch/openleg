@@ -697,3 +697,48 @@ def test_statement_amount_must_fit_bank_entry_storage(amount, accepted):
     else:
         with pytest.raises(payment_reconciliation.StatementError):
             payment_reconciliation.parse_statement(xml)
+
+
+def _statement_for_accounts(*accounts):
+    """One camt.053 upload whose statements reuse one bank-local reference."""
+    start = CAMT_053.index(b"<Stmt>")
+    end = CAMT_053.index(b"</Stmt>") + len(b"</Stmt>")
+    statements = b"".join(
+        CAMT_053[start:end].replace(
+            b"statement-1</Id>",
+            f"statement-{number}</Id><Acct><Id>{account}</Id></Acct>".encode(),
+        )
+        for number, account in enumerate(accounts, start=1)
+    )
+    return CAMT_053[:start] + statements + CAMT_053[end:]
+
+
+@pytest.mark.parametrize(
+    ("second", "second_account"),
+    [
+        ("<IBAN>CH0000000000000000002</IBAN>", "CH0000000000000000002"),
+        ("<Othr><Id>local-2</Id></Othr>", "local-2"),
+    ],
+)
+def test_accounts_sharing_a_local_reference_keep_the_bank_value(second, second_account):
+    entries = payment_reconciliation.parse_statement(
+        _statement_for_accounts("<IBAN>CH0000000000000000001</IBAN>", second)
+    ).entries
+
+    assert [(entry.bank_account, entry.entry_reference) for entry in entries] == [
+        ("CH0000000000000000001", "bank-entry-1"),
+        (second_account, "bank-entry-1"),
+    ]
+
+
+def test_one_account_reusing_a_local_reference_still_gets_distinct_rows():
+    account = "<IBAN>CH0000000000000000001</IBAN>"
+    entries = payment_reconciliation.parse_statement(
+        _statement_for_accounts(account, account)
+    ).entries
+
+    assert [entry.entry_reference for entry in entries] == [
+        "bank-entry-1",
+        "bank-entry-1:2:1",
+    ]
+    assert [entry.bank_references for entry in entries] == [("bank-entry-1",)] * 2
