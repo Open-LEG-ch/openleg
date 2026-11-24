@@ -278,3 +278,43 @@ def test_existing_database_migrates_to_keep_failed_attempts(signed):
 
     assert response.status_code == 302
     assert [case["state"] for case in _cases(db, cid)] == ["failed", "delivered"]
+
+
+def test_attempts_are_ordered_by_claim_not_by_transaction_start(signed):
+    from store import vnb_exchange as cases
+
+    client, db, cid, failed_with = signed
+    adapter = ScriptedAdapter(OUTAGE, OUTAGE)
+    failed = failed_with(adapter)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT contract_version, payload_fingerprint
+               FROM vnb_submission_cases WHERE case_id = %s""",
+            (failed,),
+        )
+        identity = cur.fetchone()
+    with db.get_connection() as confirmation:
+        # An agent confirmation opens its transaction before it waits for the
+        # community lock; a person's retry can commit in between.
+        confirmation.cursor().execute("SELECT 1")
+        retry = client.post(
+            _retry_path(cid, failed), data={"csrf_token": "csrf-secret"}
+        )
+        assert retry.status_code == 302
+        with cases.confirmation_transaction(confirmation):
+            claimed = cases.claim(
+                vnb_exchange.SubmissionClaim(
+                    community_id=cid,
+                    actor_building_id="founder",
+                    adapter_key=ADAPTER_KEY,
+                    contract_version=identity["contract_version"],
+                    capability_snapshot=(),
+                    payload_fingerprint=identity["payload_fingerprint"],
+                )
+            )
+
+    newest_first = [case["case_id"] for case in db.list_vnb_submission_cases(cid)]
+    assert newest_first[0] == claimed["case_id"]
+    assert newest_first[-1] == failed
+    page = client.get(f"/leg/dashboard?cid={cid}").text
+    assert "/retry" not in page

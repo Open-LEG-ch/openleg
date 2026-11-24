@@ -551,6 +551,8 @@ def claim(submission: SubmissionClaim) -> dict:
     case_id = str(uuid.uuid4())
     try:
         with _get_connection() as conn, conn.cursor() as cur:
+            # The insert stamps clock time under this lock, so the newest case
+            # is the last claim even when a transaction started earlier.
             _lock_community(cur, submission.community_id)
             existing = _guard_current_formation_bundle(cur, submission)
             if existing is not None:
@@ -563,8 +565,9 @@ def claim(submission: SubmissionClaim) -> dict:
                 INSERT INTO vnb_submission_cases (
                     case_id, community_id, created_by, adapter_key,
                     contract_version, payload_fingerprint,
-                    capability_snapshot, actor, state, next_action
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'claimed', 'deliver')
+                    capability_snapshot, actor, state, next_action, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'claimed', 'deliver',
+                          clock_timestamp())
                 RETURNING *
             """,
                 (
