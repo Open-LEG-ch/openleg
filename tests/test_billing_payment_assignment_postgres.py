@@ -1729,3 +1729,49 @@ def test_credit_without_any_bank_reference_stays_refused(workspace):
     assert "Die Zahlung hat keine Referenz." in feedback.split("</p>", 1)[0]
     assert _entry_booking(entry["id"]) == ("unmatched", None)
     assert not _paid_events()
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_operator_cannot_replay_a_workspace_assignment_without_reference(
+    workspace, dry_run
+):
+    from unittest.mock import patch
+
+    invoice = _invoice()
+    _upload_xml(workspace, _statement_xml(reference=""))
+    (entry,) = db.list_bank_statement_entries(COMMUNITY)
+    response = _assign(workspace, entry["id"], invoice)
+    assert _assignment_outcome(workspace, response) == "assigned"
+    db.create_operator_api_client(
+        COMMUNITY,
+        ADMIN,
+        "payments.mutate",
+        ["payments.mutate"],
+        hashlib.sha256(b"fictional-mutate").hexdigest(),
+        None,
+    )
+    before = (
+        db.list_bank_statement_entries(COMMUNITY),
+        db.list_community_invoice_events(COMMUNITY),
+    )
+
+    with patch(
+        "operator_api.db.operator_creator_is_confirmed_admin", return_value=True
+    ):
+        response = workspace.post(
+            f"/api/operator/v1/communities/{COMMUNITY}/payments/matches/"
+            f"{entry['id']}/confirm" + ("?dry_run=true" if dry_run else ""),
+            headers={
+                "Authorization": "Bearer fictional-mutate",
+                # The workspace's own key must not let an operator claim its booking.
+                "Idempotency-Key": f"dashboard-payment-{entry['id']}",
+            },
+            json={"invoice_id": invoice},
+        )
+
+    assert (response.status_code, response.json["code"]) == (409, "missing_reference")
+    assert "event_id" not in response.json
+    assert (
+        db.list_bank_statement_entries(COMMUNITY),
+        db.list_community_invoice_events(COMMUNITY),
+    ) == before

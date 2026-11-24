@@ -1316,27 +1316,29 @@ def confirm_payment(
                 cur, community_id, action, key, fingerprint
             )
         )
-        if replay:
-            return replay
         cur.execute(
             "SELECT * FROM bank_statement_entries WHERE id=%s AND community_id=%s"
             + (" FOR UPDATE" if not dry_run else ""),
             (entry_id, community_id),
         )
         entry = cur.fetchone()
+        refusal = entry and payment_reconciliation.payment_entry_refusal(entry)
+        if (
+            entry
+            and not refusal
+            and not person_review
+            and payment_reconciliation.audit_reference(entry)[1]
+        ):
+            # Checked before replay: another channel must not claim a person's booking.
+            raise payment_reconciliation.PaymentMatchRefused("missing_reference")
+        if replay:
+            return replay
         if (
             not entry
             or entry["match_decision"]
             not in payment_reconciliation.REVIEWABLE_DECISIONS
         ):
             return None
-        refusal = payment_reconciliation.payment_entry_refusal(entry)
-        if (
-            not refusal
-            and not person_review
-            and payment_reconciliation.audit_reference(entry)[1]
-        ):
-            refusal = "missing_reference"
         if refusal:
             raise payment_reconciliation.PaymentMatchRefused(refusal)
         duplicate = _bank_payment_duplicate(cur, community_id, entry)
