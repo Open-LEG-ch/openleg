@@ -17329,10 +17329,6 @@ msgid "Fiktives Quartier mit Wohnhäusern, Mehrfamilienhaus und Werkstatt."
 msgstr "Fiktives Quartier mit Wohnhäusern, Mehrfamilienhaus und Werkstatt."
 
 #: templates/release/homepage.html:34
-msgid "Illustration: erfundenes Quartier"
-msgstr "Illustration: erfundenes Quartier"
-
-#: templates/release/homepage.html:34
 #, python-format
 msgid "Version %(tag)s"
 msgstr "Version %(tag)s"

@@ -31,7 +31,7 @@
         {{ home_image('tree', 300, 540, 125) }}
       </svg>
     </div>
-    <p class="home-trust"><span>{{ _('Illustration: erfundenes Quartier') }}</span>{% if release_identity %}<a href="{{ release_identity.release_url }}">{{ _('Version %(tag)s', tag=release_identity.tag) }}</a><span>{{ _('Lizenz AGPL-3.0-or-later') }}</span><a href="{{ release_identity.source_url }}">{{ _('Quellcode auf GitHub') }}</a>{% endif %}</p>
+    {% if release_identity %}<p class="home-trust"><a href="{{ release_identity.release_url }}">{{ _('Version %(tag)s', tag=release_identity.tag) }}</a><span>{{ _('Lizenz AGPL-3.0-or-later') }}</span><a href="{{ release_identity.source_url }}">{{ _('Quellcode auf GitHub') }}</a></p>{% endif %}
   </div>
 </section>
 

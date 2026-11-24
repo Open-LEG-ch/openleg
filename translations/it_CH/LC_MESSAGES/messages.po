@@ -20651,11 +20651,6 @@ msgstr "Quartiere fittizio con case, un condominio e un'officina."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/homepage.html:34
-msgid "Illustration: erfundenes Quartier"
-msgstr "Illustrazione: quartiere fittizio"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/homepage.html:34
 #, python-format
 msgid "Version %(tag)s"
 msgstr "Versione %(tag)s"

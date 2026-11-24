@@ -86,3 +86,23 @@ def test_degraded_health_keeps_identity_and_status_code(app_module):  # noqa: F8
     assert response.status_code == 503
     assert response.json["status"] == "degraded"
     assert response.json["release"] == TUPLE
+
+
+@pytest.mark.parametrize("supplied", [False, True])
+def test_homepage_trust_line_shows_only_release_identity(app_module, supplied):  # noqa: F811
+    config = {
+        **(ENV if supplied else {}),
+        "SITE_RELEASE_ENABLED": True,
+        "TESTING": True,
+    }
+    application = app_module.create_app(
+        config, load_environment=False, check_database=False
+    )
+    html = application.test_client().get("/").get_data(as_text=True)
+    assert 'data-site-release="true"' in html
+    assert "Illustration: erfundenes Quartier" not in html
+    assert ('class="home-trust"' in html) is supplied
+    if supplied:
+        assert (
+            'href="https://github.com/Open-LEG-ch/openleg/releases/tag/v1.2.3"' in html
+        )
