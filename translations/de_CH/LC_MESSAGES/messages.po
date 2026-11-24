@@ -19400,3 +19400,7 @@ msgstr ""
 "deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten "
 "vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
 "nie mit dem Snapshot vermischt."
+
+#: templates/leg_billing.html:112 templates/leg_billing.html:272
+msgid "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
+msgstr "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"

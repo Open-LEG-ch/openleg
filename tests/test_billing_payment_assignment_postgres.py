@@ -1731,13 +1731,14 @@ def test_credit_without_any_bank_reference_stays_refused(workspace):
     assert not _paid_events()
 
 
-@pytest.mark.parametrize("dry_run", [False, True])
+@pytest.mark.parametrize("case", ["replay", "dry_run", "other_invoice"])
 def test_operator_cannot_replay_a_workspace_assignment_without_reference(
-    workspace, dry_run
+    workspace, case
 ):
     from unittest.mock import patch
 
     invoice = _invoice()
+    other = _invoice("LEG-PAYMENT-2")
     _upload_xml(workspace, _statement_xml(reference=""))
     (entry,) = db.list_bank_statement_entries(COMMUNITY)
     response = _assign(workspace, entry["id"], invoice)
@@ -1760,13 +1761,13 @@ def test_operator_cannot_replay_a_workspace_assignment_without_reference(
     ):
         response = workspace.post(
             f"/api/operator/v1/communities/{COMMUNITY}/payments/matches/"
-            f"{entry['id']}/confirm" + ("?dry_run=true" if dry_run else ""),
+            f"{entry['id']}/confirm" + ("?dry_run=true" if case == "dry_run" else ""),
             headers={
                 "Authorization": "Bearer fictional-mutate",
                 # The workspace's own key must not let an operator claim its booking.
                 "Idempotency-Key": f"dashboard-payment-{entry['id']}",
             },
-            json={"invoice_id": invoice},
+            json={"invoice_id": other if case == "other_invoice" else invoice},
         )
 
     assert (response.status_code, response.json["code"]) == (409, "missing_reference")

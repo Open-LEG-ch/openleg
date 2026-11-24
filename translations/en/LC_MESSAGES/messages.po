@@ -22824,3 +22824,8 @@ msgid ""
 "vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
 "nie mit dem Snapshot vermischt."
 msgstr "The level in the progress view counts only installations commissioned since 2016, so it is lower than the figure in the ranking. Progress is the change in percentage points from the end of the previous year to the end of the year shown. It comes only from the panel and is never mixed with the snapshot."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:112 templates/leg_billing.html:272
+msgid "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
+msgstr "Bank reference (AcctSvcrRef) in place of the payment reference"

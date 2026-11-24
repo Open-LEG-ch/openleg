@@ -23093,3 +23093,8 @@ msgid ""
 "vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
 "nie mit dem Snapshot vermischt."
 msgstr "Il valore nella vista dei progressi considera solo gli impianti entrati in servizio dal 2016 ed è quindi inferiore al valore in classifica. Il progresso indica la variazione in punti percentuali tra la fine dell’anno precedente e la fine dell’anno indicato. Proviene solo dal panel e non viene mai mescolato con lo snapshot."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:112 templates/leg_billing.html:272
+msgid "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
+msgstr "Riferimento bancario (AcctSvcrRef) al posto del riferimento di pagamento"

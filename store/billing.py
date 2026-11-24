@@ -25,6 +25,7 @@ import billing_policy
 import operator_actor
 import payment_reconciliation
 from billing_types import BillingCursor, InvoiceSnapshot, LineItem, Period
+from operator_errors import IdempotencyConflict
 from store import invoice_query as invoice_query_store
 from store import operator_operations
 from store.invoice_identity import (
@@ -1309,13 +1310,14 @@ def confirm_payment(
             cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
         else:
             _lock_payment_booking(cur, community_id)
-        replay = (
-            None
-            if dry_run
-            else operator_operations._replay(
-                cur, community_id, action, key, fingerprint
-            )
-        )
+        replay = conflict = None
+        try:
+            if not dry_run:
+                replay = operator_operations._replay(
+                    cur, community_id, action, key, fingerprint
+                )
+        except IdempotencyConflict as error:
+            conflict = error
         cur.execute(
             "SELECT * FROM bank_statement_entries WHERE id=%s AND community_id=%s"
             + (" FOR UPDATE" if not dry_run else ""),
@@ -1331,6 +1333,8 @@ def confirm_payment(
         ):
             # Checked before replay: another channel must not claim a person's booking.
             raise payment_reconciliation.PaymentMatchRefused("missing_reference")
+        if conflict:
+            raise conflict
         if replay:
             return replay
         if (
