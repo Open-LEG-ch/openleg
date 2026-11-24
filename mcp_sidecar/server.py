@@ -255,6 +255,13 @@ def preview_operations():
     }
 
 
+# Fixed text: upstream error messages are never forwarded.
+MISSING_REFERENCE_TEXT = (
+    "Payment reference required. Only a person can assign a credit without one, "
+    "in the billing workspace."
+)
+
+
 def create_app():
     if os.environ.get("OPENLEG_MCP_ENABLED", "false") != "true":
         raise RuntimeError("MCP sidecar is disabled")
@@ -627,7 +634,9 @@ def create_app():
                     body["code"],
                     field=field,
                     retryable=body["retryable"],
-                    text={403: "forbidden"}.get(response.status_code),
+                    text=MISSING_REFERENCE_TEXT
+                    if confirm and body["code"] == "missing_reference"
+                    else {403: "forbidden"}.get(response.status_code),
                     matching_entry_ids=body.get("matching_entry_ids")
                     if confirm and body["code"] == "possible_duplicate_payment"
                     else None,

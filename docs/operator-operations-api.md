@@ -409,7 +409,12 @@ and `lifecycle_state: paid`. Ineligible payments return `invalid_payment` or
 `invalid_invoice_total`. A missing reference returns HTTP 409 with
 `missing_reference` when the entry passes the preceding status, direction,
 currency and amount-evidence checks. For example, a booked EUR credit without a
-reference returns `invalid_payment`.
+reference returns `invalid_payment`. The API and MCP always refuse a credit
+without a payment reference. Only a person can assign such a credit, in the
+billing workspace, and only when the statement gives the credit its own bank
+servicer reference (`AcctSvcrRef`). The invoice audit then records that value as
+the reference and sets `payment_match.reference_stand_in` to `AcctSvcrRef`. A
+credit with neither reference stays unassignable.
 
 Plausible matches, including identical reports, return HTTP 409 with
 `possible_duplicate_payment` and

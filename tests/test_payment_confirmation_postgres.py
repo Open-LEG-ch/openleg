@@ -562,3 +562,83 @@ def test_duplicate_codes_on_api_and_mcp(operator_http, monkeypatch, adapter, cas
             asyncio.run(check())
 
     assert rows(http) == before
+
+
+MISSING_REFERENCE = (
+    "Payment reference required. Only a person can assign a credit without one, "
+    "in the billing workspace."
+)
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+@pytest.mark.parametrize("adapter", ["api", "mcp"])
+def test_api_and_mcp_refuse_credit_without_reference(
+    operator_http, monkeypatch, adapter, dry_run
+):
+    import asyncio
+
+    import payment_reconciliation
+    from mcp_sidecar.server import create_app
+    from tests.test_billing_payment_assignment_postgres import _statement_xml
+    from tests.test_mcp_sidecar import session
+    from tests.test_mcp_sidecar_postgres import operator_server
+    from tests.test_operator_contract import load_contract
+
+    http = operator_http
+    ids = seed_operator_resources(http)
+    payment_reconciliation.import_statement(
+        http.community_id,
+        "contract-admin",
+        "synthetic.xml",
+        _statement_xml(reference="").replace(b"9.67", b"42.50"),
+        http.db,
+    )
+    entry = http.db.list_bank_statement_entries(http.community_id)[0]
+    # The workspace could book this credit through its servicer reference.
+    assert (entry["payment_reference"], entry["servicer_reference"]) == (
+        "",
+        "bank-entry-1",
+    )
+    ids["entry_id"] = entry["id"]
+    before = rows(http)
+    if adapter == "api":
+        response = confirm(http, ids, "?dry_run=true" if dry_run else "")
+        assert response.status_code == 409
+        assert (response.json["code"], response.json["error"]) == (
+            "missing_reference",
+            MISSING_REFERENCE,
+        )
+        operator_contract_helpers.validate_response(
+            load_contract(),
+            "/api/operator/v1/communities/{community_id}/payments/matches/{entry_id}/confirm",
+            "post",
+            response,
+        )
+    else:
+        monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+        monkeypatch.setenv("OPENLEG_MCP_DEV_STATIC", "true")
+        with operator_server(http.app) as origin:
+            monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+            app = create_app()
+
+            async def check():
+                async with (
+                    app.router.lifespan_context(app),
+                    session(app, http.headers) as sdk,
+                ):
+                    return await sdk.call_tool(
+                        "confirm_payment_match",
+                        {
+                            "community_id": http.community_id,
+                            "entry_id": ids["entry_id"],
+                            "invoice_id": ids["invoice_id"],
+                            "idempotency_key": "missing-reference",
+                            "dry_run": dry_run,
+                        },
+                    )
+
+            result = asyncio.run(check())
+            assert result.is_error
+            assert result.structured_content["code"] == "missing_reference"
+            assert result.content[0].text == MISSING_REFERENCE
+    assert rows(http) == before

@@ -1276,6 +1276,7 @@ def create_tables():
                 ADD COLUMN IF NOT EXISTS legacy_bank_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS creditor_references TEXT[] NOT NULL DEFAULT '{}',
                 ADD COLUMN IF NOT EXISTS source_statement_reference TEXT,
+                ADD COLUMN IF NOT EXISTS servicer_reference TEXT,
                 ADD COLUMN IF NOT EXISTS duplicate_reason TEXT,
                 ADD COLUMN IF NOT EXISTS bank_account TEXT NOT NULL DEFAULT ''
             """)
