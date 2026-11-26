@@ -79,6 +79,9 @@ LISTING_PAGES = (
 LISTING_HTML_LIMIT = 48_000
 
 PAGE_TTL_SECONDS = 600
+# A page that keeps failing to render is served from its last good render
+# for at most this long after that render.
+PAGE_REUSE_LIMIT_SECONDS = 3600
 DATA_TTL_SECONDS = 600
 # A withdrawn LEG must leave the search within a minute: its entries refresh
 # every 50 seconds, and an overdue refresh hides them after 10 more seconds.
@@ -432,6 +435,11 @@ def documents_from_page(path, kind, locale, content, labels=()):
     return documents
 
 
+# The page is withdrawn or has moved for good: drop it instead of reusing it.
+GONE = object()
+GONE_STATUSES = frozenset({301, 308, 404, 410})
+
+
 def render_public_page(app, path, locale, tenant):
     """Render one listed page anonymously; return its HTML or None.
 
@@ -451,8 +459,10 @@ def render_public_page(app, path, locale, tenant):
         g.tenant = tenant
         try:
             response = app.make_response(app.dispatch_request())
-        except HTTPException:
-            return None
+        except HTTPException as error:
+            return GONE if error.code in GONE_STATUSES else None
+        if response.status_code in GONE_STATUSES:
+            return GONE
         if response.status_code != 200 or response.mimetype != "text/html":
             return None
         return response.get_data(as_text=True)
@@ -464,12 +474,15 @@ def _skip_rate_limits():
     return request.environ.get(RENDER_ENVIRON_KEY) is True
 
 
-def page_documents(app, previous=()):
+def page_documents(app, previous=(), reusable=None):
     """Render every listed page in every site language.
 
-    Returns `(documents, complete)`. A page that cannot be rendered now keeps
-    its documents from `previous`, the last good refresh, so one failing render
-    does not drop the page from search; `complete` is False until it renders.
+    Returns `(documents, complete)`. A page that fails to render for a passing
+    reason keeps its documents from `previous` while `reusable((path, locale))`
+    allows it, so one failing render does not drop it from search; `complete`
+    is then False so it is tried again soon. Reused documents follow the fresh
+    ones, so a page that renders wins an exact tie. A withdrawn or permanently
+    moved page (`GONE`) is dropped.
     """
     documents = []
     complete = True
@@ -484,6 +497,7 @@ def page_documents(app, previous=()):
     paths = {path for path, _kind, _listing in pages}
     for locale in locales:
         rendered = []
+        reused = []
         labels = {}
         for path, kind, listing in pages:
             try:
@@ -491,9 +505,12 @@ def page_documents(app, previous=()):
             except Exception:
                 logger.exception("[SEARCH] Rendering %s (%s) failed", path, locale)
                 html = None
+            if html is GONE:
+                continue
             if html is None:
                 complete = False
-                documents.extend(kept.get((path, locale), ()))
+                if reusable is None or reusable((path, locale)):
+                    reused.extend(kept.get((path, locale), ()))
                 continue
             content = extract_page(html, listing=listing)
             rendered.append((path, kind, content))
@@ -505,6 +522,7 @@ def page_documents(app, previous=()):
             documents.extend(
                 documents_from_page(path, kind, locale, content, labels.get(path, ()))
             )
+        documents.extend(reused)
     return documents, complete
 
 
@@ -634,6 +652,8 @@ class SiteSearch:
         self._refreshing = False
         self._snapshot = None
         self._parts = {name: _Part() for name in ("pages", MUNICIPALITY, LEG)}
+        # When each (path, locale) last rendered, to cap reuse after failures.
+        self._page_rendered_at = {}
 
     def search(self, query, *, kinds=None, **options):
         """Search the current index without LEGs whose publication is overdue."""
@@ -710,12 +730,28 @@ class SiteSearch:
             part.expires = expires[name]
         self._snapshot = _Snapshot(index, expires[LEG] + LEG_GRACE_SECONDS)
 
+    def _load_pages(self):
+        now = self._clock()
+        previous = self._parts["pages"].documents
+
+        def reusable(key):
+            rendered_at = self._page_rendered_at.get(key)
+            return (
+                rendered_at is not None and now - rendered_at < PAGE_REUSE_LIMIT_SECONDS
+            )
+
+        documents, complete = page_documents(self._app, previous, reusable)
+        # Reused documents are the previous objects; new ones were rendered now.
+        reused = {id(document) for document in previous}
+        for document in documents:
+            if id(document) not in reused:
+                self._page_rendered_at[(document.url, document.locale)] = now
+        return documents, complete
+
     def _load(self, name):
         try:
             if name == "pages":
-                documents, complete = page_documents(
-                    self._app, self._parts["pages"].documents
-                )
+                documents, complete = self._load_pages()
                 return documents, PAGE_TTL_SECONDS if complete else RETRY_SECONDS
             with self._app.app_context():
                 loader = (

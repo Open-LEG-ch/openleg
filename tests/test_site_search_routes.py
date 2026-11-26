@@ -100,7 +100,10 @@ def limited_search_web(search_web, app_module):
     disabled it earlier would otherwise silence these tests, so the app sets
     RATELIMIT_ENABLED explicitly, as tests/test_rate_limiting.py does.
     """
-    return app_module.create_app(
+    from security_extensions import limiter
+
+    enabled = limiter.enabled
+    application = app_module.create_app(
         {
             "TESTING": True,
             "SECRET_KEY": "search-rate-limit-test",
@@ -115,6 +118,8 @@ def limited_search_web(search_web, app_module):
         load_environment=False,
         check_database=False,
     )
+    yield application
+    limiter.enabled = enabled
 
 
 def _results(html):
@@ -445,3 +450,38 @@ def test_the_release_navigation_renders_the_search_form_once(search_web, path):
     nav = html.split("data-release-nav", 1)[1].split("site_navigation.js", 1)[0]
     assert '<form class="site-search" role="search" method="get" action="/suche"' in nav
     assert html.count('id="site-search-q"') == 1
+
+
+def test_rendering_tells_a_withdrawn_page_from_a_passing_failure(search_web):
+    """Withdrawn or permanently moved pages are dropped; others are retried."""
+    from flask import abort, redirect
+
+    import site_search_index
+    import tenant
+
+    routes = {
+        "/probe-gone": lambda: abort(410),
+        "/probe-missing": lambda: abort(404),
+        "/probe-moved": lambda: redirect("/pricing", code=301),
+        "/probe-moved-for-good": lambda: redirect("/pricing", code=308),
+        "/probe-elsewhere": lambda: redirect("/pricing", code=302),
+        "/probe-down": lambda: abort(503),
+    }
+    for path, view in routes.items():
+        search_web.add_url_rule(path, path.strip("/"), view)
+
+    def render(path):
+        return site_search_index.render_public_page(
+            search_web, path, "de_CH", tenant.DEFAULT_TENANT
+        )
+
+    gone = site_search_index.GONE
+    for path in (
+        "/probe-gone",
+        "/probe-missing",
+        "/probe-moved",
+        "/probe-moved-for-good",
+    ):
+        assert render(path) is gone, path
+    for path in ("/probe-elsewhere", "/probe-down"):
+        assert render(path) is None, path

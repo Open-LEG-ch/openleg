@@ -118,9 +118,10 @@ def sources(monkeypatch):
         "calls": [],
     }
 
-    def pages(_app, previous=()):
+    def pages(_app, previous=(), reusable=None):
         state["calls"].append("pages")
         state["previous_pages"] = tuple(previous)
+        state["reusable"] = reusable
         return state["pages"]
 
     def municipalities():
@@ -347,6 +348,8 @@ def test_a_failed_render_keeps_the_page_from_the_last_refresh(monkeypatch):
     assert ("/pricing", "Was OpenLEG kostet") in titles
     assert ("/pricing", "Alte Kosten") not in titles, "a rendered page is fresh"
     assert complete is False
+    urls = [document.url for document in documents]
+    assert urls.index("/pricing") < urls.index("/verein"), "fresh results come first"
 
 
 def test_the_page_refresh_receives_the_last_good_documents(sources):
@@ -378,3 +381,45 @@ def test_a_directory_longer_than_the_page_limit_is_reported(
         documents = site_search_index.leg_documents()
     assert len(documents) == min(pages_available, 2)
     assert ("more than 2 pages" in caplog.text) is warned
+
+
+def test_a_withdrawn_or_moved_page_is_dropped_not_reused(monkeypatch):
+    monkeypatch.setattr(
+        site_search_index, "PAGES", (("/pricing", "page"), ("/verein", "page"))
+    )
+    monkeypatch.setattr(site_search_index, "LISTING_PAGES", ())
+    monkeypatch.setattr(site_search_index.i18n, "supported_locales", lambda: ("de_CH",))
+    monkeypatch.setattr(
+        site_search_index.tenant_module, "get_tenant_config", lambda *_a, **_k: {}
+    )
+    monkeypatch.setattr(
+        site_search_index,
+        "render_public_page",
+        lambda _app, path, _locale, _tenant: (
+            PAGE if path == "/pricing" else site_search_index.GONE
+        ),
+    )
+    previous = (Document(kind="page", url="/verein", title="Verein", locale="de_CH"),)
+    documents, complete = site_search_index.page_documents(
+        _FakeApp(), previous, lambda _key: True
+    )
+    assert "/verein" not in {document.url for document in documents}
+    assert complete is True, "a withdrawn page needs no retry"
+
+
+def test_reuse_after_failed_renders_stops_after_the_limit(sources, monkeypatch):
+    clock = _Clock()
+    page = Document(kind="page", url="/verein", title="Verein", locale="de_CH")
+    sources["pages"] = ([page], True)
+    search = SiteSearch(_FakeApp(), clock=clock)
+    search.index()
+    clock.now += site_search_index.PAGE_TTL_SECONDS
+    search.index()
+    reusable = sources["reusable"]
+    assert reusable(("/verein", "de_CH")) is True
+    assert reusable(("/neu", "de_CH")) is False, "never rendered, nothing to reuse"
+    # The page now keeps failing: the fake hands back the previous object.
+    sources["pages"] = (list(sources["previous_pages"]), False)
+    clock.now += site_search_index.PAGE_REUSE_LIMIT_SECONDS
+    search.index()
+    assert sources["reusable"](("/verein", "de_CH")) is False
