@@ -22924,3 +22924,132 @@ msgstr ""
 msgctxt "navigation"
 msgid "Für Gemeinden"
 msgstr "Per i comuni"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:22
+msgid "Seiten"
+msgstr "Pagine"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:24
+msgid "Gemeinden"
+msgstr "Comuni"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:25
+msgid "LEGs"
+msgstr "CEL"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:76
+#, python-format
+msgid "Gemeinde im Kanton %(kanton)s"
+msgstr "Comune del Cantone %(kanton)s"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:107
+#, python-format
+msgid "Abschnitt «%(section)s»"
+msgstr "Sezione «%(section)s»"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search.html:3
+msgid "Website durchsuchen"
+msgstr "Cerca nel sito"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:4
+#, python-format
+msgid "Suche: %(query)s"
+msgstr "Ricerca: %(query)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:4 templates/release/search.html:8
+msgid "Suche"
+msgstr "Ricerca"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:4
+msgid "Durchsuchen Sie Seiten, Wissen, Gemeinden und LEGs auf OpenLEG."
+msgstr "Cerchi pagine, conoscenze, Comuni e CEL su OpenLEG."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:8
+msgid "Finden Sie Seiten, Antworten, Gemeinden und LEGs. Eine Postleitzahl führt zur passenden Gemeinde."
+msgstr ""
+"Trovi pagine, risposte, Comuni e CEL. Un numero postale d'avviamento porta al Comune "
+"corrispondente."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:10
+msgid "Suchbegriff"
+msgstr "Termine di ricerca"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:21
+#, python-format
+msgid "%(num)s Treffer in «%(group)s» für «%(query)s»"
+msgid_plural "%(num)s Treffer in «%(group)s» für «%(query)s»"
+msgstr[0] "%(num)s risultato in «%(group)s» per «%(query)s»"
+msgstr[1] "%(num)s risultati in «%(group)s» per «%(query)s»"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:21
+#, python-format
+msgid "%(num)s Treffer für «%(query)s»"
+msgid_plural "%(num)s Treffer für «%(query)s»"
+msgstr[0] "%(num)s risultato per «%(query)s»"
+msgstr[1] "%(num)s risultati per «%(query)s»"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:22
+#, python-format
+msgid "«%(words)s» kommt auf der Website nicht vor. Die Treffer enthalten die übrigen Wörter."
+msgid_plural "«%(words)s» kommen auf der Website nicht vor. Die Treffer enthalten die übrigen Wörter."
+msgstr[0] "«%(words)s» non compare nel sito. I risultati contengono le altre parole."
+msgstr[1] "«%(words)s» non compaiono nel sito. I risultati contengono le altre parole."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:24
+#, python-format
+msgid "Meinten Sie «%(suggestion)s»?"
+msgstr "Intendeva «%(suggestion)s»?"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:25
+msgid "Zurück zu allen Treffern"
+msgstr "Torna a tutti i risultati"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:40
+#, python-format
+msgid "%(num)s Treffer in «%(group)s» anzeigen"
+msgid_plural "%(num)s Treffer in «%(group)s» anzeigen"
+msgstr[0] "Mostra %(num)s risultato in «%(group)s»"
+msgstr[1] "Mostra tutti i %(num)s risultati in «%(group)s»"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:41
+msgid "Postleitzahlen: amtliches Gebäudeadressverzeichnis von swisstopo."
+msgstr "Numeri postali d'avviamento: elenco ufficiale degli indirizzi degli edifici di swisstopo."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:49
+#, python-format
+msgid "Keine Treffer für «%(query)s»"
+msgstr "Nessun risultato per «%(query)s»"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:50
+msgid "Prüfen Sie die Schreibweise, verwenden Sie weniger Wörter oder suchen Sie nach einer Postleitzahl."
+msgstr "Verifichi l'ortografia, usi meno parole o cerchi un numero postale d'avviamento."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:57
+msgid "Beispiele"
+msgstr "Esempi"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:61
+msgid "Direkt weiter"
+msgstr "Accesso diretto"
