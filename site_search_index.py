@@ -79,8 +79,8 @@ LISTING_PAGES = (
 LISTING_HTML_LIMIT = 48_000
 
 PAGE_TTL_SECONDS = 600
-# A page that keeps failing to render is served from its last good render
-# for at most this long after that render.
+# When no page renders at all, search keeps the last good page results for at
+# most this long after that load, then drops them.
 PAGE_REUSE_LIMIT_SECONDS = 3600
 DATA_TTL_SECONDS = 600
 # A withdrawn LEG must leave the search within a minute: its entries refresh
@@ -474,21 +474,19 @@ def _skip_rate_limits():
     return request.environ.get(RENDER_ENVIRON_KEY) is True
 
 
-def page_documents(app, previous=(), reusable=None):
+def page_documents(app):
     """Render every listed page in every site language.
 
-    Returns `(documents, complete)`. A page that fails to render for a passing
-    reason keeps its documents from `previous` while `reusable((path, locale))`
-    allows it, so one failing render does not drop it from search; `complete`
-    is then False so it is tried again soon. Reused documents follow the fresh
-    ones, so a page that renders wins an exact tie. A withdrawn or permanently
-    moved page (`GONE`) is dropped.
+    Returns `(documents, complete)`. A page that fails to render now is left
+    out and `complete` is False, so it is tried again soon. A withdrawn or
+    permanently moved page (`GONE`) is left out for good. When not a single page
+    renders and at least one failed for a passing reason, returns
+    `(None, False)` so the caller can keep its last good pages for a while
+    instead of emptying search.
     """
     documents = []
     complete = True
-    kept = {}
-    for document in previous:
-        kept.setdefault((document.url, document.locale), []).append(document)
+    rendered_any = False
     with app.app_context():
         locales = tuple(i18n.supported_locales())
         tenant = tenant_module.get_tenant_config("zurich", db=db)
@@ -497,7 +495,6 @@ def page_documents(app, previous=(), reusable=None):
     paths = {path for path, _kind, _listing in pages}
     for locale in locales:
         rendered = []
-        reused = []
         labels = {}
         for path, kind, listing in pages:
             try:
@@ -509,20 +506,23 @@ def page_documents(app, previous=(), reusable=None):
                 continue
             if html is None:
                 complete = False
-                if reusable is None or reusable((path, locale)):
-                    reused.extend(kept.get((path, locale), ()))
                 continue
+            rendered_any = True
             content = extract_page(html, listing=listing)
             rendered.append((path, kind, content))
             for href, text in content.links:
-                target = urlsplit(href)
+                try:
+                    target = urlsplit(href)
+                except ValueError:
+                    continue  # A malformed link never stops the refresh.
                 if not target.netloc and target.path in paths:
                     labels.setdefault(target.path, set()).add(text)
         for path, kind, content in rendered:
             documents.extend(
                 documents_from_page(path, kind, locale, content, labels.get(path, ()))
             )
-        documents.extend(reused)
+    if not rendered_any and not complete:
+        return None, False
     return documents, complete
 
 
@@ -627,14 +627,15 @@ class _Part:
 
 @dataclass(frozen=True)
 class _Snapshot:
-    """An index and the time until which its LEG entries may be shown.
+    """An index and the times until which its LEG and page entries may be shown.
 
-    Both change together, so a slow rebuild cannot lend a new expiry to the
+    They change together, so a slow rebuild cannot lend a new expiry to the
     old index.
     """
 
     index: SearchIndex
     legs_valid_until: float
+    pages_valid_until: float = float("inf")
 
 
 class SiteSearch:
@@ -652,15 +653,18 @@ class SiteSearch:
         self._refreshing = False
         self._snapshot = None
         self._parts = {name: _Part() for name in ("pages", MUNICIPALITY, LEG)}
-        # When each (path, locale) last rendered, to cap reuse after failures.
-        self._page_rendered_at = {}
+        # When pages last rendered, to cap how long the last good ones are kept.
+        self._pages_rendered_at = None
 
     def search(self, query, *, kinds=None, **options):
         """Search the current index without LEGs whose publication is overdue."""
         snapshot = self._current()
         allowed = KINDS if kinds is None else frozenset(kinds)
-        if self._clock() >= snapshot.legs_valid_until:
+        now = self._clock()
+        if now >= snapshot.legs_valid_until:
             allowed = allowed - {LEG}
+        if now >= snapshot.pages_valid_until:
+            allowed = allowed - {PAGE, KNOWLEDGE}
         return snapshot.index.search(query, kinds=allowed, **options)
 
     def index(self):
@@ -728,31 +732,41 @@ class SiteSearch:
         for name, part in self._parts.items():
             part.documents = documents[name]
             part.expires = expires[name]
-        self._snapshot = _Snapshot(index, expires[LEG] + LEG_GRACE_SECONDS)
+        pages_valid_until = (
+            float("inf")
+            if self._pages_rendered_at is None
+            else self._pages_rendered_at + PAGE_REUSE_LIMIT_SECONDS
+        )
+        self._snapshot = _Snapshot(
+            index, expires[LEG] + LEG_GRACE_SECONDS, pages_valid_until
+        )
 
     def _load_pages(self):
+        """Load the pages part; if nothing renders, keep the last good pages.
+
+        They are kept for at most PAGE_REUSE_LIMIT_SECONDS after that load. The
+        retry is due no later than that deadline, and the snapshot hides page
+        results once it passes, even if the retry itself fails.
+        """
         now = self._clock()
-        previous = self._parts["pages"].documents
-
-        def reusable(key):
-            rendered_at = self._page_rendered_at.get(key)
-            return (
-                rendered_at is not None and now - rendered_at < PAGE_REUSE_LIMIT_SECONDS
-            )
-
-        documents, complete = page_documents(self._app, previous, reusable)
-        # Reused documents are the previous objects; new ones were rendered now.
-        reused = {id(document) for document in previous}
-        for document in documents:
-            if id(document) not in reused:
-                self._page_rendered_at[(document.url, document.locale)] = now
-        return documents, complete
+        try:
+            documents, complete = page_documents(self._app)
+        except Exception:
+            logger.exception("[SEARCH] Loading pages failed")
+            documents, complete = None, False
+        if documents is not None:
+            self._pages_rendered_at = now
+            return documents, PAGE_TTL_SECONDS if complete else RETRY_SECONDS
+        if self._pages_rendered_at is not None:
+            remaining = self._pages_rendered_at + PAGE_REUSE_LIMIT_SECONDS - now
+            if remaining > 0:
+                return None, min(RETRY_SECONDS, remaining)
+        return (), RETRY_SECONDS
 
     def _load(self, name):
+        if name == "pages":
+            return self._load_pages()
         try:
-            if name == "pages":
-                documents, complete = self._load_pages()
-                return documents, PAGE_TTL_SECONDS if complete else RETRY_SECONDS
             with self._app.app_context():
                 loader = (
                     municipality_documents if name == MUNICIPALITY else leg_documents

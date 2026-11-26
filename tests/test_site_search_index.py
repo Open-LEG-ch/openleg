@@ -118,11 +118,12 @@ def sources(monkeypatch):
         "calls": [],
     }
 
-    def pages(_app, previous=(), reusable=None):
+    def pages(_app):
         state["calls"].append("pages")
-        state["previous_pages"] = tuple(previous)
-        state["reusable"] = reusable
-        return state["pages"]
+        value = state["pages"]
+        if isinstance(value, Exception):
+            raise value
+        return value
 
     def municipalities():
         state["calls"].append("municipalities")
@@ -321,47 +322,6 @@ def test_a_slow_rebuild_cannot_extend_an_overdue_leg(sources, monkeypatch):
         release.set()
 
 
-def test_a_failed_render_keeps_the_page_from_the_last_refresh(monkeypatch):
-    """One page that fails to render keeps its documents from the last refresh."""
-    monkeypatch.setattr(
-        site_search_index, "PAGES", (("/pricing", "page"), ("/verein", "page"))
-    )
-    monkeypatch.setattr(site_search_index, "LISTING_PAGES", ())
-    monkeypatch.setattr(site_search_index.i18n, "supported_locales", lambda: ("de_CH",))
-    monkeypatch.setattr(
-        site_search_index.tenant_module, "get_tenant_config", lambda *_a, **_k: {}
-    )
-    monkeypatch.setattr(
-        site_search_index,
-        "render_public_page",
-        lambda _app, path, _locale, _tenant: PAGE if path == "/pricing" else None,
-    )
-    previous = (
-        Document(kind="page", url="/verein", title="Verein", locale="de_CH"),
-        Document(kind="page", url="/verein", title="Association", locale="fr_CH"),
-        Document(kind="page", url="/pricing", title="Alte Kosten", locale="de_CH"),
-    )
-    documents, complete = site_search_index.page_documents(_FakeApp(), previous)
-    titles = {(document.url, document.title) for document in documents}
-    assert ("/verein", "Verein") in titles, "the failed page keeps its last text"
-    assert ("/verein", "Association") not in titles, "only the same language"
-    assert ("/pricing", "Was OpenLEG kostet") in titles
-    assert ("/pricing", "Alte Kosten") not in titles, "a rendered page is fresh"
-    assert complete is False
-    urls = [document.url for document in documents]
-    assert urls.index("/pricing") < urls.index("/verein"), "fresh results come first"
-
-
-def test_the_page_refresh_receives_the_last_good_documents(sources):
-    clock = _Clock()
-    search = SiteSearch(_FakeApp(), clock=clock)
-    search.index()
-    assert sources["previous_pages"] == ()
-    clock.now += site_search_index.PAGE_TTL_SECONDS
-    search.index()
-    assert [d.title for d in sources["previous_pages"]] == ["Startseite"]
-
-
 @pytest.mark.parametrize("pages_available, warned", [(1, False), (5, True)])
 def test_a_directory_longer_than_the_page_limit_is_reported(
     monkeypatch, caplog, pages_available, warned
@@ -383,7 +343,7 @@ def test_a_directory_longer_than_the_page_limit_is_reported(
     assert ("more than 2 pages" in caplog.text) is warned
 
 
-def test_a_withdrawn_or_moved_page_is_dropped_not_reused(monkeypatch):
+def _pages_setup(monkeypatch, render, page=PAGE):
     monkeypatch.setattr(
         site_search_index, "PAGES", (("/pricing", "page"), ("/verein", "page"))
     )
@@ -395,31 +355,66 @@ def test_a_withdrawn_or_moved_page_is_dropped_not_reused(monkeypatch):
     monkeypatch.setattr(
         site_search_index,
         "render_public_page",
-        lambda _app, path, _locale, _tenant: (
-            PAGE if path == "/pricing" else site_search_index.GONE
-        ),
+        lambda _app, path, _locale, _tenant: render(path),
     )
-    previous = (Document(kind="page", url="/verein", title="Verein", locale="de_CH"),)
-    documents, complete = site_search_index.page_documents(
-        _FakeApp(), previous, lambda _key: True
-    )
-    assert "/verein" not in {document.url for document in documents}
-    assert complete is True, "a withdrawn page needs no retry"
 
 
-def test_reuse_after_failed_renders_stops_after_the_limit(sources, monkeypatch):
+def test_a_page_that_fails_to_render_is_left_out_and_retried(monkeypatch):
+    _pages_setup(monkeypatch, lambda path: PAGE if path == "/pricing" else None)
+    documents, complete = site_search_index.page_documents(_FakeApp())
+    assert {document.url for document in documents} == {"/pricing"}
+    assert complete is False
+
+
+def test_nothing_rendering_is_reported_but_withdrawn_pages_are_not(monkeypatch):
+    _pages_setup(monkeypatch, lambda _path: None)
+    assert site_search_index.page_documents(_FakeApp()) == (None, False)
+    _pages_setup(monkeypatch, lambda _path: site_search_index.GONE)
+    assert site_search_index.page_documents(_FakeApp()) == ([], True)
+
+
+def test_a_malformed_link_does_not_stop_the_refresh(monkeypatch):
+    broken = PAGE.replace('href="/self-host"', 'href="http://[broken"')
+    _pages_setup(monkeypatch, lambda _path: broken)
+    documents, complete = site_search_index.page_documents(_FakeApp())
+    assert complete is True
+    assert {document.url for document in documents} == {"/pricing", "/verein"}
+
+
+def test_the_last_good_pages_are_kept_for_an_hour_when_nothing_renders(sources):
     clock = _Clock()
-    page = Document(kind="page", url="/verein", title="Verein", locale="de_CH")
-    sources["pages"] = ([page], True)
+    search = SiteSearch(_FakeApp(), clock=clock)
+    assert "Startseite" in _titles(search)
+    loaded_at = clock.now
+    sources["pages"] = (None, False)
+    clock.now += site_search_index.PAGE_TTL_SECONDS
+    assert "Startseite" in _titles(search), "kept while nothing renders"
+    sources["pages"] = RuntimeError("templates unavailable")
+    clock.now = loaded_at + site_search_index.PAGE_REUSE_LIMIT_SECONDS - 1
+    assert "Startseite" in _titles(search), "an exception takes the same path"
+    clock.now = loaded_at + site_search_index.PAGE_REUSE_LIMIT_SECONDS
+    assert "Startseite" not in _titles(search), "dropped at the limit"
+    assert "Baden" in _titles(search), "other parts stay"
+
+
+def test_readers_stop_seeing_kept_pages_at_the_limit_before_a_refresh(sources):
+    clock = _Clock()
     search = SiteSearch(_FakeApp(), clock=clock)
     search.index()
+    loaded_at = clock.now
+    sources["pages"] = (None, False)
     clock.now += site_search_index.PAGE_TTL_SECONDS
     search.index()
-    reusable = sources["reusable"]
-    assert reusable(("/verein", "de_CH")) is True
-    assert reusable(("/neu", "de_CH")) is False, "never rendered, nothing to reuse"
-    # The page now keeps failing: the fake hands back the previous object.
-    sources["pages"] = (list(sources["previous_pages"]), False)
-    clock.now += site_search_index.PAGE_REUSE_LIMIT_SECONDS
-    search.index()
-    assert sources["reusable"](("/verein", "de_CH")) is False
+    # A refresh that has not finished yet must not extend the deadline.
+    search._refresh = lambda: None
+    clock.now = loaded_at + site_search_index.PAGE_REUSE_LIMIT_SECONDS
+    titles = {
+        hit.document.title
+        for group in search.search("Startseite Baden").groups
+        for hit in group.hits
+    } | {
+        hit.document.title
+        for group in search.search("Startseite").groups
+        for hit in group.hits
+    }
+    assert "Startseite" not in titles

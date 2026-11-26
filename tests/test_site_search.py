@@ -468,3 +468,23 @@ def test_corrections_use_the_spelling_of_visible_documents():
     ]
     index = SearchIndex([_page("Solar"), *hidden])
     assert index.search("Solra", kinds={"page"}).suggestion == "Solar"
+
+
+def test_exact_ties_keep_index_order_not_set_order():
+    """Identical items merge into the first indexed one, whatever its id."""
+    fillers = [_page(f"Füller {n}", url=f"/f{n}") for n in range(7)]
+    first = _page(
+        "Messpunkt", "Zähler und Messpunkte.", url="/first", duplicate_key="m"
+    )
+    second = _page(
+        "Messpunkt", "Zähler und Messpunkte.", url="/second", duplicate_key="m"
+    )
+    # Ids 1 and 8 iterate as {8, 1} in a small set, the reverse of index order.
+    documents = [fillers[0], first, *fillers[1:], second]
+    assert documents.index(first) == 1 and documents.index(second) == 8
+    hits = [
+        hit.document.url
+        for group in SearchIndex(documents).search("Messpunkt").groups
+        for hit in group.hits
+    ]
+    assert hits == ["/first"]

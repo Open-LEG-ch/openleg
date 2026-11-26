@@ -764,6 +764,7 @@ class SearchIndex:
                 item[2],
                 -item[1],
                 self.documents[item[0]].title.casefold(),
+                item[0],  # Exact ties keep index order, not set order.
             )
         )
         kept = []
