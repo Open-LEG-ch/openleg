@@ -22918,3 +22918,9 @@ msgstr ""
 "registrati. Se mancano valori, la fatturazione di quel periodo attende che i dati siano completi."
 " La bozza usa le tariffe registrate dalla vostra LEG. Solo con l'approvazione nascono fatture che"
 " non si possono più modificare. Le correzioni successive restano visibili."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:10
+msgctxt "navigation"
+msgid "Für Gemeinden"
+msgstr "Per i comuni"

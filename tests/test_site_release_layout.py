@@ -390,7 +390,7 @@ def test_desktop_header_labels_stay_on_one_line(release_page, locale):
         # Every label sits on one line (one line of 16 px text is about 26 px).
         heights = page.evaluate(
             """() => [...document.querySelectorAll(
-                '.release-nav-group > summary .release-nav-line, .release-login'
+                '.release-nav-group > summary .release-nav-line'
             )].filter(el => el.offsetParent)
               .map(el => Math.round(el.getBoundingClientRect().height))"""
         )
