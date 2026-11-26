@@ -75,7 +75,7 @@ class TestInverseWordmarkOnDark:
 
 
 class TestDashboardDarkHero:
-    """Dashboard hero on ink: Tailwind utilities must keep WCAG contrast.
+    """Dashboard hero on ink: text is white, the accent marks only the progress bar.
 
     The template now uses the shared brand build; these tests pin the
     utility-to-hex mapping so a class swap cannot silently fail contrast.
@@ -83,8 +83,8 @@ class TestDashboardDarkHero:
 
     KICKER_ON_PAPER = "#1f3d32"  # text-brand (pine)
     PANEL = "#16302a"  # bg-brand-dark readiness panel
-    HERO_KICKER_ON_PANEL = "#f0b968"  # text-accent-light (solar)
-    SCORE_ON_PANEL = "#e8a13a"  # text-accent / bg-accent (solar)
+    WHITE = "#ffffff"  # text-white
+    SCORE_ON_PANEL = "#e8a13a"  # bg-accent progress fill (solar)
 
     @pytest.fixture(autouse=True)
     def load(self):
@@ -94,13 +94,11 @@ class TestDashboardDarkHero:
         assert "text-brand" in self.html
         assert contrast(self.KICKER_ON_PAPER, PAPER) >= 4.5
 
-    def test_hero_kicker_readable_on_ink(self):
-        assert "text-accent-light" in self.html
-        assert contrast(self.HERO_KICKER_ON_PANEL, self.PANEL) >= 4.5
-
-    def test_score_readable(self):
-        assert "text-accent " in self.html or 'text-accent"' in self.html
-        assert contrast(self.SCORE_ON_PANEL, self.PANEL) >= 3, "large text needs 3:1"
+    def test_hero_text_is_white_on_ink(self):
+        assert 'text-white" id="readiness-title"' in self.html
+        assert "font-bold text-white my-2" in self.html
+        assert "text-accent-light" not in self.html
+        assert contrast(self.WHITE, self.PANEL) >= 4.5
 
     def test_progress_fill_visible(self):
         assert "bg-accent" in self.html

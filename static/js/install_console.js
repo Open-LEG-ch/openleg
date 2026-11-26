@@ -8,10 +8,9 @@ document.querySelectorAll("[data-install-console]").forEach((consoleElement) => 
       const active = item === tab;
       item.setAttribute("aria-selected", String(active));
       item.tabIndex = active ? 0 : -1;
-      item.classList.toggle("border-indigo-400", active);
-      item.classList.toggle("text-white", active);
+      // Text stays white on the dark console; only the underline marks the active tab.
+      item.classList.toggle("border-accent", active);
       item.classList.toggle("border-transparent", !active);
-      item.classList.toggle("text-slate-400", !active);
     });
     panels.forEach((panel) => {
       panel.classList.toggle("hidden", panel.dataset.installPanel !== tab.dataset.installTab);

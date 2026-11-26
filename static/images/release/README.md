@@ -7,7 +7,12 @@ supplied. The transparent source was exported to WebP at quality 86, alpha 100,
 and establishes no network eligibility. The HTML caption and role descriptions
 carry the information when the image is unavailable.
 
-`favicon.svg` uses the existing openLEG letter identity and static roof-coloured baseline.
+`favicon.svg` uses the openLEG letter identity and static roof-coloured baseline.
+The letters are drawn as shapes, so the icon does not depend on installed fonts.
+`favicon.ico` (16, 32 and 48 px), `apple-touch-icon.png` (180 px, square corners for
+iOS masking), `icon-192.png` and `icon-512.png` are rendered from that SVG in Chromium
+at each native size. `site.webmanifest` lists the PNG icons. When the release site is
+enabled, `/favicon.ico` serves this ICO instead of the legacy daylight icon.
 Both assets are distributed under the repository's AGPL-3.0-or-later license.
 
 The language-specific `og-image.svg` sources are built from

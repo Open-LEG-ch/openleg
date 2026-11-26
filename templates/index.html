@@ -24,7 +24,7 @@
     "@type": "Organization",
     "name": {{ _("OpenLEG")|tojson }},
     "url": "{{ site_url }}/",
-    "logo": "{{ site_url }}/static/images/apple-touch-icon.png",
+    "logo": "{{ site_url }}{{ '/static/images/release/icon-512.png' if site_release_enabled else '/static/apple-touch-icon.png' }}",
     "sameAs": ["https://github.com/Open-LEG-ch/openleg"],
     "description": {{ _("Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften.")|tojson }}
   }

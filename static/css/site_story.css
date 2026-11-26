@@ -37,11 +37,11 @@
 .release-building svg { display: block; width: 100%; height: auto; overflow: visible; }
 .release-neighbourhood-scene { display: block; width: 100%; height: auto; }
 .release-neighbourhood figcaption { margin-top: 24px; }
-.release-story .release-software-band { border-top: 8px solid var(--roof); background: var(--color-brand); color: #fffdf8; }
-.release-software-band > p, .release-software-band .release-caption { color: var(--roof-sun); }
+.release-story .release-software-band { border-top: 8px solid var(--roof); background: var(--color-brand); color: #fffdf8; padding-inline: clamp(20px, 4vw, 48px); }
+.release-software-band > p, .release-software-band .release-caption { color: #fffdf8; }
 .release-software-band .release-workflow { border-color: var(--roof-sun); margin-block: 64px 32px; gap: 24px; }
 .release-software-band .release-workflow li { padding-block: 32px; }
-.release-software-band .release-workflow span { color: var(--roof-sun); margin-bottom: 16px; font-size: 40px; }
+.release-software-band .release-workflow span { color: #fffdf8; margin-bottom: 16px; font-size: 40px; }
 .release-software-band .release-button { border-color: #fffdf8; color: #fffdf8; background: transparent; }
 .release-software-band .release-button-primary { background: #fffdf8; color: #243b85; }
 .release-software-band .release-button:hover { background: #edf1f9; color: #243b85; }

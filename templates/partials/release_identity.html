@@ -1,9 +1,11 @@
 {% if release_identity %}
-<div class="text-sm px-4 py-2">
-  <a href="{{ release_identity.release_url }}">{{ release_identity.tag }}</a>
-  <a href="{{ release_identity.source_url }}" title="{{ release_identity.source_sha }}">{{ release_identity.source_sha[:12] }}</a>
-  <details><summary>{{ _('Release-Details') }}</summary>
-    <div class="break-all">{{ release_identity.source_sha }}<br>{{ release_identity.image_digest }}</div>
+<div class="release-identity text-sm px-4 py-2">
+  <a href="{{ release_identity.release_url }}">{{ _('Version %(tag)s', tag=release_identity.tag) }}</a>
+  <details><summary>{{ _('Technische Angaben') }}</summary>
+    <dl class="break-all">
+      <dt>{{ _('Quellcode') }}</dt><dd><a href="{{ release_identity.source_url }}">{{ release_identity.source_sha }}</a></dd>
+      <dt>{{ _('Container-Image') }}</dt><dd>{{ release_identity.image_digest }}</dd>
+    </dl>
   </details>
 </div>
 {% endif %}

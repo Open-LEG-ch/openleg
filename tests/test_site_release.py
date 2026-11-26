@@ -31,10 +31,139 @@ def test_release_costs_do_not_offer_unapproved_hosting(web):
     web.config["SITE_RELEASE_ENABLED"] = True
     response = web.test_client().get("/pricing")
     assert response.status_code == 200
-    assert "Was beim Betrieb Kosten verursacht." in response.text
+    assert "Was OpenLEG kostet." in response.text
     assert "CHF 0" not in response.text
     assert "Für immer" not in response.text
     assert "AGPL-3.0-or-later" in response.text
+
+
+def test_release_icons_match_the_page_head_everywhere(web):
+    """Safari, iOS, crawlers and /favicon.ico get the same release icon as the tab."""
+    import json
+    import struct
+    from pathlib import Path
+
+    release = Path(web.static_folder) / "images" / "release"
+    client = web.test_client()
+    legacy = client.get("/favicon.ico").data
+    web.config["SITE_RELEASE_ENABLED"] = True
+    html = client.get("/pricing").text
+    for href in (
+        "/favicon.ico?v=2",
+        "/static/images/release/favicon.svg?v=2",
+        "/static/images/release/apple-touch-icon.png",
+        "/static/images/release/site.webmanifest",
+    ):
+        assert f'href="{href}"' in html
+    assert '<meta name="theme-color" content="#243b85">' in html
+
+    icon = client.get("/favicon.ico")
+    assert icon.mimetype == "image/vnd.microsoft.icon"
+    assert icon.data == (release / "favicon.ico").read_bytes() != legacy
+    # Letters are shapes, so the icon does not depend on the visitor's fonts.
+    assert "<text" not in (release / "favicon.svg").read_text()
+
+    def png_size(path):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert response.data[:8] == b"\x89PNG\r\n\x1a\n"
+        width, height = struct.unpack(">II", response.data[16:24])
+        return f"{width}x{height}"
+
+    assert png_size("/static/images/release/apple-touch-icon.png") == "180x180"
+    manifest = json.loads(client.get("/static/images/release/site.webmanifest").data)
+    assert manifest["theme_color"] == "#243b85"
+    assert [png_size(entry["src"]) for entry in manifest["icons"]] == [
+        entry["sizes"] for entry in manifest["icons"]
+    ]
+
+
+def test_text_on_dark_release_surfaces_is_white():
+    """Orange or grey text on the navy sections was hard to read; text is white."""
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    css = "".join(
+        (root / "static" / "css" / name).read_text()
+        for name in ("homepage.css", "site_story.css")
+    )
+    for selector in (
+        ".home-practice .home-lead",
+        ".home-flow p",
+        ".home-example-label",
+        ".release-software-band > p, .release-software-band .release-caption",
+        ".release-software-band .release-workflow span",
+    ):
+        rule = re.search(re.escape(selector) + r" \{([^}]*)\}", css)
+        assert rule and "color: #fffdf8;" in rule.group(1), selector
+    for template in (
+        "partials/install_console.html",
+        "open_source.html",
+        "dashboard.html",
+    ):
+        markup = (root / "templates" / template).read_text()
+        if template == "dashboard.html":
+            markup = markup.split('aria-labelledby="readiness-title"', 1)[1]
+            markup = markup.split("</section>", 1)[0]
+            assert "text-sage-light" not in markup and "text-paper" not in markup
+        for grey in ("text-slate-100", "text-slate-300", "text-slate-400"):
+            assert grey not in markup, (template, grey)
+        assert "text-accent-light" not in markup, template
+    script = (root / "static" / "js" / "install_console.js").read_text()
+    assert "text-slate-400" not in script and "border-indigo-400" not in script
+    api = (root / "templates" / "api_docs.html").read_text()
+    example = re.search(r"\.api-copy-example \{([^}]*)\}", api)
+    assert example and "color: #ffffff;" in example.group(1)
+    # No other rule or element inside the examples may set a different colour.
+    for selector, body in re.findall(r"([^{}]*api-copy-example[^{}]*)\{([^}]*)\}", api):
+        colours = re.findall(r"(?<![-\w])color:\s*([^;]+);", body)
+        assert colours in ([], ["#ffffff"]), (selector, colours)
+    examples = re.findall(
+        r'<pre class="api-copy-example"[^>]*>(.*?)</pre>', api, re.DOTALL
+    )
+    # Each example is plain text in a bare <code>, so nothing inside can recolour it.
+    assert examples and all(re.fullmatch(r"<code>[^<]*</code>", e) for e in examples)
+    profile = (root / "templates" / "gemeinde" / "profil.html").read_text()
+    callout = profile.split('<section class="mt-8 bg-brand', 1)[1].split(
+        "</section>", 1
+    )[0]
+    grey = re.compile(
+        r"(?:[\w-]+:)?text-(?:white/|ink|slate|gray|sage|stone|zinc|neutral|muted)"
+    )
+    for element in re.findall(r"<[a-z][^>]*>", callout):
+        assert "style=" not in element, element
+        classes = re.search(r'class="([^"]*)"', element)
+        tokens = classes.group(1).split() if classes else []
+        # The white button keeps brand-coloured text on its own white background.
+        if "bg-white" not in tokens:
+            assert not any(grey.match(token) for token in tokens), element
+
+
+@pytest.mark.parametrize("path", ["/", "/software", "/pricing", "/how-it-works"])
+def test_release_header_offers_a_visible_github_button(web, monkeypatch, path):
+    """The repository link sits outside the collapsible menu, so phones see it too."""
+    client = _release_home(web, monkeypatch)
+    html = client.get(path).text
+    # The language switcher nests its own <nav>, so cut at the menu script.
+    nav = html.split("data-release-nav", 1)[1].split("site_navigation.js", 1)[0]
+    # The link follows the closed menu container, not an item inside it.
+    assert re.search(r'</details>\s*</div>\s*<a class="release-github"', nav)
+    menu_end = nav.index('<a class="release-github"')
+    button = nav[menu_end:].split("</a>", 1)[0]
+    assert 'href="https://github.com/Open-LEG-ch/openleg"' in button
+    assert 'class="github-mark"' in button and 'aria-hidden="true"' in button
+    assert "<span>GitHub</span>" in button
+
+
+def test_homepage_github_invitation_is_a_button(web, monkeypatch):
+    html = _release_home(web, monkeypatch).get("/").text
+    verein = html.split('aria-labelledby="home-verein-title"', 1)[1].split(
+        "</section>", 1
+    )[0]
+    button = verein.split('class="release-button release-button-github"', 1)[1]
+    button = button.split("</a>", 1)[0]
+    assert 'href="https://github.com/Open-LEG-ch/openleg"' in button
+    assert 'class="github-mark"' in button and "Auf GitHub mitarbeiten" in button
 
 
 def test_verified_formation_metadata_updates_public_status_and_join_link(web):

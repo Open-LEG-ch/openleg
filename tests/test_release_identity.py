@@ -74,6 +74,10 @@ def test_health_and_footer_share_runtime_identity(app_module, enabled, supplied)
             'href="https://github.com/Open-LEG-ch/openleg/releases/tag/v1.2.3"' in html
         )
         assert TUPLE["image_digest"] in html
+        # Readers see a version label; hashes sit behind a labelled toggle.
+        assert "Version v1.2.3" in html
+        assert "<summary>Technische Angaben</summary>" in html
+        assert ">" + TUPLE["source_sha"][:12] + "<" not in html
     else:
         assert "/releases/tag/" not in html
         assert "sha256:" not in html

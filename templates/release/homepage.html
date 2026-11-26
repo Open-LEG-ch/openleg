@@ -31,7 +31,7 @@
         {{ home_image('tree', 300, 540, 125) }}
       </svg>
     </div>
-    {% if release_identity %}<p class="home-trust"><a href="{{ release_identity.release_url }}">{{ _('Version %(tag)s', tag=release_identity.tag) }}</a><span>{{ _('Lizenz AGPL-3.0-or-later') }}</span><a href="{{ release_identity.source_url }}">{{ _('Quellcode auf GitHub') }}</a></p>{% endif %}
+    {% if release_identity %}<p class="home-trust"><a href="{{ release_identity.release_url }}">{{ _('Version %(tag)s', tag=release_identity.tag) }}</a><span>{{ _('Freie Software (AGPL)') }}</span><a href="{{ release_identity.source_url }}">{{ _('Quellcode auf GitHub') }}</a></p>{% endif %}
   </div>
 </section>
 
@@ -45,7 +45,7 @@
         <a class="release-button release-button-primary" href="{{ sandbox_url|localized_url }}">{{ _('Demodorf öffnen') }}</a>
       </div>
       {% else %}
-      <h2 id="home-practice-title">{{ _('Von Messdaten zur geprüften Abrechnung.') }}</h2>
+      <h2 id="home-practice-title">{{ _('Von den Messdaten zur Rechnung.') }}</h2>
       <p class="home-lead">{{ _('OpenLEG liest die Messdaten ein, zeigt, was fehlt, und bereitet die Rechnungen vor. Freigeben müssen Sie selbst.') }}</p>
       <div class="home-actions">
         <a class="release-button release-button-primary" href="{{ '/dashboard/demo'|localized_url }}">{{ _('Beispiel-Dashboard öffnen') }}</a>
@@ -53,23 +53,23 @@
       {% endif %}
     </div>
     <div class="home-flow">
-      <h3>{{ _('Sie prüfen vor jeder Rechnung.') }}</h3>
-      <p class="home-example-label">{{ _('Statische Auszüge aus dem Demodorf Sonnwil, erfundene Daten.') }}</p>
+      <h3>{{ _('Sie prüfen jede Rechnung, bevor sie verschickt wird.') }}</h3>
+      <p class="home-example-label">{{ _('Beispiel aus dem Demodorf Sonnwil, mit erfundenen Daten.') }}</p>
       <ol>
-        <li><strong>{{ _('Messdaten importieren') }}</strong><p>{{ _('Die Messdaten kommen vom Verteilnetzbetreiber, der das Stromnetz vor Ort betreibt.') }}</p></li>
+        <li><strong>{{ _('Messdaten einlesen') }}</strong><p>{{ _('Die Messdaten liefert der Netzbetreiber, der das Stromnetz in Ihrer Gemeinde betreibt.') }}</p></li>
         <li class="home-flow-gap">
-          <strong>{{ _('Fehlende Werte prüfen') }}</strong>
-          <p>{{ _('Eine Lücke ist kein Nullverbrauch. OpenLEG lehnt die Lieferung ab, statt Werte zu erfinden.') }}</p>
+          <strong>{{ _('Lücken erkennen') }}</strong>
+          <p>{{ _('Ein fehlender Messwert bedeutet nicht, dass kein Strom verbraucht wurde. OpenLEG erfindet keinen Ersatzwert und weist die Daten zurück.') }}</p>
           <figure class="home-notice">
             <figcaption>{{ _('Abgelehnt') }}</figcaption>
-            <p>{{ _('Ein Viertelstundenwert fehlt. Diese Lieferung kann nicht für die Abrechnung verwendet werden.') }}</p>
+            <p>{{ _('Für eine Viertelstunde fehlt der Messwert. Mit diesen Daten entsteht keine Rechnung.') }}</p>
           </figure>
-          <p>{{ _('Zuerst wird die Lieferung korrigiert und erneut geprüft. Erst mit gültigen Messdaten wird der Entwurf vorbereitet.') }}</p>
+          <p>{{ _('Erst wenn korrigierte, vollständige Daten vorliegen, bereitet OpenLEG einen Rechnungsentwurf vor.') }}</p>
         </li>
-        <li><strong>{{ _('Rechnungen freigeben') }}</strong><p>{{ _('Erst eine berechtigte Person gibt sie frei.') }}</p>
+        <li><strong>{{ _('Rechnungen freigeben') }}</strong><p>{{ _('Verbindlich werden sie erst, wenn eine berechtigte Person aus Ihrer LEG sie freigibt.') }}</p>
           <figure class="home-notice">
             <figcaption>{{ _('August 2026: Entwurf, wartet auf Freigabe') }}</figcaption>
-            <p>{{ _('Eine berechtigte Person prüft Tarife, den Abgleich mit dem Verteilnetzbetreiber und die Quelldokumente, bevor sie die Abrechnung freigibt.') }}</p>
+            <p>{{ _('Vor der Freigabe kontrolliert sie die Tarife, die Zahlen des Netzbetreibers und die Unterlagen, auf denen die Rechnung beruht.') }}</p>
           </figure>
         </li>
       </ol>
@@ -79,8 +79,8 @@
 
 <section class="home-define" id="strom-teilen" aria-labelledby="home-define-title">
   <div class="release-container">
-    <div class="home-statement"><h2 id="home-define-title">{{ _('Was ist eine LEG?') }}</h2> <p>{{ _('Eine lokale Elektrizitätsgemeinschaft, kurz LEG, nutzt Strom aus dem Quartier gemeinsam über das öffentliche Netz.') }}</p></div>
-    <p class="home-define-more">{{ _('Ob Ihre Anschlüsse dazugehören, klärt der Verteilnetzbetreiber.') }} <a href="{{ '/how-it-works'|localized_url }}">{{ _('So funktioniert eine LEG') }}</a></p>
+    <div class="home-statement"><h2 id="home-define-title">{{ _('Was ist eine LEG?') }}</h2> <p>{{ _('In einer lokalen Elektrizitätsgemeinschaft, kurz LEG, teilen Nachbarn den Strom, den sie im Quartier erzeugen. Er fliesst über das öffentliche Stromnetz.') }}</p></div>
+    <p class="home-define-more">{{ _('Ob Ihr Anschluss mitmachen kann, klärt der Netzbetreiber.') }} <a href="{{ '/how-it-works'|localized_url }}">{{ _('So funktioniert eine LEG') }}</a></p>
   </div>
 </section>
 
@@ -108,8 +108,8 @@
     </div>
     <ol class="home-steps">
       <li><h3>{{ _('Beteiligte klären') }}</h3><p>{{ _('Fragen Sie die Nachbarn, wer mitmacht, und den Netzbetreiber, welche Anschlüsse teilnehmen können.') }}</p></li>
-      <li><h3>{{ _('Regeln vereinbaren') }}</h3><p>{{ _('Tarife, Abrechnung und Vertretung, auch für Mieterinnen und Mieter.') }}</p></li>
-      <li><h3>{{ _('Betrieb vorbereiten') }}</h3><p>{{ _('Datenzugang klären und eine erste Abrechnung prüfen.') }}</p></li>
+      <li><h3>{{ _('Regeln vereinbaren') }}</h3><p>{{ _('Festlegen, was der Strom kostet, wie abgerechnet wird und wer die LEG vertritt. Die Regeln gelten auch für Mieterinnen und Mieter.') }}</p></li>
+      <li><h3>{{ _('Betrieb vorbereiten') }}</h3><p>{{ _('Klären, wie die Messdaten zu Ihnen kommen, und eine erste Abrechnung testen.') }}</p></li>
     </ol>
     <div class="home-actions"><a class="release-button release-button-primary" href="{{ '/leg-gruenden'|localized_url }}">{{ _('Gründungsschritte ansehen') }}</a></div>
   </div>
@@ -142,8 +142,8 @@
     <h2 id="home-faq-title">{{ _('Vor dem Start') }}</h2>
     <div class="home-faq-list">
       <details><summary>{{ _('Was kostet OpenLEG?') }}</summary><div><p>{{ _('Die Software kostet nichts. Für Server, Einrichtung und Unterstützung können Kosten entstehen.') }}</p><a href="{{ '/pricing'|localized_url }}">{{ _('Kosten ansehen') }}</a></div></details>
-      <details><summary>{{ _('Woher kommen die Messdaten?') }}</summary><div><p>{{ _('Vom Verteilnetzbetreiber. Den Zugang und das Format vereinbaren Sie mit ihm.') }}</p><a href="{{ '/self-host'|localized_url }}">{{ _('Betrieb vorbereiten') }}</a></div></details>
-      <details><summary>{{ _('Wer betreibt unsere LEG?') }}</summary><div><p>{{ _('Ihre LEG selbst oder ein Dienstleister, den sie beauftragt. Offener Code heisst nicht, dass jemand Betrieb oder Support übernimmt.') }}</p></div></details>
+      <details><summary>{{ _('Woher kommen die Messdaten?') }}</summary><div><p>{{ _('Vom Netzbetreiber. Wie Sie die Daten bekommen und in welchem Format, vereinbaren Sie mit ihm.') }}</p><a href="{{ '/self-host'|localized_url }}">{{ _('Betrieb vorbereiten') }}</a></div></details>
+      <details><summary>{{ _('Wer betreibt unsere LEG?') }}</summary><div><p>{{ _('Ihre LEG selbst oder ein Dienstleister, den sie beauftragt. Dass der Code offen ist, heisst nicht, dass jemand Betrieb oder Support für Sie übernimmt.') }}</p></div></details>
     </div>
   </div>
 </section>
@@ -155,11 +155,11 @@
   </svg>
   <div class="release-container home-verein-inner">
     <h2 id="home-verein-title">{{ _('Offene Software braucht Menschen.') }}</h2>
-    <p>{% if verein_formation_date %}{{ _('%(name)s pflegt Software, Dokumentation und Austausch. Der Verein mit Sitz in %(seat)s übernimmt nicht den Betrieb des gehosteten Produkts.', seat=verein_facts.seat, name=verein_facts.legal_name) }}{% else %}{{ _('%(name)s soll Software, Dokumentation und Austausch pflegen. Den Betrieb des gehosteten Produkts übernimmt der Verein nicht.', name=verein_facts.legal_name) }}{% endif %}</p>
+    <p>{% if verein_formation_date %}{{ _('%(name)s mit Sitz in %(seat)s kümmert sich um Software, Dokumentation und Austausch. Die gehostete Plattform betreibt der Verein nicht.', seat=verein_facts.seat, name=verein_facts.legal_name) }}{% else %}{{ _('%(name)s soll sich um Software, Dokumentation und Austausch kümmern. Die gehostete Plattform betreibt der Verein nicht.', name=verein_facts.legal_name) }}{% endif %}</p>
     {% if verein_formation_date %}<p>{{ _('Gegründet am %(date)s in %(seat)s.', date=verein_facts.formation_date|datelabel, seat=verein_facts.seat) }}</p>{% endif %}
     <div class="home-actions home-actions-center">
       <a class="release-button release-button-primary" href="{{ '/verein'|localized_url }}">{% if verein_formation_date %}{{ _('Verein und Mitgliedschaft') }}{% else %}{{ _('Zum Verein') }}{% endif %}</a>
-      <a class="home-link" href="https://github.com/Open-LEG-ch/openleg"><span class="home-link-text">{{ _('Auf GitHub mitarbeiten') }}</span> <span class="home-arrow" aria-hidden="true">&rarr;</span></a>
+      <a class="release-button release-button-github" href="https://github.com/Open-LEG-ch/openleg">{% include 'partials/github_mark.html' %}{{ _('Auf GitHub mitarbeiten') }}</a>
     </div>
   </div>
 </section>
