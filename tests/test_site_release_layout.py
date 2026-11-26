@@ -395,3 +395,72 @@ def test_desktop_header_labels_stay_on_one_line(release_page, locale):
               .map(el => Math.round(el.getBoundingClientRect().height))"""
         )
         assert heights and max(heights) <= 34, (width, heights)
+
+
+@pytest.mark.parametrize("width", [320, 1280])
+def test_search_results_fit_and_keep_large_targets(release_page, width):
+    page = release_page
+    page.set_viewport_size({"width": width, "height": 900})
+    assert page.goto("http://qa.test/suche?q=Messpunkt").status == 200
+    assert page.locator(".site-search-result").count() >= 1
+    assert page.evaluate("document.documentElement.scrollWidth") == width
+    for selector in (".site-search-title", ".site-search-page-form button"):
+        for box in page.locator(selector).evaluate_all(
+            "nodes => nodes.map(node => node.getBoundingClientRect().height)"
+        ):
+            assert box >= 44, selector
+    for selector in (".site-search-meta", ".site-search-snippet", ".site-search-title"):
+        color = page.locator(selector).first.evaluate(
+            "el => getComputedStyle(el).color"
+        )
+        rgb = [int(part) for part in color[color.index("(") + 1 : -1].split(",")[:3]]
+        hex_color = "#" + "".join(f"{part:02x}" for part in rgb)
+        assert contrast(hex_color, "#f6f2ea") >= 4.5, selector
+    mark = page.locator(".site-search-snippet mark").first
+    assert mark.evaluate("el => getComputedStyle(el).fontWeight") == "700"
+
+
+def test_empty_search_offers_large_example_links(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 320, "height": 900})
+    assert page.goto("http://qa.test/suche?q=qqqqq").status == 200
+    assert page.evaluate("document.documentElement.scrollWidth") == 320
+    heights = page.locator(
+        ".site-search-examples a, .site-search-shortcuts a"
+    ).evaluate_all("nodes => nodes.map(node => node.getBoundingClientRect().height)")
+    assert heights and min(heights) >= 44
+
+
+def test_highlighted_result_titles_keep_word_spacing(release_page):
+    page = release_page
+    assert page.goto("http://qa.test/suche?q=Rechnung").status == 200
+    # Distance from the last letter before a highlight to the highlight: a
+    # rendered space, not zero.
+    gaps = page.locator(".site-search-title").evaluate_all(
+        """titles => titles.flatMap(title => [...title.querySelectorAll('mark')].map(mark => {
+            const before = mark.previousSibling;
+            if (!before || before.nodeType !== 3 || !/\\S\\s+$/.test(before.data)) return null;
+            const end = before.data.replace(/\\s+$/, '').length;
+            const range = document.createRange();
+            range.setStart(before, end - 1);
+            range.setEnd(before, end);
+            return mark.getBoundingClientRect().left - range.getBoundingClientRect().right;
+        })).filter(gap => gap !== null)"""
+    )
+    assert gaps and min(gaps) > 2
+
+
+@pytest.mark.parametrize("locale", ["de-CH", "fr-CH", "it-CH", "en"])
+def test_navigation_search_field_keeps_its_width_on_desktop(release_page, locale):
+    """The nav slot is not a flex container; without a set width the field
+    collapsed to 120 px and clipped «Suchen» and «Rechercher»."""
+    page = release_page
+    for width in (1100, 1280, 1440):
+        page.set_viewport_size({"width": width, "height": 800})
+        assert page.goto(f"http://qa.test/?lang={locale}").status == 200
+        field = page.locator(".release-nav #site-search-q")
+        assert field.bounding_box()["width"] == 200
+        assert page.evaluate(
+            "(r => r.scrollWidth <= r.clientWidth)"
+            "(document.querySelector('.release-nav-row'))"
+        )

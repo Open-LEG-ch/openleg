@@ -26,9 +26,14 @@ def app_module():
         import app
 
         app = importlib.reload(app)
+        # The limiter is shared by the whole test process; restore it so later
+        # modules that rely on rate limits still get them.
+        was_enabled = app.limiter.enabled if app.limiter else None
         if app.limiter:
             app.limiter.enabled = False
         yield app
+        if app.limiter:
+            app.limiter.enabled = was_enabled
 
 
 @pytest.fixture
