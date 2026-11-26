@@ -48,6 +48,7 @@
 .release-nav-group > summary:focus-visible { outline: none; }
 .release-nav-group > summary:focus-visible > .release-nav-line { outline: 3px solid #243b85; outline-offset: 4px; }
 .release-nav-group > summary:hover, .release-nav-group > summary:focus-visible, .release-nav-group[open] > summary { color: var(--color-brand); }
+.release-language > summary { min-width: 44px; justify-content: center; }
 .release-language-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .release-nav-group[data-current-section] > summary { color: var(--color-brand); font-weight: 700; }
 .release-nav-group > summary:hover > .release-nav-line::after,

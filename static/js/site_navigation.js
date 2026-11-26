@@ -6,23 +6,31 @@
   const menu = nav.querySelector('#release-menu');
   const groups = [...nav.querySelectorAll('details')];
   const desktop = window.matchMedia('(min-width: 1100px)');
-  // Wide screens open a group's panel when the pointer rests on it.
-  // A hover-opened panel closes after a grace period once the pointer leaves
-  // both the trigger and the panel; a clicked or keyed one stays open.
+  // Wide screens open a group's panel when the pointer rests on its label,
+  // also while another panel is open, so a pointer crossing the bar changes
+  // nothing. A panel opened this way closes after a grace period once the
+  // pointer leaves label and panel; a clicked or keyed one stays open. The
+  // pointer never closes or replaces a panel whose link holds keyboard focus.
   const OPEN_DELAY = 120;
   const CLOSE_DELAY = 300;
-  let timer = 0;
+  let openTimer = 0;
+  let closeTimer = 0;
   let hoverOpened = null;
-  const wait = (action, delay) => {
-    clearTimeout(timer);
-    timer = setTimeout(action, delay);
+  const cancelTimers = () => {
+    clearTimeout(openTimer);
+    clearTimeout(closeTimer);
   };
+  const holdsFocus = group => group.querySelector('.release-nav-panel').contains(document.activeElement);
   const openGroup = (group, byHover) => {
+    cancelTimers();
     groups.forEach(other => { if (other !== group) other.open = false; });
     group.open = true;
     hoverOpened = byHover ? group : null;
   };
-  const closeGroups = () => groups.forEach(group => { group.open = false; });
+  const closeGroups = () => {
+    cancelTimers();
+    groups.forEach(group => { group.open = false; });
+  };
   const closeMenu = () => {
     nav.dataset.menuOpen = 'false';
     toggle.setAttribute('aria-expanded', 'false');
@@ -44,8 +52,8 @@
     const open = toggle.getAttribute('aria-expanded') !== 'true';
     nav.dataset.menuOpen = String(open);
     toggle.setAttribute('aria-expanded', String(open));
-    if (open) menu.querySelector('summary, a').focus();
-    else closeGroups();
+    // Focus stays on the toggle, so Tab enters the menu at its first control.
+    if (!open) closeGroups();
   });
   const hovering = event => event.pointerType === 'mouse' && desktop.matches;
   groups.forEach(group => {
@@ -55,14 +63,14 @@
     });
     summary.addEventListener('pointerenter', event => {
       if (!hovering(event) || group.open) return;
-      // Once a panel is open, the visitor is browsing: swap without a delay.
-      if (groups.some(other => other.open)) {
-        clearTimeout(timer);
-        openGroup(group, true);
-      } else wait(() => openGroup(group, true), OPEN_DELAY);
+      clearTimeout(openTimer);
+      openTimer = setTimeout(() => {
+        const current = groups.find(other => other.open);
+        if (desktop.matches && !(current && holdsFocus(current))) openGroup(group, true);
+      }, OPEN_DELAY);
     });
     summary.addEventListener('click', event => {
-      clearTimeout(timer);
+      cancelTimers();
       // The pointer already opened this panel; the click keeps it open.
       if (group.open && group === hoverOpened) event.preventDefault();
       hoverOpened = null;
@@ -80,18 +88,20 @@
       }
     });
     group.addEventListener('pointerenter', event => {
-      if (hovering(event) && group.open) clearTimeout(timer);
+      if (hovering(event) && group.open) clearTimeout(closeTimer);
     });
     group.addEventListener('pointerleave', event => {
       if (!hovering(event)) return;
-      clearTimeout(timer);
-      if (group.open && group === hoverOpened) wait(() => { group.open = false; }, CLOSE_DELAY);
+      clearTimeout(openTimer);
+      if (!group.open || group !== hoverOpened) return;
+      closeTimer = setTimeout(() => { if (!holdsFocus(group)) group.open = false; }, CLOSE_DELAY);
     });
   });
   // Escape works anywhere, so a panel opened by hover can be dismissed without
   // moving the pointer; focus returns to the trigger only from inside the nav.
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
+    cancelTimers();
     const group = groups.find(candidate => candidate.open);
     const inside = nav.contains(document.activeElement);
     if (group) {

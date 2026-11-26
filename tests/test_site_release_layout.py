@@ -309,6 +309,9 @@ def test_navigation_keeps_one_row_with_search_from_1100_px(release_page, lang):
             lang,
             width,
         )
+        for trigger in page.locator(".release-nav-group > summary").all():
+            box = trigger.bounding_box()
+            assert box["width"] >= 44 and box["height"] >= 44, (lang, width, box)
         search = page.locator(".release-search-slot input").bounding_box()
         assert search["width"] >= 200, (lang, width)
 

@@ -144,16 +144,65 @@ test('an open panel stays open while the pointer moves into it and closes after 
     assert.equal(groups[1].open, false);
 });
 
-test('moving along the bar swaps panels at once and keeps only one open', () => {
+test('resting on another label swaps panels and keeps only one open', () => {
     const {summaries, menu, pointer, wait, openLabels} = setup();
     pointer(summaries[0]); wait(250);
     pointer(menu);
-    pointer(summaries[2]);
-    assert.deepEqual(openLabels(), [2], 'the next panel replaces the open one without a delay');
+    pointer(summaries[2]); wait(250);
+    assert.deepEqual(openLabels(), [2]);
     pointer(menu);
     pointer(summaries[0]);
     wait(1000);
     assert.deepEqual(openLabels(), [0], 'a stale close timer must not close the panel the pointer rests on');
+});
+
+test('crossing another label on the way to the panel keeps the open panel', () => {
+    const {summaries, panels, menu, main, pointer, wait, openLabels} = setup();
+    pointer(summaries[2]); wait(250);
+    pointer(menu); wait(30);
+    pointer(summaries[1]); wait(40); // the diagonal path from the label down to the links
+    pointer(panels[2].querySelector('a'));
+    wait(1000);
+    assert.deepEqual(openLabels(), [2]);
+    pointer(summaries[1]); wait(40);
+    pointer(main);
+    wait(1000);
+    assert.deepEqual(openLabels(), [], 'leaving across another label still closes the panel');
+});
+
+test('pointer movement never closes or swaps a panel whose link has keyboard focus', () => {
+    const {summaries, panels, groups, main, pointer, wait, openLabels} = setup();
+    pointer(summaries[0]); wait(250);
+    summaries[0].focus();
+    const link = panels[0].querySelector('a');
+    link.focus(); // Tab from the trigger into the panel
+    assert.equal(groups[0].open, true);
+    pointer(main); wait(1000);
+    assert.equal(groups[0].open, true, 'closing would drop focus to the page body');
+    pointer(summaries[1]); wait(1000);
+    assert.deepEqual(openLabels(), [0]);
+    assert.equal(doc.activeElement, link);
+});
+
+test('a dismissal or a narrow viewport cancels a pending hover open', () => {
+    const {summaries, groups, main, pointer, wait, key, breakpoint} = setup();
+    pointer(summaries[1]); wait(50);
+    key(main, 'Escape');
+    wait(1000);
+    assert.equal(groups[1].open, false, 'Escape during the pause');
+    pointer(main);
+    pointer(summaries[1]); wait(50);
+    breakpoint(false);
+    wait(1000);
+    assert.equal(groups[1].open, false, 'resize during the pause');
+});
+
+test('opening the menu leaves focus on the toggle so Tab reaches the search first', () => {
+    const {toggle, click} = setup({desktop: false});
+    toggle.focus();
+    click(toggle);
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+    assert.equal(doc.activeElement, toggle);
 });
 
 test('clicking a hover-opened trigger keeps the panel open until a second click', () => {
