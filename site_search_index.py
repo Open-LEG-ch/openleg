@@ -464,14 +464,18 @@ def _skip_rate_limits():
     return request.environ.get(RENDER_ENVIRON_KEY) is True
 
 
-def page_documents(app):
+def page_documents(app, previous=()):
     """Render every listed page in every site language.
 
-    Returns `(documents, complete)`; a page that cannot be rendered now is
-    missing until the next refresh.
+    Returns `(documents, complete)`. A page that cannot be rendered now keeps
+    its documents from `previous`, the last good refresh, so one failing render
+    does not drop the page from search; `complete` is False until it renders.
     """
     documents = []
     complete = True
+    kept = {}
+    for document in previous:
+        kept.setdefault((document.url, document.locale), []).append(document)
     with app.app_context():
         locales = tuple(i18n.supported_locales())
         tenant = tenant_module.get_tenant_config("zurich", db=db)
@@ -489,6 +493,7 @@ def page_documents(app):
                 html = None
             if html is None:
                 complete = False
+                documents.extend(kept.get((path, locale), ()))
                 continue
             content = extract_page(html, listing=listing)
             rendered.append((path, kind, content))
@@ -587,6 +592,12 @@ def leg_documents():
             )
         if not result.get("has_next"):
             break
+    else:
+        logger.warning(
+            "[SEARCH] The LEG directory has more than %s pages; later entries "
+            "are not indexed",
+            MAX_DIRECTORY_PAGES,
+        )
     return documents
 
 
@@ -702,7 +713,9 @@ class SiteSearch:
     def _load(self, name):
         try:
             if name == "pages":
-                documents, complete = page_documents(self._app)
+                documents, complete = page_documents(
+                    self._app, self._parts["pages"].documents
+                )
                 return documents, PAGE_TTL_SECONDS if complete else RETRY_SECONDS
             with self._app.app_context():
                 loader = (

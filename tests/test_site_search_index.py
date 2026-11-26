@@ -118,8 +118,9 @@ def sources(monkeypatch):
         "calls": [],
     }
 
-    def pages(_app):
+    def pages(_app, previous=()):
         state["calls"].append("pages")
+        state["previous_pages"] = tuple(previous)
         return state["pages"]
 
     def municipalities():
@@ -317,3 +318,63 @@ def test_a_slow_rebuild_cannot_extend_an_overdue_leg(sources, monkeypatch):
         assert search.search("Sonnenhalde", locale="de_CH").total == 0
     finally:
         release.set()
+
+
+def test_a_failed_render_keeps_the_page_from_the_last_refresh(monkeypatch):
+    """One page that fails to render keeps its documents from the last refresh."""
+    monkeypatch.setattr(
+        site_search_index, "PAGES", (("/pricing", "page"), ("/verein", "page"))
+    )
+    monkeypatch.setattr(site_search_index, "LISTING_PAGES", ())
+    monkeypatch.setattr(site_search_index.i18n, "supported_locales", lambda: ("de_CH",))
+    monkeypatch.setattr(
+        site_search_index.tenant_module, "get_tenant_config", lambda *_a, **_k: {}
+    )
+    monkeypatch.setattr(
+        site_search_index,
+        "render_public_page",
+        lambda _app, path, _locale, _tenant: PAGE if path == "/pricing" else None,
+    )
+    previous = (
+        Document(kind="page", url="/verein", title="Verein", locale="de_CH"),
+        Document(kind="page", url="/verein", title="Association", locale="fr_CH"),
+        Document(kind="page", url="/pricing", title="Alte Kosten", locale="de_CH"),
+    )
+    documents, complete = site_search_index.page_documents(_FakeApp(), previous)
+    titles = {(document.url, document.title) for document in documents}
+    assert ("/verein", "Verein") in titles, "the failed page keeps its last text"
+    assert ("/verein", "Association") not in titles, "only the same language"
+    assert ("/pricing", "Was OpenLEG kostet") in titles
+    assert ("/pricing", "Alte Kosten") not in titles, "a rendered page is fresh"
+    assert complete is False
+
+
+def test_the_page_refresh_receives_the_last_good_documents(sources):
+    clock = _Clock()
+    search = SiteSearch(_FakeApp(), clock=clock)
+    search.index()
+    assert sources["previous_pages"] == ()
+    clock.now += site_search_index.PAGE_TTL_SECONDS
+    search.index()
+    assert [d.title for d in sources["previous_pages"]] == ["Startseite"]
+
+
+@pytest.mark.parametrize("pages_available, warned", [(1, False), (5, True)])
+def test_a_directory_longer_than_the_page_limit_is_reported(
+    monkeypatch, caplog, pages_available, warned
+):
+    monkeypatch.setattr(site_search_index, "MAX_DIRECTORY_PAGES", 2)
+
+    def read_public_registry(*, page=1, **_kwargs):
+        return {
+            "entries": [{"slug": f"leg-{page}", "name": f"LEG {page}"}],
+            "has_next": page < pages_available,
+        }
+
+    monkeypatch.setattr(
+        site_search_index.db, "read_public_registry", read_public_registry
+    )
+    with caplog.at_level("WARNING", logger=site_search_index.logger.name):
+        documents = site_search_index.leg_documents()
+    assert len(documents) == min(pages_available, 2)
+    assert ("more than 2 pages" in caplog.text) is warned
