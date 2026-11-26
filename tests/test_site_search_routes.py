@@ -146,6 +146,7 @@ def test_empty_search_page_is_labelled_and_not_indexed(search_web):
     assert 'role="search"' in html and 'action="/suche"' in html
     assert 'name="q"' in html and 'maxlength="100"' in html
     assert 'href="/suche?q=Smart+Meter"' in html
+    assert "aria-keyshortcuts" not in html
 
 
 def test_a_municipality_is_found_by_name_and_postcode(search_web):
@@ -384,6 +385,8 @@ def test_navigation_field_is_a_labelled_get_form(search_web):
     assert 'id="site-search-q"' in html and 'name="q"' in html
     assert '<input type="hidden" name="lang" value="fr-CH">' in html
     assert '<link rel="stylesheet" href="/static/css/site_search.css">' in html
+    # The script adds the shortcut hint; without it no shortcut exists.
+    assert "aria-keyshortcuts" not in html
     search_web.config["SITE_RELEASE_ENABLED"] = False
     with search_web.test_request_context("/"):
         assert render_template("partials/site_search.html").strip() == ""

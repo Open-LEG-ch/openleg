@@ -159,6 +159,7 @@
             input.removeAttribute('aria-activedescendant');
             listbox.replaceChildren();
             listbox.removeAttribute('aria-busy');
+            listbox.removeAttribute('inert');
             if (data.suggestion) {
                 listbox.append(option(data.suggestion.url, 'site-search-correction'));
                 options[options.length - 1].textContent = data.suggestion.label;
@@ -234,6 +235,7 @@
             setActive(-1);
             listbox.replaceChildren();
             listbox.removeAttribute('aria-busy');
+            listbox.removeAttribute('inert');
             shown = '';
             showStatus(failure || '');
             open();
@@ -250,6 +252,8 @@
             setActive(-1);
             options = [];
             shown = '';
+            // Old options stay in view, dimmed, but nobody can click them.
+            listbox.setAttribute('inert', '');
         }
 
         function schedule() {

@@ -595,3 +595,56 @@ def test_the_slash_shortcut_can_be_switched_off(release_page):
     assert field.get_attribute("aria-keyshortcuts") == "Control+K Meta+K"
     page.reload()
     assert not page.locator("[data-site-search-shortcut] input").is_checked()
+
+
+def test_suggestion_details_read_as_plain_text_on_the_results_page(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    assert page.goto("http://qa.test/suche").status == 200
+    field = page.locator("#site-search-page-q")
+    field.type("Messpunkt")
+    page.locator('.site-search-page-form [role="option"]').first.wait_for()
+    styles = page.locator(
+        ".site-search-page-form .site-search-option-meta, "
+        ".site-search-page-form .site-search-option-snippet"
+    ).evaluate_all(
+        """nodes => nodes.map(node => {
+            const style = getComputedStyle(node);
+            return [style.fontWeight, style.textDecorationLine];
+        })"""
+    )
+    assert styles and all(style == ["400", "none"] for style in styles), styles
+    decorations = page.locator(
+        '.site-search-page-form [role="option"]:not(.site-search-all, .site-search-correction)'
+    ).evaluate_all(
+        "nodes => nodes.map(node => getComputedStyle(node).textDecorationLine)"
+    )
+    assert set(decorations) == {"none"}, decorations
+    # Result links on the page keep a visible underline.
+    page.goto("http://qa.test/suche?q=Messpunkt")
+    title = page.locator(".site-search-title").first
+    assert (
+        title.evaluate("el => getComputedStyle(el).textDecorationLine") == "underline"
+    )
+
+
+def test_stale_suggestions_cannot_be_clicked(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    assert page.goto("http://qa.test/suche").status == 200
+    field = page.locator("#site-search-page-q")
+    field.type("Messpunkt")
+    option = page.locator('.site-search-page-form [role="option"]').first
+    option.wait_for()
+    hit = page.evaluate(
+        """() => {
+            const field = document.querySelector('#site-search-page-q');
+            const option = document.querySelector('.site-search-page-form [role="option"]');
+            const box = option.getBoundingClientRect();
+            field.value = 'Gossau';
+            field.dispatchEvent(new Event('input', {bubbles: true}));
+            const target = document.elementFromPoint(box.left + 10, box.top + 10);
+            return Boolean(target && target.closest('[role="option"]'));
+        }"""
+    )
+    assert hit is False

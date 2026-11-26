@@ -32,8 +32,10 @@
 .site-search-status[hidden] { display: none; }
 .site-search-listbox { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 32px; align-items: start; }
 .site-search-option-group { display: grid; gap: 4px; min-width: 0; }
+.site-search-listbox[inert] { opacity: .55; }
 .site-search-group-label { padding: 0 12px 6px; border-bottom: 1px solid #bcc3d0; font-size: 14px; font-weight: 600; color: #505869; }
 .site-search-option {
+  font-weight: 400;
   display: grid; gap: 2px; min-height: 44px; padding: 10px 12px; border-radius: 4px;
   color: #26324b; text-decoration: none; box-shadow: inset 3px 0 0 transparent;
 }
@@ -61,7 +63,14 @@
   .site-search-option[aria-selected='true'] { outline: 2px solid Highlight; }
 }
 
-/* Results page */
+/* Results page. It does not use .release-document, whose link rule would also
+   style the suggestion options; links are styled here instead. */
+.site-search-page { padding-block: 64px 80px; }
+.site-search-page h1 { font-size: clamp(36px, 5vw, 64px); }
+.site-search-header { max-width: 900px; }
+.site-search-header .release-lead { margin-top: 24px; max-width: 760px; }
+.site-search-page :where(a:not(.release-button, .site-search-option)) { color: #243b85; text-decoration: underline; text-underline-offset: 4px; }
+.site-search-page :where(a:not(.release-button, .site-search-option)):hover { text-decoration-color: #cb815c; }
 .site-search-page-form { margin-top: 32px; max-width: 720px; }
 .site-search-page-form label { display: block; margin-bottom: 8px; font-weight: 600; }
 .site-search-page-field { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -104,6 +113,7 @@
 .site-search-shortcuts { list-style: none; margin: 0; padding: 0; display: grid; }
 .site-search-shortcuts a { display: flex; align-items: center; min-height: 44px; border-bottom: 1px solid #bcc3d0; }
 @media (max-width: 767px) {
+  .site-search-page { padding-block: 36px 48px; }
   .site-search-group h2 { font-size: 26px; }
   .site-search-help h2 { font-size: 24px; }
 }

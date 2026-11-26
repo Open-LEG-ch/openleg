@@ -462,3 +462,21 @@ test('moving focus out of the field closes the suggestions', async () => {
     form.dispatch('focusout', {relatedTarget: outside});
     assert.equal(panel.hidden, true);
 });
+
+test('older options stay visible but inert until new ones arrive', async () => {
+    const {type, requests, reply, input, listbox, runTimers} = setup();
+    await type('Bern');
+    await reply(requests[0], DATA);
+    assert.equal(listbox.getAttribute('inert'), null);
+    input.value = 'Zürich';
+    input.dispatch('input');
+    assert.equal(listbox.getAttribute('inert'), '');
+    await runTimers(120);
+    await reply(requests[1], DATA);
+    assert.equal(listbox.getAttribute('inert'), null);
+});
+
+test('the shortcut hint appears only once the script runs', () => {
+    const {input} = setup();
+    assert.equal(input.getAttribute('aria-keyshortcuts'), '/ Control+K Meta+K');
+});
