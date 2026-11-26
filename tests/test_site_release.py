@@ -31,7 +31,7 @@ def test_release_costs_do_not_offer_unapproved_hosting(web):
     web.config["SITE_RELEASE_ENABLED"] = True
     response = web.test_client().get("/pricing")
     assert response.status_code == 200
-    assert "Was beim Betrieb Kosten verursacht." in response.text
+    assert "Was OpenLEG kostet." in response.text
     assert "CHF 0" not in response.text
     assert "Für immer" not in response.text
     assert "AGPL-3.0-or-later" in response.text

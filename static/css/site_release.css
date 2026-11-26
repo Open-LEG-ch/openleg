@@ -63,6 +63,10 @@
 .release-footer h2 { font-family: system-ui, sans-serif !important; font-size: 16px; font-weight: 600 !important; margin-bottom: 8px; }
 .release-footer :where(a, h2, p) { max-width: 100%; overflow-wrap: anywhere; }
 .release-footer a:hover { text-decoration: underline var(--roof-sun) 2px; text-underline-offset: 4px; }
+.release-footer .release-identity { display: grid; gap: 8px; margin-top: 40px; padding: 0; }
+.release-identity dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 16px; margin-top: 8px; }
+.release-identity dt { font-weight: 600; }
+.release-identity dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 900px) {
   .release-footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; }
 }
