@@ -65,7 +65,7 @@
 
 /* Results page. It does not use .release-document, whose link rule would also
    style the suggestion options; links are styled here instead. */
-.site-search-page { padding-block: 64px 80px; }
+.site-search-page { padding-block: var(--space-section, 64px); }
 .site-search-page h1 { font-size: clamp(36px, 5vw, 64px); }
 .site-search-header { max-width: 900px; }
 .site-search-header .release-lead { margin-top: 24px; max-width: 760px; }
@@ -105,6 +105,7 @@
 .site-search-source { margin-top: 16px; font-size: 14px; color: #505869; }
 .site-search-pages { margin-top: 32px; align-items: center; }
 .site-search-empty { margin-top: 40px; }
+.site-search-empty h2 { font-size: clamp(28px, 3vw, 40px); }
 .site-search-help { margin-top: 48px; padding-top: 32px; border-top: 1px solid #bcc3d0; }
 .site-search-help h2 { font-size: 28px; margin-bottom: 16px; }
 .site-search-examples { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
@@ -113,7 +114,6 @@
 .site-search-shortcuts { list-style: none; margin: 0; padding: 0; display: grid; }
 .site-search-shortcuts a { display: flex; align-items: center; min-height: 44px; border-bottom: 1px solid #bcc3d0; }
 @media (max-width: 767px) {
-  .site-search-page { padding-block: 36px 48px; }
   .site-search-group h2 { font-size: 26px; }
   .site-search-help h2 { font-size: 24px; }
 }

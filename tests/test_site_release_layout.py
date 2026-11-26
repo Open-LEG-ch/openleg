@@ -429,6 +429,10 @@ def test_empty_search_offers_large_example_links(release_page):
         ".site-search-examples a, .site-search-shortcuts a"
     ).evaluate_all("nodes => nodes.map(node => node.getBoundingClientRect().height)")
     assert heights and min(heights) >= 44
+    size = page.locator(".site-search-empty h2").evaluate(
+        "el => parseFloat(getComputedStyle(el).fontSize)"
+    )
+    assert size >= 28
 
 
 def test_highlighted_result_titles_keep_word_spacing(release_page):

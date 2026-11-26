@@ -120,7 +120,8 @@
             const nav = form.closest('nav') || document.querySelector('nav[data-release-nav]');
             if (nav) nav.querySelectorAll('details[open]').forEach(details => { details.open = false; });
             panel.hidden = false;
-            input.setAttribute('aria-expanded', 'true');
+            // Expanded means options to navigate, not a loading or error note.
+            input.setAttribute('aria-expanded', String(options.length > 0));
             place();
         }
 
@@ -252,8 +253,10 @@
             setActive(-1);
             options = [];
             shown = '';
-            // Old options stay in view, dimmed, but nobody can click them.
+            // Old options stay in view, dimmed, but nobody can click them, and
+            // assistive technology no longer counts them as options.
             listbox.setAttribute('inert', '');
+            input.setAttribute('aria-expanded', 'false');
         }
 
         function schedule() {

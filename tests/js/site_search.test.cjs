@@ -480,3 +480,21 @@ test('the shortcut hint appears only once the script runs', () => {
     const {input} = setup();
     assert.equal(input.getAttribute('aria-keyshortcuts'), '/ Control+K Meta+K');
 });
+
+test('the field reports expanded only while fresh options are listed', async () => {
+    const {type, requests, reply, input, runTimers} = setup();
+    await type('Bern');
+    await reply(requests[0], DATA);
+    assert.equal(input.getAttribute('aria-expanded'), 'true');
+    input.value = 'Zürich';
+    input.dispatch('input');
+    assert.equal(input.getAttribute('aria-expanded'), 'false');
+    await runTimers(120);
+    await runTimers(250);
+    assert.equal(input.getAttribute('aria-expanded'), 'false');
+    await reply(requests[1], {}, {status: 503});
+    assert.equal(input.getAttribute('aria-expanded'), 'false');
+    await type('Zürich');
+    await reply(requests[2], DATA);
+    assert.equal(input.getAttribute('aria-expanded'), 'true');
+});
