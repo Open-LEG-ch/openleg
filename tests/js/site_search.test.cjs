@@ -51,7 +51,8 @@ class Element {
                 ? attribute.slice(5).replace(/-([a-z])/g, (_all, letter) => letter.toUpperCase()) : null;
             const actual = key && key in this.dataset ? this.dataset[key]
                 : attribute in this ? this[attribute] : this.getAttribute(attribute);
-            return value === undefined ? actual !== null && actual !== undefined : String(actual) === value;
+            // Like the DOM, a boolean property that is false has no attribute.
+            return value === undefined ? actual !== null && actual !== undefined && actual !== false : String(actual) === value;
         });
     }
     *walk() {for (const child of this.children) if (child instanceof Element) {yield child; yield* child.walk();}}
@@ -114,7 +115,7 @@ function setup({inline = false, extraScript = false, abortable = true, stored = 
     other.name = 'email';
     form.append(input);
     const flyout = make('details');
-    flyout.open = true;
+    flyout.open = false;
     const shortcut = make('input');
     shortcut.type = 'checkbox';
     shortcut.checked = true;
@@ -448,6 +449,7 @@ test('a stored choice keeps the slash shortcut off on every page', () => {
 
 test('opening the suggestions closes an open menu flyout', async () => {
     const {type, requests, reply, flyout} = setup();
+    flyout.open = true;
     await type('Baden');
     await reply(requests[0], DATA);
     assert.equal(flyout.open, false);
@@ -497,4 +499,27 @@ test('the field reports expanded only while fresh options are listed', async () 
     await type('Zürich');
     await reply(requests[2], DATA);
     assert.equal(input.getAttribute('aria-expanded'), 'true');
+});
+
+test('Escape leaves an open flyout to the navigation and keeps the query', async () => {
+    const {type, requests, reply, key, input, panel, fire, flyout} = setup();
+    await type('Messpunkt');
+    await reply(requests[0], DATA);
+    flyout.open = true;
+    fire('toggle', {target: flyout});
+    assert.equal(panel.hidden, true, 'the flyout replaced the suggestions');
+    const event = key('Escape');
+    assert.equal(event.propagationStopped, false, 'the navigation handles it');
+    assert.equal(event.defaultPrevented, true, 'the browser does not clear the field');
+    assert.equal(input.value, 'Messpunkt');
+});
+
+test('Escape with a flyout open still cancels a pending answer', async () => {
+    const {type, requests, reply, key, input, panel, flyout} = setup();
+    await type('Messpunkt');
+    flyout.open = true;
+    key('Escape');
+    await reply(requests[0], DATA);
+    assert.equal(panel.hidden, true, 'the late answer stays closed');
+    assert.equal(input.value, 'Messpunkt');
 });

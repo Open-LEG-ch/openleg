@@ -630,3 +630,38 @@ def test_stale_suggestions_cannot_be_clicked(release_page):
         }"""
     )
     assert hit is False
+
+
+def test_escape_closes_a_hovered_flyout_before_it_clears_the_search(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    assert page.goto("http://qa.test/pricing").status == 200
+    _navigation_search_ready(page)
+    field = page.locator('.release-nav input[role="combobox"]')
+    field.click()
+    field.type("Messpunkt")
+    page.locator('.release-nav [role="option"]').first.wait_for()
+    group = page.locator(".release-nav-group").nth(1)
+    group.locator("summary").hover()
+    page.wait_for_timeout(400)
+    assert group.evaluate("el => el.open")
+    page.keyboard.press("Escape")
+    assert not group.evaluate("el => el.open")
+    assert field.input_value() == "Messpunkt"
+    assert field.evaluate("el => el === document.activeElement")
+
+
+def test_the_selected_suggestion_stays_on_screen_in_the_tablet_menu(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 900, "height": 600})
+    assert page.goto("http://qa.test/pricing").status == 200
+    _navigation_search_ready(page)
+    page.keyboard.press("/")
+    field = page.locator('.release-nav input[role="combobox"]')
+    field.type("Messpunkt")
+    page.locator('.release-nav [role="option"]').first.wait_for()
+    for key in ("ArrowUp", "ArrowDown", "ArrowDown"):
+        page.keyboard.press(key)
+        selected = page.locator('.release-nav [role="option"][aria-selected="true"]')
+        box = selected.bounding_box()
+        assert box and box["y"] >= 0 and box["y"] + box["height"] <= 600, (key, box)

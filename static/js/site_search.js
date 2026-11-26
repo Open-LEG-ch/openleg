@@ -296,9 +296,16 @@
                     root.location.assign(chosen.href);
                 }
             } else if (event.key === 'Escape') {
+                const nav = form.closest('nav');
                 if (!panel.hidden) {
                     event.preventDefault();
                     event.stopPropagation();
+                    close();
+                } else if (nav && nav.querySelector('details[open]')) {
+                    // A flyout replaced the suggestions: drop any pending answer,
+                    // keep the typed query (no native clearing) and let the
+                    // navigation close the flyout.
+                    event.preventDefault();
                     close();
                 } else if (input.value) {
                     event.preventDefault();

@@ -100,7 +100,8 @@
     });
   });
   // Escape works anywhere, so a panel opened by hover can be dismissed without
-  // moving the pointer; focus returns to the trigger only from inside the nav.
+  // moving the pointer. Focus returns to the trigger only from inside that
+  // group, so a visitor typing in the nav search keeps the field.
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
     cancelTimers();
@@ -108,7 +109,7 @@
     const inside = nav.contains(document.activeElement);
     if (group) {
       group.open = false;
-      if (inside) group.querySelector('summary').focus();
+      if (group.contains(document.activeElement)) group.querySelector('summary').focus();
     } else if (inside && toggle.getAttribute('aria-expanded') === 'true') {
       closeMenu();
       toggle.focus();

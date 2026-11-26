@@ -331,3 +331,15 @@ test('on narrow screens one Escape closes the open group, a second closes the me
     assert.equal(toggle.getAttribute('aria-expanded'), 'false', 'the second Escape closes the menu');
     assert.equal(doc.activeElement, toggle);
 });
+
+test('Escape closes a hovered panel but leaves focus in the nav search field', () => {
+    const {summaries, groups, slot, pointer, key, wait} = setup();
+    const field = slot.querySelector('input');
+    field.focus();
+    pointer(summaries[1]);
+    wait(200);
+    assert.equal(groups[1].open, true);
+    key(field, 'Escape');
+    assert.equal(groups[1].open, false);
+    assert.equal(doc.activeElement, field, 'typing continues in the search field');
+});
