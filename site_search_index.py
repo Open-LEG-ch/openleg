@@ -17,12 +17,13 @@ from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from urllib.parse import quote, urlsplit
 
-from flask import g
+from flask import g, request
 from werkzeug.exceptions import HTTPException
 
 import database as db
 import i18n
 import tenant as tenant_module
+from security_extensions import limiter
 from site_search import Block, Document, SearchIndex
 from swiss_postcodes import postcodes_by_municipality
 
@@ -77,9 +78,14 @@ LISTING_PAGES = (
 # A listing page's introduction fits well within this many characters.
 LISTING_HTML_LIMIT = 48_000
 
-PAGE_TTL_SECONDS = 3600
+PAGE_TTL_SECONDS = 600
 DATA_TTL_SECONDS = 600
+# A withdrawn LEG must leave the search soon; its directory read is small.
+LEG_TTL_SECONDS = 60
 RETRY_SECONDS = 60
+# Marks the internal page renders, which no rate limit counts. Clients cannot
+# set WSGI environment keys, only HTTP_* headers.
+RENDER_ENVIRON_KEY = "openleg.site_search.render"
 MAX_DIRECTORY_PAGES = 40
 
 _SKIP = frozenset(
@@ -386,9 +392,10 @@ def documents_from_page(path, kind, locale, content, labels=()):
         ),
         blocks=tuple(content.blocks),
         group_key=path,
-        duplicate_key=_digest(
-            *(block.heading + block.text for block in content.blocks)
-        ),
+        # Only pages with the same text merge; listing pages keep their own entry.
+        duplicate_key=_digest(*(block.heading + block.text for block in content.blocks))
+        if any(block.text for block in content.blocks)
+        else "",
     )
     documents = [page]
     for number, (question, answer, anchor) in enumerate(content.questions):
@@ -425,8 +432,8 @@ def documents_from_page(path, kind, locale, content, labels=()):
 def render_public_page(app, path, locale, tenant):
     """Render one listed page anonymously; return its HTML or None.
 
-    The handler runs without request hooks: no rate limit is consumed and no
-    session is stored. A fresh application context keeps `g` separate from
+    The handler runs without request hooks and without the visitor's session.
+    Route rate limits skip it (see `_skip_rate_limits`). A fresh application context keeps `g` separate from
     the request that triggered the refresh.
     """
     with (
@@ -435,6 +442,7 @@ def render_public_page(app, path, locale, tenant):
             path,
             base_url=app.config.get("SITE_URL") or "http://localhost",
             query_string={"lang": locale.replace("_", "-")},
+            environ_overrides={RENDER_ENVIRON_KEY: True},
         ),
     ):
         g.tenant = tenant
@@ -445,6 +453,12 @@ def render_public_page(app, path, locale, tenant):
         if response.status_code != 200 or response.mimetype != "text/html":
             return None
         return response.get_data(as_text=True)
+
+
+@limiter.request_filter
+def _skip_rate_limits():
+    """Route decorators still run inside dispatch; spare their quotas."""
+    return request.environ.get(RENDER_ENVIRON_KEY) is True
 
 
 def page_documents(app):
@@ -637,6 +651,10 @@ class SiteSearch:
                 continue
             documents, ttl = self._load(name)
             part.expires = now + ttl
+            if documents is None and name == LEG:
+                # Publication cannot be confirmed: hide LEGs rather than show
+                # entries that may have been withdrawn meanwhile.
+                documents = ()
             if documents is not None:
                 part.documents = tuple(documents)
                 changed = True
@@ -658,4 +676,6 @@ class SiteSearch:
         except Exception:
             logger.exception("[SEARCH] Loading %s failed", name)
             return None, RETRY_SECONDS
-        return documents, DATA_TTL_SECONDS if documents is not None else RETRY_SECONDS
+        if documents is None:
+            return None, RETRY_SECONDS
+        return documents, LEG_TTL_SECONDS if name == LEG else DATA_TTL_SECONDS

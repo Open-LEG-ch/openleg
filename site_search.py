@@ -10,6 +10,7 @@ longer words. Domain synonyms connect the four site languages.
 
 import bisect
 import re
+import threading
 import unicodedata
 from collections import OrderedDict
 from collections.abc import Mapping
@@ -33,7 +34,10 @@ INFIX = 0.4
 
 SNIPPET_LENGTH = 180
 
-_TOKEN = re.compile(r"[^\W_]+")
+# Combining marks stay with their letter, so a decomposed "e\u0300" is one word.
+_TOKEN = re.compile(
+    r"[^\W_](?:[^\W_]|[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f])*"
+)
 _SPECIAL = str.maketrans({"ø": "o", "ł": "l", "đ": "d", "ð": "d", "þ": "th"})
 _UMLAUT_SPELLING = re.compile(r"([aou])e")
 
@@ -451,7 +455,13 @@ def _letters(word):
 
 
 class SearchIndex:
-    """An immutable in-memory index; build a new one to change the content."""
+    """An immutable in-memory index; build a new one to change the content.
+
+    Threads share one index. Only the bounded cache of expanded query words
+    changes after construction, under its own lock.
+    """
+
+    EXPANSION_CACHE_SIZE = 4096
 
     def __init__(self, documents):
         self.documents = tuple(documents)
@@ -496,15 +506,17 @@ class SearchIndex:
             if not word.isdigit():
                 self._by_length.setdefault(len(word), []).append((_letters(word), word))
         self._expansions = OrderedDict()
+        self._expansions_lock = threading.Lock()
 
     # --- term expansion -------------------------------------------------
 
     def _expand(self, term):
         """Return `{vocabulary word: quality}` for one folded query word."""
-        cached = self._expansions.get(term)
-        if cached is not None:
-            self._expansions.move_to_end(term)
-            return cached
+        with self._expansions_lock:
+            cached = self._expansions.get(term)
+            if cached is not None:
+                self._expansions.move_to_end(term)
+                return cached
         expansion = {}
         if term in self._postings:
             expansion[term] = EXACT
@@ -528,9 +540,10 @@ class SearchIndex:
                 quality = FUZZY_ONE if distance == 1 else FUZZY_TWO
                 if expansion.get(word, 0) < quality:
                     expansion[word] = quality
-        self._expansions[term] = expansion
-        if len(self._expansions) > 4096:
-            self._expansions.popitem(last=False)
+        with self._expansions_lock:
+            self._expansions[term] = expansion
+            if len(self._expansions) > self.EXPANSION_CACHE_SIZE:
+                self._expansions.popitem(last=False)
         return expansion
 
     def _near(self, term, limit):
@@ -567,9 +580,10 @@ class SearchIndex:
         words = folded_words(query)[: MAX_TERMS * 2]
         clauses = []
         index = 0
-        concepts = {
-            start: (length, name) for start, length, name in _phrase_matches(words)
-        }
+        # The longest phrase starting at a word wins; it is listed first.
+        concepts = {}
+        for start, length, name in _phrase_matches(words):
+            concepts.setdefault(start, (length, name))
         while index < len(words):
             if index in concepts and concepts[index][0] > 1:
                 length, name = concepts[index]
@@ -655,7 +669,11 @@ class SearchIndex:
         return SearchResult(
             query=query,
             groups=tuple(groups),
-            total=sum(len(entries) for entries in grouped.values()),
+            total=sum(
+                len(entries)
+                for kind, entries in grouped.items()
+                if kinds is None or kind in kinds
+            ),
             suggestion=suggestion,
             ignored=ignored,
         )
@@ -695,11 +713,12 @@ class SearchIndex:
             document = self.documents[doc_id]
             group_key = (document.kind, document.group_key or document.url)
             duplicate_key = (document.locale, document.duplicate_key)
-            if group_key in seen_groups or (
-                document.duplicate_key and duplicate_key in seen_duplicates
-            ):
+            if group_key in seen_groups:
                 continue
+            # A page merged into an identical one also hides its translations.
             seen_groups.add(group_key)
+            if document.duplicate_key and duplicate_key in seen_duplicates:
+                continue
             if document.duplicate_key:
                 seen_duplicates.add(duplicate_key)
             kept.append((doc_id, score, secondary))

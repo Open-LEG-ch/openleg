@@ -186,6 +186,13 @@ def test_pages_are_indexed_as_an_anonymous_visitor(search_web):
     assert any(urlsplit(href).path == "/" for _title, href in titles)
 
 
+def test_each_listing_page_is_found_in_the_current_language(search_web):
+    html = search_web.test_client().get("/suche?q=Rangliste").text
+    urls = {urlsplit(href).path for _title, href in _results(html)}
+    assert {"/rangliste", "/rangliste/fortschritte", "/rangliste/vergleich"} <= urls
+    assert 'class="site-search-language"' not in html
+
+
 def test_only_public_routes_are_indexed(search_web):
     import site_search_routes
 
@@ -330,3 +337,57 @@ def test_navigation_field_is_a_labelled_get_form(search_web):
     search_web.config["SITE_RELEASE_ENABLED"] = False
     with search_web.test_request_context("/"):
         assert render_template("partials/site_search.html").strip() == ""
+
+
+def test_rendering_pages_spends_no_rate_limit(search_web):
+    import site_search_index
+    import tenant
+    from security_extensions import rate_limit
+
+    @rate_limit("1 per hour")
+    def limited_probe():
+        return "<html><body><main><h1>Probe</h1></main></body></html>"
+
+    search_web.add_url_rule("/probe-limited", "limited_probe", limited_probe)
+    for _ in range(3):
+        html = site_search_index.render_public_page(
+            search_web, "/probe-limited", "de_CH", tenant.DEFAULT_TENANT
+        )
+        assert html and "Probe" in html
+    client = search_web.test_client()
+    assert client.get("/probe-limited").status_code == 200
+    assert client.get("/probe-limited").status_code == 429
+
+
+def test_a_group_with_no_hits_shows_the_empty_state(search_web):
+    html = unescape(
+        search_web.test_client().get("/suche?q=Sonnenhalde&typ=gemeinden").text
+    )
+    assert "Keine Treffer für «Sonnenhalde»" in html
+    assert 'href="/suche?q=Netzbetreiber"' in html
+
+
+@pytest.mark.parametrize("page", ["9" * 5000, "-1", "1e3", "٣"])
+def test_odd_page_numbers_fall_back_safely(search_web, page):
+    response = search_web.test_client().get(
+        "/suche", query_string={"q": "Testdorf", "typ": "gemeinden", "seite": page}
+    )
+    assert response.status_code == 200
+
+
+def test_the_last_page_offers_no_further_page(search_web, monkeypatch):
+    import site_search_routes
+
+    monkeypatch.setattr(site_search_routes, "MAX_GROUP_PAGES", 1)
+    html = search_web.test_client().get("/suche?q=Testdorf&typ=gemeinden").text
+    assert "seite=2" not in html
+
+
+def test_highlighted_titles_keep_their_spaces(search_web):
+    html = search_web.test_client().get("/suche?q=Rangliste").text
+    titles = re.findall(
+        r'<a class="site-search-title" href="[^"]+">(.*?)</a>', html, re.DOTALL
+    )
+    assert titles and all(
+        title.startswith("<span>") and title.endswith("</span>") for title in titles
+    )

@@ -133,7 +133,8 @@ def present_group(group, query):
 
 def _page_number():
     value = request.args.get("seite", "1")
-    if not (value.isascii() and value.isdigit()):
+    # Check the length first: int() refuses very long digit strings.
+    if not (value.isascii() and value.isdigit() and len(value) <= 3):
         return 1
     return min(max(int(value), 1), MAX_GROUP_PAGES)
 
@@ -170,7 +171,7 @@ def results():
             kind_label=_(GROUPS[kind][1]) if kind else "",
             page=page,
             has_previous=page > 1,
-            has_next=page * GROUP_PAGE_SIZE < group_total,
+            has_next=page < MAX_GROUP_PAGES and page * GROUP_PAGE_SIZE < group_total,
             page_url=lambda number: search_url(
                 query, typ=GROUPS[kind][0], seite=number
             ),

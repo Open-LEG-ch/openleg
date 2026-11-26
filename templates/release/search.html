@@ -30,7 +30,7 @@
     <ol class="site-search-results">
       {% for hit in group.hits %}
       <li class="site-search-result"{% if hit.lang %} lang="{{ hit.lang }}"{% endif %}>
-        <a class="site-search-title" href="{{ hit.url }}">{{ marked(hit.title) }}</a>
+        <a class="site-search-title" href="{{ hit.url }}"><span>{{ marked(hit.title) }}</span></a>
         {% if hit.language %}<span class="site-search-language">{{ hit.language }}</span>{% endif %}
         {% if hit.context or hit.meta %}<p class="site-search-meta">{{ hit.context or hit.meta }}</p>{% endif %}
         {% if hit.snippet %}<p class="site-search-snippet">{{ marked(hit.snippet) }}</p>{% endif %}

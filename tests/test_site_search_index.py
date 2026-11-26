@@ -152,8 +152,7 @@ def test_database_parts_refresh_after_their_time_to_live(sources):
     assert _titles(search) == ["Baden", "Startseite"]
     clock.now += 1
     assert _titles(search) == ["Bern", "Startseite"]
-    # Pages live longer than data.
-    assert sources["calls"].count("pages") == 1
+    assert sources["calls"].count("pages") == 2
 
 
 def test_an_unavailable_source_keeps_the_previous_content_and_retries_soon(sources):
@@ -216,3 +215,31 @@ def test_municipality_postcodes_are_grouped_by_locality(monkeypatch):
     assert baden.summary == "5400, 5404, 5406 Baden · 5405 Dättwil AG"
     assert baden.boosts == {"5400": 2.0, "5404": 2.0, "5405": 2.0, "5406": 1.84}
     assert "Dättwil AG" in baden.keywords and "5406" in baden.keywords
+
+
+def test_listing_pages_without_text_are_not_merged():
+    content = extract_page(PAGE, listing=True)
+    first = site_search_index.documents_from_page(
+        "/rangliste", "page", "de_CH", content
+    )
+    second = site_search_index.documents_from_page(
+        "/rangliste/vergleich", "page", "de_CH", content
+    )
+    assert first[0].duplicate_key == second[0].duplicate_key == ""
+
+
+def test_withdrawn_legs_disappear_and_an_unavailable_directory_hides_them(sources):
+    clock = _Clock()
+    sources["legs"] = [_document("LEG Sonnenhalde", "leg")]
+    search = SiteSearch(_FakeApp(), clock=clock)
+    assert "LEG Sonnenhalde" in _titles(search)
+    sources["legs"] = []
+    clock.now += site_search_index.LEG_TTL_SECONDS
+    assert "LEG Sonnenhalde" not in _titles(search)
+    sources["legs"] = [_document("LEG Sonnenhalde", "leg")]
+    clock.now += site_search_index.LEG_TTL_SECONDS
+    assert "LEG Sonnenhalde" in _titles(search)
+    # When the directory cannot confirm publication, its entries are hidden.
+    sources["legs"] = None
+    clock.now += site_search_index.LEG_TTL_SECONDS
+    assert "LEG Sonnenhalde" not in _titles(search)

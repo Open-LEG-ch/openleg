@@ -429,3 +429,22 @@ def test_empty_search_offers_large_example_links(release_page):
         ".site-search-examples a, .site-search-shortcuts a"
     ).evaluate_all("nodes => nodes.map(node => node.getBoundingClientRect().height)")
     assert heights and min(heights) >= 44
+
+
+def test_highlighted_result_titles_keep_word_spacing(release_page):
+    page = release_page
+    assert page.goto("http://qa.test/suche?q=Rechnung").status == 200
+    # Distance from the last letter before a highlight to the highlight: a
+    # rendered space, not zero.
+    gaps = page.locator(".site-search-title").evaluate_all(
+        """titles => titles.flatMap(title => [...title.querySelectorAll('mark')].map(mark => {
+            const before = mark.previousSibling;
+            if (!before || before.nodeType !== 3 || !/\\S\\s+$/.test(before.data)) return null;
+            const end = before.data.replace(/\\s+$/, '').length;
+            const range = document.createRange();
+            range.setStart(before, end - 1);
+            range.setEnd(before, end);
+            return mark.getBoundingClientRect().left - range.getBoundingClientRect().right;
+        })).filter(gap => gap !== null)"""
+    )
+    assert gaps and min(gaps) > 2

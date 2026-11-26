@@ -360,3 +360,77 @@ def test_a_suggestion_leaves_out_words_that_match_nothing():
     result = index.search("Glosar qqqq")
     assert result.ignored == ("qqqq",)
     assert result.suggestion == "Glossar"
+
+
+def test_the_longest_synonym_phrase_wins():
+    index = SearchIndex(
+        [_page("RCP", "Un RCP."), _page("vZEV", "Ein vZEV teilt Leitungen.")]
+    )
+    result = index.search("RCP virtuel")
+    assert (_titles(result), result.ignored) == (["vZEV"], ())
+
+
+def test_a_kind_filter_counts_only_that_kind():
+    index = SearchIndex([_page("Sonnenhalde"), _municipality("Baden", "AG", 4021)])
+    result = index.search("Sonnenhalde", kinds={"municipality"})
+    assert (result.total, result.groups) == (0, ())
+
+
+def test_decomposed_accents_stay_in_one_word():
+    index = SearchIndex([_municipality("Genève", "GE", 6621), _page("Gene")])
+    result = index.search("Genève")
+    assert (_titles(result), result.ignored) == (["Genève"], ())
+    hit = SearchIndex([_page("Genève")]).search("Geneve").groups[0].hits[0]
+    assert [(segment.text, segment.match) for segment in hit.title] == [
+        ("Genève", True)
+    ]
+
+
+def test_concurrent_searches_share_the_expansion_cache_safely():
+    import sys
+    import threading
+
+    index = SearchIndex([_page(f"Wort{number}") for number in range(40)])
+    # A tiny cache evicts on almost every search; frequent thread switches
+    # expose an unguarded lookup between reading and promoting an entry.
+    index.EXPANSION_CACHE_SIZE = 2
+    previous = sys.getswitchinterval()
+    sys.setswitchinterval(1e-6)
+    errors = []
+
+    def search(offset):
+        try:
+            for number in range(300):
+                index.search(f"wort{(number + offset) % 40}")
+        except Exception as error:  # pragma: no cover - the failure is the report
+            errors.append(error)
+
+    threads = [threading.Thread(target=search, args=(offset,)) for offset in range(6)]
+    try:
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+    finally:
+        sys.setswitchinterval(previous)
+    assert errors == []
+
+
+def test_a_merged_page_does_not_return_in_another_language():
+    text = "Gemeinsamer Text zum Mitarbeiten."
+    index = SearchIndex(
+        [
+            _page("Alpha", text, url="/a", group_key="/a", duplicate_key="same"),
+            _page("Beta", text, url="/b", group_key="/b", duplicate_key="same"),
+            _page(
+                "Bêta",
+                "Texte commun: Mitarbeiten.",
+                url="/b",
+                group_key="/b",
+                locale="fr_CH",
+                duplicate_key="other",
+            ),
+        ]
+    )
+    hits = index.search("Mitarbeiten", locale="de_CH").groups[0].hits
+    assert [(hit.document.title, hit.secondary) for hit in hits] == [("Alpha", False)]
