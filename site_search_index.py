@@ -596,6 +596,18 @@ class _Part:
     expires: float = 0.0
 
 
+@dataclass(frozen=True)
+class _Snapshot:
+    """An index and the time until which its LEG entries may be shown.
+
+    Both change together, so a slow rebuild cannot lend a new expiry to the
+    old index.
+    """
+
+    index: SearchIndex
+    legs_valid_until: float
+
+
 class SiteSearch:
     """Holds the current index; refreshes stale parts without blocking reads.
 
@@ -609,23 +621,26 @@ class SiteSearch:
         self._clock = clock
         self._lock = threading.Lock()
         self._refreshing = False
-        self._index = None
+        self._snapshot = None
         self._parts = {name: _Part() for name in ("pages", MUNICIPALITY, LEG)}
 
     def search(self, query, *, kinds=None, **options):
         """Search the current index without LEGs whose publication is overdue."""
-        index = self.index()
+        snapshot = self._current()
         allowed = KINDS if kinds is None else frozenset(kinds)
-        if self._clock() >= self._parts[LEG].expires + LEG_GRACE_SECONDS:
+        if self._clock() >= snapshot.legs_valid_until:
             allowed = allowed - {LEG}
-        return index.search(query, kinds=allowed, **options)
+        return snapshot.index.search(query, kinds=allowed, **options)
 
     def index(self):
-        if self._index is None:
+        return self._current().index
+
+    def _current(self):
+        if self._snapshot is None:
             with self._lock:
-                if self._index is None:
+                if self._snapshot is None:
                     self._refresh()
-            return self._index
+            return self._snapshot
         if self._stale() and not self._refreshing:
             if self._app.testing:
                 with self._lock:
@@ -635,11 +650,11 @@ class SiteSearch:
                 threading.Thread(
                     target=self._refresh_in_background, daemon=True
                 ).start()
-        return self._index
+        return self._snapshot
 
     def warm(self):
         """Start building in the background unless an index exists or is coming."""
-        if self._index is None and not self._refreshing:
+        if self._snapshot is None and not self._refreshing:
             self._refreshing = True
             threading.Thread(target=self._refresh_in_background, daemon=True).start()
 
@@ -656,23 +671,33 @@ class SiteSearch:
 
     def _refresh(self):
         now = self._clock()
-        changed = self._index is None
-        for name, part in self._parts.items():
-            if part.expires > now:
+        current = self._snapshot
+        documents = {name: part.documents for name, part in self._parts.items()}
+        expires = {name: part.expires for name, part in self._parts.items()}
+        changed = current is None
+        for name in self._parts:
+            if expires[name] > now:
                 continue
-            documents, ttl = self._load(name)
-            part.expires = now + ttl
-            if documents is None and name == LEG:
+            loaded, ttl = self._load(name)
+            expires[name] = now + ttl
+            if loaded is None and name == LEG:
                 # Publication cannot be confirmed: hide LEGs rather than show
                 # entries that may have been withdrawn meanwhile.
-                documents = ()
-            if documents is not None and tuple(documents) != part.documents:
-                part.documents = tuple(documents)
+                loaded = ()
+            if loaded is not None and tuple(loaded) != documents[name]:
+                documents[name] = tuple(loaded)
                 changed = True
-        if changed:
-            self._index = SearchIndex(
-                document for part in self._parts.values() for document in part.documents
+        index = (
+            SearchIndex(
+                document for name in self._parts for document in documents[name]
             )
+            if changed
+            else current.index
+        )
+        for name, part in self._parts.items():
+            part.documents = documents[name]
+            part.expires = expires[name]
+        self._snapshot = _Snapshot(index, expires[LEG] + LEG_GRACE_SECONDS)
 
     def _load(self, name):
         try:

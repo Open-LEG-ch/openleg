@@ -287,3 +287,33 @@ def test_an_unchanged_refresh_keeps_the_index(sources):
     sources["legs"] = [_document("LEG Neu", "leg")]
     clock.now += site_search_index.LEG_TTL_SECONDS
     assert search.index() is not first
+
+
+def test_a_slow_rebuild_cannot_extend_an_overdue_leg(sources, monkeypatch):
+    import threading
+
+    clock = _Clock()
+    sources["legs"] = [_document("LEG Sonnenhalde", "leg")]
+    search = SiteSearch(_FakeApp(testing=False), clock=clock)
+    assert search.search("Sonnenhalde", locale="de_CH").total == 1
+    release = threading.Event()
+    building = threading.Event()
+    original = site_search_index.SearchIndex
+
+    def slow_index(documents):
+        building.set()
+        release.wait(5)
+        return original(documents)
+
+    monkeypatch.setattr(site_search_index, "SearchIndex", slow_index)
+    sources["legs"] = []
+    clock.now += site_search_index.LEG_TTL_SECONDS
+    search.search("Sonnenhalde", locale="de_CH")
+    assert building.wait(5)
+    # The new expiry belongs to the index still being built, not to the one
+    # that answers now.
+    clock.now += site_search_index.LEG_GRACE_SECONDS
+    try:
+        assert search.search("Sonnenhalde", locale="de_CH").total == 0
+    finally:
+        release.set()

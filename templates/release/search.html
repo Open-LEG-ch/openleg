@@ -38,7 +38,7 @@
       {% endfor %}
     </ol>
     {% if not kind and group.total > group.hits|length %}<p class="site-search-more"><a href="{{ group.more_url }}">{{ ngettext('%(num)s Treffer in «%(group)s» anzeigen', '%(num)s Treffer in «%(group)s» anzeigen', group.total, group=group.label) }}</a></p>{% endif %}
-    {% if group.kind == 'municipality' %}<p class="site-search-source">{{ _('Postleitzahlen: amtliches Ortschaftenverzeichnis von swisstopo.') }}</p>{% endif %}
+    {% if group.kind == 'municipality' %}<p class="site-search-source">{{ _('Postleitzahlen: amtliches Gebäudeadressverzeichnis von swisstopo.') }}</p>{% endif %}
   </section>
   {% endfor %}
   {% if kind and (has_previous or has_next) %}

@@ -1,43 +1,41 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Postcode shares from the swisstopo locality list."""
+"""Postcode shares from the official building address directory."""
 
 from scripts.update_swiss_postcodes import build
 
 
-def _row(postcode, zip_id, locality, bfs, share):
-    return {
-        "PLZ4": postcode,
-        "ZIP_ID": zip_id,
-        "Ortschaftsname": locality,
-        "BFS-Nr": str(bfs),
-        "Adressenanteil": f"{share} %",
-    }
+def _addresses(postcode, locality, bfs, count, status="real"):
+    return [
+        {
+            "ZIP_LABEL": f"{postcode} {locality}",
+            "COM_FOSNR": str(bfs),
+            "ADR_STATUS": status,
+        }
+    ] * count
 
 
-def test_each_locality_of_a_postcode_weighs_the_same():
+def test_shares_follow_the_existing_addresses_of_each_postcode():
     rows = [
-        _row("1148", "293", "L'Isle", 5486, "100"),
-        _row("1148", "7449", "Villars-Bozon", 5486, "100"),
-        _row("1148", "8477", "La Coudre", 5486, "100"),
-        _row("1148", "5842", "Mauraz", 5488, "100"),
-        _row("1148", "556", "Cuarnens", 5479, "100"),
-        _row("1148", "5841", "Chavannes-le-Veyron", 5475, "98.361"),
-        _row("1148", "5841", "Chavannes-le-Veyron", 5474, "1.639"),
+        *_addresses("6110", "Wolhusen", 1107, 1313),
+        *_addresses("6110", "Wolhusen", 1107, 36, status="planned"),
+        *_addresses("6110", "Wolhusen", 1009, 331),
+        *_addresses("6110", "Wolhusen", 1098, 78),
+        *_addresses("6110", "Wolhusen", 1007, 58),
+        *_addresses("6110", "Wolhusen", 1002, 6),
     ]
-    lines = build(rows).splitlines()
-    assert lines == [
-        "5475;1148;16;Chavannes-le-Veyron",
-        "5479;1148;17;Cuarnens",
-        "5486;1148;50;L'Isle|La Coudre|Villars-Bozon",
-        "5488;1148;17;Mauraz",
+    assert build(rows).splitlines() == [
+        "1007;6110;3;",
+        "1009;6110;19;Wolhusen",
+        "1098;6110;4;",
+        "1107;6110;74;Wolhusen",
     ]
 
 
-def test_a_tiny_share_of_another_municipality_is_dropped():
+def test_a_small_municipality_keeps_its_only_postcode():
     rows = [
-        _row("8910", "5141", "Affoltern am Albis", 2, "99.739"),
-        _row("8910", "5141", "Affoltern am Albis", 10, "0.261"),
-        _row("8912", "5142", "Obfelden", 10, "100"),
+        *_addresses("8910", "Affoltern am Albis", 2, 4000),
+        *_addresses("8910", "Affoltern am Albis", 10, 3),
+        *_addresses("8912", "Obfelden", 10, 900),
     ]
     assert build(rows).splitlines() == [
         "2;8910;100;Affoltern am Albis",

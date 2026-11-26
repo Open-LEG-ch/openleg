@@ -452,3 +452,19 @@ def test_hidden_kinds_neither_match_nor_suggest():
     result = index.search("Sonnenhlade", kinds={"page"})
     assert (result.total, result.suggestion) == (0, None)
     assert index.search("Sonnenhalde", kinds={"page"}).total == 0
+
+
+def test_hidden_words_do_not_block_typo_tolerance():
+    hidden = Document(kind="leg", url="/leg-verzeichnis/x", title="Solaar")
+    index = SearchIndex([_page("Solar"), hidden])
+    result = index.search("Solaa", kinds={"page"})
+    assert (_titles(result), result.suggestion) == (["Solar"], "Solar")
+
+
+def test_corrections_use_the_spelling_of_visible_documents():
+    hidden = [
+        Document(kind="leg", url=f"/leg-verzeichnis/{number}", title="Sólär")
+        for number in range(3)
+    ]
+    index = SearchIndex([_page("Solar"), *hidden])
+    assert index.search("Solra", kinds={"page"}).suggestion == "Solar"

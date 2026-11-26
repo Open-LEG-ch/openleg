@@ -467,9 +467,10 @@ class SearchIndex:
         self.documents = tuple(documents)
         self._postings = {}
         self._document_words = []
-        self._surface = {}
-        self._frequency = {}
-        spellings = {}
+        # Per word and kind: how many documents use it and how they spell it,
+        # so hidden kinds neither steer typo matching nor corrections.
+        self._word_kinds = {}
+        self._spellings = {}
         for doc_id, document in enumerate(self.documents):
             words = {}
             for weight, texts in (
@@ -486,18 +487,17 @@ class SearchIndex:
                         if words.get(word, 0) < weight:
                             words[word] = weight
                     for start, end, word in tokens:
-                        key = (word, text[start:end])
-                        spellings[key] = spellings.get(key, 0) + 1
+                        counts = self._spellings.setdefault(word, {}).setdefault(
+                            document.kind, {}
+                        )
+                        spelling = text[start:end]
+                        counts[spelling] = counts.get(spelling, 0) + 1
             self._document_words.append(words)
             for word, weight in words.items():
                 self._postings.setdefault(word, {})[doc_id] = weight
-                self._frequency[word] = self._frequency.get(word, 0) + 1
-        # Suggestions use the most common spelling of a word.
-        best = {}
-        for (word, spelling), count in spellings.items():
-            if count > best.get(word, (0, ""))[0]:
-                best[word] = (count, spelling)
-        self._surface = {word: spelling for word, (_count, spelling) in best.items()}
+                kinds = self._word_kinds.setdefault(word, {})
+                kinds[document.kind] = kinds.get(document.kind, 0) + 1
+        self._kinds = frozenset(document.kind for document in self.documents)
         self._vocabulary = sorted(
             word for word in self._postings if not word.startswith("\x00")
         )
@@ -510,13 +510,42 @@ class SearchIndex:
 
     # --- term expansion -------------------------------------------------
 
-    def _expand(self, term):
-        """Return `{vocabulary word: quality}` for one folded query word."""
+    def _visible(self, word, kinds):
+        return kinds is None or any(kind in kinds for kind in self._word_kinds[word])
+
+    def _frequency(self, word, kinds):
+        return sum(
+            count
+            for kind, count in self._word_kinds[word].items()
+            if kinds is None or kind in kinds
+        )
+
+    def _spelling(self, word, kinds):
+        """The most common original spelling of a word in the allowed kinds."""
+        counts = {}
+        for kind, spellings in self._spellings.get(word, {}).items():
+            if kinds is None or kind in kinds:
+                for spelling, count in spellings.items():
+                    counts[spelling] = counts.get(spelling, 0) + count
+        if not counts:
+            return None
+        return min(counts, key=lambda spelling: (-counts[spelling], spelling))
+
+    def _cached(self, key, compute):
         with self._expansions_lock:
-            cached = self._expansions.get(term)
+            cached = self._expansions.get(key)
             if cached is not None:
-                self._expansions.move_to_end(term)
+                self._expansions.move_to_end(key)
                 return cached
+        value = compute()
+        with self._expansions_lock:
+            self._expansions[key] = value
+            if len(self._expansions) > self.EXPANSION_CACHE_SIZE:
+                self._expansions.popitem(last=False)
+        return value
+
+    def _direct(self, term):
+        """Exact, prefix and infix matches: `{vocabulary word: quality}`."""
         expansion = {}
         if term in self._postings:
             expansion[term] = EXACT
@@ -533,17 +562,34 @@ class SearchIndex:
                 for _mask, word in entries:
                     if term in word:
                         expansion.setdefault(word, INFIX)
-        if len(term) >= 6 or not any(
-            quality >= PREFIX for quality in expansion.values()
-        ):
-            for word, distance in self._near(term, typo_limit(term)):
-                quality = FUZZY_ONE if distance == 1 else FUZZY_TWO
-                if expansion.get(word, 0) < quality:
-                    expansion[word] = quality
-        with self._expansions_lock:
-            self._expansions[term] = expansion
-            if len(self._expansions) > self.EXPANSION_CACHE_SIZE:
-                self._expansions.popitem(last=False)
+        return expansion
+
+    def _typos(self, term):
+        return {
+            word: FUZZY_ONE if distance == 1 else FUZZY_TWO
+            for word, distance in self._near(term, typo_limit(term))
+        }
+
+    def _expand(self, term, kinds=None):
+        """Return `{vocabulary word: quality}` for one folded query word.
+
+        Typos count when the word is long or nothing visible starts with it.
+        """
+        direct = self._cached(("direct", term), lambda: self._direct(term))
+        if kinds is not None:
+            direct = {
+                word: quality
+                for word, quality in direct.items()
+                if self._visible(word, kinds)
+            }
+        if len(term) < 6 and any(quality >= PREFIX for quality in direct.values()):
+            return direct
+        expansion = dict(direct)
+        for word, quality in self._cached(
+            ("typos", term), lambda: self._typos(term)
+        ).items():
+            if self._visible(word, kinds) and expansion.get(word, 0) < quality:
+                expansion[word] = quality
         return expansion
 
     def _near(self, term, limit):
@@ -566,15 +612,9 @@ class SearchIndex:
             return None
         limit = 1 if len(term) <= 4 else 2
         candidates = [
-            (distance, -self._frequency.get(word, 0), word)
+            (distance, -self._frequency(word, kinds), word)
             for word, distance in self._near(term, limit)
-            if word in self._surface
-            and (
-                kinds is None
-                or any(
-                    self.documents[doc].kind in kinds for doc in self._postings[word]
-                )
-            )
+            if self._visible(word, kinds) and self._spelling(word, kinds)
         ]
         if not candidates:
             return None
@@ -619,7 +659,7 @@ class SearchIndex:
             for doc_id, weight in self._postings.get(clause.concept, {}).items():
                 scores[doc_id] = weight * CONCEPT
         if clause.term:
-            for word, quality in self._expand(clause.term).items():
+            for word, quality in self._expand(clause.term, kinds).items():
                 for doc_id, weight in self._postings[word].items():
                     value = weight * quality
                     if scores.get(doc_id, 0) < value:
@@ -638,6 +678,10 @@ class SearchIndex:
         With `kinds`, other documents neither match nor shape suggestions.
         """
         query = clean_query(query)
+        if kinds is not None:
+            kinds = frozenset(kinds)
+            if self._kinds <= kinds:
+                kinds = None
         clauses = self._clauses(query)
         if not clauses:
             return SearchResult(query=query, groups=(), total=0)
@@ -676,7 +720,7 @@ class SearchIndex:
                 Group(
                     kind=kind,
                     hits=tuple(
-                        self._hit(doc_id, score, secondary, clauses)
+                        self._hit(doc_id, score, secondary, clauses, kinds)
                         for doc_id, score, secondary in selected
                     ),
                     total=len(entries),
@@ -748,13 +792,15 @@ class SearchIndex:
         replacements = {}
         for clause in clauses:
             term = clause.term
-            if not term or clause.concept or term in self._postings:
+            if not term or clause.concept:
                 continue
-            if any(quality >= PREFIX for quality in self._expand(term).values()):
+            if term in self._postings and self._visible(term, kinds):
+                continue
+            if any(quality >= PREFIX for quality in self._expand(term, kinds).values()):
                 continue
             corrected = self.correction(term, kinds)
             if corrected:
-                replacements[term] = self._surface[corrected]
+                replacements[term] = self._spelling(corrected, kinds)
             elif not self._clause_scores(clause, kinds):
                 replacements[term] = ""
         if not any(replacements.values()):
@@ -775,11 +821,11 @@ class SearchIndex:
 
     # --- presentation -----------------------------------------------------
 
-    def _matcher(self, clauses):
+    def _matcher(self, clauses, kinds=None):
         terms = {}
         for clause in clauses:
             if clause.term:
-                terms.update(self._expand(clause.term))
+                terms.update(self._expand(clause.term, kinds))
         concepts = {clause.concept[1:] for clause in clauses if clause.concept}
         return terms, concepts
 
@@ -840,9 +886,9 @@ class SearchIndex:
             segments.append(Segment(" …"))
         return tuple(segments)
 
-    def _hit(self, doc_id, score, secondary, clauses):
+    def _hit(self, doc_id, score, secondary, clauses, kinds=None):
         document = self.documents[doc_id]
-        matcher = self._matcher(clauses)
+        matcher = self._matcher(clauses, kinds)
         best = None
         for block in document.blocks:
             count = self._count(block.heading, matcher) * 2 + self._count(

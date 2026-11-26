@@ -11956,7 +11956,7 @@ msgid "Postleitzahl"
 msgstr ""
 
 #: templates/release/search.html:41
-msgid "Postleitzahlen: amtliches Ortschaftenverzeichnis von swisstopo."
+msgid "Postleitzahlen: amtliches Gebäudeadressverzeichnis von swisstopo."
 msgstr ""
 
 #: templates/gemeinde/pilotgemeinde.html:38

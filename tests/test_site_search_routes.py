@@ -125,7 +125,7 @@ def test_a_municipality_is_found_by_name_and_postcode(search_web):
     html = client.get("/suche?q=8001").text
     assert _results(html)[0] == ("Zürich", "/gemeinde/profil/261")
     assert "<mark>8001</mark>" in html
-    assert "amtliches Ortschaftenverzeichnis von swisstopo" in html
+    assert "amtliches Gebäudeadressverzeichnis von swisstopo" in html
 
 
 def test_pages_questions_and_terms_are_found(search_web):
