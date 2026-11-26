@@ -14,4 +14,6 @@ def test_ruff_017_is_pinned_with_reviewed_exceptions():
 
     assert "ruff==0.17.6" in requirements
     assert "tzdata==2026.6" in runtime_requirements
+    # Catalogs and MO bytes are built with this Babel; 2.19 changes fr/it plurals.
+    assert "Babel==2.18.0" in runtime_requirements
     assert config["tool"]["ruff"]["lint"]["ignore"] == ["BLE001", "SIM117"]
