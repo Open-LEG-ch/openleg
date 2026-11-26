@@ -78,6 +78,41 @@ def test_release_icons_match_the_page_head_everywhere(web):
     ]
 
 
+def test_text_on_dark_release_surfaces_is_white():
+    """Orange or grey text on the navy sections was hard to read; text is white."""
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    css = "".join(
+        (root / "static" / "css" / name).read_text()
+        for name in ("homepage.css", "site_story.css")
+    )
+    for selector in (
+        ".home-practice .home-lead",
+        ".home-flow p",
+        ".home-example-label",
+        ".release-software-band > p, .release-software-band .release-caption",
+        ".release-software-band .release-workflow span",
+    ):
+        rule = re.search(re.escape(selector) + r" \{([^}]*)\}", css)
+        assert rule and "color: #fffdf8;" in rule.group(1), selector
+    for template in (
+        "partials/install_console.html",
+        "open_source.html",
+        "dashboard.html",
+    ):
+        markup = (root / "templates" / template).read_text()
+        if template == "dashboard.html":
+            markup = markup.split('aria-labelledby="readiness-title"', 1)[1]
+            markup = markup.split("</section>", 1)[0]
+            assert "text-sage-light" not in markup and "text-paper" not in markup
+        for grey in ("text-slate-100", "text-slate-300", "text-slate-400"):
+            assert grey not in markup, (template, grey)
+        assert "text-accent-light" not in markup, template
+    script = (root / "static" / "js" / "install_console.js").read_text()
+    assert "text-slate-400" not in script and "border-indigo-400" not in script
+
+
 def test_verified_formation_metadata_updates_public_status_and_join_link(web):
     web.config.update(
         SITE_RELEASE_ENABLED=True,

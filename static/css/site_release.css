@@ -99,6 +99,8 @@
 .site-release:not(.product-shell) .release-document a:not(.release-button):not(.release-practice-roles a):hover,
 .site-release:not(.product-shell) .release-finance a:hover { text-decoration-color: currentColor; }
 .release-prose a { color: #243b85; text-decoration: underline; text-underline-offset: 3px; }
+/* The install console is a dark surface: its links stay white. */
+.site-release:not(.product-shell) [data-install-console] a.underline { color: #fff; text-decoration-color: var(--roof); }
 .release-hero { background: #edf1f9; padding-bottom: 48px; }
 .release-hero-intro { display: grid; grid-template-columns: 1.1fr 1fr; align-items: start; gap: 64px; }
 .release-hero h1 { font-size: clamp(42px, 5.6vw, 80px); line-height: 1.05; letter-spacing: -.04em; }

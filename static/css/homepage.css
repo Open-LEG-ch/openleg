@@ -30,7 +30,7 @@
 .home-practice { border-top: 8px solid var(--roof); background: #243b85; color: #fffdf8; padding-block: clamp(88px, 10vw, 152px); }
 .home-practice-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px clamp(64px, 9vw, 140px); align-items: start; }
 .home-practice h2 { color: #fffdf8; max-width: 12em; }
-.home-practice .home-lead { margin-top: 28px; color: var(--roof-sun); }
+.home-practice .home-lead { margin-top: 28px; color: #fffdf8; }
 .home-practice .release-button-primary { background: #fffdf8; color: #243b85; border-color: #fffdf8; }
 .home-practice .release-button-primary:hover { background: #edf1f9; }
 .home-practice a:focus-visible { outline-color: var(--focus-inverse); }
@@ -42,9 +42,9 @@
 .home-flow li::before { content: ""; position: absolute; left: 0; top: 7px; width: 12px; height: 12px; border-radius: 50%; background: #fffdf8; box-shadow: 0 0 0 4px #243b85; }
 .home-flow li.home-flow-gap::before { background: #243b85; box-shadow: 0 0 0 2px var(--roof-sun), 0 0 0 5px #243b85; }
 .home-flow strong { display: block; font-weight: 600; }
-.home-flow p { margin-top: 6px; color: var(--roof-sun); font-size: 16px; max-width: 30em; }
+.home-flow p { margin-top: 6px; color: #fffdf8; font-size: 16px; max-width: 30em; }
 /* Static text excerpts reflow with the surrounding workflow at body size. */
-.home-example-label { color: var(--roof-sun); font-size: 16px; margin-top: 16px; }
+.home-example-label { color: #fffdf8; font-size: 16px; margin-top: 16px; }
 .home-notice { margin: 20px 0; padding: 16px 20px; background: #fffdf8; color: #26324b; border-radius: 8px; font-size: 17px; line-height: 1.7; }
 .home-notice figcaption { font-weight: 600; }
 .home-flow .home-notice p { color: #26324b; font-size: inherit; }
