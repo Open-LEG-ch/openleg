@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#243B85"/><text x="7" y="39" font-family="monospace" font-size="28" font-weight="700" fill="#FFFDF8">LEG</text><path d="M8 48h48" stroke="#CB815C" stroke-width="4"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>OpenLEG</title>
+  <rect width="64" height="64" rx="14" fill="#243b85"/>
+  <path fill="#fffdf8" d="M8 12h6v20h6v6H8zM24 12h12v6h-6v4h4v6h-4v4h6v6H24zM40 12h16v6H46v14h4v-3h-2v-5h8v14H40z"/>
+  <path fill="#cb815c" d="M8 45h48v6H8z"/>
+</svg>

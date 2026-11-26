@@ -37,6 +37,47 @@ def test_release_costs_do_not_offer_unapproved_hosting(web):
     assert "AGPL-3.0-or-later" in response.text
 
 
+def test_release_icons_match_the_page_head_everywhere(web):
+    """Safari, iOS, crawlers and /favicon.ico get the same release icon as the tab."""
+    import json
+    import struct
+    from pathlib import Path
+
+    release = Path(web.static_folder) / "images" / "release"
+    client = web.test_client()
+    legacy = client.get("/favicon.ico").data
+    web.config["SITE_RELEASE_ENABLED"] = True
+    html = client.get("/pricing").text
+    for href in (
+        "/favicon.ico?v=2",
+        "/static/images/release/favicon.svg?v=2",
+        "/static/images/release/apple-touch-icon.png",
+        "/static/images/release/site.webmanifest",
+    ):
+        assert f'href="{href}"' in html
+    assert '<meta name="theme-color" content="#243b85">' in html
+
+    icon = client.get("/favicon.ico")
+    assert icon.mimetype == "image/vnd.microsoft.icon"
+    assert icon.data == (release / "favicon.ico").read_bytes() != legacy
+    # Letters are shapes, so the icon does not depend on the visitor's fonts.
+    assert "<text" not in (release / "favicon.svg").read_text()
+
+    def png_size(path):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert response.data[:8] == b"\x89PNG\r\n\x1a\n"
+        width, height = struct.unpack(">II", response.data[16:24])
+        return f"{width}x{height}"
+
+    assert png_size("/static/images/release/apple-touch-icon.png") == "180x180"
+    manifest = json.loads(client.get("/static/images/release/site.webmanifest").data)
+    assert manifest["theme_color"] == "#243b85"
+    assert [png_size(entry["src"]) for entry in manifest["icons"]] == [
+        entry["sizes"] for entry in manifest["icons"]
+    ]
+
+
 def test_verified_formation_metadata_updates_public_status_and_join_link(web):
     web.config.update(
         SITE_RELEASE_ENABLED=True,

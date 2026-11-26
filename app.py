@@ -515,10 +515,13 @@ def sitemap_xml():
 
 @main_bp.route("/favicon.ico")
 def favicon():
+    # Browsers and crawlers request /favicon.ico directly, so it must match the
+    # icon the page head declares for the active site design.
+    folder = current_app.static_folder
+    if current_app.config.get("SITE_RELEASE_ENABLED") is True:
+        folder = os.path.join(folder, "images", "release")
     return send_from_directory(
-        current_app.static_folder,
-        "favicon.ico",
-        mimetype="image/vnd.microsoft.icon",
+        folder, "favicon.ico", mimetype="image/vnd.microsoft.icon"
     )
 
 

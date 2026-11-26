@@ -1,0 +1,12 @@
+{
+  "name": "OpenLEG",
+  "short_name": "OpenLEG",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#f6f2ea",
+  "theme_color": "#243b85",
+  "icons": [
+    {"src": "/static/images/release/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/static/images/release/icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
