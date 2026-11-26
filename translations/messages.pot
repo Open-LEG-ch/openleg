@@ -165,6 +165,27 @@ msgid_plural "%(num)s Tage"
 msgstr[0] ""
 msgstr[1] ""
 
+#: templates/release/search.html:21
+#, python-format
+msgid "%(num)s Treffer für «%(query)s»"
+msgid_plural "%(num)s Treffer für «%(query)s»"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/release/search.html:40
+#, python-format
+msgid "%(num)s Treffer in «%(group)s» anzeigen"
+msgid_plural "%(num)s Treffer in «%(group)s» anzeigen"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/release/search.html:21
+#, python-format
+msgid "%(num)s Treffer in «%(group)s» für «%(query)s»"
+msgid_plural "%(num)s Treffer in «%(group)s» für «%(query)s»"
+msgstr[0] ""
+msgstr[1] ""
+
 #: municipality.py:380
 #, python-format
 msgid "%(num)s bestätigte Interessierte"
@@ -189,7 +210,7 @@ msgstr[1] ""
 msgid "%(platform_name)s · LEG für %(city_name)s"
 msgstr ""
 
-#: app.py:244
+#: app.py:245
 #, python-format
 msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr ""
@@ -881,6 +902,11 @@ msgstr ""
 msgid "Abruffehler simulieren"
 msgstr ""
 
+#: site_search_routes.py:107
+#, python-format
+msgid "Abschnitt «%(section)s»"
+msgstr ""
+
 #: billing_workspace.py:283
 msgid "Abweichung prüfen"
 msgstr ""
@@ -962,11 +988,11 @@ msgstr ""
 msgid "Adresse ist zu kurz"
 msgstr ""
 
-#: app.py:577
+#: app.py:578
 msgid "Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: app.py:569
+#: app.py:570
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr ""
 
@@ -1347,7 +1373,7 @@ msgstr ""
 msgid "Anlagenhinweise"
 msgstr ""
 
-#: app.py:142 formation_guide.py:65
+#: app.py:143 formation_guide.py:65
 msgid "Anleitung zum eigenen Betrieb"
 msgstr ""
 
@@ -2050,6 +2076,10 @@ msgstr ""
 msgid "Beispiel-Dashboard öffnen"
 msgstr ""
 
+#: templates/release/search.html:57
+msgid "Beispiele"
+msgstr ""
+
 #: templates/release/community.html:9
 msgid "Beitrag ansehen"
 msgstr ""
@@ -2296,7 +2326,7 @@ msgid ""
 "Die Bestätigung ist noch keine Aufnahme. Der Vorstand prüft den Antrag."
 msgstr ""
 
-#: app.py:249
+#: app.py:250
 #, python-format
 msgid ""
 "Bestätigen Sie Ihre Interessenmeldung für eine Lokale Elektrizitätsgemeinschaft (LEG) in "
@@ -2327,7 +2357,7 @@ msgstr ""
 msgid "Bestätigen Sie den vollständigen Konten- und Anbieterumfang ohne fehlende Fremdwährungsbestände."
 msgstr ""
 
-#: app.py:807
+#: app.py:808
 #, python-format
 msgid ""
 "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen Gebietsanfrage bei OpenLEG "
@@ -2712,7 +2742,7 @@ msgstr ""
 msgid "Bitte zwei Gemeinden mit verfügbaren Daten wählen."
 msgstr ""
 
-#: app.py:86 formation_guide.py:9
+#: app.py:87 formation_guide.py:9
 msgid "Brauchen die Teilnehmenden eigene Smart Meter?"
 msgstr ""
 
@@ -2891,7 +2921,7 @@ msgstr ""
 msgid "Danke für die Bestätigung"
 msgstr ""
 
-#: app.py:121 formation_guide.py:44
+#: app.py:122 formation_guide.py:44
 msgid "Darf ich OpenLEG installieren, anpassen oder forken?"
 msgstr ""
 
@@ -3542,7 +3572,7 @@ msgid ""
 "teilnehmenden Endverbraucher erreichen."
 msgstr ""
 
-#: app.py:112 formation_guide.py:35
+#: app.py:113 formation_guide.py:35
 msgid ""
 "Der Verteilnetzbetreiber rechnet Netznutzung und Messung ab, bei Teilnehmenden in der "
 "Grundversorgung auch den übrigen Strombezug. Die LEG oder ihr Dienstleister rechnet den innerhalb"
@@ -3638,7 +3668,7 @@ msgid ""
 "anschliessend."
 msgstr ""
 
-#: app.py:889
+#: app.py:890
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -4796,6 +4826,10 @@ msgstr ""
 msgid "Direkt im Terminal ausführen:"
 msgstr ""
 
+#: templates/release/search.html:61
+msgid "Direkt weiter"
+msgstr ""
+
 #: templates/admin/abrechnungen.html:112
 msgid "Direkte Solarenergie"
 msgstr ""
@@ -4879,6 +4913,10 @@ msgid ""
 "Drucken Sie dieses Dokument bei Bedarf in Originalgrösse auf A4 ohne Skalierung. Der untere "
 "Zahlteil mit Empfangsschein misst 210 × 105 mm. Trennen Sie die Teile vor einer physischen "
 "Weitergabe entlang der Linien ab."
+msgstr ""
+
+#: templates/release/search.html:4
+msgid "Durchsuchen Sie Seiten, Wissen, Gemeinden und LEGs auf OpenLEG."
 msgstr ""
 
 #: billing_policy.py:100 templates/admin/ops.html:87 templates/leg_workspace/correspondence.html:19
@@ -5797,7 +5835,7 @@ msgstr ""
 msgid "Ergebnis zum Fernzugriff"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:45
 msgid "Ergebnisseiten"
 msgstr ""
 
@@ -6004,7 +6042,7 @@ msgid ""
 "Versandproblem können Sie es erneut versuchen."
 msgstr ""
 
-#: app.py:824
+#: app.py:825
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr ""
 
@@ -6136,6 +6174,10 @@ msgstr ""
 
 #: templates/verein/finance_edit.html:2 templates/verein/finance_edit.html:3
 msgid "Finanzbericht vorbereiten"
+msgstr ""
+
+#: templates/release/search.html:8
+msgid "Finden Sie Seiten, Antworten, Gemeinden und LEGs. Eine Postleitzahl führt zur passenden Gemeinde."
 msgstr ""
 
 #: templates/agent_confirmation.html:10
@@ -6738,7 +6780,7 @@ msgstr ""
 msgid "Gebiet und Voraussetzungen prüfen"
 msgstr ""
 
-#: app.py:738
+#: app.py:739
 msgid "Gebäude nicht gefunden."
 msgstr ""
 
@@ -6797,9 +6839,9 @@ msgstr ""
 msgid "Gelöscht nach %(idle)s ohne Aktivität"
 msgstr ""
 
-#: templates/admin/ops.html:88 templates/fuer_gemeinden.html:54 templates/gemeinde/rangliste.html:83
-#: templates/index.html:62 templates/index.html:172 templates/leg_verzeichnis/leg_check.html:23
-#: templates/partials/address_intake.html:77
+#: site_search_routes.py:78 templates/admin/ops.html:88 templates/fuer_gemeinden.html:54
+#: templates/gemeinde/rangliste.html:83 templates/index.html:62 templates/index.html:172
+#: templates/leg_verzeichnis/leg_check.html:23 templates/partials/address_intake.html:77
 msgid "Gemeinde"
 msgstr ""
 
@@ -6824,6 +6866,11 @@ msgstr ""
 
 #: templates/leg_kalkulator.html:74
 msgid "Gemeinde auswählen"
+msgstr ""
+
+#: site_search_routes.py:76
+#, python-format
+msgid "Gemeinde im Kanton %(kanton)s"
 msgstr ""
 
 #: municipality.py:185 templates/api_docs.html:118
@@ -6902,6 +6949,10 @@ msgstr ""
 msgid "Gemeindedaten, PV-Anlagen, Tarife, Registrierungen und Audit-Daten."
 msgstr ""
 
+#: site_search_routes.py:24
+msgid "Gemeinden"
+msgstr ""
+
 #: templates/interest_confirmed.html:17
 msgid "Gemeinden ansehen"
 msgstr ""
@@ -6915,7 +6966,7 @@ msgid "Gemeinden unterstützen"
 msgstr ""
 
 #: templates/gemeinde/vergleich.html:18 templates/release/footer.html:9
-#: templates/release/navigation.html:10
+#: templates/release/navigation.html:10 templates/release/search.html:62
 msgid "Gemeinden vergleichen"
 msgstr ""
 
@@ -7386,8 +7437,9 @@ msgstr ""
 msgid "Gründen Sie eine"
 msgstr ""
 
-#: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:58
-#: templates/leg_verzeichnis/liste.html:14 templates/leg_workspace_base.html:16
+#: site_search_routes.py:30 templates/leg_verzeichnis/detail.html:33
+#: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:14
+#: templates/leg_workspace_base.html:16
 msgid "Gründung"
 msgstr ""
 
@@ -7424,7 +7476,7 @@ msgstr ""
 
 #: templates/leg_gruenden.html:35 templates/leg_gruenden.html:170
 #: templates/release/how_it_works.html:64 templates/release/navigation.html:8
-#: templates/release/software.html:15
+#: templates/release/search.html:62 templates/release/software.html:15
 msgid "Gründung vorbereiten"
 msgstr ""
 
@@ -8427,7 +8479,7 @@ msgstr ""
 msgid "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 msgstr ""
 
-#: app.py:149 formation_guide.py:72
+#: app.py:150 formation_guide.py:72
 msgid "Ist OpenLEG an einen bestimmten Netzbetreiber gebunden?"
 msgstr ""
 
@@ -8444,7 +8496,7 @@ msgstr ""
 msgid "Ja"
 msgstr ""
 
-#: app.py:125 formation_guide.py:48
+#: app.py:126 formation_guide.py:48
 msgid ""
 "Ja. Unter der Lizenz AGPL-3.0-or-later dürfen Sie OpenLEG installieren, nutzen und anpassen. Auch"
 " ein Fork ist erlaubt. Wenn Sie eine veränderte Version über ein Netzwerk anbieten, müssen Sie "
@@ -8577,11 +8629,11 @@ msgstr ""
 msgid "Kanal"
 msgstr ""
 
-#: app.py:160 formation_guide.py:83
+#: app.py:161 formation_guide.py:83
 msgid "Kann OpenLEG unsere Gruppe persönlich unterstützen?"
 msgstr ""
 
-#: app.py:98 formation_guide.py:21
+#: app.py:99 formation_guide.py:21
 msgid "Kann eine LEG mehrere Gemeinden oder VNB-Gebiete umfassen?"
 msgstr ""
 
@@ -8756,7 +8808,7 @@ msgstr ""
 msgid "Keine Datei ausgewählt"
 msgstr ""
 
-#: app.py:554 app.py:606 app.py:659
+#: app.py:555 app.py:607 app.py:660
 msgid "Keine Daten empfangen."
 msgstr ""
 
@@ -8866,6 +8918,11 @@ msgstr ""
 msgid "Keine Tracking-Cookies."
 msgstr ""
 
+#: templates/release/search.html:49
+#, python-format
+msgid "Keine Treffer für «%(query)s»"
+msgstr ""
+
 #: member_invoices.py:766
 msgid "Keine Verbrauchskosten"
 msgstr ""
@@ -8886,7 +8943,7 @@ msgstr ""
 msgid "Keine ausstehenden Einträge"
 msgstr ""
 
-#: app.py:584
+#: app.py:585
 msgid "Keine direkten Partner gefunden."
 msgstr ""
 
@@ -8998,6 +9055,7 @@ msgstr ""
 #: templates/documents/dso_registration.html:32 templates/impressum.html:34
 #: templates/partials/site_footer.html:12 templates/release/community.html:3
 #: templates/release/footer.html:8 templates/release/navigation.html:12
+#: templates/release/search.html:62
 msgid "Kontakt"
 msgstr ""
 
@@ -9121,7 +9179,7 @@ msgstr ""
 msgid "Korrigiert durch:"
 msgstr ""
 
-#: templates/pricing.html:24 templates/release/pricing.html:12
+#: site_search_routes.py:39 templates/pricing.html:24 templates/release/pricing.html:12
 msgid "Kosten"
 msgstr ""
 
@@ -9276,9 +9334,9 @@ msgstr ""
 msgid "LEG gesetzlich möglich"
 msgstr ""
 
-#: sandbox_seed.py:49 templates/index.html:71 templates/index.html:165 templates/leg_gruenden.html:24
-#: templates/release/navigation.html:8 templates/sandbox/formation.html:2
-#: templates/sandbox/formation.html:5 templates/sandbox/home.html:66
+#: sandbox_seed.py:49 site_search_routes.py:36 templates/index.html:71 templates/index.html:165
+#: templates/leg_gruenden.html:24 templates/release/navigation.html:8
+#: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:66
 msgid "LEG gründen"
 msgstr ""
 
@@ -9323,6 +9381,7 @@ msgid "LEG nicht gefunden."
 msgstr ""
 
 #: templates/release/how_it_works.html:59 templates/release/navigation.html:8
+#: templates/release/search.html:62
 msgid "LEG prüfen"
 msgstr ""
 
@@ -9479,6 +9538,10 @@ msgstr ""
 
 #: templates/documents/participant_contract.html:11
 msgid "LEG:"
+msgstr ""
+
+#: site_search_routes.py:25
+msgid "LEGs"
 msgstr ""
 
 #: templates/pricing.html:39
@@ -9704,7 +9767,7 @@ msgstr ""
 msgid "Lizenz"
 msgstr ""
 
-#: app.py:134 formation_guide.py:57 templates/release/pricing.html:6
+#: app.py:135 formation_guide.py:57 templates/release/pricing.html:6
 msgid "Lizenz lesen"
 msgstr ""
 
@@ -9985,6 +10048,11 @@ msgstr ""
 
 #: templates/verein/member.html:2 templates/verein/member.html:3
 msgid "Meine Vereinsmitgliedschaft"
+msgstr ""
+
+#: templates/release/search.html:24
+#, python-format
+msgid "Meinten Sie «%(suggestion)s»?"
 msgstr ""
 
 #: templates/gemeinde/onboarding.html:7 templates/gemeinde/onboarding.html:20
@@ -10604,13 +10672,13 @@ msgid ""
 "Ihre Anschlüsse passen, klären Sie mit dem Netzbetreiber."
 msgstr ""
 
-#: app.py:102 formation_guide.py:25
+#: app.py:103 formation_guide.py:25
 msgid ""
 "Nein. Eine LEG bleibt innerhalb einer politischen Gemeinde und im Netzgebiet eines "
 "Verteilnetzbetreibers. Für mehrere Gemeinden oder VNB-Gebiete braucht es separate lokale LEGs."
 msgstr ""
 
-#: app.py:89 formation_guide.py:12
+#: app.py:90 formation_guide.py:12
 msgid ""
 "Nein. Vorhandene gesetzeskonforme Smart Meter des Verteilnetzbetreibers werden weiterverwendet. "
 "Fehlende erforderliche Geräte installiert der Verteilnetzbetreiber nach einem gültigen Antrag. "
@@ -10629,7 +10697,7 @@ msgstr ""
 msgid "Netz (kWh)"
 msgstr ""
 
-#: sandbox_seed.py:111 templates/release/sandbox_preview.html:7
+#: sandbox_seed.py:111 site_search_routes.py:38 templates/release/sandbox_preview.html:7
 msgid "Netzbetreiber"
 msgstr ""
 
@@ -11188,7 +11256,8 @@ msgstr ""
 msgid "Nächste Schritte"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/verein/queue.html:17
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:45
+#: templates/verein/queue.html:17
 msgid "Nächste Seite"
 msgstr ""
 
@@ -11516,7 +11585,7 @@ msgid ""
 " Gemeinden und Entwickler, ohne Lizenzkosten oder Datenverkauf."
 msgstr ""
 
-#: app.py:153 formation_guide.py:76 templates/leg_gruenden.html:87
+#: app.py:154 formation_guide.py:76 templates/leg_gruenden.html:87
 msgid ""
 "OpenLEG ist ohne Bindung an einen bestimmten VNB konzipiert. Noch ist nicht jede VNB-Anbindung "
 "fertig umgesetzt. Anmeldung und Datenlieferung müssen pro VNB konfiguriert werden."
@@ -11688,7 +11757,7 @@ msgstr ""
 msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr ""
 
-#: app.py:805
+#: app.py:806
 msgid "OpenLEG: Löschung bestätigen"
 msgstr ""
 
@@ -11791,7 +11860,7 @@ msgstr ""
 msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr ""
 
-#: app.py:591
+#: app.py:592
 msgid "Partner gefunden!"
 msgstr ""
 
@@ -11799,7 +11868,7 @@ msgstr ""
 msgid "Passwort"
 msgstr ""
 
-#: app.py:1092
+#: app.py:1093
 msgid "Period not found"
 msgstr ""
 
@@ -11853,7 +11922,7 @@ msgstr ""
 msgid "Pilotgemeinde"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:14
+#: site_search_routes.py:29 templates/leg_verzeichnis/liste.html:14
 msgid "Planung"
 msgstr ""
 
@@ -11884,6 +11953,10 @@ msgstr ""
 
 #: templates/verein/recipient_edit.html:7
 msgid "Postleitzahl"
+msgstr ""
+
+#: templates/release/search.html:41
+msgid "Postleitzahlen: amtliches Ortschaftenverzeichnis von swisstopo."
 msgstr ""
 
 #: templates/gemeinde/pilotgemeinde.html:38
@@ -12256,6 +12329,10 @@ msgstr ""
 
 #: templates/leg_verzeichnis/leg_check.html:92
 msgid "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
+msgstr ""
+
+#: templates/release/search.html:50
+msgid "Prüfen Sie die Schreibweise, verwenden Sie weniger Wörter oder suchen Sie nach einer Postleitzahl."
 msgstr ""
 
 #: formation_wizard.py:364
@@ -12778,7 +12855,7 @@ msgstr ""
 msgid "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
 msgstr ""
 
-#: app.py:138 formation_guide.py:61
+#: app.py:139 formation_guide.py:61
 msgid "Repository öffnen"
 msgstr ""
 
@@ -13120,13 +13197,17 @@ msgid ""
 "durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:45
 #, python-format
 msgid "Seite %(page)s"
 msgstr ""
 
 #: i18n.py:88
 msgid "Seite nicht gefunden"
+msgstr ""
+
+#: site_search_routes.py:22
+msgid "Seiten"
 msgstr ""
 
 #: templates/verein/queue.html:17
@@ -13172,11 +13253,11 @@ msgid ""
 "es können laufende Kosten entstehen."
 msgstr ""
 
-#: app.py:748 app.py:755
+#: app.py:749 app.py:756
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr ""
 
-#: app.py:599
+#: app.py:600
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr ""
 
@@ -13392,7 +13473,7 @@ msgstr ""
 msgid "Simuliertes Postfach"
 msgstr ""
 
-#: templates/index.html:215
+#: site_search_routes.py:37 templates/index.html:215
 msgid "Smart Meter"
 msgstr ""
 
@@ -13968,6 +14049,14 @@ msgstr ""
 msgid "Störungsmeldung senden"
 msgstr ""
 
+#: templates/release/search.html:10
+msgid "Suchbegriff"
+msgstr ""
+
+#: templates/release/search.html:4 templates/release/search.html:8
+msgid "Suche"
+msgstr ""
+
 #: templates/gemeinde/onboarding.html:112
 msgid "Suche aktuell nicht verfügbar."
 msgstr ""
@@ -13976,7 +14065,14 @@ msgstr ""
 msgid "Suche zurücksetzen"
 msgstr ""
 
+#: templates/release/search.html:4
+#, python-format
+msgid "Suche: %(query)s"
+msgstr ""
+
 #: templates/gemeinde/verzeichnis.html:35 templates/leg_verzeichnis/liste.html:16
+#: templates/partials/site_search.html:4 templates/partials/site_search.html:6
+#: templates/release/search.html:15
 msgid "Suchen"
 msgstr ""
 
@@ -14432,7 +14528,7 @@ msgstr ""
 msgid "Unterstützt werden nur camt.053 und camt.054."
 msgstr ""
 
-#: app.py:167 formation_guide.py:90
+#: app.py:168 formation_guide.py:90
 msgid "Unterstützung anfragen"
 msgstr ""
 
@@ -15060,7 +15156,8 @@ msgstr ""
 msgid "Vorher prüfen"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/verein/queue.html:17
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:45
+#: templates/verein/queue.html:17
 msgid "Vorherige Seite"
 msgstr ""
 
@@ -15090,7 +15187,7 @@ msgstr ""
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
 msgstr ""
 
-#: app.py:163 formation_guide.py:86
+#: app.py:164 formation_guide.py:86
 msgid ""
 "Vorträge, Workshops und Projektunterstützung bieten wir nach vorgängiger Vereinbarung gegen "
 "Honorar an."
@@ -15273,6 +15370,10 @@ msgstr ""
 msgid "Website (optional)"
 msgstr ""
 
+#: templates/partials/site_search.html:3
+msgid "Website durchsuchen"
+msgstr ""
+
 #: registry_intake.py:81
 msgid "Website-URL muss mit http:// oder https:// beginnen."
 msgstr ""
@@ -15398,7 +15499,7 @@ msgstr ""
 msgid "Wer handelt mit diesem Schlüssel?"
 msgstr ""
 
-#: app.py:109 formation_guide.py:32
+#: app.py:110 formation_guide.py:32
 msgid "Wer ist für die Abrechnung zuständig?"
 msgstr ""
 
@@ -15561,7 +15662,7 @@ msgid ""
 "erhalten Sie die nächsten Schritte."
 msgstr ""
 
-#: app.py:877
+#: app.py:878
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -15698,7 +15799,7 @@ msgstr ""
 msgid "Wirksamkeitsdatum"
 msgstr ""
 
-#: templates/release/navigation.html:11
+#: site_search_routes.py:23 templates/release/navigation.html:11
 msgid "Wissen"
 msgstr ""
 
@@ -15711,6 +15812,7 @@ msgid "Wissen und Daten"
 msgstr ""
 
 #: templates/release/footer.html:9 templates/release/navigation.html:11
+#: templates/release/search.html:62
 msgid "Wissen und Quellen"
 msgstr ""
 
@@ -15995,7 +16097,7 @@ msgstr ""
 msgid "Zu meinen Solargeräten"
 msgstr ""
 
-#: app.py:185 templates/partials/address_intake.html:115
+#: app.py:186 templates/partials/address_intake.html:115
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut."
 msgstr ""
 
@@ -16139,6 +16241,10 @@ msgstr ""
 msgid "Zurzeit sind keine weiteren Haushalte für eine Anfrage verfügbar."
 msgstr ""
 
+#: templates/release/search.html:25
+msgid "Zurück zu allen Treffern"
+msgstr ""
+
 #: templates/member_invoice_detail.html:34
 msgid "Zurück zu meinen Rechnungen"
 msgstr ""
@@ -16261,8 +16367,8 @@ msgstr ""
 msgid "acknowledged"
 msgstr ""
 
-#: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:58
-#: templates/leg_verzeichnis/liste.html:14
+#: site_search_routes.py:31 templates/leg_verzeichnis/detail.html:33
+#: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:14
 msgid "aktiv"
 msgstr ""
 
@@ -16316,7 +16422,7 @@ msgstr ""
 msgid "bis 40"
 msgstr ""
 
-#: app.py:732
+#: app.py:733
 msgid "building_id und csv_content erforderlich."
 msgstr ""
 
@@ -16529,8 +16635,8 @@ msgstr ""
 msgid "other"
 msgstr ""
 
-#: templates/leg_verzeichnis/detail.html:33 templates/leg_verzeichnis/leg_check.html:58
-#: templates/leg_verzeichnis/liste.html:14
+#: site_search_routes.py:32 templates/leg_verzeichnis/detail.html:33
+#: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:14
 msgid "pausiert"
 msgstr ""
 
@@ -16568,7 +16674,7 @@ msgid ""
 "einen Abrechnungslauf und definitive Rechnungsdokumente sind noch kein durchgängiger Ablauf."
 msgstr ""
 
-#: app.py:729
+#: app.py:730
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr ""
 
@@ -16701,6 +16807,13 @@ msgstr ""
 #: templates/gemeinde/dashboard.html:4
 msgid "| OpenLEG"
 msgstr ""
+
+#: templates/release/search.html:22
+#, python-format
+msgid "«%(words)s» kommt auf der Website nicht vor. Die Treffer enthalten die übrigen Wörter."
+msgid_plural "«%(words)s» kommen auf der Website nicht vor. Die Treffer enthalten die übrigen Wörter."
+msgstr[0] ""
+msgstr[1] ""
 
 #: templates/emails/day_0_welcome.html:63 templates/emails/day_14_formation.html:86
 #: templates/emails/day_3_smartmeter.html:45 templates/emails/day_7_consumption.html:60
