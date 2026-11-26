@@ -19807,8 +19807,8 @@ msgid ""
 "Die LEG entscheidet, wen sie beauftragt und wer Ergebnisse freigibt. Das muss weder der "
 "Netzbetreiber noch die Gemeinde sein."
 msgstr ""
-"La CEL décide qui elle mandate et qui valide les résultats. Il ne doit s'agir ni du gestionnaire "
-"du réseau ni de la commune."
+"La CEL décide qui elle mandate et qui valide les résultats. Il ne s'agit pas forcément du "
+"gestionnaire du réseau ou de la commune."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/how_it_works.html:31
