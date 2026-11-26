@@ -59,6 +59,11 @@
   .site-search-panel-inner { padding: 12px; }
   .site-search-listbox { grid-template-columns: minmax(0, 1fr); }
 }
+/* From 768 to 1099 px the bar is sticky: the panel scrolls on its own, below
+   the field, so the field and the highlighted option both stay on screen. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .site-search-panel:not([data-layout='inline']) { max-height: var(--site-search-max, 50vh); overflow-y: auto; overscroll-behavior: contain; }
+}
 @media (forced-colors: active) {
   .site-search-option[aria-selected='true'] { outline: 2px solid Highlight; }
 }

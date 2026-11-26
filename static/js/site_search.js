@@ -24,15 +24,16 @@
         }
     }
 
-    // Without storage the choice still holds for this page.
+    // Stored choices apply in every tab; only without storage does the choice
+    // stay local to this page.
     let slashOverride = null;
     function setSlash(enabled) {
-        slashOverride = enabled;
         try {
             if (enabled) root.localStorage.removeItem(SLASH_SETTING);
             else root.localStorage.setItem(SLASH_SETTING, 'off');
+            slashOverride = null;
         } catch (error) {
-            // Private browsing or blocked storage: keep the page-local choice.
+            slashOverride = enabled;
         }
     }
     const slashActive = () => (slashOverride === null ? slashEnabled() : slashOverride);
@@ -94,12 +95,21 @@
         let request = null;
         let sequence = 0;
         let shown = '';
+        // The query whose answer is queued or on its way.
+        let pending = '';
 
         function place() {
             if (inline || panel.hidden) return;
             const anchor = form.closest('nav, header') || form;
             const bottom = Math.round(anchor.getBoundingClientRect().bottom);
             panel.style.setProperty('--site-search-top', bottom + 'px');
+            // Where the panel sits in the menu, it scrolls within the space left
+            // below it, so the field never has to scroll away.
+            const top = panel.getBoundingClientRect().top;
+            const height = root.innerHeight;
+            if (Number.isFinite(top) && Number.isFinite(height)) {
+                panel.style.setProperty('--site-search-max', Math.max(160, Math.floor(height - top - 12)) + 'px');
+            }
         }
 
         function setActive(index) {
@@ -228,16 +238,21 @@
             if (mine !== sequence) return;
             clearTimeout(loadingTimer);
             request = null;
+            pending = '';
             if (data) {
+                listbox.hidden = false;
                 render(data);
                 return;
             }
             options = [];
             setActive(-1);
             listbox.replaceChildren();
+            // No empty listbox next to the error: the status speaks alone.
+            listbox.hidden = true;
             listbox.removeAttribute('aria-busy');
             listbox.removeAttribute('inert');
             shown = '';
+            pending = '';
             showStatus(failure || '');
             open();
         }
@@ -250,6 +265,7 @@
             if (request) request.abort();
             request = null;
             sequence += 1;
+            pending = '';
             setActive(-1);
             options = [];
             shown = '';
@@ -266,20 +282,31 @@
                 close();
                 return;
             }
+            pending = query;
             timer = setTimeout(() => load(query), DEBOUNCE_MS);
         }
 
+        // Fresh suggestions for the current text, unless they are on their way.
+        function refresh() {
+            const query = input.value.trim().slice(0, MAX_LENGTH);
+            if (query.length < MIN_LENGTH || query === pending) return;
+            schedule();
+        }
+
         input.addEventListener('input', schedule);
+        // Refocusing asks again: a retained answer may list a LEG the search has
+        // dropped since.
         input.addEventListener('focus', () => {
-            if (shown && shown === input.value.trim() && options.length) open();
+            if (panel.hidden) refresh();
         });
         input.addEventListener('keydown', event => {
+            // An IME confirming text owns its keys, Enter included.
+            if (event.isComposing || event.keyCode === 229) return;
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 if (panel.hidden || !options.length) {
                     if (input.value.trim().length >= MIN_LENGTH) {
                         event.preventDefault();
-                        if (shown === input.value.trim() && options.length) open();
-                        else schedule();
+                        refresh();
                     }
                     return;
                 }
@@ -386,6 +413,10 @@
     document.addEventListener('toggle', event => {
         if (event.target && event.target.open) controllers.forEach(item => item.close());
     }, true);
+    // Another tab changed the shortcut: follow it here too.
+    root.addEventListener('storage', event => {
+        if (!event || event.key === SLASH_SETTING || event.key === null) showShortcuts();
+    });
     const reposition = () => controllers.forEach(item => item.place());
     root.addEventListener('resize', reposition);
     root.addEventListener('scroll', reposition, {passive: true});

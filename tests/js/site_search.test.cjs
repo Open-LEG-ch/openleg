@@ -180,8 +180,9 @@ function setup({inline = false, extraScript = false, abortable = true, stored = 
     const key = (name, init = {}) => input.dispatch('keydown', {key: name, ...init});
     const options = () => [...listbox.walk()].filter(node => node.getAttribute('role') === 'option');
     const status = () => panel.querySelector('p');
+    const fireWindow = (type, init = {}) => (windowListeners[type] || []).forEach(listener => listener(init));
     return {document, nav, toggle, form, input, other, panel, listbox, timers, requests, assigned, context,
-        fire, runTimers, type, reply, key, options, status, flush, flyout, shortcut, storage, outside};
+        fire, runTimers, type, reply, key, options, status, flush, flyout, shortcut, storage, outside, fireWindow};
 }
 
 test('the field becomes a combobox that controls a hidden listbox', () => {
@@ -522,4 +523,64 @@ test('Escape with a flyout open still cancels a pending answer', async () => {
     await reply(requests[0], DATA);
     assert.equal(panel.hidden, true, 'the late answer stays closed');
     assert.equal(input.value, 'Messpunkt');
+});
+
+
+test('an IME confirming text keeps Enter and the arrows to itself', async () => {
+    const {type, requests, reply, key, assigned} = setup();
+    await type('Baden');
+    await reply(requests[0], DATA);
+    key('ArrowDown');
+    const event = key('Enter', {isComposing: true});
+    assert.equal(event.defaultPrevented, false);
+    assert.deepEqual(assigned, [], 'no option is opened while composing');
+    assert.equal(key('ArrowDown', {keyCode: 229}).defaultPrevented, false);
+    assert.equal(key('Enter').defaultPrevented, true, 'a plain Enter still opens the option');
+});
+
+test('repeated arrows keep the request that is already on its way', async () => {
+    const {type, requests, key, runTimers} = setup();
+    await type('Baden');
+    assert.equal(requests.length, 1);
+    for (let i = 0; i < 5; i += 1) key('ArrowDown');
+    await runTimers(120);
+    assert.equal(requests.length, 1, 'no new request');
+    assert.notEqual(requests[0].aborted, true, 'the first one keeps running');
+});
+
+test('refocusing the field asks again instead of reopening an old answer', async () => {
+    const {type, requests, reply, key, input, panel, runTimers} = setup();
+    await type('Baden');
+    await reply(requests[0], DATA);
+    key('Escape');
+    assert.equal(panel.hidden, true);
+    input.dispatch('focus');
+    assert.equal(panel.hidden, true, 'nothing old reopens');
+    await runTimers(120);
+    assert.equal(requests.length, 2, 'a fresh answer is requested');
+    await reply(requests[1], DATA);
+    assert.equal(panel.hidden, false);
+});
+
+test('a failed request hides the empty listbox behind its message', async () => {
+    const {type, requests, reply, listbox, status, panel} = setup();
+    await type('Baden');
+    await reply(requests[0], null, {status: 429});
+    assert.equal(panel.hidden, false);
+    assert.equal(listbox.hidden, true);
+    assert.notEqual(status().textContent, '');
+    await type('Bade');
+    await reply(requests[1], DATA);
+    assert.equal(listbox.hidden, false);
+});
+
+test('a shortcut choice made in another tab applies here too', () => {
+    const {input, storage, fireWindow} = setup();
+    assert.match(input.getAttribute('aria-keyshortcuts'), /^\/ /);
+    storage['openleg.siteSearch.slash'] = 'off';
+    fireWindow('storage', {key: 'openleg.siteSearch.slash'});
+    assert.equal(input.getAttribute('aria-keyshortcuts'), 'Control+K Meta+K');
+    delete storage['openleg.siteSearch.slash'];
+    fireWindow('storage', {key: 'openleg.siteSearch.slash'});
+    assert.match(input.getAttribute('aria-keyshortcuts'), /^\/ /);
 });

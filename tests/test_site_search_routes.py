@@ -555,3 +555,17 @@ def test_suggestions_cap_the_query_and_are_rate_limited(search_web):
     statuses = [client.get("/api/search/suggestions").status_code for _ in range(239)]
     assert set(statuses) == {200}
     assert client.get("/api/search/suggestions").status_code == 429
+
+
+def test_suggestions_answer_in_their_language_without_switching_the_session(
+    search_web,
+):
+    """An older German tab must not switch a session the visitor set to French."""
+    client = search_web.test_client()
+    assert client.get("/?lang=fr-CH").status_code == 200
+    with client.session_transaction() as session:
+        assert session["locale"] == "fr_CH"
+    data = client.get("/api/search/suggestions?q=Baden&lang=de-CH").get_json()
+    assert data["results_label"] == "Alle Treffer für «Baden» anzeigen"
+    with client.session_transaction() as session:
+        assert session["locale"] == "fr_CH"

@@ -343,3 +343,21 @@ test('Escape closes a hovered panel but leaves focus in the nav search field', (
     assert.equal(groups[1].open, false);
     assert.equal(doc.activeElement, field, 'typing continues in the search field');
 });
+
+
+test('in the phone menu Escape returns focus to the trigger of the closed group', () => {
+    const {toggle, summaries, groups, slot, click, key} = setup({desktop: false});
+    click(toggle);
+    click(summaries[0]);
+    assert.equal(groups[0].open, true);
+    summaries[1].focus();
+    key(summaries[1], 'Escape');
+    assert.equal(groups[0].open, false);
+    assert.equal(doc.activeElement, summaries[0]);
+    click(summaries[0]);
+    const field = slot.querySelector('input');
+    field.focus();
+    key(field, 'Escape');
+    assert.equal(groups[0].open, false);
+    assert.equal(doc.activeElement, field, 'the search field keeps focus');
+});

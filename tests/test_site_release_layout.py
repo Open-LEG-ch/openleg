@@ -651,9 +651,13 @@ def test_escape_closes_a_hovered_flyout_before_it_clears_the_search(release_page
     assert field.evaluate("el => el === document.activeElement")
 
 
-def test_the_selected_suggestion_stays_on_screen_in_the_tablet_menu(release_page):
+@pytest.mark.parametrize("height", [600, 450])
+def test_the_selected_suggestion_stays_on_screen_in_the_tablet_menu(
+    release_page, height
+):
+    """The panel scrolls on its own, so neither the field nor the option leaves."""
     page = release_page
-    page.set_viewport_size({"width": 900, "height": 600})
+    page.set_viewport_size({"width": 900, "height": height})
     assert page.goto("http://qa.test/pricing").status == 200
     _navigation_search_ready(page)
     page.keyboard.press("/")
@@ -663,5 +667,12 @@ def test_the_selected_suggestion_stays_on_screen_in_the_tablet_menu(release_page
     for key in ("ArrowUp", "ArrowDown", "ArrowDown"):
         page.keyboard.press(key)
         selected = page.locator('.release-nav [role="option"][aria-selected="true"]')
-        box = selected.bounding_box()
-        assert box and box["y"] >= 0 and box["y"] + box["height"] <= 600, (key, box)
+        for name, box in (
+            ("option", selected.bounding_box()),
+            ("field", field.bounding_box()),
+        ):
+            assert box and box["y"] >= 0 and box["y"] + box["height"] <= height, (
+                key,
+                name,
+                box,
+            )

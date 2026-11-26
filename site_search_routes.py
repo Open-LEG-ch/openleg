@@ -241,3 +241,7 @@ def suggestions():
     response.headers["Cache-Control"] = "private, max-age=60"
     response.vary.add("Cookie")
     return response
+
+
+# Typing in an older tab must not switch the language of the whole session.
+suggestions.keeps_session_language = True
