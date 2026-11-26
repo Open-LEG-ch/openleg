@@ -315,3 +315,19 @@ test('Escape dismisses a hovered panel even when focus is elsewhere on the page'
     assert.equal(groups[2].open, false);
     assert.equal(doc.activeElement, link, 'focus stays where the visitor left it');
 });
+
+test('on narrow screens one Escape closes the open group, a second closes the menu', () => {
+    const {toggle, summaries, panels, groups, click, key} = setup({desktop: false});
+    click(toggle);
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+    click(summaries[1]);
+    const link = panels[1].querySelector('a');
+    link.focus();
+    key(link, 'Escape');
+    assert.equal(groups[1].open, false, 'the first Escape closes the group');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true', 'the menu stays open');
+    assert.equal(doc.activeElement, summaries[1]);
+    key(summaries[1], 'Escape');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'false', 'the second Escape closes the menu');
+    assert.equal(doc.activeElement, toggle);
+});
