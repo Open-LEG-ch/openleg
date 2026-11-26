@@ -68,6 +68,7 @@ from registration import CONSENT_VERSION, parse_consents  # noqa: F401
 from security_extensions import RATE_LIMIT_RETRY_AFTER_SECONDS, limiter
 from security_utils import log_security_event
 from self_host import self_host_bp
+from site_search_routes import site_search_bp
 from telemetry_routes import telemetry_bp
 from translation_markers import gettext_noop
 from utility_portal import utility_bp
@@ -1183,6 +1184,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
         equipment_bp,
         advisory_bp,
         site_release.site_bp,
+        site_search_bp,
         verein_bp,
         events_bp,
         finance_bp,

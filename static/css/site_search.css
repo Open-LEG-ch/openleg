@@ -1,0 +1,64 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+ * Site search: the compact field in the navigation and the /suche page.
+ * Colours follow /design.md; the roof colour only marks lines. */
+.site-search { position: relative; display: flex; align-items: center; flex: 0 1 200px; min-width: 120px; }
+.site-search-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.site-search .site-search-input {
+  flex: 1 1 auto; width: 0; min-width: 0; height: 44px; min-height: 44px; padding: 0 48px 0 16px;
+  border: 1px solid #70798d; border-radius: 999px; background: #fffdf8; color: #26324b;
+  font-size: 16px; appearance: none;
+}
+.site-search .site-search-input::placeholder { color: #505869; opacity: 1; }
+.site-search .site-search-input::-webkit-search-cancel-button { display: none; }
+.site-search-submit {
+  position: absolute; right: 0; top: 0; display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border: 0; border-radius: 999px; background: transparent; color: #243b85; cursor: pointer;
+}
+.site-search-submit:hover { color: #1b2f6a; }
+.site-search .site-search-input:focus-visible { outline: 3px solid #243b85; outline-offset: 2px; }
+@media (max-width: 1099px) {
+  .site-search { flex: none; width: 100%; }
+}
+
+/* Results page */
+.site-search-page-form { margin-top: 32px; max-width: 720px; }
+.site-search-page-form label { display: block; margin-bottom: 8px; font-weight: 600; }
+.site-search-page-field { display: flex; flex-wrap: wrap; gap: 12px; }
+.site-search-page-field .site-search-input { flex: 1 1 14rem; min-width: 0; height: 48px; padding: 0 14px; border: 1px solid #70798d; border-radius: 8px; background: #fffdf8; color: #26324b; }
+.site-search-page-field .release-button { min-height: 48px; }
+.site-search-summary { margin-top: 32px; display: grid; gap: 8px; }
+.site-search-suggestion a { font-weight: 600; }
+.site-search-group { margin-top: 40px; padding-top: 32px; border-top: 1px solid #bcc3d0; }
+.site-search-group h2 { display: flex; align-items: center; gap: 12px; font-size: 32px; }
+.site-search-count {
+  display: inline-flex; align-items: center; min-width: 32px; height: 28px; padding: 0 10px; justify-content: center;
+  border: 1px solid #243b85; border-radius: 999px; font: 600 16px/1 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #243b85; letter-spacing: 0;
+}
+.site-search-results { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 16px; max-width: 760px; }
+.site-search-result { min-width: 0; }
+.site-search-title { display: inline-flex; align-items: center; min-height: 44px; font-size: 20px; font-weight: 600; line-height: 1.4; color: #243b85; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.site-search-title:hover { text-decoration-color: #cb815c; text-decoration-thickness: 2px; }
+.site-search-language { display: inline-block; margin-left: 8px; padding: 0 8px; border: 1px solid #70798d; border-radius: 999px; font-size: 14px; line-height: 1.6; color: #505869; vertical-align: middle; }
+.site-search-meta { font-size: 14px; color: #505869; }
+.site-search-snippet { margin-top: 6px; }
+.site-search mark, .site-search-page mark, .site-search-panel mark {
+  background: none; color: inherit; font-weight: 700;
+  text-decoration: underline 2px #cb815c; text-underline-offset: 3px;
+}
+.site-search-title mark { text-decoration: none; }
+.site-search-more { margin-top: 20px; }
+.site-search-more a, .site-search-suggestion a, .site-search-back { min-height: 44px; display: inline-flex; align-items: center; }
+.site-search-source { margin-top: 16px; font-size: 14px; color: #505869; }
+.site-search-pages { margin-top: 32px; align-items: center; }
+.site-search-empty { margin-top: 40px; }
+.site-search-help { margin-top: 48px; padding-top: 32px; border-top: 1px solid #bcc3d0; }
+.site-search-help h2 { font-size: 28px; margin-bottom: 16px; }
+.site-search-examples { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.site-search-examples a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #243b85; border-radius: 999px; text-decoration: none; }
+.site-search-examples a:hover { background: #edf1f9; }
+.site-search-shortcuts { list-style: none; margin: 0; padding: 0; display: grid; }
+.site-search-shortcuts a { display: flex; align-items: center; min-height: 44px; border-bottom: 1px solid #bcc3d0; }
+@media (max-width: 767px) {
+  .site-search-group h2 { font-size: 26px; }
+  .site-search-help h2 { font-size: 24px; }
+}

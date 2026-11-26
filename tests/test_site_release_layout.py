@@ -395,3 +395,37 @@ def test_desktop_header_labels_stay_on_one_line(release_page, locale):
               .map(el => Math.round(el.getBoundingClientRect().height))"""
         )
         assert heights and max(heights) <= 34, (width, heights)
+
+
+@pytest.mark.parametrize("width", [320, 1280])
+def test_search_results_fit_and_keep_large_targets(release_page, width):
+    page = release_page
+    page.set_viewport_size({"width": width, "height": 900})
+    assert page.goto("http://qa.test/suche?q=Messpunkt").status == 200
+    assert page.locator(".site-search-result").count() >= 1
+    assert page.evaluate("document.documentElement.scrollWidth") == width
+    for selector in (".site-search-title", ".site-search-page-form button"):
+        for box in page.locator(selector).evaluate_all(
+            "nodes => nodes.map(node => node.getBoundingClientRect().height)"
+        ):
+            assert box >= 44, selector
+    for selector in (".site-search-meta", ".site-search-snippet", ".site-search-title"):
+        color = page.locator(selector).first.evaluate(
+            "el => getComputedStyle(el).color"
+        )
+        rgb = [int(part) for part in color[color.index("(") + 1 : -1].split(",")[:3]]
+        hex_color = "#" + "".join(f"{part:02x}" for part in rgb)
+        assert contrast(hex_color, "#f6f2ea") >= 4.5, selector
+    mark = page.locator(".site-search-snippet mark").first
+    assert mark.evaluate("el => getComputedStyle(el).fontWeight") == "700"
+
+
+def test_empty_search_offers_large_example_links(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 320, "height": 900})
+    assert page.goto("http://qa.test/suche?q=qqqqq").status == 200
+    assert page.evaluate("document.documentElement.scrollWidth") == 320
+    heights = page.locator(
+        ".site-search-examples a, .site-search-shortcuts a"
+    ).evaluate_all("nodes => nodes.map(node => node.getBoundingClientRect().height)")
+    assert heights and min(heights) >= 44
