@@ -7,18 +7,20 @@
       {% set groups = [
         (_('LEG gründen'), [('/leg-gruenden', _('Gründung vorbereiten')), ('/fuer-bewohner', _('Adresse und Nachbarschaft')), ('/leg-check', _('LEG prüfen')), ('/leg-verzeichnis', _('LEG-Verzeichnis'))]),
         (_('Software'), [('/software', _('Funktionen und Ablauf')), ('/open-source', _('Quellcode und Lizenz')), ('/pricing', _('Kosten und Betrieb')), ('/self-host', _('Selbst betreiben')), ('/api/v1/docs', _('Öffentliche API'))]),
-        (_('Für Gemeinden'), [('/fuer-gemeinden', _('Gemeinden unterstützen')), ('/rangliste', _('Gemeinden vergleichen')), ('/gemeinde/onboarding', _('Gemeinde anmelden'))]),
+        (pgettext('navigation', 'Für Gemeinden'), [('/fuer-gemeinden', _('Gemeinden unterstützen')), ('/rangliste', _('Gemeinden vergleichen')), ('/gemeinde/onboarding', _('Gemeinde anmelden'))]),
         (_('Wissen'), [('/wissen', _('Wissen und Quellen')), ('/how-it-works', _('So funktioniert eine LEG')), ('/dokumente', _('Dokumente')), ('/leg-kalkulator', _('Kosten abschätzen')), ('/rangliste/methodik', _('Daten und Methodik'))]),
         (_('Verein'), [('/verein', _('Zweck und Mitgliedschaft')), ('/community', _('Community')), ('/veranstaltungen', _('Treffen')), ('/mitmachen', _('Mitmachen')), ('/kontakt', _('Kontakt'))])
       ] %}
       {% for label, links in groups %}
-      <details class="release-nav-group">
-        <summary>{{ label }} <span aria-hidden="true">⌄</span></summary>
-        <ul>{% for href, text in links %}<li><a href="{{ href|localized_url }}"{% if request.path == href %} aria-current="page"{% endif %}>{{ text }}</a></li>{% endfor %}</ul>
+      <details class="release-nav-group" name="release-nav"{% if request.path in links|map('first') %} data-current-section{% endif %}>
+        <summary><span class="release-nav-line">{{ label }}</span></summary>
+        <div class="release-nav-panel"><ul class="release-container">{% for href, text in links %}<li><a href="{{ href|localized_url }}"{% if request.path == href %} aria-current="page"{% endif %}><span class="release-nav-line">{{ text }}</span></a></li>{% endfor %}</ul></div>
       </details>
       {% endfor %}
+      <div class="release-search-slot">{% include 'partials/site_search.html' ignore missing %}</div>
       <a class="release-login" href="{{ '/login'|localized_url }}"{% if request.path == '/login' %} aria-current="page"{% endif %}>{{ _('Anmelden') }}</a>
-      <details class="release-nav-group release-language"><summary>{{ supported_locales.get(current_locale|replace('-', '_'), _('Sprache')) }} <span aria-hidden="true">⌄</span></summary><div class="release-language-options">{% include 'partials/language_switcher.html' %}</div></details>
+      {# Wide screens show the language code and keep the name for assistive technology; the menu shows the name. #}
+      <details class="release-nav-group release-language" name="release-nav"><summary><span class="release-nav-line"><span class="release-language-code">{{ current_locale[:2]|upper }}</span> <span class="release-language-name">{{ supported_locales.get(current_locale|replace('-', '_'), _('Sprache')) }}</span></span></summary><div class="release-nav-panel release-language-options"><div class="release-container">{% include 'partials/language_switcher.html' %}</div></div></details>
     </div>
     <a class="release-github" href="https://github.com/Open-LEG-ch/openleg">{% include 'partials/github_mark.html' %}<span>GitHub</span></a>
   </div>

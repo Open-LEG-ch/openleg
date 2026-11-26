@@ -22,6 +22,7 @@ from flask import (
 from flask_babel import Babel, get_locale
 from flask_babel import gettext as babel_gettext
 from flask_babel import ngettext as babel_ngettext
+from flask_babel import pgettext as babel_pgettext
 from jinja2 import pass_context
 from werkzeug.exceptions import HTTPException
 
@@ -175,6 +176,13 @@ def gettext(message, **variables):
     return babel_gettext(message, **variables)
 
 
+def pgettext(context, message, **variables):
+    """Translate a source text whose wording depends on where it appears."""
+    if not has_app_context() or "babel" not in current_app.extensions:
+        return message % variables if variables else message
+    return babel_pgettext(context, message, **variables)
+
+
 def ngettext(singular, plural, number, **variables):
     """Use the catalog's plural rules when available, German otherwise."""
     if not has_app_context() or "babel" not in current_app.extensions:
@@ -318,7 +326,9 @@ def init_app(app):
     app.jinja_env.add_extension("jinja2.ext.i18n")
     # Old-style Jinja preserves literal '%' in German source text. Flask-Babel's
     # gettext still supports named interpolation when kwargs are supplied.
-    app.jinja_env.install_gettext_callables(gettext, ngettext, newstyle=False)
+    app.jinja_env.install_gettext_callables(
+        gettext, ngettext, newstyle=False, pgettext=pgettext
+    )
     app.jinja_env.globals.update(
         public_language_url=public_language_url,
         public_canonical_path=public_canonical_path,

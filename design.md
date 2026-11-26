@@ -245,9 +245,31 @@ Long identifiers wrap; data tables may scroll within their own labeled region.
 
 Public navigation has LEG gründen, Software, Für Gemeinden, Wissen and Verein.
 Every destination must exist when linked. Anmelden opens the existing owner and
-municipality chooser. The utility portal has a separate explicit link. The mobile
-menu exposes expanded state. Escape closes an expanded group first, then the
-menu, and returns focus to its trigger. Navigation remains available without JS.
+municipality chooser. The utility portal has a separate explicit link.
+
+Each group is a native `details`/`summary` disclosure. Browsers expose the
+summary as a button with its expanded state, and a shared `name` keeps one group
+open, also without JavaScript. Hover, keyboard focus, an open group and the
+section of the current page draw the wordmark's 2 px roof line under the label.
+The line grows from the left and appears at once under reduced motion. The
+navigation uses no arrow glyphs.
+
+From 1100 px a group opens a flyout across the full viewport, directly under the
+bar, with its links in columns on the page grid. A pointer that rests on a label
+opens it after a short pause. The flyout stays open while the pointer is in it and
+closes shortly after the pointer leaves both label and flyout. A click keeps it
+open until a second click, a click elsewhere or Escape. Enter or Space opens a
+group, Tab or ArrowDown moves into its links, and focus that leaves the group
+closes it. To keep one row in all four languages, the bar shows the language as
+a two-letter code, the GitHub button shows only its mark from 1100 to 1279 px,
+and a label may use a shorter translation in the `navigation` context.
+
+Below 1100 px the groups sit in the Menü and fold open in place, marked with a
+plus or minus sign. The GitHub button stays beside Menü. The site search
+(`partials/site_search.html`) sits before Anmelden on wide screens and at the top
+of the opened menu. The mobile menu exposes expanded state. Escape closes an
+expanded group first, then the menu, and returns focus to its trigger.
+Navigation remains available without JS.
 
 Product screens retain task-specific toolbars, tables and navigation. They use
 the shared wordmark, colors, controls and focus treatment without adding the
