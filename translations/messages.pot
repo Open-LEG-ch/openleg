@@ -2032,6 +2032,14 @@ msgstr ""
 msgid "Beilagen"
 msgstr ""
 
+#: templates/release/software.html:9
+msgid ""
+"Beim Import ordnet OpenLEG die Viertelstundenwerte über die erfassten Messpunkte den Mitgliedern "
+"zu. Fehlen Werte, wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der "
+"Entwurf rechnet mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen "
+"Rechnungen, die sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
+msgstr ""
+
 #: templates/leg_workspace/members.html:68
 msgid "Beim Netzbetreiber einreichen"
 msgstr ""
@@ -5947,10 +5955,6 @@ msgstr ""
 msgid "Es fehlen"
 msgstr ""
 
-#: templates/release/how_it_works.html:52
-msgid "Es gibt drei getrennte Abrechnungen."
-msgstr ""
-
 #: templates/leg_billing.html:145
 msgid "Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu."
 msgstr ""
@@ -7678,6 +7682,10 @@ msgstr ""
 msgid "Hier sehen Sie künftig Registrierungen, Solarnutzung und den Stand Ihrer Gemeinde."
 msgstr ""
 
+#: templates/release/how_it_works.html:52
+msgid "Hier sehen Sie, wer wem eine Rechnung stellt."
+msgstr ""
+
 #: templates/release/events.html:3
 msgid ""
 "Hier stehen bestätigte Treffen mit Termin, Sprache und Teilnahmeweg. Die monatlichen Online-"
@@ -9156,7 +9164,7 @@ msgstr ""
 #: templates/release/pricing.html:6
 msgid ""
 "Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
-"den Nutzenden den geänderten Code zugänglich machen."
+"den Nutzenden den vollständigen Quellcode dieser Version zugänglich machen."
 msgstr ""
 
 #: templates/pricing.html:34
@@ -11524,14 +11532,6 @@ msgstr ""
 
 #: templates/partials/install_console.html:3
 msgid "OpenLEG mit einem Befehl selbst betreiben."
-msgstr ""
-
-#: templates/release/software.html:9
-msgid ""
-"OpenLEG ordnet jeden Zähler und jeden Viertelstundenwert dem richtigen Mitglied zu. Fehlen Werte,"
-" wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der Entwurf rechnet "
-"mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen Rechnungen, die "
-"sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
 msgstr ""
 
 #: templates/llms.txt:13

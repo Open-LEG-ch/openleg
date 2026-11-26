@@ -40,7 +40,7 @@
 .release-menu { display: flex; align-items: center; gap: 18px; margin-left: auto; }
 .release-menu-toggle { display: none; border: 1px solid #70798d; border-radius: 8px; padding: 8px 16px; min-height: 44px; }
 .release-nav-group { position: relative; }
-.release-nav-group summary { display: flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; list-style: none; font-size: 16px; }
+.release-nav-group summary { display: flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; list-style: none; font-size: 16px; white-space: nowrap; }
 .release-nav-group summary::-webkit-details-marker { display: none; }
 .release-nav-group ul { position: absolute; top: calc(100% + 8px); left: -16px; width: 280px; list-style: none; padding: 12px; border: 1px solid #bcc3d0; border-radius: 12px; background: #fffdf8; box-shadow: 0 12px 24px #26324b14; }
 .release-nav-group a { display: block; padding: 10px; border-radius: 4px; }
@@ -156,7 +156,14 @@
 .release-resource-list > li { padding-block: 20px; border-top: 1px solid #bcc3d0; }
 .release-resource-list a { font-size: 22px; }
 .release-plain-text { white-space: pre-line; }
-@media (max-width: 1199px) { .release-container { padding-inline: 32px; } .release-menu { gap: 12px; } .release-nav-row { gap: 20px; } }
+@media (max-width: 1299px) { .release-menu { gap: 12px; } .release-nav-row { gap: 20px; } .release-github { padding-inline: 14px; } }
+@media (max-width: 1199px) { .release-container { padding-inline: 24px; } .release-menu { gap: 10px; } .release-nav-row { gap: 16px; } }
+/* 1100-1299 px: the full desktop menu is tight in French, so the GitHub button shows its mark only. */
+@media (min-width: 1100px) and (max-width: 1299px) {
+  .release-github { min-width: 44px; min-height: 44px; justify-content: center; padding: 8px 12px; }
+  .release-github span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (min-width: 1100px) and (max-width: 1199px) { .release-nav-group summary, .release-login { font-size: 15px; } }
 @media (max-width: 1099px) {
   .release-hero-intro { gap: 32px; }
   .release-two-column { gap: 40px; }

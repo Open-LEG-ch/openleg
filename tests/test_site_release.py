@@ -111,6 +111,11 @@ def test_text_on_dark_release_surfaces_is_white():
         assert "text-accent-light" not in markup, template
     script = (root / "static" / "js" / "install_console.js").read_text()
     assert "text-slate-400" not in script and "border-indigo-400" not in script
+    api = (root / "templates" / "api_docs.html").read_text()
+    example = re.search(r"\.api-copy-example \{([^}]*)\}", api)
+    assert example and "color: #ffffff;" in example.group(1)
+    profile = (root / "templates" / "gemeinde" / "profil.html").read_text()
+    assert "text-white/" not in profile
 
 
 @pytest.mark.parametrize("path", ["/", "/software", "/pricing", "/how-it-works"])

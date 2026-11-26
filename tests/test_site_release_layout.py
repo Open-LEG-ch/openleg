@@ -186,3 +186,19 @@ def test_text_on_dark_surfaces_is_white(release_page, path, surface):
     colours = page.locator(surface).first.evaluate(DARK_SURFACE_TEXT)
     assert colours
     assert set(colours) <= {"rgb(255, 253, 248)", "rgb(255, 255, 255)"}, colours
+
+
+@pytest.mark.parametrize("locale", ["de-CH", "fr-CH", "it-CH", "en"])
+def test_desktop_header_labels_stay_on_one_line(release_page, locale):
+    """French labels wrapped once the GitHub button took room; each must fit."""
+    page = release_page
+    for width in (1100, 1150, 1200, 1280, 1300, 1440):
+        page.set_viewport_size({"width": width, "height": 800})
+        assert page.goto(f"http://qa.test/?lang={locale}").status == 200
+        assert page.evaluate("document.documentElement.scrollWidth") == width
+        heights = page.evaluate(
+            """() => [...document.querySelectorAll(
+                '.release-nav-group > summary, .release-login, .release-github'
+            )].map(el => Math.round(el.getBoundingClientRect().height))"""
+        )
+        assert heights and max(heights) <= 46, (width, heights)

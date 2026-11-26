@@ -22332,11 +22332,6 @@ msgid ""
 msgstr "How the data reaches your LEG has to be settled first. Not every grid operator is connected yet."
 
 #. Draft translation; native language and domain review pending.
-#: templates/release/how_it_works.html:52
-msgid "Es gibt drei getrennte Abrechnungen."
-msgstr "There are three separate bills."
-
-#. Draft translation; native language and domain review pending.
 #: templates/release/how_it_works.html:53
 msgid "Die LEG rechnet den geteilten Strom mit ihren Mitgliedern ab."
 msgstr "The LEG bills its members for the shared electricity."
@@ -22416,15 +22411,6 @@ msgstr ""
 #: templates/release/pricing.html:5
 msgid "Wofür Kosten anfallen"
 msgstr "What costs money"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/pricing.html:6
-msgid ""
-"Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
-"den Nutzenden den geänderten Code zugänglich machen."
-msgstr ""
-"Free, under the AGPL-3.0-or-later license. If you offer a modified version online, you must make "
-"the modified code available to its users."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/pricing.html:7
@@ -22639,14 +22625,28 @@ msgstr ""
 "once your responsible people have checked and approved them."
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:52
+msgid "Hier sehen Sie, wer wem eine Rechnung stellt."
+msgstr "This shows who bills whom."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/pricing.html:6
+msgid ""
+"Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
+"den Nutzenden den vollständigen Quellcode dieser Version zugänglich machen."
+msgstr ""
+"Free, under the AGPL-3.0-or-later license. If you offer a modified version online, you must make "
+"the complete source code of that version available to its users."
+
+#. Draft translation; native language and domain review pending.
 #: templates/release/software.html:9
 msgid ""
-"OpenLEG ordnet jeden Zähler und jeden Viertelstundenwert dem richtigen Mitglied zu. Fehlen Werte,"
-" wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der Entwurf rechnet "
-"mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen Rechnungen, die "
-"sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
+"Beim Import ordnet OpenLEG die Viertelstundenwerte über die erfassten Messpunkte den Mitgliedern "
+"zu. Fehlen Werte, wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der "
+"Entwurf rechnet mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen "
+"Rechnungen, die sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
 msgstr ""
-"OpenLEG assigns every meter and every quarter-hour value to the right member. If values are "
-"missing, billing for that period waits until the data is complete. The draft uses the tariffs "
-"your LEG has stored. Only approval creates invoices that can no longer be changed. Later "
-"corrections stay visible."
+"On import, OpenLEG matches the quarter-hour values to members through the metering points you "
+"have set up. If values are missing, billing for that period waits until the data is complete. The"
+" draft uses the tariffs your LEG has stored. Only approval creates invoices that can no longer be"
+" changed. Later corrections stay visible."

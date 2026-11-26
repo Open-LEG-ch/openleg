@@ -19939,11 +19939,6 @@ msgstr ""
 "gestionnaires de réseau ne sont pas encore raccordés."
 
 #. Draft translation; native language and domain review pending.
-#: templates/release/how_it_works.html:52
-msgid "Es gibt drei getrennte Abrechnungen."
-msgstr "Il y a trois facturations distinctes."
-
-#. Draft translation; native language and domain review pending.
 #: templates/release/how_it_works.html:53
 msgid "Die LEG rechnet den geteilten Strom mit ihren Mitgliedern ab."
 msgstr "La CEL facture l'électricité partagée à ses membres."
@@ -20024,15 +20019,6 @@ msgstr ""
 #: templates/release/pricing.html:5
 msgid "Wofür Kosten anfallen"
 msgstr "Ce qui coûte"
-
-#. Draft translation; native language and domain review pending.
-#: templates/release/pricing.html:6
-msgid ""
-"Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
-"den Nutzenden den geänderten Code zugänglich machen."
-msgstr ""
-"Gratuit, sous licence AGPL-3.0-or-later. Qui propose en ligne une version modifiée doit rendre le"
-" code modifié accessible à ses utilisateurs."
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/pricing.html:7
@@ -20251,14 +20237,29 @@ msgstr ""
 " Les factures ne partent qu'une fois vérifiées et validées par vos responsables."
 
 #. Draft translation; native language and domain review pending.
+#: templates/release/how_it_works.html:52
+msgid "Hier sehen Sie, wer wem eine Rechnung stellt."
+msgstr "Voici qui adresse une facture à qui."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/pricing.html:6
+msgid ""
+"Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
+"den Nutzenden den vollständigen Quellcode dieser Version zugänglich machen."
+msgstr ""
+"Gratuit, sous licence AGPL-3.0-or-later. Qui propose en ligne une version modifiée doit rendre "
+"accessible à ses utilisateurs le code source complet de cette version."
+
+#. Draft translation; native language and domain review pending.
 #: templates/release/software.html:9
 msgid ""
-"OpenLEG ordnet jeden Zähler und jeden Viertelstundenwert dem richtigen Mitglied zu. Fehlen Werte,"
-" wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der Entwurf rechnet "
-"mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen Rechnungen, die "
-"sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
+"Beim Import ordnet OpenLEG die Viertelstundenwerte über die erfassten Messpunkte den Mitgliedern "
+"zu. Fehlen Werte, wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der "
+"Entwurf rechnet mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen "
+"Rechnungen, die sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
 msgstr ""
-"OpenLEG attribue chaque compteur et chaque valeur au quart d'heure au bon membre. S'il manque des"
-" valeurs, la facturation de cette période attend que les données soient complètes. Le projet "
-"utilise les tarifs enregistrés par votre CEL. Ce n'est qu'à la validation que naissent des "
-"factures qui ne peuvent plus être modifiées. Les corrections ultérieures restent visibles."
+"À l'importation, OpenLEG attribue les valeurs au quart d'heure aux membres via les points de "
+"mesure enregistrés. S'il manque des valeurs, la facturation de cette période attend que les "
+"données soient complètes. Le projet utilise les tarifs enregistrés par votre CEL. Ce n'est qu'à "
+"la validation que naissent des factures qui ne peuvent plus être modifiées. Les corrections "
+"ultérieures restent visibles."

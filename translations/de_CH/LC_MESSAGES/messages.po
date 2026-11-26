@@ -18979,10 +18979,6 @@ msgstr ""
 "Wie die Daten zu Ihrer LEG kommen, muss vorher geklärt sein. Noch ist nicht jeder Netzbetreiber "
 "angebunden."
 
-#: templates/release/how_it_works.html:52
-msgid "Es gibt drei getrennte Abrechnungen."
-msgstr "Es gibt drei getrennte Abrechnungen."
-
 #: templates/release/how_it_works.html:53
 msgid "Die LEG rechnet den geteilten Strom mit ihren Mitgliedern ab."
 msgstr "Die LEG rechnet den geteilten Strom mit ihren Mitgliedern ab."
@@ -19050,14 +19046,6 @@ msgstr ""
 #: templates/release/pricing.html:5
 msgid "Wofür Kosten anfallen"
 msgstr "Wofür Kosten anfallen"
-
-#: templates/release/pricing.html:6
-msgid ""
-"Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
-"den Nutzenden den geänderten Code zugänglich machen."
-msgstr ""
-"Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
-"den Nutzenden den geänderten Code zugänglich machen."
 
 #: templates/release/pricing.html:7
 msgid "Server und Dienste"
@@ -19239,14 +19227,26 @@ msgstr ""
 "OpenLEG hilft Ihrer LEG, Mitglieder, Dokumente, Messdaten und Rechnungen zu verwalten. Rechnungen"
 " werden erst verschickt, wenn Ihre Verantwortlichen sie geprüft und freigegeben haben."
 
+#: templates/release/how_it_works.html:52
+msgid "Hier sehen Sie, wer wem eine Rechnung stellt."
+msgstr "Hier sehen Sie, wer wem eine Rechnung stellt."
+
+#: templates/release/pricing.html:6
+msgid ""
+"Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
+"den Nutzenden den vollständigen Quellcode dieser Version zugänglich machen."
+msgstr ""
+"Kostenlos, unter der Lizenz AGPL-3.0-or-later. Wer eine veränderte Version online anbietet, muss "
+"den Nutzenden den vollständigen Quellcode dieser Version zugänglich machen."
+
 #: templates/release/software.html:9
 msgid ""
-"OpenLEG ordnet jeden Zähler und jeden Viertelstundenwert dem richtigen Mitglied zu. Fehlen Werte,"
-" wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der Entwurf rechnet "
-"mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen Rechnungen, die "
-"sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
+"Beim Import ordnet OpenLEG die Viertelstundenwerte über die erfassten Messpunkte den Mitgliedern "
+"zu. Fehlen Werte, wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der "
+"Entwurf rechnet mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen "
+"Rechnungen, die sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
 msgstr ""
-"OpenLEG ordnet jeden Zähler und jeden Viertelstundenwert dem richtigen Mitglied zu. Fehlen Werte,"
-" wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der Entwurf rechnet "
-"mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen Rechnungen, die "
-"sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
+"Beim Import ordnet OpenLEG die Viertelstundenwerte über die erfassten Messpunkte den Mitgliedern "
+"zu. Fehlen Werte, wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der "
+"Entwurf rechnet mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen "
+"Rechnungen, die sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
