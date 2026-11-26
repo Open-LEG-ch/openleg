@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Rendered release layouts and colour contrast."""
 
-from itertools import pairwise
+from itertools import pairwise, product
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import urlsplit
@@ -284,8 +284,10 @@ def test_navigation_keyboard_opens_enters_and_escapes_a_flyout(release_page):
 @pytest.mark.parametrize("lang", ["de-CH", "fr-CH", "it-CH", "en"])
 def test_navigation_keeps_one_row_with_search_from_1100_px(release_page, lang):
     page = release_page
-    for width in (1100, 1280, 1440):
-        _nav_ready(page, f"/?lang={lang}", width)
+    # A page inside a section sets that label in bold, which makes it wider.
+    pages = ("/", "/leg-gruenden", "/software", "/fuer-gemeinden", "/wissen", "/verein")
+    for path, width in product(pages, (1100, 1200, 1280, 1440)):
+        _nav_ready(page, f"{path}?lang={lang}", width)
         page.evaluate(SEARCH_STAND_IN)
         row = page.locator(".release-nav-row")
         tops = row.evaluate(
@@ -293,7 +295,7 @@ def test_navigation_keeps_one_row_with_search_from_1100_px(release_page, lang):
                 '.release-nav-group > summary, .release-search-slot, .release-login, .release-github'
             )].map(node => Math.round(node.getBoundingClientRect().top + node.getBoundingClientRect().height / 2))"""
         )
-        assert max(tops) - min(tops) <= 2, (lang, width, tops)
+        assert max(tops) - min(tops) <= 2, (lang, path, width, tops)
         # Neighbours must not overlap, and the last one ends inside the container.
         edges = row.evaluate(
             """el => [el.querySelector('.ol-logo'), ...el.querySelectorAll(
@@ -302,16 +304,17 @@ def test_navigation_keeps_one_row_with_search_from_1100_px(release_page, lang):
         )
         edges.sort()
         for (_, right), (left, _) in pairwise(edges):
-            assert right <= left + 0.5, (lang, width, edges)
+            assert right <= left + 0.5, (lang, path, width, edges)
         assert edges[-1][1] <= width - 20, (lang, width)
         assert row.bounding_box()["height"] <= 90, (lang, width)
         assert page.evaluate("document.documentElement.scrollWidth") == width, (
             lang,
             width,
         )
-        for trigger in page.locator(".release-nav-group > summary").all():
-            box = trigger.bounding_box()
-            assert box["width"] >= 44 and box["height"] >= 44, (lang, width, box)
+        targets = page.locator(".release-nav-group > summary, .release-github")
+        for target in targets.all():
+            box = target.bounding_box()
+            assert box["width"] >= 44 and box["height"] >= 44, (lang, path, width, box)
         search = page.locator(".release-search-slot input").bounding_box()
         assert search["width"] >= 200, (lang, width)
 
