@@ -79,9 +79,6 @@ LISTING_PAGES = (
 LISTING_HTML_LIMIT = 48_000
 
 PAGE_TTL_SECONDS = 600
-# When no page renders at all, search keeps the last good page results for at
-# most this long after that load, then drops them.
-PAGE_REUSE_LIMIT_SECONDS = 3600
 DATA_TTL_SECONDS = 600
 # A withdrawn LEG must leave the search within a minute: its entries refresh
 # every 50 seconds, and an overdue refresh hides them after 10 more seconds.
@@ -435,7 +432,7 @@ def documents_from_page(path, kind, locale, content, labels=()):
     return documents
 
 
-# The page is withdrawn or has moved for good: drop it instead of reusing it.
+# The page is withdrawn or has moved for good: drop it without a retry.
 GONE = object()
 GONE_STATUSES = frozenset({301, 308, 404, 410})
 
@@ -478,15 +475,12 @@ def page_documents(app):
     """Render every listed page in every site language.
 
     Returns `(documents, complete)`. A page that fails to render now is left
-    out and `complete` is False, so it is tried again soon. A withdrawn or
-    permanently moved page (`GONE`) is left out for good. When not a single page
-    renders and at least one failed for a passing reason, returns
-    `(None, False)` so the caller can keep its last good pages for a while
-    instead of emptying search.
+    out and `complete` is False, so it is tried again soon; search never keeps
+    a page it cannot render now. A withdrawn or permanently moved page (`GONE`)
+    is left out without a retry.
     """
     documents = []
     complete = True
-    rendered_any = False
     with app.app_context():
         locales = tuple(i18n.supported_locales())
         tenant = tenant_module.get_tenant_config("zurich", db=db)
@@ -507,7 +501,6 @@ def page_documents(app):
             if html is None:
                 complete = False
                 continue
-            rendered_any = True
             content = extract_page(html, listing=listing)
             rendered.append((path, kind, content))
             for href, text in content.links:
@@ -521,8 +514,6 @@ def page_documents(app):
             documents.extend(
                 documents_from_page(path, kind, locale, content, labels.get(path, ()))
             )
-    if not rendered_any and not complete:
-        return None, False
     return documents, complete
 
 
@@ -627,15 +618,14 @@ class _Part:
 
 @dataclass(frozen=True)
 class _Snapshot:
-    """An index and the times until which its LEG and page entries may be shown.
+    """An index and the time until which its LEG entries may be shown.
 
-    They change together, so a slow rebuild cannot lend a new expiry to the
+    Both change together, so a slow rebuild cannot lend a new expiry to the
     old index.
     """
 
     index: SearchIndex
     legs_valid_until: float
-    pages_valid_until: float = float("inf")
 
 
 class SiteSearch:
@@ -653,18 +643,13 @@ class SiteSearch:
         self._refreshing = False
         self._snapshot = None
         self._parts = {name: _Part() for name in ("pages", MUNICIPALITY, LEG)}
-        # When pages last rendered, to cap how long the last good ones are kept.
-        self._pages_rendered_at = None
 
     def search(self, query, *, kinds=None, **options):
         """Search the current index without LEGs whose publication is overdue."""
         snapshot = self._current()
         allowed = KINDS if kinds is None else frozenset(kinds)
-        now = self._clock()
-        if now >= snapshot.legs_valid_until:
+        if self._clock() >= snapshot.legs_valid_until:
             allowed = allowed - {LEG}
-        if now >= snapshot.pages_valid_until:
-            allowed = allowed - {PAGE, KNOWLEDGE}
         return snapshot.index.search(query, kinds=allowed, **options)
 
     def index(self):
@@ -732,41 +717,13 @@ class SiteSearch:
         for name, part in self._parts.items():
             part.documents = documents[name]
             part.expires = expires[name]
-        pages_valid_until = (
-            float("inf")
-            if self._pages_rendered_at is None
-            else self._pages_rendered_at + PAGE_REUSE_LIMIT_SECONDS
-        )
-        self._snapshot = _Snapshot(
-            index, expires[LEG] + LEG_GRACE_SECONDS, pages_valid_until
-        )
-
-    def _load_pages(self):
-        """Load the pages part; if nothing renders, keep the last good pages.
-
-        They are kept for at most PAGE_REUSE_LIMIT_SECONDS after that load. The
-        retry is due no later than that deadline, and the snapshot hides page
-        results once it passes, even if the retry itself fails.
-        """
-        now = self._clock()
-        try:
-            documents, complete = page_documents(self._app)
-        except Exception:
-            logger.exception("[SEARCH] Loading pages failed")
-            documents, complete = None, False
-        if documents is not None:
-            self._pages_rendered_at = now
-            return documents, PAGE_TTL_SECONDS if complete else RETRY_SECONDS
-        if self._pages_rendered_at is not None:
-            remaining = self._pages_rendered_at + PAGE_REUSE_LIMIT_SECONDS - now
-            if remaining > 0:
-                return None, min(RETRY_SECONDS, remaining)
-        return (), RETRY_SECONDS
+        self._snapshot = _Snapshot(index, expires[LEG] + LEG_GRACE_SECONDS)
 
     def _load(self, name):
-        if name == "pages":
-            return self._load_pages()
         try:
+            if name == "pages":
+                documents, complete = page_documents(self._app)
+                return documents, PAGE_TTL_SECONDS if complete else RETRY_SECONDS
             with self._app.app_context():
                 loader = (
                     municipality_documents if name == MUNICIPALITY else leg_documents

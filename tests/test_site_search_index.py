@@ -366,9 +366,10 @@ def test_a_page_that_fails_to_render_is_left_out_and_retried(monkeypatch):
     assert complete is False
 
 
-def test_nothing_rendering_is_reported_but_withdrawn_pages_are_not(monkeypatch):
+def test_failed_pages_are_retried_but_withdrawn_pages_are_not(monkeypatch):
+    """Nothing is kept from an earlier render: failed pages wait for the retry."""
     _pages_setup(monkeypatch, lambda _path: None)
-    assert site_search_index.page_documents(_FakeApp()) == (None, False)
+    assert site_search_index.page_documents(_FakeApp()) == ([], False)
     _pages_setup(monkeypatch, lambda _path: site_search_index.GONE)
     assert site_search_index.page_documents(_FakeApp()) == ([], True)
 
@@ -379,42 +380,3 @@ def test_a_malformed_link_does_not_stop_the_refresh(monkeypatch):
     documents, complete = site_search_index.page_documents(_FakeApp())
     assert complete is True
     assert {document.url for document in documents} == {"/pricing", "/verein"}
-
-
-def test_the_last_good_pages_are_kept_for_an_hour_when_nothing_renders(sources):
-    clock = _Clock()
-    search = SiteSearch(_FakeApp(), clock=clock)
-    assert "Startseite" in _titles(search)
-    loaded_at = clock.now
-    sources["pages"] = (None, False)
-    clock.now += site_search_index.PAGE_TTL_SECONDS
-    assert "Startseite" in _titles(search), "kept while nothing renders"
-    sources["pages"] = RuntimeError("templates unavailable")
-    clock.now = loaded_at + site_search_index.PAGE_REUSE_LIMIT_SECONDS - 1
-    assert "Startseite" in _titles(search), "an exception takes the same path"
-    clock.now = loaded_at + site_search_index.PAGE_REUSE_LIMIT_SECONDS
-    assert "Startseite" not in _titles(search), "dropped at the limit"
-    assert "Baden" in _titles(search), "other parts stay"
-
-
-def test_readers_stop_seeing_kept_pages_at_the_limit_before_a_refresh(sources):
-    clock = _Clock()
-    search = SiteSearch(_FakeApp(), clock=clock)
-    search.index()
-    loaded_at = clock.now
-    sources["pages"] = (None, False)
-    clock.now += site_search_index.PAGE_TTL_SECONDS
-    search.index()
-    # A refresh that has not finished yet must not extend the deadline.
-    search._refresh = lambda: None
-    clock.now = loaded_at + site_search_index.PAGE_REUSE_LIMIT_SECONDS
-    titles = {
-        hit.document.title
-        for group in search.search("Startseite Baden").groups
-        for hit in group.hits
-    } | {
-        hit.document.title
-        for group in search.search("Startseite").groups
-        for hit in group.hits
-    }
-    assert "Startseite" not in titles
