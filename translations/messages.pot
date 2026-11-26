@@ -962,11 +962,11 @@ msgstr ""
 msgid "Adresse ist zu kurz"
 msgstr ""
 
-#: app.py:574
+#: app.py:577
 msgid "Adresse konnte nicht analysiert werden."
 msgstr ""
 
-#: app.py:566
+#: app.py:569
 msgid "Adresse konnte nicht eindeutig geprüft werden."
 msgstr ""
 
@@ -2327,7 +2327,7 @@ msgstr ""
 msgid "Bestätigen Sie den vollständigen Konten- und Anbieterumfang ohne fehlende Fremdwährungsbestände."
 msgstr ""
 
-#: app.py:804
+#: app.py:807
 #, python-format
 msgid ""
 "Bestätigen Sie die Löschung Ihres Adressprofils oder Ihrer offenen Gebietsanfrage bei OpenLEG "
@@ -3638,7 +3638,7 @@ msgid ""
 "anschliessend."
 msgstr ""
 
-#: app.py:886
+#: app.py:889
 msgid ""
 "Der mit diesem Link verknüpfte Eintrag (Adressprofil oder offene Gebietsanfrage) ist jetzt "
 "erfolgreich gelöscht."
@@ -6008,7 +6008,7 @@ msgid ""
 "Versandproblem können Sie es erneut versuchen."
 msgstr ""
 
-#: app.py:821
+#: app.py:824
 msgid "Falls ein Eintrag vorhanden ist, erhalten Sie einen Bestätigungslink per E-Mail."
 msgstr ""
 
@@ -6728,7 +6728,7 @@ msgstr ""
 msgid "Gebiet und Voraussetzungen prüfen"
 msgstr ""
 
-#: app.py:735
+#: app.py:738
 msgid "Gebäude nicht gefunden."
 msgstr ""
 
@@ -8742,7 +8742,7 @@ msgstr ""
 msgid "Keine Datei ausgewählt"
 msgstr ""
 
-#: app.py:551 app.py:603 app.py:656
+#: app.py:554 app.py:606 app.py:659
 msgid "Keine Daten empfangen."
 msgstr ""
 
@@ -8872,7 +8872,7 @@ msgstr ""
 msgid "Keine ausstehenden Einträge"
 msgstr ""
 
-#: app.py:581
+#: app.py:584
 msgid "Keine direkten Partner gefunden."
 msgstr ""
 
@@ -11682,7 +11682,7 @@ msgstr ""
 msgid "OpenLEG: Interessenmeldung bestätigen"
 msgstr ""
 
-#: app.py:802
+#: app.py:805
 msgid "OpenLEG: Löschung bestätigen"
 msgstr ""
 
@@ -11785,7 +11785,7 @@ msgstr ""
 msgid "Parse-Fehler mit Delimiter '%(delimiter)s'."
 msgstr ""
 
-#: app.py:588
+#: app.py:591
 msgid "Partner gefunden!"
 msgstr ""
 
@@ -11793,7 +11793,7 @@ msgstr ""
 msgid "Passwort"
 msgstr ""
 
-#: app.py:1089
+#: app.py:1092
 msgid "Period not found"
 msgstr ""
 
@@ -13166,11 +13166,11 @@ msgid ""
 "es können laufende Kosten entstehen."
 msgstr ""
 
-#: app.py:745 app.py:752
+#: app.py:748 app.py:755
 msgid "Server-Fehler beim Verarbeiten der Messdaten."
 msgstr ""
 
-#: app.py:596
+#: app.py:599
 msgid "Server-Fehler. Bitte später erneut versuchen."
 msgstr ""
 
@@ -15555,7 +15555,7 @@ msgid ""
 "erhalten Sie die nächsten Schritte."
 msgstr ""
 
-#: app.py:874
+#: app.py:877
 msgid ""
 "Wir haben den mit diesem Link verknüpften Eintrag (Adressprofil oder offene Gebietsanfrage) nicht"
 " gelöscht. Der Link ist möglicherweise abgelaufen. Fordern Sie einen neuen Bestätigungslink an."
@@ -16310,7 +16310,7 @@ msgstr ""
 msgid "bis 40"
 msgstr ""
 
-#: app.py:729
+#: app.py:732
 msgid "building_id und csv_content erforderlich."
 msgstr ""
 
@@ -16562,7 +16562,7 @@ msgid ""
 "einen Abrechnungslauf und definitive Rechnungsdokumente sind noch kein durchgängiger Ablauf."
 msgstr ""
 
-#: app.py:726
+#: app.py:729
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr ""
 
