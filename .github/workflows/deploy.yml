@@ -114,19 +114,19 @@ jobs:
           echo "Matrix result: ${RESULT}"
           expected=$(seq 1 "${SHARDS}" | sed 's|^|ci/test shard |' | sort -u)
           for poll in 1 2 3 4 5 6 7; do
-            if ! jobs=$(gh api --paginate "repos/${REPO}/actions/runs/${RUN}/attempts/${RUN_ATTEMPT}/jobs?per_page=100"); then
+            # One row per expected shard: name, run_attempt, status, conclusion.
+            if ! jobs=$(gh api --paginate "repos/${REPO}/actions/runs/${RUN}/attempts/${RUN_ATTEMPT}/jobs?per_page=100") \
+              || ! shards=$(printf '%s\n' "${jobs}" \
+                | jq -rs --argjson count "${SHARDS}" '
+                    [.[].jobs[]] as $jobs
+                    | range(1; $count + 1) | "ci/test shard \(.)" as $name
+                    | [$jobs[] | select(.name == $name) | [.name, .run_attempt, .status, .conclusion // "-"]]
+                    | (if . == [] then [[$name, "-", "missing", "-"]] else . end)[]
+                    | @tsv'); then
               echo "::error::Could not read the jobs of attempt ${RUN_ATTEMPT}; no shard counts as passed."
               shards=$(for index in $(seq 1 "${SHARDS}"); do printf 'ci/test shard %s\t-\tunknown\t-\n' "${index}"; done)
               break
             fi
-            # One row per expected shard: name, run_attempt, status, conclusion.
-            shards=$(printf '%s\n' "${jobs}" \
-              | jq -rs --argjson count "${SHARDS}" '
-                  [.[].jobs[]] as $jobs
-                  | range(1; $count + 1) | "ci/test shard \(.)" as $name
-                  | [$jobs[] | select(.name == $name) | [.name, .run_attempt, .status, .conclusion // "-"]]
-                  | (if . == [] then [[$name, "-", "missing", "-"]] else . end)[]
-                  | @tsv')
             passed=$(printf '%s\n' "${shards}" | awk -F '\t' '$4 == "success" { print $1 }' | sort -u)
             if [ "${RESULT}" = success ] && [ "${passed}" = "${expected}" ]; then
               echo "All ${SHARDS} shards passed."

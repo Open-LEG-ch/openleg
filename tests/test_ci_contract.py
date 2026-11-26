@@ -143,6 +143,7 @@ SHARD_3_NOT_COPIED_YET = [[_shard_job(index) for index in SHARDS if index != 3]]
             1,
         ),
         ("success", [None], 1, 1),
+        ("success", ["invalid"], 1, 1),
         # A failed matrix fails the gate, after one read that names the shards.
         ("failure", [ALL_PASSED], 1, 1),
         ("cancelled", [ALL_PASSED], 1, 1),
@@ -190,6 +191,7 @@ SHARD_3_NOT_COPIED_YET = [[_shard_job(index) for index in SHARDS if index != 3]]
         "missing-shard",
         "cancelled-shard",
         "api-error",
+        "invalid-response",
         "matrix-failed",
         "matrix-cancelled",
         "shard-reported-late",
@@ -224,6 +226,9 @@ def test_ci_test_gate_fails_closed(tmp_path, result, responses, status, polls):
         "if pages is None:\n"
         "    print('gh: Forbidden (HTTP 403)', file=sys.stderr)\n"
         "    sys.exit(1)\n"
+        "if pages == 'invalid':\n"
+        "    print(json.dumps({'message': 'unexpected payload'}))\n"
+        "    sys.exit(0)\n"
         "for jobs in pages:\n"
         "    print(json.dumps({'jobs': jobs}))\n"
     )
@@ -266,16 +271,17 @@ def test_ci_test_gate_fails_closed(tmp_path, result, responses, status, polls):
     if status and polls:
         # A failed gate lists every shard with its attempt, status and conclusion.
         last = responses[min(polls, len(responses)) - 1]
-        if last is None:
+        readable = isinstance(last, list)
+        if not readable:
             assert "::error::Could not read the jobs of attempt 2" in output
-        seen = {job["name"]: job for page in last or [] for job in page}
+        seen = {job["name"]: job for page in last for job in page} if readable else {}
         for index in SHARDS:
             name = f"{SHARD_PREFIX}{index}"
             job = seen.get(name)
             fields = (
                 [name, str(job["run_attempt"]), job["status"], job["conclusion"] or "-"]
                 if job
-                else [name, "-", "missing" if last is not None else "unknown", "-"]
+                else [name, "-", "missing" if readable else "unknown", "-"]
             )
             assert "\t".join(fields) + "\n" in completed.stdout, output
 
