@@ -191,6 +191,12 @@
   .release-github { width: 44px; height: 44px; padding: 0; justify-content: center; }
   .release-github span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
+/* From 768 to 1099 px the bar is sticky, so an opened menu scrolls within the
+   screen. The search panel inside it is bounded on its own (site_search.css), so
+   a highlighted suggestion never scrolls the field away. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .release-nav[data-menu-open='true'] { max-height: 100vh; max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain; }
+}
 @media (max-width: 1099px) {
   .release-hero-intro { gap: 32px; }
   .release-two-column { gap: 40px; }

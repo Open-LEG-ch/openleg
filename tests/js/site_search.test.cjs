@@ -584,3 +584,20 @@ test('a shortcut choice made in another tab applies here too', () => {
     fireWindow('storage', {key: 'openleg.siteSearch.slash'});
     assert.match(input.getAttribute('aria-keyshortcuts'), /^\/ /);
 });
+
+test('leaving the field mid-request lets a later arrow ask again', async () => {
+    const {type, requests, reply, key, input, panel, runTimers} = setup();
+    await type('Baden');
+    assert.equal(requests.length, 1);
+    key('Tab');
+    assert.equal(requests[0].aborted, true, 'leaving the field cancels the request');
+    input.dispatch('focus');
+    await runTimers(120);
+    assert.equal(requests.length, 2, 'refocusing asks again');
+    key('Tab');
+    key('ArrowDown');
+    await runTimers(120);
+    assert.equal(requests.length, 3, 'an arrow after leaving asks again too');
+    await reply(requests[2], DATA);
+    assert.equal(panel.hidden, false);
+});

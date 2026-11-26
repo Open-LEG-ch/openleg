@@ -651,7 +651,7 @@ def test_escape_closes_a_hovered_flyout_before_it_clears_the_search(release_page
     assert field.evaluate("el => el === document.activeElement")
 
 
-@pytest.mark.parametrize("height", [600, 450])
+@pytest.mark.parametrize("height", [600, 450, 280])
 def test_the_selected_suggestion_stays_on_screen_in_the_tablet_menu(
     release_page, height
 ):
@@ -667,12 +667,30 @@ def test_the_selected_suggestion_stays_on_screen_in_the_tablet_menu(
     for key in ("ArrowUp", "ArrowDown", "ArrowDown"):
         page.keyboard.press(key)
         selected = page.locator('.release-nav [role="option"][aria-selected="true"]')
+        panel = page.locator(".release-nav .site-search-panel").bounding_box()
         for name, box in (
             ("option", selected.bounding_box()),
             ("field", field.bounding_box()),
+            ("panel", panel),
         ):
             assert box and box["y"] >= 0 and box["y"] + box["height"] <= height, (
                 key,
                 name,
                 box,
             )
+        # The panel scrolls on its own; the menu, and with it the field, stays put.
+        assert page.evaluate("document.querySelector('.release-nav').scrollTop") == 0
+
+
+def test_the_opened_tablet_menu_scrolls_to_its_last_entry(release_page):
+    """The bar is sticky from 768 px; a menu taller than the screen must scroll."""
+    page = release_page
+    page.set_viewport_size({"width": 900, "height": 450})
+    assert page.goto("http://qa.test/pricing").status == 200
+    _navigation_search_ready(page)
+    page.locator("[data-menu-toggle]").click()
+    page.locator(".release-nav-group summary").nth(1).click()
+    login = page.locator(".release-nav .release-login")
+    login.scroll_into_view_if_needed()
+    box = login.bounding_box()
+    assert box and box["y"] >= 0 and box["y"] + box["height"] <= 450, box

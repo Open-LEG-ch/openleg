@@ -104,7 +104,7 @@
   // trigger; on desktop only from inside that group. Typing in the nav search
   // keeps the field either way.
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape') return;
+    if (event.key !== 'Escape' || event.isComposing || event.keyCode === 229) return;
     cancelTimers();
     const group = groups.find(candidate => candidate.open);
     const inside = nav.contains(document.activeElement);

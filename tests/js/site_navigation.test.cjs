@@ -361,3 +361,15 @@ test('in the phone menu Escape returns focus to the trigger of the closed group'
     assert.equal(groups[0].open, false);
     assert.equal(doc.activeElement, field, 'the search field keeps focus');
 });
+
+test('an Escape that confirms IME text leaves the phone menu open', () => {
+    const {toggle, summaries, groups, slot, click} = setup({desktop: false});
+    click(toggle);
+    click(summaries[0]);
+    const field = slot.querySelector('input');
+    field.focus();
+    dispatch(field, 'keydown', {key: 'Escape', isComposing: true, bubbles: true});
+    assert.equal(groups[0].open, true);
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+    assert.equal(doc.activeElement, field);
+});

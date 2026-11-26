@@ -108,7 +108,7 @@
             const top = panel.getBoundingClientRect().top;
             const height = root.innerHeight;
             if (Number.isFinite(top) && Number.isFinite(height)) {
-                panel.style.setProperty('--site-search-max', Math.max(160, Math.floor(height - top - 12)) + 'px');
+                panel.style.setProperty('--site-search-max', Math.max(48, Math.floor(height - top - 12)) + 'px');
             }
         }
 
@@ -140,6 +140,7 @@
             clearTimeout(loadingTimer);
             if (request) request.abort();
             request = null;
+            pending = '';
             sequence += 1;
             setActive(-1);
             panel.hidden = true;
