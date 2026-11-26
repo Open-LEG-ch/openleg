@@ -436,3 +436,12 @@ def test_highlighted_titles_keep_their_spaces(search_web):
     assert titles and all(
         title.startswith("<span>") and title.endswith("</span>") for title in titles
     )
+
+
+@pytest.mark.parametrize("path", ["/", "/software", "/leg-gruenden", "/suche?q=LEG"])
+def test_the_release_navigation_renders_the_search_form_once(search_web, path):
+    """The nav includes the partial itself; no test fixture injects it."""
+    html = search_web.test_client().get(path).text
+    nav = html.split("data-release-nav", 1)[1].split("site_navigation.js", 1)[0]
+    assert '<form class="site-search" role="search" method="get" action="/suche"' in nav
+    assert html.count('id="site-search-q"') == 1

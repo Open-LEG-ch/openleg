@@ -448,3 +448,19 @@ def test_highlighted_result_titles_keep_word_spacing(release_page):
         })).filter(gap => gap !== null)"""
     )
     assert gaps and min(gaps) > 2
+
+
+@pytest.mark.parametrize("locale", ["de-CH", "fr-CH", "it-CH", "en"])
+def test_navigation_search_field_keeps_its_width_on_desktop(release_page, locale):
+    """The nav slot is not a flex container; without a set width the field
+    collapsed to 120 px and clipped «Suchen» and «Rechercher»."""
+    page = release_page
+    for width in (1100, 1280, 1440):
+        page.set_viewport_size({"width": width, "height": 800})
+        assert page.goto(f"http://qa.test/?lang={locale}").status == 200
+        field = page.locator(".release-nav #site-search-q")
+        assert field.bounding_box()["width"] == 200
+        assert page.evaluate(
+            "(r => r.scrollWidth <= r.clientWidth)"
+            "(document.querySelector('.release-nav-row'))"
+        )

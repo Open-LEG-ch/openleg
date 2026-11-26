@@ -2,6 +2,8 @@
  * Site search: the compact field in the navigation and the /suche page.
  * Colours follow /design.md; the roof colour only marks lines. */
 .site-search { position: relative; display: flex; align-items: center; flex: 0 1 200px; min-width: 120px; }
+/* The nav slot is not a flex container, so the field needs its width set; the bar keeps 200 px for it. */
+@media (min-width: 1100px) { .release-search-slot .site-search { width: 200px; } }
 .site-search-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 .site-search .site-search-input {
   flex: 1 1 auto; width: 0; min-width: 0; height: 44px; min-height: 44px; padding: 0 48px 0 16px;
