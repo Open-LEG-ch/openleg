@@ -11,8 +11,31 @@
     const LOADING_DELAY_MS = 250;
     const MIN_LENGTH = 2;
     const MAX_LENGTH = 100;
+    // WCAG 2.1.4: visitors can switch off the single-key shortcut.
+    const SLASH_SETTING = 'openleg.siteSearch.slash';
     const forms = [...document.querySelectorAll('[data-site-search]')];
     const controllers = [];
+
+    function slashEnabled() {
+        try {
+            return root.localStorage.getItem(SLASH_SETTING) !== 'off';
+        } catch (error) {
+            return true;
+        }
+    }
+
+    // Without storage the choice still holds for this page.
+    let slashOverride = null;
+    function setSlash(enabled) {
+        slashOverride = enabled;
+        try {
+            if (enabled) root.localStorage.removeItem(SLASH_SETTING);
+            else root.localStorage.setItem(SLASH_SETTING, 'off');
+        } catch (error) {
+            // Private browsing or blocked storage: keep the page-local choice.
+        }
+    }
+    const slashActive = () => (slashOverride === null ? slashEnabled() : slashOverride);
 
     const isEditable = target => Boolean(target) && (target.isContentEditable
         || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
@@ -93,6 +116,9 @@
         }
 
         function open() {
+            // A menu flyout and the suggestions never show at the same time.
+            const nav = form.closest('nav') || document.querySelector('nav[data-release-nav]');
+            if (nav) nav.querySelectorAll('details[open]').forEach(details => { details.open = false; });
             panel.hidden = false;
             input.setAttribute('aria-expanded', 'true');
             place();
@@ -213,8 +239,21 @@
             open();
         }
 
-        function schedule() {
+        // The shown options belong to the old text: none stays selectable by
+        // Enter, and an answer still on its way is dropped.
+        function invalidate() {
             clearTimeout(timer);
+            clearTimeout(loadingTimer);
+            if (request) request.abort();
+            request = null;
+            sequence += 1;
+            setActive(-1);
+            options = [];
+            shown = '';
+        }
+
+        function schedule() {
+            invalidate();
             const query = input.value.trim().slice(0, MAX_LENGTH);
             if (query.length < MIN_LENGTH) {
                 close();
@@ -257,12 +296,16 @@
                 } else if (input.value) {
                     event.preventDefault();
                     event.stopPropagation();
+                    close();
                     input.value = '';
                     shown = '';
                 }
             } else if (event.key === 'Tab') {
                 close();
             }
+        });
+        form.addEventListener('focusout', event => {
+            if (!form.contains(event.relatedTarget)) close();
         });
         // Keep focus in the field while a pointer chooses an option.
         panel.addEventListener('mousedown', event => event.preventDefault());
@@ -290,9 +333,28 @@
     });
     if (!controllers.length) return;
 
+    const switches = [...document.querySelectorAll('[data-site-search-shortcut]')];
+    function showShortcuts() {
+        const keys = (slashActive() ? '/ ' : '') + 'Control+K Meta+K';
+        controllers.forEach(item => item.input.setAttribute('aria-keyshortcuts', keys));
+        switches.forEach(row => {
+            const box = row.matches('input') ? row : row.querySelector('input');
+            if (box) box.checked = slashActive();
+        });
+    }
+    switches.forEach(row => {
+        row.hidden = false;
+        const box = row.matches('input') ? row : row.querySelector('input');
+        if (box) box.addEventListener('change', () => {
+            setSlash(box.checked);
+            showShortcuts();
+        });
+    });
+    showShortcuts();
+
     document.addEventListener('keydown', event => {
         if (event.defaultPrevented || event.altKey) return;
-        const slash = event.key === '/' && !event.ctrlKey && !event.metaKey;
+        const slash = event.key === '/' && !event.ctrlKey && !event.metaKey && slashActive();
         const commandK = (event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'k';
         if (!slash && !commandK) return;
         if (isEditable(event.target)) return;

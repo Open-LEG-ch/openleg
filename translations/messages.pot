@@ -165,21 +165,21 @@ msgid_plural "%(num)s Tage"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/release/search.html:22
+#: templates/release/search.html:23
 #, python-format
 msgid "%(num)s Treffer für «%(query)s»"
 msgid_plural "%(num)s Treffer für «%(query)s»"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/release/search.html:41
+#: templates/release/search.html:42
 #, python-format
 msgid "%(num)s Treffer in «%(group)s» anzeigen"
 msgid_plural "%(num)s Treffer in «%(group)s» anzeigen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/release/search.html:22
+#: templates/release/search.html:23
 #, python-format
 msgid "%(num)s Treffer in «%(group)s» für «%(query)s»"
 msgid_plural "%(num)s Treffer in «%(group)s» für «%(query)s»"
@@ -2088,7 +2088,7 @@ msgstr ""
 msgid "Beispiel-Dashboard öffnen"
 msgstr ""
 
-#: templates/release/search.html:58
+#: templates/release/search.html:59
 msgid "Beispiele"
 msgstr ""
 
@@ -2913,6 +2913,10 @@ msgstr ""
 
 #: templates/admin/ops.html:206 templates/admin/ops.html:237
 msgid "Created"
+msgstr ""
+
+#: templates/release/search.html:19
+msgid "Ctrl+K oder Cmd+K funktioniert immer."
 msgstr ""
 
 #: templates/gemeinde/methodik.html:58 templates/gemeinde/profil.html:58
@@ -4838,7 +4842,7 @@ msgstr ""
 msgid "Direkt im Terminal ausführen:"
 msgstr ""
 
-#: templates/release/search.html:62
+#: templates/release/search.html:63
 msgid "Direkt weiter"
 msgstr ""
 
@@ -5847,7 +5851,7 @@ msgstr ""
 msgid "Ergebnis zum Fernzugriff"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:46
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
 msgid "Ergebnisseiten"
 msgstr ""
 
@@ -6978,7 +6982,7 @@ msgid "Gemeinden unterstützen"
 msgstr ""
 
 #: templates/gemeinde/vergleich.html:18 templates/release/footer.html:9
-#: templates/release/navigation.html:10 templates/release/search.html:63
+#: templates/release/navigation.html:10 templates/release/search.html:64
 msgid "Gemeinden vergleichen"
 msgstr ""
 
@@ -7488,7 +7492,7 @@ msgstr ""
 
 #: templates/leg_gruenden.html:35 templates/leg_gruenden.html:170
 #: templates/release/how_it_works.html:64 templates/release/navigation.html:8
-#: templates/release/search.html:63 templates/release/software.html:15
+#: templates/release/search.html:64 templates/release/software.html:15
 msgid "Gründung vorbereiten"
 msgstr ""
 
@@ -8930,7 +8934,7 @@ msgstr ""
 msgid "Keine Tracking-Cookies."
 msgstr ""
 
-#: site_search_routes.py:237 templates/release/search.html:50
+#: site_search_routes.py:237 templates/release/search.html:51
 #, python-format
 msgid "Keine Treffer für «%(query)s»"
 msgstr ""
@@ -9067,7 +9071,7 @@ msgstr ""
 #: templates/documents/dso_registration.html:32 templates/impressum.html:34
 #: templates/partials/site_footer.html:12 templates/release/community.html:3
 #: templates/release/footer.html:8 templates/release/navigation.html:12
-#: templates/release/search.html:63
+#: templates/release/search.html:64
 msgid "Kontakt"
 msgstr ""
 
@@ -9393,7 +9397,7 @@ msgid "LEG nicht gefunden."
 msgstr ""
 
 #: templates/release/how_it_works.html:59 templates/release/navigation.html:8
-#: templates/release/search.html:63
+#: templates/release/search.html:64
 msgid "LEG prüfen"
 msgstr ""
 
@@ -10062,7 +10066,7 @@ msgstr ""
 msgid "Meine Vereinsmitgliedschaft"
 msgstr ""
 
-#: site_search_routes.py:227 templates/release/search.html:25
+#: site_search_routes.py:227 templates/release/search.html:26
 #, python-format
 msgid "Meinten Sie «%(suggestion)s»?"
 msgstr ""
@@ -11268,7 +11272,7 @@ msgstr ""
 msgid "Nächste Schritte"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:46
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
 #: templates/verein/queue.html:17
 msgid "Nächste Seite"
 msgstr ""
@@ -11967,7 +11971,7 @@ msgstr ""
 msgid "Postleitzahl"
 msgstr ""
 
-#: templates/release/search.html:42
+#: templates/release/search.html:43
 msgid "Postleitzahlen: amtliches Gebäudeadressverzeichnis von swisstopo."
 msgstr ""
 
@@ -12343,7 +12347,7 @@ msgstr ""
 msgid "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
 msgstr ""
 
-#: templates/release/search.html:51
+#: templates/release/search.html:52
 msgid "Prüfen Sie die Schreibweise, verwenden Sie weniger Wörter oder suchen Sie nach einer Postleitzahl."
 msgstr ""
 
@@ -13209,7 +13213,7 @@ msgid ""
 "durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:46
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
 #, python-format
 msgid "Seite %(page)s"
 msgstr ""
@@ -14157,6 +14161,10 @@ msgstr ""
 
 #: templates/api_docs.html:83
 msgid "Tariffs across municipalities"
+msgstr ""
+
+#: templates/release/search.html:19
+msgid "Taste / springt auf jeder Seite ins Suchfeld"
 msgstr ""
 
 #: templates/verein/events.html:6
@@ -15176,7 +15184,7 @@ msgstr ""
 msgid "Vorher prüfen"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:46
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
 #: templates/verein/queue.html:17
 msgid "Vorherige Seite"
 msgstr ""
@@ -15836,7 +15844,7 @@ msgid "Wissen und Daten"
 msgstr ""
 
 #: templates/release/footer.html:9 templates/release/navigation.html:11
-#: templates/release/search.html:63
+#: templates/release/search.html:64
 msgid "Wissen und Quellen"
 msgstr ""
 
@@ -16269,7 +16277,7 @@ msgstr ""
 msgid "Zurzeit sind keine weiteren Haushalte für eine Anfrage verfügbar."
 msgstr ""
 
-#: templates/release/search.html:26
+#: templates/release/search.html:27
 msgid "Zurück zu allen Treffern"
 msgstr ""
 
@@ -16836,7 +16844,7 @@ msgstr ""
 msgid "| OpenLEG"
 msgstr ""
 
-#: templates/release/search.html:23
+#: templates/release/search.html:24
 #, python-format
 msgid "«%(words)s» kommt auf der Website nicht vor. Die Treffer enthalten die übrigen Wörter."
 msgid_plural "«%(words)s» kommen auf der Website nicht vor. Die Treffer enthalten die übrigen Wörter."

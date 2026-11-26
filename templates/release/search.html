@@ -16,6 +16,7 @@
       <button class="release-button release-button-primary" type="submit">{{ _('Suchen') }}</button>
     </div>
   </form>
+  <p class="site-search-shortcut" data-site-search-shortcut hidden><label><input type="checkbox" checked> {{ _('Taste / springt auf jeder Seite ins Suchfeld') }}</label> <span>{{ _('Ctrl+K oder Cmd+K funktioniert immer.') }}</span></p>
   {% if query %}
   <div class="site-search-summary">
     {% if result.total %}

@@ -86,7 +86,7 @@ const DATA = {
     ],
 };
 
-function setup({inline = false, extraScript = false, abortable = true} = {}) {
+function setup({inline = false, extraScript = false, abortable = true, stored = {}, withSwitch = false} = {}) {
     const document = new Element('#document');
     document.listeners = {};
     document.activeElement = null;
@@ -113,9 +113,23 @@ function setup({inline = false, extraScript = false, abortable = true} = {}) {
     const other = make('input');
     other.name = 'email';
     form.append(input);
-    nav.append(toggle, form, other);
-    document.append(nav);
-    document.querySelectorAll = selector => selector === '[data-site-search]' ? [form] : [];
+    const flyout = make('details');
+    flyout.open = true;
+    const shortcut = make('input');
+    shortcut.type = 'checkbox';
+    shortcut.checked = true;
+    shortcut.dataset.siteSearchShortcut = '';
+    shortcut.hidden = true;
+    const outside = make('a');
+    nav.append(toggle, flyout, form, other);
+    document.append(nav, outside);
+    if (withSwitch) document.append(shortcut);
+    document.querySelectorAll = selector => {
+        if (selector === '[data-site-search]') return [form];
+        if (selector === '[data-site-search-shortcut]') return withSwitch ? [shortcut] : [];
+        return [];
+    };
+    const storage = {...stored};
 
     const timers = new Map();
     let timerId = 0;
@@ -125,6 +139,11 @@ function setup({inline = false, extraScript = false, abortable = true} = {}) {
     const context = {
         document, URLSearchParams, AbortController: abortable ? AbortController : undefined,
         location: {assign: url => assigned.push(url)},
+        localStorage: {
+            getItem: key => (key in storage ? storage[key] : null),
+            setItem: (key, value) => {storage[key] = String(value);},
+            removeItem: key => {delete storage[key];},
+        },
         addEventListener: (type, listener) => {(windowListeners[type] ||= []).push(listener);},
         setTimeout: (fn, delay) => {timers.set(++timerId, {fn, delay}); return timerId;},
         clearTimeout: id => timers.delete(id),
@@ -161,7 +180,7 @@ function setup({inline = false, extraScript = false, abortable = true} = {}) {
     const options = () => [...listbox.walk()].filter(node => node.getAttribute('role') === 'option');
     const status = () => panel.querySelector('p');
     return {document, nav, toggle, form, input, other, panel, listbox, timers, requests, assigned, context,
-        fire, runTimers, type, reply, key, options, status, flush};
+        fire, runTimers, type, reply, key, options, status, flush, flyout, shortcut, storage, outside};
 }
 
 test('the field becomes a combobox that controls a hidden listbox', () => {
@@ -370,4 +389,76 @@ test('the panel sits under the navigation bar unless it is inline', async () => 
 test('loading the script twice enhances the field once', () => {
     const {form} = setup({extraScript: true});
     assert.equal(form.children.filter(node => node.className === 'site-search-panel').length, 1);
+});
+
+test('typing again drops the highlighted option of the old answer', async () => {
+    const {type, requests, reply, input, key, assigned} = setup();
+    await type('Bern');
+    await reply(requests[0], DATA);
+    key('ArrowDown');
+    input.value = 'Zürich';
+    input.dispatch('input');
+    assert.equal(input.getAttribute('aria-activedescendant'), null);
+    assert.equal(key('Enter').defaultPrevented, false);
+    assert.deepEqual(assigned, []);
+});
+
+test('Escape before the first answer cancels it', async () => {
+    const {input, key, requests, runTimers, panel} = setup();
+    input.value = 'Messpunkt';
+    input.dispatch('input');
+    key('Escape');
+    assert.equal(input.value, '');
+    await runTimers();
+    assert.equal(requests.length, 0);
+    assert.equal(panel.hidden, true);
+});
+
+test('an answer that arrives after Escape stays closed', async () => {
+    const {type, requests, reply, key, input, panel} = setup();
+    await type('Messpunkt');
+    key('Escape');
+    assert.equal(input.value, '');
+    await reply(requests[0], DATA);
+    assert.equal(panel.hidden, true);
+});
+
+test('the slash shortcut can be switched off and Ctrl or Cmd+K still works', () => {
+    const {fire, document, input, shortcut, storage} = setup({withSwitch: true});
+    assert.equal(shortcut.hidden, false);
+    assert.equal(shortcut.checked, true);
+    shortcut.checked = false;
+    shortcut.dispatch('change');
+    assert.equal(storage['openleg.siteSearch.slash'], 'off');
+    assert.equal(input.getAttribute('aria-keyshortcuts'), 'Control+K Meta+K');
+    assert.equal(fire('keydown', {key: '/', target: document}).defaultPrevented, false);
+    assert.equal(document.activeElement, null);
+    assert.equal(fire('keydown', {key: 'k', ctrlKey: true, target: document}).defaultPrevented, true);
+    shortcut.checked = true;
+    shortcut.dispatch('change');
+    assert.equal(storage['openleg.siteSearch.slash'], undefined);
+    assert.equal(input.getAttribute('aria-keyshortcuts'), '/ Control+K Meta+K');
+});
+
+test('a stored choice keeps the slash shortcut off on every page', () => {
+    const {fire, document, input} = setup({stored: {'openleg.siteSearch.slash': 'off'}});
+    assert.equal(fire('keydown', {key: '/', target: document}).defaultPrevented, false);
+    assert.equal(input.getAttribute('aria-keyshortcuts'), 'Control+K Meta+K');
+});
+
+test('opening the suggestions closes an open menu flyout', async () => {
+    const {type, requests, reply, flyout} = setup();
+    await type('Baden');
+    await reply(requests[0], DATA);
+    assert.equal(flyout.open, false);
+});
+
+test('moving focus out of the field closes the suggestions', async () => {
+    const {type, requests, reply, form, panel, outside, options} = setup();
+    await type('Baden');
+    await reply(requests[0], DATA);
+    form.dispatch('focusout', {relatedTarget: options()[0]});
+    assert.equal(panel.hidden, false);
+    form.dispatch('focusout', {relatedTarget: outside});
+    assert.equal(panel.hidden, true);
 });

@@ -557,3 +557,41 @@ def test_results_page_suggestions_open_with_the_keyboard(release_page):
     with page.expect_navigation():
         page.keyboard.press("Enter")
     assert urlsplit(page.url).path == urlsplit(target).path
+
+
+@pytest.mark.parametrize("where", ["page", "navigation"])
+def test_a_long_unbroken_query_wraps_inside_the_suggestions(release_page, where):
+    page = release_page
+    page.set_viewport_size({"width": 320, "height": 800})
+    if where == "page":
+        assert page.goto("http://qa.test/suche").status == 200
+        field = page.locator("#site-search-page-q")
+        panel = page.locator(".site-search-page-form .site-search-panel")
+    else:
+        assert page.goto("http://qa.test/pricing").status == 200
+        _inject_navigation_search(page)
+        page.keyboard.press("/")
+        field = page.locator('.release-nav input[role="combobox"]')
+        panel = page.locator(".release-nav .site-search-panel")
+    field.fill("a" * 100)
+    field.dispatch_event("input")
+    page.locator(".site-search-all").first.wait_for()
+    assert panel.evaluate("el => el.scrollWidth <= el.clientWidth")
+    assert page.evaluate("document.documentElement.scrollWidth") == 320
+
+
+def test_the_slash_shortcut_can_be_switched_off(release_page):
+    page = release_page
+    assert page.goto("http://qa.test/suche").status == 200
+    switch = page.locator("[data-site-search-shortcut] input")
+    assert switch.is_visible() and switch.is_checked()
+    switch.uncheck()
+    page.locator("h1").click()
+    page.keyboard.press("/")
+    field = page.locator("#site-search-page-q")
+    assert not field.evaluate("el => el === document.activeElement")
+    page.keyboard.press("Control+k")
+    assert field.evaluate("el => el === document.activeElement")
+    assert field.get_attribute("aria-keyshortcuts") == "Control+K Meta+K"
+    page.reload()
+    assert not page.locator("[data-site-search-shortcut] input").is_checked()
