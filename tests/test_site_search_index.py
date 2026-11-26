@@ -243,3 +243,47 @@ def test_withdrawn_legs_disappear_and_an_unavailable_directory_hides_them(source
     sources["legs"] = None
     clock.now += site_search_index.LEG_TTL_SECONDS
     assert "LEG Sonnenhalde" not in _titles(search)
+
+
+def test_expired_legs_are_hidden_while_their_refresh_is_pending(sources):
+    import threading
+
+    clock = _Clock()
+    release = threading.Event()
+    sources["legs"] = [_document("LEG Sonnenhalde", "leg")]
+    search = SiteSearch(_FakeApp(testing=False), clock=clock)
+    assert search.search("Sonnenhalde", locale="de_CH").total == 1
+    original_legs = site_search_index.leg_documents
+
+    def slow_legs():
+        release.wait(5)
+        return original_legs()
+
+    site_search_index.leg_documents = slow_legs
+    try:
+        # The refresh is due, but within the grace period the entry still shows.
+        clock.now += site_search_index.LEG_TTL_SECONDS
+        assert search.search("Sonnenhalde", locale="de_CH").total == 1
+        # Past it, the pending refresh no longer vouches for the entry.
+        clock.now += site_search_index.LEG_GRACE_SECONDS
+        assert search.search("Sonnenhalde", locale="de_CH").total == 0
+        assert search.search("Sonnenhalde", locale="de_CH", kinds={"leg"}).total == 0
+    finally:
+        site_search_index.leg_documents = original_legs
+        release.set()
+    for _ in range(100):
+        if not search._refreshing:
+            break
+        threading.Event().wait(0.05)
+    assert search.search("Sonnenhalde", locale="de_CH").total == 1
+
+
+def test_an_unchanged_refresh_keeps_the_index(sources):
+    clock = _Clock()
+    search = SiteSearch(_FakeApp(), clock=clock)
+    first = search.index()
+    clock.now += site_search_index.LEG_TTL_SECONDS
+    assert search.index() is first
+    sources["legs"] = [_document("LEG Neu", "leg")]
+    clock.now += site_search_index.LEG_TTL_SECONDS
+    assert search.index() is not first

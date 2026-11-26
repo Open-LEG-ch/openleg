@@ -18,7 +18,8 @@ from pathlib import Path
 
 TARGET = Path(__file__).resolve().parents[1] / "swiss_postcodes.py"
 # A postcode whose addresses mostly lie elsewhere still finds this municipality,
-# but only from one percent of the addresses on. Locality names need ten.
+# but only from a one percent share on. A locality name needs ten percent of
+# that locality's addresses.
 MIN_POSTCODE_SHARE = 1
 MIN_LOCALITY_SHARE = 10
 
@@ -55,29 +56,38 @@ def postcodes_by_municipality():
 
 
 def build(rows):
-    pairs = {}
+    """One line per municipality and postcode with its share of the postcode.
+
+    The directory gives each municipality's share of the addresses of one
+    locality (ZIP_ID), not address counts. Each locality of a postcode
+    therefore weighs the same.
+    """
+    localities = {}
+    shares = {}
+    names = {}
     for row in rows:
         bfs = int(row["BFS-Nr"])
         postcode = row["PLZ4"].strip()
         share = float(row["Adressenanteil"].replace("%", "").strip())
         name = re.sub(r"\s+\d+$", "", row["Ortschaftsname"]).strip()
-        entry = pairs.setdefault((bfs, postcode), {"share": 0.0, "names": {}})
-        entry["share"] = max(entry["share"], share)
-        entry["names"][name] = max(entry["names"].get(name, 0.0), share)
+        localities.setdefault(postcode, set()).add(row["ZIP_ID"])
+        key = (bfs, postcode)
+        shares[key] = shares.get(key, 0.0) + share
+        if share >= MIN_LOCALITY_SHARE:
+            names.setdefault(key, set()).add(name)
+    shares = {
+        (bfs, postcode): total / len(localities[postcode])
+        for (bfs, postcode), total in shares.items()
+    }
     best = {}
-    for (bfs, postcode), entry in pairs.items():
-        best[postcode] = max(best.get(postcode, 0.0), entry["share"])
+    for (bfs, postcode), share in shares.items():
+        best[postcode] = max(best.get(postcode, 0.0), share)
     lines = []
-    for (bfs, postcode), entry in sorted(pairs.items()):
-        share = entry["share"]
+    for (bfs, postcode), share in sorted(shares.items()):
         if share < MIN_POSTCODE_SHARE and share < best[postcode]:
             continue
-        names = sorted(
-            name
-            for name, name_share in entry["names"].items()
-            if name_share >= MIN_LOCALITY_SHARE
-        )
-        lines.append(f"{bfs};{postcode};{max(1, round(share))};{'|'.join(names)}")
+        place = "|".join(sorted(names.get((bfs, postcode), ())))
+        lines.append(f"{bfs};{postcode};{max(1, round(share))};{place}")
     return "\n".join(lines) + "\n"
 
 

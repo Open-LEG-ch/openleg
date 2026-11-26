@@ -148,9 +148,8 @@ def results():
     result = None
     groups = []
     if query:
-        index = site_search().index()
         if kind:
-            result = index.search(
+            result = site_search().search(
                 query,
                 locale=str(get_locale()),
                 kinds={kind},
@@ -158,7 +157,9 @@ def results():
                 offset=(page - 1) * GROUP_PAGE_SIZE,
             )
         else:
-            result = index.search(query, locale=str(get_locale()), limit=PREVIEW_LIMIT)
+            result = site_search().search(
+                query, locale=str(get_locale()), limit=PREVIEW_LIMIT
+            )
         groups = [present_group(group, query) for group in result.groups]
     group_total = groups[0]["total"] if kind and groups else 0
     response = make_response(

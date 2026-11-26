@@ -80,8 +80,11 @@ LISTING_HTML_LIMIT = 48_000
 
 PAGE_TTL_SECONDS = 600
 DATA_TTL_SECONDS = 600
-# A withdrawn LEG must leave the search soon; its directory read is small.
-LEG_TTL_SECONDS = 60
+# A withdrawn LEG must leave the search within a minute: its entries refresh
+# every 50 seconds, and an overdue refresh hides them after 10 more seconds.
+LEG_TTL_SECONDS = 50
+LEG_GRACE_SECONDS = 10
+KINDS = frozenset({PAGE, KNOWLEDGE, MUNICIPALITY, LEG})
 RETRY_SECONDS = 60
 # Marks the internal page renders, which no rate limit counts. Clients cannot
 # set WSGI environment keys, only HTTP_* headers.
@@ -609,6 +612,14 @@ class SiteSearch:
         self._index = None
         self._parts = {name: _Part() for name in ("pages", MUNICIPALITY, LEG)}
 
+    def search(self, query, *, kinds=None, **options):
+        """Search the current index without LEGs whose publication is overdue."""
+        index = self.index()
+        allowed = KINDS if kinds is None else frozenset(kinds)
+        if self._clock() >= self._parts[LEG].expires + LEG_GRACE_SECONDS:
+            allowed = allowed - {LEG}
+        return index.search(query, kinds=allowed, **options)
+
     def index(self):
         if self._index is None:
             with self._lock:
@@ -655,7 +666,7 @@ class SiteSearch:
                 # Publication cannot be confirmed: hide LEGs rather than show
                 # entries that may have been withdrawn meanwhile.
                 documents = ()
-            if documents is not None:
+            if documents is not None and tuple(documents) != part.documents:
                 part.documents = tuple(documents)
                 changed = True
         if changed:

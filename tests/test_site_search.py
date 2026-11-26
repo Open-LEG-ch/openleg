@@ -434,3 +434,21 @@ def test_a_merged_page_does_not_return_in_another_language():
     )
     hits = index.search("Mitarbeiten", locale="de_CH").groups[0].hits
     assert [(hit.document.title, hit.secondary) for hit in hits] == [("Alpha", False)]
+
+
+def test_a_short_prefix_reaches_every_matching_word():
+    index = SearchIndex([_page(f"Rang{number:03d}") for number in range(450)])
+    assert index.search("ra", limit=500).group("page").total == 450
+
+
+def test_hidden_kinds_neither_match_nor_suggest():
+    index = SearchIndex(
+        [
+            Document(kind="leg", url="/leg-verzeichnis/x", title="Sonnenhalde"),
+            _page("Sonne", "Sonnenstrom im Quartier."),
+        ]
+    )
+    assert index.search("Sonnenhlade").suggestion == "Sonnenhalde"
+    result = index.search("Sonnenhlade", kinds={"page"})
+    assert (result.total, result.suggestion) == (0, None)
+    assert index.search("Sonnenhalde", kinds={"page"}).total == 0

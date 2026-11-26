@@ -18,7 +18,7 @@ _DATA = """\
 2;8909;100;Zwillikon
 2;8910;100;Affoltern am Albis
 3;8906;100;Bonstetten
-4;6340;60;Sihlbrugg
+4;6340;30;Sihlbrugg
 4;8915;100;Hausen am Albis
 4;8925;100;Ebertswil
 5;8908;100;Hedingen
@@ -29,7 +29,7 @@ _DATA = """\
 10;8912;100;Obfelden
 11;8913;100;Ottenbach
 12;8911;100;Rifferswil
-13;8143;100;Stallikon|Uetliberg
+13;8143;75;Stallikon|Uetliberg
 14;8907;100;Wettswil
 22;8463;100;Benken ZH
 23;8415;100;Berg am Irchel|Gräslikon
@@ -44,7 +44,7 @@ _DATA = """\
 33;8451;100;Kleinandelfingen
 33;8453;100;Alten
 33;8461;100;Oerlingen
-34;8212;100;Nohl
+34;8212;50;Nohl
 34;8248;100;Uhwiesen
 34;8447;3;
 35;8460;100;Marthalen
@@ -63,7 +63,7 @@ _DATA = """\
 54;8305;100;Dietlikon
 55;8193;100;Eglisau
 56;8424;100;Embrach
-57;8427;100;Freienstein
+57;8427;50;Freienstein
 57;8428;99;Teufen ZH
 58;8192;100;Glattfelden|Zweidlen
 59;8182;100;Hochfelden
@@ -73,9 +73,9 @@ _DATA = """\
 63;8426;100;Lufingen
 64;8309;100;Nürensdorf
 65;8425;100;Oberembrach
-66;8152;100;Glattbrugg|Glattpark (Opfikon)|Opfikon
+66;8152;98;Glattbrugg|Glattpark (Opfikon)|Opfikon
 67;8197;100;Rafz
-68;8427;100;Rorbas
+68;8427;50;Rorbas
 68;8428;1;
 69;8304;100;Wallisellen
 70;8195;100;Wasterkingen
@@ -97,15 +97,15 @@ _DATA = """\
 91;8166;100;Niederweningen
 92;8154;100;Oberglatt ZH
 93;5462;3;
-93;8165;100;Oberweningen
+93;8165;33;Oberweningen
 94;8112;100;Otelfingen
 95;8158;97;Regensberg
 96;8105;100;Regensdorf|Watt
 96;8106;100;Adlikon b. Regensdorf
-97;8152;5;
+97;8152;2;
 97;8153;100;Rümlang
-98;8165;100;Schleinikon
-99;8165;100;Schöfflisdorf
+98;8165;33;Schleinikon
+99;8165;33;Schöfflisdorf
 100;8174;99;Stadel b. Niederglatt
 100;8175;100;Windlach
 101;8162;100;Steinmaur|Sünikon
@@ -120,7 +120,7 @@ _DATA = """\
 114;8496;100;Steg im Tösstal
 114;8497;100;Fischenthal
 114;8498;62;Gibswil
-115;8614;100;Bertschikon (Gossau ZH)
+115;8614;50;Bertschikon (Gossau ZH)
 115;8624;100;Grüt (Gossau ZH)
 115;8625;100;Gossau ZH
 115;8626;100;Ottikon (Gossau ZH)
@@ -137,7 +137,7 @@ _DATA = """\
 121;8623;100;Wetzikon ZH
 131;8134;100;Adliswil
 135;8802;100;Kilchberg ZH
-136;8135;100;Langnau am Albis
+136;8135;33;Langnau am Albis
 137;8942;100;Oberrieden
 138;8805;100;Richterswil
 138;8833;99;Samstagern
@@ -159,10 +159,9 @@ _DATA = """\
 160;8126;100;Zumikon
 161;8125;100;Zollikerberg
 161;8702;100;Zollikon
-172;8308;1;
 172;8320;100;Fehraltorf
 173;8335;100;Hittnau
-176;8310;100;Grafstal|Kemptthal
+176;8310;90;Grafstal|Kemptthal
 176;8312;100;Winterberg ZH
 176;8315;100;Lindau
 176;8317;100;Tagelswangen
@@ -170,32 +169,32 @@ _DATA = """\
 177;8331;100;Auslikon
 178;8322;100;Gündisau|Madetswil
 178;8332;100;Rumlikon|Russikon
-180;8308;8;
+180;8308;4;
 180;8484;100;Neschwil|Theilingen|Weisslingen
 180;8486;2;
 181;8492;89;Wila
 181;8493;4;
 182;8489;100;Ehrikon|Schalchen|Wildberg
-191;8044;100;Gockhausen
+191;8044;50;Gockhausen
 191;8600;100;Dübendorf
 192;8127;1;
-192;8132;100;Egg b. Zürich|Hinteregg
+192;8132;98;Egg b. Zürich|Hinteregg
 192;8133;100;Esslingen
 193;8117;100;Fällanden
 193;8118;100;Pfaffhausen
 193;8121;100;Benglen
-194;8606;100;Greifensee
+194;8606;50;Greifensee
 195;8122;100;Binz
 195;8123;100;Ebmatingen
 195;8124;100;Maur
 195;8127;70;Forch
-195;8132;3;
+195;8132;2;
 196;8607;5;
 196;8617;99;Mönchaltorf
 197;8603;100;Schwerzenbach
-198;8606;100;Nänikon
+198;8606;50;Nänikon
 198;8610;100;Uster
-198;8614;100;Sulzbach
+198;8614;50;Sulzbach
 198;8615;100;Freudwil|Wermatswil
 198;8616;100;Riedikon
 199;8604;100;Volketswil
@@ -208,22 +207,22 @@ _DATA = """\
 215;8421;100;Dättlikon
 216;8474;100;Dinhard
 218;8548;100;Ellikon an der Thur
-219;8352;100;Elsau
+219;8352;50;Elsau
 220;8523;97;Hagenbuch ZH
 221;8442;100;Hettlingen
 223;8412;100;Aesch (Neftenbach)|Hünikon (Neftenbach)|Riet (Neftenbach)
 223;8413;100;Neftenbach
 224;8422;100;Pfungen
 225;8545;100;Rickenbach Sulz|Rickenbach ZH
-226;8354;3;
+226;8354;1;
 226;8418;100;Schlatt ZH
 227;8472;100;Oberohringen|Seuzach|Unterohringen
 228;8363;4;
 228;8488;100;Turbenthal
 228;8492;11;Wila
 228;8495;75;Schmidrüti
-230;8310;20;Kemptthal
-230;8352;100;Ricketwil (Winterthur)
+230;8310;10;Kemptthal
+230;8352;50;Ricketwil (Winterthur)
 230;8400;100;Winterthur
 230;8404;100;Reutlingen (Winterthur)|Stadel (Winterthur)|Winterthur
 230;8405;100;Winterthur
@@ -244,7 +243,7 @@ _DATA = """\
 247;8902;1;
 247;8952;99;Schlieren
 248;8142;99;Uitikon Waldegg
-248;8143;8;
+248;8143;4;
 249;8103;100;Unterengstringen
 249;8951;15;Fahrweid
 250;8902;99;Urdorf
@@ -261,7 +260,7 @@ _DATA = """\
 261;8037;100;Zürich
 261;8038;100;Zürich
 261;8041;100;Zürich
-261;8044;100;Zürich
+261;8044;50;Zürich
 261;8045;100;Zürich
 261;8046;100;Zürich
 261;8047;100;Zürich
@@ -275,29 +274,29 @@ _DATA = """\
 261;8057;100;Zürich
 261;8064;100;Zürich
 261;8142;1;
-261;8143;42;Uetliberg
+261;8143;21;Uetliberg
 291;8450;100;Andelfingen
 291;8452;100;Adlikon b. Andelfingen
 291;8457;100;Humlikon
 292;8468;100;Guntalingen|Waltalingen
 292;8476;100;Unterstammheim
 292;8477;100;Oberstammheim
-292;8525;43;Wilen b. Neunforn
+292;8525;22;Wilen b. Neunforn
 293;8804;100;Au ZH
 293;8820;100;Wädenswil
 293;8824;100;Schönenberg ZH
 293;8825;100;Hütten
 294;8353;100;Elgg
-294;8354;100;Dickbuch|Hofstetten ZH
+294;8354;99;Dickbuch|Hofstetten ZH
 294;8355;3;
 294;8523;3;
-295;6340;8;
-295;8135;100;Sihlbrugg Station|Sihlwald
+295;6340;4;
+295;8135;67;Sihlbrugg Station|Sihlwald
 295;8810;100;Horgen
 295;8815;100;Horgenberg
 295;8816;100;Hirzel
 296;8307;100;Effretikon|Ottikon b. Kemptthal
-296;8308;99;Agasul|Illnau
+296;8308;95;Agasul|Illnau
 296;8314;100;Kyburg
 296;8482;10;Sennhof (Winterthur)
 296;8483;10;
@@ -307,16 +306,15 @@ _DATA = """\
 298;8542;100;Wiesendangen
 298;8543;100;Bertschikon|Gundetswil|Kefikon ZH
 298;8544;100;Attikon
-298;8546;100;Menzengrüt
+298;8546;33;Menzengrüt
 301;3270;100;Aarberg
 301;3273;1;
 302;3282;100;Bargen BE
-302;3283;2;
 303;3257;100;Ammerzwil BE|Grossaffoltern
 303;3262;100;Suberg
-304;3207;96;Golaten
+304;3207;48;Golaten
 304;3226;6;
-304;3283;100;Kallnach|Niederried b. Kallnach
+304;3283;99;Kallnach|Niederried b. Kallnach
 305;3252;3;
 305;3273;99;Kappelen
 306;3250;99;Lyss
@@ -326,9 +324,9 @@ _DATA = """\
 307;3046;100;Wahlendorf
 309;3036;93;Detligen
 309;3271;100;Radelfingen b. Aarberg
-310;3053;100;Lätti
-310;3251;100;Ruppoldsried
-310;3254;8;
+310;3053;20;Lätti
+310;3251;50;Ruppoldsried
+310;3254;4;
 310;3255;100;Rapperswil BE
 310;3256;100;Bangerten b. Dieterswil|Dieterswil|Seewil
 311;3054;100;Schüpfen
@@ -337,32 +335,32 @@ _DATA = """\
 312;3267;100;Seedorf BE
 312;3268;100;Lobsigen
 321;4912;100;Aarwangen
-321;4922;4;
-322;4938;4;
+321;4922;2;
+322;4938;2;
 322;4944;100;Auswil
 323;4913;100;Bannwil
 324;3368;99;Bleienbach
-325;4917;100;Busswil b. Melchnau
+325;4917;50;Busswil b. Melchnau
 326;4955;99;Gondiswil
 329;4900;100;Langenthal
 329;4916;100;Untersteckholz
 329;4924;100;Obersteckholz
 331;3368;1;
-331;4932;100;Lotzwil
+331;4932;50;Lotzwil
 332;4919;1;
-332;4932;100;Gutenburg
+332;4932;50;Gutenburg
 332;4934;100;Madiswil
 332;4935;100;Leimiswil
 332;4936;97;Kleindietwil
-333;4917;100;Melchnau
+333;4917;50;Melchnau
 335;4943;88;Oeschenbach
 336;4919;99;Reisiswil
 337;4914;100;Roggwil BE
-338;4938;96;Rohrbach
-339;4938;98;Rohrbachgraben
+338;4938;48;Rohrbach
+339;4938;49;Rohrbachgraben
 340;4933;100;Rütschelen
 341;4911;100;Schwarzhäusern
-342;4922;100;Bützberg|Thunstetten
+342;4922;98;Bützberg|Thunstetten
 344;4936;3;
 344;4937;100;Ursenbach
 344;4942;1;
@@ -439,17 +437,17 @@ _DATA = """\
 372;2533;100;Evilard
 381;3296;100;Arch
 382;3263;100;Büetigen
-383;3294;100;Büren an der Aare
+383;3294;50;Büren an der Aare
 385;3264;100;Diessbach b. Büren
 386;3293;100;Dotzigen
 387;2543;100;Lengnau BE
 388;3297;100;Leuzigen
-389;3294;100;Meienried
+389;3294;50;Meienried
 390;2554;100;Meinisberg
 391;3298;100;Oberwil b. Büren
 392;2542;100;Pieterlen
 393;3295;100;Rüti b. Büren
-394;3251;100;Wengi b. Büren
+394;3251;50;Wengi b. Büren
 401;3426;100;Aefligen
 402;3473;100;Alchenstorf
 403;3323;100;Bäriswil BE
@@ -458,70 +456,66 @@ _DATA = """\
 404;3414;16;Oberburg
 405;3423;100;Ersigen
 405;3424;100;Niederösch|Oberösch
-405;3472;7;
-406;3415;100;Hasle b. Burgdorf|Schafhausen im Emmental
+405;3472;4;
+406;3415;67;Hasle b. Burgdorf|Schafhausen im Emmental
 406;3419;87;Biembach im Emmental
 406;3432;29;Lützelflüh-Goldbach
 406;3433;5;
 407;3412;100;Heimiswil
 407;3413;95;Kaltacker
-407;3415;2;
 407;3416;3;
 407;3418;11;Rüegsbach
-407;3472;1;
-408;3429;100;Hellsau
+408;3429;50;Hellsau
 409;3324;100;Hindelbank|Mötschwil
 409;3325;7;
-409;3421;1;
-410;3429;100;Höchstetten
-411;3309;100;Kernenried
+410;3429;50;Höchstetten
+411;3309;50;Kernenried
 412;3400;5;
-412;3422;100;Kirchberg BE
-413;3425;100;Koppigen
+412;3422;33;Kirchberg BE
+413;3425;50;Koppigen
 414;3325;93;Hettiswil b. Hindelbank
 414;3326;99;Krauchthal
-415;3421;89;Lyssach
+415;3421;45;Lyssach
 418;3414;81;Oberburg
-418;3421;10;
-420;3422;100;Alchenflüh|Rüdtligen
-421;3472;93;Rumendingen
-422;3421;100;Rüti b. Lyssach
-423;3425;100;Willadingen
+418;3421;5;
+420;3422;67;Alchenflüh|Rüdtligen
+421;3472;46;Rumendingen
+422;3421;50;Rüti b. Lyssach
+423;3425;50;Willadingen
 424;3464;32;Schmidigen-Mühleweg
-424;3472;98;Wynigen
+424;3472;49;Wynigen
 424;3474;98;Rüedisbach
-431;2534;1;
 431;2606;99;Corgémont
-431;2608;9;
-431;2720;41;La Tanne
-432;2608;11;Montagne-de-Courtelary
-432;2610;26;Mont-Crosin
+431;2608;5;
+431;2720;20;La Tanne
+432;2608;5;Montagne-de-Courtelary
+432;2610;6;Mont-Crosin
 432;2612;100;Cormoret
 433;2607;100;Cortébert
-433;2608;40;Montagne-de-Courtelary
+433;2608;20;Montagne-de-Courtelary
 433;2723;7;
-434;2608;100;Courtelary|Montagne-de-Courtelary
-434;2610;48;Mont-Crosin
+434;2608;70;Courtelary|Montagne-de-Courtelary
+434;2610;12;Mont-Crosin
 434;2723;4;
-435;2333;100;La Cibourg|La Ferrière
+435;2333;91;La Cibourg|La Ferrière
 437;2723;76;Mont-Tramelan
-438;2534;100;Les Prés-d'Orvin|Orvin
+438;2534;98;Les Prés-d'Orvin|Orvin
 438;2535;3;
-441;2616;100;La Cibourg|Renan BE
+441;2616;97;La Cibourg|Renan BE
 442;2536;2;
 442;2538;100;Romont BE
 442;2603;1;
-443;2345;45;Le Cerneux-Veusil
-443;2610;100;Les Pontins|Mont-Soleil|St-Imier
+443;2345;11;Le Cerneux-Veusil
+443;2610;66;Les Pontins|Mont-Soleil|St-Imier
 444;2605;100;Sonceboz-Sombeval
-444;2720;20;La Tanne
-445;2333;17;La Ferrière
-445;2610;36;Mont-Soleil
+444;2720;10;La Tanne
+445;2333;9;La Ferrière
+445;2610;9;Mont-Soleil
 445;2615;100;Montagne-de-Sonvilier|Sonvilier
-446;2720;99;La Tanne|Tramelan
+446;2720;61;La Tanne|Tramelan
 446;2722;100;Les Reussilles
 446;2723;13;Mont-Tramelan
-448;2610;27;Mont-Crosin
+448;2610;7;Mont-Crosin
 448;2613;100;Villeret
 449;2535;91;Frinvillier
 449;2536;98;Plagne
@@ -529,20 +523,18 @@ _DATA = """\
 450;2535;6;
 450;2603;99;Péry
 450;2604;100;La Heutte
-450;2732;2;
 491;3237;100;Brüttelen
 492;3235;92;Erlach
-493;2577;100;Finsterhennen
+493;2577;50;Finsterhennen
 494;2525;2;
 494;3235;2;
 494;3238;100;Gals
 495;3236;90;Gampelen
 496;3232;100;Ins
 496;3236;9;
-497;2575;1;
 497;2576;85;Lüscherz
 498;3225;100;Müntschemier
-499;2577;100;Siselen BE
+499;2577;50;Siselen BE
 500;3226;94;Treiten
 501;3233;99;Tschugg
 502;2576;15;Lüscherz
@@ -550,77 +542,75 @@ _DATA = """\
 533;3314;10;Schalunen
 533;3315;100;Bätterkinden|Kräiligen
 533;4573;3;
-535;3053;100;Deisswil b. Münchenbuchsee
+535;3053;20;Deisswil b. Münchenbuchsee
 538;3306;100;Etzelkofen
 538;3308;100;Grafenried
-538;3309;100;Zauggenried
+538;3309;50;Zauggenried
 538;3312;100;Fraubrunnen
 538;3313;100;Büren zum Hof
 538;3314;90;Schalunen
 538;3317;100;Limpach|Mülchi
-540;3303;100;Ballmoos|Jegenstorf|Münchringen
-540;3305;100;Scheunen
-541;3305;100;Iffwil
-543;3322;100;Mattstetten
+540;3303;75;Ballmoos|Jegenstorf|Münchringen
+540;3305;50;Scheunen
+541;3305;50;Iffwil
+543;3322;50;Mattstetten
 544;3302;100;Moosseedorf
-544;3322;5;
+544;3322;3;
 546;3052;6;
-546;3053;100;Diemerswil|Münchenbuchsee
-551;3322;95;Urtenen-Schönbühl
+546;3053;40;Diemerswil|Münchenbuchsee
+551;3322;47;Urtenen-Schönbühl
 552;3427;100;Utzenstorf
-553;3053;100;Wiggiswil
+553;3053;20;Wiggiswil
 554;3428;100;Wiler b. Utzenstorf
-556;4564;100;Zielebach
-557;3303;100;Zuzwil BE
+556;4564;50;Zielebach
+557;3303;25;Zuzwil BE
 561;3715;100;Adelboden
 561;3725;2;
 562;3703;100;Aeschi b. Spiez|Aeschiried
-562;3711;95;Emdthal|Mülenen
-563;3714;100;Frutigen
+562;3711;93;Emdthal|Mülenen
+563;3714;50;Frutigen
 563;3724;100;Ried (Frutigen)
 563;3725;98;Achseten
 564;3716;99;Kandergrund
 564;3717;100;Blausee-Mitholz
 565;3718;100;Kandersteg
 566;3704;97;Krattigen
-567;3711;9;
+567;3711;4;
 567;3713;100;Reichenbach im Kandertal
-567;3714;100;Wengi b. Frutigen
+567;3714;50;Wengi b. Frutigen
 567;3722;100;Scharnachtal
 567;3723;100;Kiental
-571;3800;100;Sundlauenen
+571;3800;25;Sundlauenen
 571;3803;100;Beatenberg
 572;3806;100;Bönigen b. Interlaken
-573;3855;100;Axalp|Brienz BE
+573;3855;66;Axalp|Brienz BE
 574;3856;99;Brienzwiler
-574;3860;2;
 575;3707;100;Därligen
-576;3816;100;Burglauenen
+576;3816;51;Burglauenen
 576;3818;100;Grindelwald
-576;3823;48;Kleine Scheidegg
+576;3823;16;Kleine Scheidegg
 577;3814;100;Gsteigwiler
 578;3815;100;Gündlischwand|Zweilütschinen
 579;3804;100;Habkern
 580;3858;100;Hofstetten b. Brienz
-581;3800;100;Interlaken
+581;3800;25;Interlaken
 582;3807;100;Iseltwald
 584;3801;33;Jungfraujoch
 584;3822;100;Isenfluh|Lauterbrunnen
-584;3823;100;Eigergletscher|Kleine Scheidegg|Wengen
+584;3823;84;Eigergletscher|Kleine Scheidegg|Wengen
 584;3824;100;Stechelberg
 584;3825;100;Mürren
 584;3826;100;Gimmelwald
 585;3706;100;Leissigen
-586;3816;99;Lütschental
-587;3800;100;Matten b. Interlaken
+586;3816;49;Lütschental
+587;3800;25;Matten b. Interlaken
 588;3853;100;Niederried b. Interlaken
 589;3854;100;Oberried am Brienzersee
-589;3855;2;
 590;3805;100;Goldswil b. Interlaken
 590;3852;100;Ringgenberg BE
 591;3813;100;Saxeten
-592;3855;100;Schwanden b. Brienz
-593;3800;100;Unterseen
+592;3855;33;Schwanden b. Brienz
+593;3800;25;Unterseen
 594;3812;99;Wilderswil
 602;3507;3;
 602;3508;94;Arni BE
@@ -630,28 +620,28 @@ _DATA = """\
 605;3534;9;
 605;3538;2;
 605;3673;1;
-606;3671;97;Brenzikofen
-607;3510;100;Freimettigen
+606;3671;49;Brenzikofen
+607;3510;33;Freimettigen
 608;3082;75;Schlosswil
 608;3506;95;Grosshöchstetten
-609;3510;90;Häutligen
-610;3671;100;Herbligen
-611;3629;99;Kiesen
+609;3510;30;Häutligen
+610;3671;50;Herbligen
+611;3629;33;Kiesen
 612;3503;100;Gysenstein
-612;3510;100;Konolfingen
-613;3434;99;Landiswil|Obergoldbach
+612;3510;33;Konolfingen
+613;3434;94;Landiswil|Obergoldbach
 614;3673;95;Linden
-615;3532;99;Mirchel
+615;3532;50;Mirchel
 616;3083;100;Trimstein
 616;3110;100;Münsingen
 616;3111;100;Tägertschi
-617;3504;100;Niederhünigen
+617;3504;50;Niederhünigen
 619;3672;100;Aeschlen b. Oberdiessbach|Oberdiessbach
 619;3674;97;Bleiken b. Oberdiessbach
 620;3506;4;
 620;3508;5;
 620;3531;98;Oberthal
-622;3629;100;Oppligen
+622;3629;33;Oppligen
 623;3112;3;
 623;3113;99;Rubigen
 626;3512;100;Walkringen
@@ -663,15 +653,15 @@ _DATA = """\
 627;3082;25;Schlosswil
 627;3113;1;
 628;3531;1;
-628;3532;100;Zäziwil
-629;3504;100;Oberhünigen
+628;3532;50;Zäziwil
+629;3504;50;Oberhünigen
 629;3673;3;
 630;3112;97;Allmendingen b. Bern
 632;3114;100;Wichtrach
-632;3510;10;
+632;3510;3;
 662;3205;21;Gümmenen
-662;3206;100;Biberen|Ferenbalm|Gammen|Rizenbach
-662;3207;6;
+662;3206;80;Biberen|Ferenbalm|Gammen|Rizenbach
+662;3207;3;
 663;3020;15;Bern
 663;3033;3;
 663;3202;88;Frauenkappelen
@@ -687,43 +677,43 @@ _DATA = """\
 670;3176;100;Neuenegg
 670;3177;2;
 670;3204;24;Rosshäusern
-671;3207;93;Wileroltigen
+671;3207;46;Wileroltigen
 681;2744;100;Belprahon
-683;2735;91;Champoz
-687;2747;100;Corcelles BE
-690;2735;9;
+683;2735;30;Champoz
+687;2747;50;Corcelles BE
+690;2735;3;
 690;2738;100;Court
 691;2746;100;Crémines
-691;4716;4;
+691;4716;2;
 692;2743;100;Eschert
 694;2745;100;Grandval
-696;2732;100;Loveresse
+696;2732;25;Loveresse
 701;2742;100;Perrefitte
-703;2732;98;Reconvilier
+703;2732;24;Reconvilier
 704;2762;100;Roches BE
 706;2712;86;Le Fuet
 706;2713;100;Bellelay
-706;2732;100;Saicourt
-707;2732;100;Saules BE
-708;2827;76;Schelten
-709;2747;93;Seehof
+706;2732;25;Saicourt
+707;2732;25;Saules BE
+708;2827;38;Schelten
+709;2747;46;Seehof
 711;2736;100;Sorvilier
 713;2710;100;Tavannes
-713;2720;17;La Tanne
-715;2717;100;Rebévelier
+713;2720;8;La Tanne
+715;2717;50;Rebévelier
 716;2712;14;Le Fuet
 716;2715;100;Châtelat|Monible
 716;2716;100;Sornetan
-716;2717;100;Fornet-Dessous
-716;2748;100;Les Ecorcheresses|Souboz
+716;2717;50;Fornet-Dessous
+716;2748;82;Les Ecorcheresses|Souboz
 717;2733;100;Pontenet
-717;2735;100;Bévilard|Malleray
+717;2735;67;Bévilard|Malleray
 723;2514;14;Ligerz
 723;2520;100;La Neuveville
 723;2523;2;
 724;2518;100;Nods
 724;2523;3;
-724;2534;2;
+724;2534;1;
 726;2515;100;Prêles
 726;2516;87;Lamboing
 726;2517;100;Diesse
@@ -732,27 +722,27 @@ _DATA = """\
 732;2563;2;
 732;2564;100;Bellmund
 733;2555;100;Brügg BE
-734;3274;100;Bühl b. Aarberg
-735;3272;100;Epsach
-736;2575;97;Hagneck
-737;3274;100;Hermrigen
+734;3274;33;Bühl b. Aarberg
+735;3272;50;Epsach
+736;2575;32;Hagneck
+737;3274;33;Hermrigen
 738;2565;100;Jens
 739;2563;98;Ipsach
 740;2513;5;
 740;2514;86;Ligerz
-741;3274;100;Merzligen
-742;2572;100;Mörigen
+741;3274;33;Merzligen
+742;2572;50;Mörigen
 743;2560;90;Nidau
 744;2552;99;Orpund
 745;2560;10;
 745;2562;98;Port
 746;2553;100;Safnern
-747;2556;100;Scheuren
-748;2556;100;Schwadernau
+747;2556;50;Scheuren
+748;2556;50;Schwadernau
 749;2557;99;Studen BE
-750;2572;100;Sutz
-751;2575;100;Gerolfingen|Täuffelen
-754;3272;100;Walperswil
+750;2572;50;Sutz
+751;2575;67;Gerolfingen|Täuffelen
+754;3272;50;Walperswil
 755;3252;97;Worben
 756;2512;100;Tüscherz-Alfermée
 756;2513;95;Twann
@@ -770,15 +760,15 @@ _DATA = """\
 763;3762;100;Erlenbach im Simmental
 766;3764;10;Weissenburg
 766;3765;100;Oberwil im Simmental
-767;3645;100;Zwieselberg
+767;3645;50;Zwieselberg
 767;3647;100;Reutigen
-768;3645;21;Gwatt (Thun)
+768;3645;10;Gwatt (Thun)
 768;3646;100;Einigen
 768;3700;100;Spiez
 768;3702;100;Hondrich
 768;3704;3;
 768;3705;100;Faulensee
-769;3711;5;
+769;3711;2;
 769;3752;100;Wimmis
 770;3631;97;Höfen b. Thun
 770;3632;100;Niederstocken|Oberstocken
@@ -791,8 +781,8 @@ _DATA = """\
 784;3863;100;Gadmen
 785;3856;1;
 785;3857;100;Unterbach BE
-785;3860;100;Brünig|Meiringen
-786;3860;100;Rosenlaui|Schattenhalb
+785;3860;50;Brünig|Meiringen
+786;3860;50;Rosenlaui|Schattenhalb
 791;1657;7;
 791;3766;100;Boltigen
 792;3775;100;Lenk im Simmental
@@ -828,7 +818,7 @@ _DATA = """\
 855;3154;2;
 855;3157;81;Milken
 855;3183;100;Albligen
-861;3086;6;
+861;3086;3;
 861;3115;2;
 861;3122;1;
 861;3123;100;Belp
@@ -837,18 +827,16 @@ _DATA = """\
 863;3664;98;Burgistein
 866;3115;96;Gerzensee
 867;3663;100;Gurzelen
-868;3629;100;Jaberg
-869;3126;100;Kaufdorf
+868;3629;33;Jaberg
+869;3126;50;Kaufdorf
 870;3122;99;Kehrsatz
 872;3115;2;
 872;3116;100;Kirchdorf BE|Mühledorf BE|Noflen BE
 872;3125;1;
-872;3126;100;Gelterfingen
-872;3629;1;
-877;3086;1;
+872;3126;50;Gelterfingen
 877;3087;83;Niedermuhlern
 879;3099;96;Rüti b. Riggisberg
-879;3128;100;Rümligen
+879;3128;50;Rümligen
 879;3132;99;Riggisberg
 880;3087;3;
 880;3088;100;Oberbütschel|Rüeggisberg
@@ -860,10 +848,10 @@ _DATA = """\
 884;3125;92;Toffen
 885;3628;100;Uttigen
 886;3665;99;Wattenwil
-888;3086;100;Englisberg|Zimmerwald
+888;3086;96;Englisberg|Zimmerwald
 888;3087;14;Niedermuhlern
 889;3127;100;Lohnstorf|Mühlethurnen
-889;3128;100;Kirchenthurnen
+889;3128;50;Kirchenthurnen
 901;3536;100;Aeschau
 901;3537;99;Eggiwil
 901;3618;2;
@@ -898,7 +886,7 @@ _DATA = """\
 908;3557;100;Fankhaus (Trub)
 909;3555;75;Trubschachen
 921;3633;96;Amsoldingen
-922;3638;100;Blumenstein
+922;3638;50;Blumenstein
 923;3614;8;
 923;3615;98;Heimenschwand
 923;3618;1;
@@ -909,19 +897,19 @@ _DATA = """\
 927;3625;99;Heiligenschwendi
 928;3613;15;Steffisburg
 928;3627;98;Heimberg
-928;3671;3;
+928;3671;1;
 929;3626;73;Hünibach
 929;3652;99;Hilterfingen
 931;3622;100;Homberg b. Thun
 932;3619;20;Eriz
-932;3623;100;Buchen BE|Horrenbach
+932;3623;67;Buchen BE|Horrenbach
 934;3653;100;Oberhofen am Thunersee
 934;3654;8;
 935;3616;62;Schwarzenegg
 935;3618;12;Süderen
-936;3638;100;Pohlern
+936;3638;50;Pohlern
 938;3619;2;
-938;3623;26;Teuffenthal b. Thun
+938;3623;9;Teuffenthal b. Thun
 938;3654;92;Gunten
 938;3655;100;Sigriswil
 938;3656;100;Aeschlen ob Gunten|Ringoldswil|Tschingel ob Gunten
@@ -930,27 +918,26 @@ _DATA = """\
 939;3612;100;Steffisburg
 939;3613;85;Steffisburg
 939;3617;10;
-939;3624;100;Schwendibach
+939;3624;50;Schwendibach
 939;3627;2;
-940;3623;74;Teuffenthal b. Thun
+940;3623;25;Teuffenthal b. Thun
 941;3633;4;
 941;3634;100;Thierachern
 941;3635;2;
-941;3636;1;
 942;3600;100;Thun
 942;3603;100;Thun
 942;3604;100;Thun
 942;3608;100;Thun
-942;3624;100;Goldiwil (Thun)
+942;3624;50;Goldiwil (Thun)
 942;3626;27;Hünibach
-942;3645;79;Gwatt (Thun)
+942;3645;40;Gwatt (Thun)
 943;3631;3;
 943;3635;98;Uebeschi
 944;3661;100;Uetendorf
 945;3614;92;Unterlangenegg
 945;3616;38;Schwarzenegg
 946;3618;38;Süderen
-948;3636;100;Forst b. Längenbühl|Längenbühl
+948;3636;99;Forst b. Längenbühl|Längenbühl
 951;3413;4;
 951;3416;92;Affoltern im Emmental
 951;3462;65;Weier im Emmental
@@ -960,23 +947,22 @@ _DATA = """\
 952;3465;100;Dürrenroth
 952;4942;3;
 953;4952;98;Eriswil
-954;4938;1;
 954;4950;100;Huttwil
 954;4952;1;
 954;4953;89;Schwarzenbach (Huttwil)
 955;3414;3;
-955;3415;11;Rüegsauschachen
+955;3415;4;Rüegsauschachen
 955;3418;1;
 955;3419;13;Biembach im Emmental
 955;3432;71;Lützelflüh-Goldbach
 955;3433;12;Schwanden im Emmental
-955;3434;11;Obergoldbach
+955;3434;5;Obergoldbach
 955;3435;100;Ramsei
 955;3439;52;Ranflüh
 955;3452;100;Grünenmatt
 955;3454;4;
 955;3456;23;Trachselwald
-956;3415;87;Rüegsauschachen
+956;3415;29;Rüegsauschachen
 956;3416;1;
 956;3417;100;Rüegsau
 956;3418;87;Rüegsbach
@@ -996,10 +982,10 @@ _DATA = """\
 960;4953;11;Schwarzenbach (Huttwil)
 960;4954;100;Wyssachen
 971;4536;98;Attiswil
-972;3376;100;Berken
+972;3376;50;Berken
 973;3366;100;Bettenhausen|Bollodingen
-975;4539;100;Farnern
-976;3376;100;Graben
+975;4539;50;Farnern
+976;3376;50;Graben
 977;3372;100;Wanzwil
 977;3373;100;Heimenhausen|Röthenbach Herzogenbuchsee
 979;3360;100;Herzogenbuchsee
@@ -1007,42 +993,41 @@ _DATA = """\
 980;3375;100;Inkwil
 981;4704;100;Niederbipp|Wolfisberg
 982;3362;100;Niederönz
-982;4556;3;
 983;4538;100;Oberbipp
-985;3367;100;Ochlenberg
+985;3367;50;Ochlenberg
 985;3476;70;Oschwand
-987;4539;99;Rumisberg
+987;4539;50;Rumisberg
 988;3365;100;Grasswil|Seeberg
 988;3474;2;
 988;3475;100;Hermiswil|Riedtwil
 988;3476;28;Oschwand
 988;4943;3;
-989;3367;100;Thörigen
+989;3367;50;Thörigen
 989;3476;2;
-990;3380;100;Walliswil b. Niederbipp
+990;3380;50;Walliswil b. Niederbipp
 991;3377;100;Walliswil b. Wangen
 992;3374;100;Wangenried
-992;3380;95;Wangen an der Aare
+992;3380;47;Wangen an der Aare
 992;4536;2;
-995;3380;5;
+995;3380;3;
 995;4537;100;Wiedlisbach
 1001;6112;100;Doppleschwand
-1002;6162;100;Entlebuch|Finsterwald b. Entlebuch|Rengg
+1002;6162;96;Entlebuch|Finsterwald b. Entlebuch|Rengg
 1002;6163;100;Ebnet
 1002;6166;2;
 1004;6173;99;Flühli LU
 1004;6174;99;Sörenberg
 1004;6192;8;
 1004;6197;3;
-1005;6162;11;Finsterwald b. Entlebuch
+1005;6162;4;Finsterwald b. Entlebuch
 1005;6166;97;Hasle LU
-1007;6110;100;Fontannen b. Wolhusen
+1007;6110;50;Fontannen b. Wolhusen
 1007;6113;100;Romoos
 1007;6167;100;Bramboden
 1008;6170;98;Schüpfheim
 1009;6105;98;Schachen LU
 1009;6106;38;Werthenstein
-1009;6110;19;Wolhusen
+1009;6110;9;Wolhusen
 1010;3555;1;
 1010;6173;1;
 1010;6182;100;Escholzmatt
@@ -1067,19 +1052,19 @@ _DATA = """\
 1030;6295;100;Mosen
 1031;6274;1;
 1031;6275;1;
-1031;6280;90;Hochdorf|Urswil
+1031;6280;85;Hochdorf|Urswil
 1031;6283;63;Baldegg
 1032;6275;19;Ballwil
 1032;6276;100;Hohenrain
 1032;6277;100;Kleinwangen|Lieli LU
 1032;6283;7;
 1033;6034;85;Inwil
-1033;6038;11;Gisikon
+1033;6038;6;Gisikon
 1037;6026;97;Rain
 1039;6026;1;
 1039;6027;100;Römerswil LU
 1039;6028;94;Herlisberg
-1039;6280;20;Urswil
+1039;6280;15;Urswil
 1039;6283;30;Baldegg
 1040;6023;99;Rothenburg
 1041;6287;1;
@@ -1090,18 +1075,18 @@ _DATA = """\
 1053;6036;100;Dierikon
 1054;6030;100;Ebikon
 1054;6032;4;
-1055;6038;88;Gisikon
+1055;6038;44;Gisikon
 1056;6404;100;Greppen
-1058;6005;100;St. Niklausen LU
+1058;6005;52;St. Niklausen LU
 1058;6047;100;Kastanienbaum
 1058;6048;99;Horw
-1059;6005;7;
-1059;6010;100;Kriens
+1059;6005;4;
+1059;6010;50;Kriens
 1059;6012;100;Obernau
 1059;6013;3;
 1061;6003;100;Luzern
 1061;6004;100;Luzern
-1061;6005;90;Luzern
+1061;6005;45;Luzern
 1061;6006;100;Luzern
 1061;6014;93;Luzern
 1061;6015;100;Luzern
@@ -1115,7 +1100,7 @@ _DATA = """\
 1064;6344;100;Meierskappel
 1065;6035;34;Perlen
 1065;6037;100;Root
-1065;6038;100;Honau
+1065;6038;50;Honau
 1065;6039;100;Root D4
 1065;6044;2;
 1066;6013;94;Eigenthal
@@ -1136,10 +1121,10 @@ _DATA = """\
 1085;6232;100;Geuensee
 1086;6022;100;Grosswangen
 1088;6024;99;Hildisrieden
-1089;6212;100;St. Erhard
+1089;6212;50;St. Erhard
 1089;6213;100;Knutwil
 1091;6210;6;
-1091;6212;100;Kaltbach
+1091;6212;50;Kaltbach
 1091;6216;96;Mauensee
 1091;6242;6;
 1093;6016;46;Hellbühl
@@ -1158,7 +1143,7 @@ _DATA = """\
 1098;6019;98;Sigigen
 1098;6105;2;
 1098;6106;62;Werthenstein
-1098;6110;4;
+1098;6110;2;
 1098;6206;1;
 1099;6214;100;Schenkon
 1099;6222;1;
@@ -1168,7 +1153,7 @@ _DATA = """\
 1104;6234;100;Kulmerau|Triengen
 1104;6235;95;Winikon
 1104;6236;100;Wilihof
-1107;6110;76;Wolhusen
+1107;6110;38;Wolhusen
 1107;6114;100;Steinhuserberg
 1121;6248;95;Alberswil
 1122;6147;84;Altbüron
@@ -1180,7 +1165,6 @@ _DATA = """\
 1125;6246;3;
 1125;6252;99;Dagmersellen
 1125;6253;100;Uffikon
-1125;6260;2;
 1127;6243;100;Egolzwil
 1127;6244;1;
 1128;6217;100;Kottwil
@@ -1194,11 +1178,10 @@ _DATA = """\
 1132;6125;8;
 1132;6132;44;Rohrmatt
 1132;6133;99;Hergiswil b. Willisau
-1132;6156;2;
+1132;6156;1;
 1135;6153;2;
 1135;6154;97;Hofstatt
-1135;6156;100;Luthern|Luthern Bad
-1136;6110;1;
+1135;6156;97;Luthern|Luthern Bad
 1136;6122;99;Menznau
 1136;6123;100;Geiss
 1136;6125;83;Menzberg
@@ -1207,7 +1190,7 @@ _DATA = """\
 1139;6147;1;
 1139;6264;100;Pfaffnau
 1139;6265;9;
-1140;6260;100;Mehlsecken|Reiden|Reidermoos
+1140;6260;76;Mehlsecken|Reiden|Reidermoos
 1140;6262;100;Langnau b. Reiden
 1140;6263;99;Richenthal
 1142;6265;91;Roggliswil
@@ -1216,7 +1199,7 @@ _DATA = """\
 1145;6153;96;Ufhusen
 1146;6242;94;Wauwil
 1147;4806;100;Wikon
-1147;6260;92;Hintermoos
+1147;6260;23;Hintermoos
 1150;6144;99;Zell LU
 1150;6152;95;Hüswil
 1150;6153;1;
@@ -1228,13 +1211,13 @@ _DATA = """\
 1151;6142;100;Gettnau
 1151;6143;2;
 1151;6154;3;
-1151;6156;3;
+1151;6156;2;
 1151;6248;4;
 1201;6460;88;Altdorf UR
 1202;6490;100;Andermatt
 1203;6390;2;
 1203;6468;100;Attinghausen
-1205;6436;14;Bisisthal
+1205;6436;6;Bisisthal
 1205;6460;11;Altdorf UR
 1205;6463;100;Bürglen UR
 1205;6469;22;Haldi b. Schattdorf
@@ -1259,10 +1242,10 @@ _DATA = """\
 1216;6474;59;Amsteg
 1216;6475;100;Bristen
 1216;6476;27;Intschi
-1217;6452;81;Riemenstalden|Sisikon
+1217;6452;61;Riemenstalden|Sisikon
 1218;6464;99;Spiringen
 1218;8751;100;Urnerboden
-1219;6436;6;
+1219;6436;2;
 1219;6465;100;Unterschächen
 1220;6484;100;Wassen UR
 1220;6485;100;Meien
@@ -1272,39 +1255,39 @@ _DATA = """\
 1301;8844;99;Euthal
 1301;8846;99;Willerzell
 1301;8847;99;Egg SZ
-1311;6410;100;Rigi Scheidegg
+1311;6410;20;Rigi Scheidegg
 1311;6442;100;Gersau
 1321;8834;96;Schindellegi
 1321;8835;100;Feusisberg
 1321;8836;4;
-1322;8640;100;Hurden
+1322;8640;50;Hurden
 1322;8806;69;Bäch SZ
 1322;8807;100;Freienbach
 1322;8808;100;Pfäffikon SZ
-1322;8832;100;Wilen b. Wollerau
+1322;8832;50;Wilen b. Wollerau
 1323;8806;31;Bäch SZ
-1323;8832;100;Wollerau
+1323;8832;50;Wollerau
 1323;8834;4;
 1331;6402;100;Merlischachen
 1331;6403;100;Küssnacht am Rigi
 1331;6405;100;Immensee
 1341;8852;100;Altendorf
-1342;8854;100;Galgenen|Siebnen
+1342;8854;63;Galgenen|Siebnen
 1343;8858;100;Innerthal
 1344;8853;99;Lachen SZ
 1345;8864;100;Reichenburg
-1346;8854;51;Siebnen
+1346;8854;26;Siebnen
 1346;8862;100;Schübelbach
 1346;8863;99;Buttikon SZ
 1347;8855;6;
 1347;8856;100;Tuggen
 1348;8857;100;Vorderthal
-1349;8854;24;Siebnen
+1349;8854;12;Siebnen
 1349;8855;94;Wangen SZ
 1361;8849;100;Alpthal
 1362;6318;2;
 1362;6356;32;Rigi Kaltbad
-1362;6410;100;Goldau|Rigi Klösterli|Rigi Kulm|Rigi Staffel
+1362;6410;80;Goldau|Rigi Klösterli|Rigi Kulm|Rigi Staffel
 1362;6414;100;Oberarth
 1362;6415;100;Arth
 1362;6416;2;
@@ -1314,13 +1297,12 @@ _DATA = """\
 1365;6424;100;Lauerz
 1366;6433;86;Stoos SZ
 1366;6443;100;Morschach
-1366;6452;19;Sisikon
+1366;6452;9;Sisikon
 1367;6433;14;Stoos SZ
-1367;6436;100;Bisisthal|Muotathal|Ried (Muotathal)
-1367;8750;1;
+1367;6436;92;Bisisthal|Muotathal|Ried (Muotathal)
 1368;8842;7;
 1368;8843;94;Oberiberg
-1369;6452;59;Riemenstalden
+1369;6452;30;Riemenstalden
 1370;6418;93;Rothenthurm
 1371;6417;97;Sattel
 1372;6417;2;
@@ -1333,7 +1315,7 @@ _DATA = """\
 1374;6416;98;Steinerberg
 1375;8842;93;Unteriberg
 1375;8845;100;Studen SZ
-1401;6010;100;Pilatus Kulm
+1401;6010;50;Pilatus Kulm
 1401;6053;100;Alpnachstad
 1401;6055;100;Alpnach Dorf
 1402;6388;20;Grafenort
@@ -1356,22 +1338,22 @@ _DATA = """\
 1501;6375;100;Beckenried
 1501;6376;7;
 1502;6374;99;Buochs
-1503;6383;100;Dallenwil|Wiesenberg|Wirzweli
+1503;6383;75;Dallenwil|Wiesenberg|Wirzweli
 1504;6376;93;Emmetten
 1504;6377;8;
-1505;6363;76;Bürgenstock|Obbürgen
+1505;6363;31;Bürgenstock|Obbürgen
 1505;6373;99;Ennetbürgen
 1506;6372;100;Ennetmoos
 1507;6013;3;
 1507;6052;100;Hergiswil NW
-1508;6370;100;Oberdorf NW
+1508;6370;50;Oberdorf NW
 1508;6382;100;Büren NW
-1508;6383;76;Niederrickenbach
-1509;6370;100;Stans
+1508;6383;19;Niederrickenbach
+1509;6370;50;Stans
 1510;6362;99;Stansstad
-1510;6363;100;Bürgenstock|Fürigen|Obbürgen
+1510;6363;69;Bürgenstock|Fürigen|Obbürgen
 1510;6365;97;Kehrsiten
-1511;6383;24;Niederrickenbach
+1511;6383;6;Niederrickenbach
 1511;6386;100;Wolfenschiessen
 1511;6387;100;Oberrickenbach
 1511;6388;80;Grafenort
@@ -1402,64 +1384,64 @@ _DATA = """\
 1632;8750;100;Glarus|Klöntal|Riedern
 1632;8754;100;Netstal
 1632;8755;99;Ennenda
-1701;6314;11;Neuägeri
+1701;6314;6;Neuägeri
 1701;6319;100;Allenwinden
-1701;6340;100;Baar
+1701;6340;50;Baar
 1702;6330;100;Cham
 1702;6332;99;Hagendorn
 1703;6331;100;Hünenberg
 1703;6332;1;
 1703;6333;100;Hünenberg See
 1704;6313;100;Edlibach|Finstersee|Menzingen
-1704;6314;28;Neuägeri
-1704;6315;4;
-1705;6340;32;Sihlbrugg
+1704;6314;14;Neuägeri
+1704;6315;1;
+1705;6340;16;Sihlbrugg
 1705;6345;100;Neuheim
-1706;6315;99;Alosen|Morgarten|Oberägeri
+1706;6315;98;Alosen|Morgarten|Oberägeri
 1706;6417;1;
 1706;6418;6;
 1706;8836;5;
 1707;6343;100;Buonas|Holzhäusern ZG|Risch|Rotkreuz
 1708;6312;100;Steinhausen
-1709;6314;100;Neuägeri|Unterägeri
+1709;6314;75;Neuägeri|Unterägeri
 1710;6318;98;Walchwil
 1711;6300;100;Zug|Zugerberg
-1711;6314;11;Neuägeri
+1711;6314;6;Neuägeri
 1711;6317;100;Oberwil b. Zug
-2008;1473;100;Châtillon FR
+2008;1473;50;Châtillon FR
 2011;1482;100;Cugy FR
-2011;1483;100;Vesin
+2011;1483;33;Vesin
 2022;1544;100;Gletterens
-2025;1470;100;Bollion|Lully FR|Seiry
+2025;1470;75;Bollion|Lully FR|Seiry
 2029;1774;100;Cousset|Montagny-les-Monts
 2029;1775;100;Grandsivaz|Mannens
 2029;1776;99;Montagny-la-Ville
 2035;1485;95;Nuvilly
-2038;1410;100;Prévondavaux
+2038;1410;20;Prévondavaux
 2041;1566;100;Les Friques|St-Aubin FR
-2043;1541;100;Sévaz
-2044;1525;6;
+2043;1541;33;Sévaz
+2044;1525;3;
 2044;1527;100;Villeneuve FR
 2044;1528;100;Praratoud|Surpierre
 2044;1529;100;Cheiry
-2044;1534;100;Chapelle (Broye)
-2045;1565;100;Vallon
-2050;1483;100;Frasses|Montet (Broye)
+2044;1534;50;Chapelle (Broye)
+2045;1565;50;Vallon
+2050;1483;67;Frasses|Montet (Broye)
 2050;1484;100;Aumont|Granges-de-Vesin
-2050;1534;5;
+2050;1534;3;
 2051;1567;100;Delley
 2051;1568;100;Portalban
 2053;1563;100;Dompierre FR
 2053;1564;100;Domdidier
-2053;1580;16;Oleyres
+2053;1580;6;Oleyres
 2053;1773;100;Chandon|Léchelles|Russy
 2053;1776;1;
-2054;1470;100;Estavayer-le-Lac
-2054;1473;100;Font
+2054;1470;25;Estavayer-le-Lac
+2054;1473;50;Font
 2054;1475;100;Autavaux|Forel FR|Montbrelloz
 2054;1486;100;Vuissens
 2054;1489;100;Murist
-2054;1541;100;Bussy FR|Morens FR
+2054;1541;67;Bussy FR|Morens FR
 2054;1542;100;Rueyres-les-Prés
 2055;1468;100;Cheyres
 2055;1474;100;Châbles FR
@@ -1468,32 +1450,31 @@ _DATA = """\
 2063;1681;100;Billens|Hennens
 2067;1689;100;Le Châtelard-près-Romont
 2068;1553;100;Châtonnaye
-2079;1686;100;Grangettes-près-Romont
+2079;1686;50;Grangettes-près-Romont
 2086;1692;100;Massonnens
-2087;1680;100;Berlens
+2087;1680;50;Berlens
 2087;1684;100;Mézières FR
-2096;1680;98;Romont FR
-2097;1608;100;Chapelle (Glâne)
+2096;1680;49;Romont FR
+2097;1608;25;Chapelle (Glâne)
 2097;1673;100;Auboranges|Ecublens FR|Gillarens|Promasens|Rue
-2097;1675;99;Blessens
+2097;1675;33;Blessens
 2099;1676;100;Chavannes-les-Forts
 2099;1677;100;Prez-vers-Siviriez
 2099;1678;100;Siviriez
 2099;1679;100;Villaraboud
 2102;1670;100;Bionnens|Esmonts|Ursy
 2102;1674;100;Montet (Glâne)|Morlens|Vuarmarens
-2102;1675;100;Mossel|Vauderens
+2102;1675;67;Mossel|Vauderens
 2113;1685;100;Villariaz
-2113;1686;100;La Neirigue
+2113;1686;50;La Neirigue
 2113;1687;100;Estévenens|La Magne|Vuisternens-devant-Romont
 2113;1688;100;Lieffrens|Sommentier
 2113;1697;100;La Joux FR|Les Ecasseys
-2114;1690;4;
+2114;1690;2;
 2114;1694;100;Chavannes-sous-Orsonnens|Orsonnens|Villargiroud|Villarsiviriaux
 2115;1748;100;Torny-le-Grand
 2115;1749;100;Middes
-2117;1680;1;
-2117;1690;100;Lussy FR|Villaz-St-Pierre
+2117;1690;98;Lussy FR|Villaz-St-Pierre
 2117;1691;100;Villarimboud
 2121;1669;100;Albeuve|Les Sciernes-d'Albeuve|Lessoc|Montbovon|Neirivue
 2122;1643;100;Gumefens
@@ -1503,20 +1484,20 @@ _DATA = """\
 2124;1636;99;Broc
 2125;1630;100;Bulle
 2125;1635;96;La Tour-de-Trême
-2128;1653;99;Châtel-sur-Montsalvens
+2128;1653;50;Châtel-sur-Montsalvens
 2129;1646;2;
 2129;1647;99;Corbières
 2129;1651;100;Villarvolard
-2130;1653;100;Crésuz
+2130;1653;50;Crésuz
 2131;1646;98;Echarlens
-2134;1666;100;Grandvillard
+2134;1666;50;Grandvillard
 2135;1635;3;
 2135;1636;1;
-2135;1663;100;Epagny|Gruyères|Moléson-sur-Gruyères|Pringy
+2135;1663;99;Epagny|Gruyères|Moléson-sur-Gruyères|Pringy
 2137;1648;100;Hauteville
 2138;1656;100;Im Fang|Jaun
 2138;1657;5;
-2138;1716;3;
+2138;1716;1;
 2140;1633;100;Marsens|Vuippens
 2143;1638;100;Morlon
 2145;1635;1;
@@ -1530,44 +1511,41 @@ _DATA = """\
 2153;1642;100;Sorens
 2155;1627;98;Vaulruz
 2160;1628;98;Vuadens
-2162;1663;3;
 2162;1665;100;Estavannens
-2162;1666;100;Villars-sous-Mont
+2162;1666;50;Villars-sous-Mont
 2162;1667;100;Enney
 2163;1637;99;Charmey (Gruyère)
 2163;1654;100;Cerniat FR
-2163;1716;4;
+2163;1716;1;
 2173;1742;100;Autigny
 2173;1745;6;
-2174;1754;100;Avry-sur-Matran|Corjolens
-2175;1720;2;
-2175;1782;100;Autafond|Belfaux
+2174;1754;91;Avry-sur-Matran|Corjolens
+2175;1782;33;Autafond|Belfaux
 2177;1744;100;Chénens
-2183;1720;100;Chésopelloz|Corminboeuf
+2183;1720;99;Chésopelloz|Corminboeuf
 2183;1753;4;
 2186;1741;100;Cottens FR
-2194;1724;100;Ferpicloz
+2194;1724;12;Ferpicloz
 2196;1700;95;Fribourg
 2196;1722;100;Bourguillon
 2197;1762;100;Givisiez
 2198;1763;100;Granges-Paccot
-2206;1723;100;Marly
+2206;1723;33;Marly
 2206;1725;2;
 2208;1753;96;Matran
 2211;1740;100;Neyruz FR
-2216;1723;100;Pierrafortscha
-2220;1724;100;Bonnefontaine|Essert FR|Le Mouret|Montévraz|Oberried FR|Zénauva
-2226;1724;4;
+2216;1723;33;Pierrafortscha
+2220;1724;74;Bonnefontaine|Essert FR|Le Mouret|Montévraz|Oberried FR|Zénauva
+2226;1724;1;
 2226;1733;100;Treyvaux
 2228;1752;100;Villars-sur-Glâne
-2230;1723;100;Villarsel-sur-Marly
-2230;1724;1;
+2230;1723;33;Villarsel-sur-Marly
 2233;1725;97;Posieux
 2233;1730;100;Ecuvillens
 2234;1745;94;Lentigny
-2234;1754;9;
+2234;1754;5;
 2234;1756;100;Lovens|Onnens FR
-2235;1782;100;Cormagens|Formangueires|La Corbaz|Lossy
+2235;1782;67;Cormagens|Formangueires|La Corbaz|Lossy
 2236;1695;100;Estavayer-le-Gibloux|Rueyres-St-Laurent|Villarlod|Villarsel-le-Gibloux
 2236;1696;100;Vuisternens-en-Ogoz
 2236;1726;100;Farvagny-le-Grand|Farvagny-le-Petit|Grenilles|Posat
@@ -1575,63 +1553,62 @@ _DATA = """\
 2236;1728;100;Rossens FR
 2237;1746;100;Prez-vers-Noréaz
 2237;1747;100;Corserey
-2237;1754;9;
+2237;1754;5;
 2237;1757;100;Noréaz
-2238;1724;96;Senèdes
+2238;1724;12;Senèdes
 2238;1725;2;
 2238;1731;100;Ependes FR
 2238;1732;100;Arconciel
 2239;1772;100;Grolley|Nierlet-les-Bois|Ponthaux
 2250;1796;100;Courgevaux
-2250;3280;4;
+2250;3280;1;
 2254;1583;100;Villarepos
 2254;1783;100;Barberêche|Pensier
 2254;1784;100;Courtepin|Wallenried
 2254;1791;100;Courtaman
 2254;1795;6;
-2254;3212;2;
+2254;3212;1;
 2257;1785;100;Cressier FR
 2258;3284;100;Fräschels
-2261;3280;97;Greng
+2261;3280;32;Greng
 2262;1792;100;Cordast|Guschelmuth
 2262;3179;2;
 2262;3205;2;
-2262;3206;100;Wallenbuch
-2262;3212;100;Gurmels|Kleingurmels
-2262;3213;100;Liebistorf
+2262;3206;20;Wallenbuch
+2262;3212;99;Gurmels|Kleingurmels
+2262;3213;50;Liebistorf
 2262;3214;100;Ulmiz
-2265;3207;4;
+2265;3207;3;
 2265;3210;99;Kerzers
-2266;3213;100;Kleinbösingen
-2271;3280;100;Meyriez
+2266;3213;50;Kleinbösingen
+2271;3280;33;Meyriez
 2272;1721;100;Cormérod|Cournillens|Courtion|Misery
 2274;3286;100;Muntelier
-2275;1595;100;Clavaleyres
+2275;1595;50;Clavaleyres
 2275;1793;97;Jeuss
 2275;1794;100;Salvenach
 2275;1795;94;Courlevon
 2275;3215;100;Büchslen|Gempenach|Lurtigen
-2275;3280;96;Murten
+2275;3280;33;Murten
 2275;3285;100;Galmiz
 2276;3216;100;Agriswil|Ried b. Kerzers
 2284;1786;100;Sugiez
-2284;1787;100;Mur (Vully) FR|Môtier (Vully)
+2284;1787;67;Mur (Vully) FR|Môtier (Vully)
 2284;1788;100;Praz (Vully)
 2284;1789;100;Lugnorre
-2292;1719;99;Brünisried
+2292;1719;50;Brünisried
 2293;1700;1;
 2293;3186;100;Düdingen
 2294;1735;99;Giffers
 2295;3178;100;Bösingen
 2295;3185;2;
 2296;1714;67;Heitenried
-2299;1716;100;Oberschrot|Plaffeien|Schwarzsee
-2299;1719;100;Zumholz
+2299;1716;98;Oberschrot|Plaffeien|Schwarzsee
+2299;1719;50;Zumholz
 2299;1738;16;Sangernboden
 2300;1737;100;Plasselb
 2301;1718;92;Rechthalten
 2301;1735;1;
-2303;1724;4;
 2303;1736;100;St. Silvester
 2304;1715;2;
 2304;1717;99;St. Ursen
@@ -1648,13 +1625,13 @@ _DATA = """\
 2309;3175;100;Flamatt
 2309;3184;99;Wünnewil
 2321;1616;100;Attalens
-2321;1617;100;Tatroz
+2321;1617;50;Tatroz
 2321;1808;3;
 2323;1615;100;Bossonnens
 2325;1618;100;Châtel-St-Denis
 2325;1619;100;Les Paccots
 2328;1614;100;Granges (Veveyse)
-2333;1617;100;Remaufens
+2333;1617;50;Remaufens
 2335;1609;100;Besencens|Fiaugères|St-Martin FR
 2336;1623;100;Semsales
 2337;1699;100;Bouloz|Pont (Veveyse)|Porsel
@@ -1669,7 +1646,7 @@ _DATA = """\
 2406;4625;100;Oberbuchsiten
 2407;4702;100;Oensingen
 2408;4628;100;Wolfwil
-2421;2747;7;
+2421;2747;4;
 2421;4714;100;Aedermannsdorf
 2421;4717;2;
 2422;4710;100;Balsthal
@@ -1682,14 +1659,14 @@ _DATA = """\
 2428;4229;2;
 2428;4717;95;Mümliswil
 2428;4719;97;Ramiswil
-2430;4716;99;Gänsbrunnen|Welschenrohr
+2430;4716;97;Gänsbrunnen|Welschenrohr
 2445;4585;100;Biezwil
 2455;4571;100;Ichertswil|Lüterkofen
-2457;3254;100;Balm b. Messen|Messen
+2457;3254;96;Balm b. Messen|Messen
 2457;3307;100;Brunnenthal
-2457;4588;100;Oberramsern
+2457;4588;33;Oberramsern
 2461;3253;100;Schnottwil
-2463;4588;100;Unterramsern
+2463;4588;33;Unterramsern
 2464;4574;99;Lüsslingen|Nennigkofen
 2465;4576;100;Tscheppach
 2465;4577;100;Hessigkofen
@@ -1701,13 +1678,13 @@ _DATA = """\
 2465;4584;100;Gächliwil|Lüterswil
 2465;4586;100;Kyburg-Buchegg
 2465;4587;100;Aetingen
-2465;4588;100;Brittern
-2471;4112;100;Bättwil
+2465;4588;33;Brittern
+2471;4112;50;Bättwil
 2472;4413;100;Büren SO
 2473;4143;100;Dornach
 2474;4145;100;Gempen
 2475;4146;100;Hochwald
-2476;4112;100;Flüh
+2476;4112;50;Flüh
 2476;4114;100;Hofstetten SO
 2477;4115;99;Mariastein
 2477;4116;100;Metzerlen
@@ -1730,29 +1707,28 @@ _DATA = """\
 2502;4634;94;Wisen SO
 2503;5015;100;Erlinsbach SO
 2503;5017;24;Barmelweid
-2511;4556;100;Aeschi SO|Burgäschi|Steinhof SO
+2511;4556;74;Aeschi SO|Burgäschi|Steinhof SO
 2513;4500;4;
 2513;4528;1;
 2513;4562;100;Biberist
-2513;4574;1;
-2514;4556;100;Bolken
+2514;4556;25;Bolken
 2516;4542;2;
 2516;4543;98;Deitingen
 2517;4552;99;Derendingen
 2517;4553;1;
-2518;4554;100;Etziken
+2518;4554;50;Etziken
 2519;4563;100;Gerlafingen
 2523;4557;100;Horriwil
-2524;4554;100;Hüniken
+2524;4554;50;Hüniken
 2525;4566;100;Halten|Kriegstetten|Oekingen
 2526;4573;97;Lohn-Ammannsegg
 2527;4542;98;Luterbach
-2528;4564;100;Obergerlafingen
+2528;4564;50;Obergerlafingen
 2530;4565;100;Recherswil
 2532;4553;99;Subingen
 2534;4528;99;Zuchwil
 2535;4558;100;Heinrichswil|Hersiwil|Winistorf
-2541;4524;100;Balmberg|Oberbalmberg
+2541;4524;67;Balmberg|Oberbalmberg
 2541;4525;100;Balm b. Günsberg
 2542;4512;100;Bellach
 2543;2544;100;Bettlach
@@ -1760,9 +1736,9 @@ _DATA = """\
 2545;4534;100;Flumenthal
 2545;4543;2;
 2546;2540;100;Grenchen
-2547;4524;100;Günsberg
-2548;4535;100;Hubersdorf
-2549;4535;100;Kammersrohr
+2547;4524;33;Günsberg
+2548;4535;50;Hubersdorf
+2549;4535;50;Kammersrohr
 2550;4513;100;Langendorf
 2551;4514;100;Lommiswil
 2553;4515;100;Oberdorf SO|Weissenstein b. Solothurn
@@ -1773,12 +1749,11 @@ _DATA = """\
 2555;4522;97;Rüttenen
 2555;4532;5;
 2556;2545;100;Selzach
-2556;4574;2;
 2571;4618;98;Boningen
 2572;4658;100;Däniken SO
 2573;4657;100;Dulliken
 2573;5746;9;
-2574;5012;100;Eppenberg|Wöschnau
+2574;5012;67;Eppenberg|Wöschnau
 2575;4629;100;Fulenbach
 2576;5014;100;Gretzenbach
 2578;4614;1;
@@ -1790,14 +1765,14 @@ _DATA = """\
 2580;4618;2;
 2581;4600;100;Olten
 2582;4613;100;Rickenbach SO
-2583;5012;100;Schönenwerd
+2583;5012;33;Schönenwerd
 2584;4656;99;Starrkirch-Wil
 2585;5746;91;Walterswil SO
 2586;4612;100;Wangen b. Olten
 2601;4500;94;Solothurn
 2611;4252;98;Bärschwil
 2611;4253;4;
-2612;2827;24;Schelten
+2612;2827;12;Schelten
 2612;4229;94;Beinwil SO
 2612;4719;3;
 2613;4226;100;Breitenbach
@@ -1928,10 +1903,10 @@ _DATA = """\
 2888;4438;96;Langenbruck
 2889;4229;3;
 2889;4426;100;Lauwil
-2890;4436;93;Liedertswil
+2890;4436;46;Liedertswil
 2891;4435;97;Niederdorf
 2892;4435;3;
-2892;4436;100;Oberdorf BL
+2892;4436;54;Oberdorf BL
 2893;4418;98;Reigoldswil
 2894;4425;100;Titterten
 2895;4418;1;
@@ -1943,11 +1918,11 @@ _DATA = """\
 2904;8213;100;Neunkirch
 2904;8223;2;
 2904;8224;1;
-2914;8236;100;Büttenhardt
+2914;8236;50;Büttenhardt
 2915;8239;100;Dörflingen
 2917;8235;100;Lohn SH
 2919;8234;100;Stetten SH
-2920;8236;100;Opfertshofen SH
+2920;8236;50;Opfertshofen SH
 2920;8240;100;Thayngen
 2920;8241;100;Barzheim
 2920;8242;100;Bibern SH|Hofen SH
@@ -1957,7 +1932,7 @@ _DATA = """\
 2932;8223;96;Guntmadingen
 2933;8454;100;Buchberg
 2936;8232;100;Merishausen
-2937;8212;99;Neuhausen am Rheinfall
+2937;8212;50;Neuhausen am Rheinfall
 2938;8455;99;Rüdlingen
 2939;8200;100;Schaffhausen
 2939;8203;100;Schaffhausen
@@ -2004,30 +1979,28 @@ _DATA = """\
 3033;9405;97;Wienacht-Tobel
 3033;9426;99;Lutzenberg
 3034;9038;95;Rehetobel
-3035;9411;100;Reute AR|Schachen b. Reute
+3035;9411;99;Reute AR|Schachen b. Reute
 3036;9044;100;Wald AR
 3037;9428;99;Walzenhausen
 3038;9410;1;
 3038;9425;2;
 3038;9427;99;Wolfhalden
-3101;9050;96;Appenzell|Appenzell Meistersrüte
-3102;9050;2;
-3102;9108;100;Gonten|Gontenbad|Jakobsbad
-3104;9050;100;Appenzell Enggenhütten|Appenzell Schlatt
+3101;9050;26;Appenzell|Appenzell Meistersrüte
+3102;9108;99;Gonten|Gontenbad|Jakobsbad
+3104;9050;33;Appenzell Enggenhütten|Appenzell Schlatt
 3104;9053;2;
 3104;9054;100;Haslen AI
 3104;9055;7;
 3104;9056;1;
 3111;9413;99;Oberegg
-3111;9442;97;Büriswilen
-3111;9450;7;
-3112;9050;100;Appenzell|Appenzell Eggerstanden|Appenzell Steinegg
+3111;9442;49;Büriswilen
+3111;9450;3;
+3112;9050;40;Appenzell|Appenzell Eggerstanden|Appenzell Steinegg
 3112;9057;100;Schwende|Wasserauen|Weissbad
 3112;9058;99;Brülisau
-3112;9108;3;
 3201;9308;89;Lömmenschwil
 3201;9312;100;Häggenschwil
-3202;8580;6;
+3202;8580;1;
 3202;9220;2;
 3202;9308;5;
 3202;9313;97;Muolen
@@ -2061,9 +2034,9 @@ _DATA = """\
 3231;9435;66;Heerbrugg
 3232;9435;20;Heerbrugg
 3232;9436;96;Balgach
-3233;9411;2;
+3233;9411;1;
 3233;9435;8;
-3233;9442;99;Berneck
+3233;9442;51;Berneck
 3234;9436;2;
 3234;9443;5;
 3234;9444;100;Diepoldsau
@@ -2075,11 +2048,11 @@ _DATA = """\
 3237;9425;98;Thal
 3238;9435;6;
 3238;9443;95;Widnau
-3251;9450;100;Altstätten SG|Lüchingen
+3251;9450;96;Altstätten SG|Lüchingen
 3251;9452;55;Hinterforst
 3251;9453;2;
 3251;9463;5;
-3251;9464;100;Lienz
+3251;9464;51;Lienz
 3252;9452;45;Hinterforst
 3252;9453;98;Eichberg
 3253;9437;99;Marbach SG
@@ -2088,25 +2061,24 @@ _DATA = """\
 3254;9462;100;Montlingen
 3254;9463;95;Oberriet SG
 3255;9445;100;Rebstein
-3256;9464;97;Rüthi (Rheintal)
+3256;9464;49;Rüthi (Rheintal)
 3271;9469;4;
-3271;9470;99;Buchs SG
+3271;9470;49;Buchs SG
 3272;9473;100;Gams
-3273;9470;100;Werdenberg
+3273;9470;50;Werdenberg
 3273;9472;100;Grabs|Grabserberg
 3274;9465;100;Salez
 3274;9466;100;Sennwald
 3274;9467;99;Frümsen
 3274;9468;100;Sax
 3274;9469;95;Haag (Rheintal)
-3275;9470;1;
 3275;9475;100;Sevelen
 3276;9476;100;Fontnas|Weite
 3276;9477;100;Trübbach
 3276;9478;100;Azmoos
 3276;9479;100;Gretschins|Malans SG|Oberschan
 3291;7310;100;Bad Ragaz
-3291;7317;13;Valens
+3291;7317;6;Valens
 3292;8890;100;Flums
 3292;8893;100;Flums Hochwiese
 3292;8894;100;Flumserberg Saxli
@@ -2124,7 +2096,7 @@ _DATA = """\
 3294;7313;98;St. Margrethenberg
 3294;7314;100;Vadura
 3294;7315;80;Vättis
-3294;7317;100;Valens|Vasön
+3294;7317;94;Valens|Vasön
 3295;8877;100;Murg
 3295;8878;98;Quinten
 3295;8882;100;Unterterzen
@@ -2150,32 +2122,31 @@ _DATA = """\
 3316;8872;67;Weesen
 3338;8716;100;Schmerikon
 3339;8730;98;Uznach
-3340;8640;100;Rapperswil SG
+3340;8640;50;Rapperswil SG
 3340;8645;100;Jona
 3340;8646;100;Wagen
 3340;8714;2;
 3340;8715;100;Bollingen
 3340;8734;8;
-3341;8725;100;Ernetschwil|Gebertingen
+3341;8725;99;Ernetschwil|Gebertingen
 3341;8726;61;Ricken SG
 3341;8737;100;Gommiswald
 3341;8738;100;Uetliburg SG
 3341;8739;100;Rieden SG
 3342;8636;2;
 3342;8638;100;Goldingen
-3342;8725;1;
 3342;8727;100;Walde SG
 3342;8732;100;Neuhaus SG
 3342;8733;100;Eschenbach SG
 3342;8734;92;Ermenswil
 3342;8735;100;Rüeterswil|St. Gallenkappel
-3352;9633;2;
+3352;9633;1;
 3352;9642;100;Ebnat-Kappel
 3352;9643;2;
 3359;9656;100;Alt St. Johann
 3359;9657;100;Unterwasser
 3359;9658;99;Wildhaus
-3360;9633;2;
+3360;9633;1;
 3360;9643;98;Krummenau
 3360;9650;100;Nesslau
 3360;9651;100;Ennetbühl
@@ -2188,19 +2159,18 @@ _DATA = """\
 3379;9622;100;Krinau
 3379;9630;98;Wattwil
 3379;9631;100;Ulisbach
-3379;9633;4;
-3392;8376;10;
+3379;9633;2;
+3392;8376;5;
 3392;9532;2;
 3392;9533;100;Dietschwil|Kirchberg SG
 3392;9534;100;Gähwil
-3392;9602;100;Bazenheid|Müselbach
+3392;9602;99;Bazenheid|Müselbach
 3392;9613;2;
 3393;9123;5;
 3393;9601;40;Lütisburg Station
-3393;9602;1;
-3393;9604;100;Lütisburg|Oberrindal|Unterrindal
+3393;9604;77;Lütisburg|Oberrindal|Unterrindal
 3393;9608;1;
-3394;8376;6;
+3394;8376;3;
 3394;9601;5;
 3394;9607;100;Mosnang
 3394;9612;100;Dreien
@@ -2225,32 +2195,32 @@ _DATA = """\
 3396;9620;5;
 3396;9621;99;Oberhelfenschwil
 3396;9630;2;
-3396;9633;100;Bächli (Hemberg)|Hemberg
+3396;9633;96;Bächli (Hemberg)|Hemberg
 3401;9113;94;Degersheim
 3401;9116;94;Wolfertswil
 3402;9230;97;Flawil
 3402;9231;100;Egg (Flawil)
 3405;9243;99;Jonschwil
 3405;9536;98;Schwarzenbach SG
-3405;9604;31;Oberrindal
+3405;9604;10;Oberrindal
 3407;9230;1;
-3407;9240;97;Niederglatt SG
+3407;9240;48;Niederglatt SG
 3407;9242;100;Oberuzwil
 3407;9244;1;
 3407;9248;100;Bichwil
-3407;9604;38;Oberrindal
-3408;9240;100;Uzwil
+3407;9604;13;Oberrindal
+3408;9240;50;Uzwil
 3408;9244;99;Niederuzwil
 3408;9247;100;Henau
 3408;9249;100;Algetshausen|Niederstetten|Oberstetten
 3422;9203;1;
 3422;9246;99;Niederbüren
-3423;9223;8;
+3423;9223;4;
 3423;9525;100;Lenggenwil
 3423;9526;100;Zuckenriet
 3423;9527;100;Niederhelfenschwil
 3424;9203;99;Niederwil SG
-3424;9240;3;
+3424;9240;2;
 3424;9245;99;Oberbüren|Sonnental
 3426;9515;1;
 3426;9523;100;Züberwangen
@@ -2303,14 +2273,14 @@ _DATA = """\
 3544;7482;100;Bergün/Bravuogn|Preda|Stugl/Stuls
 3544;7484;100;Latsch
 3544;7494;6;
-3551;7743;100;Brusio|Miralago
+3551;7743;68;Brusio|Miralago
 3551;7744;100;Campocologno
 3551;7747;100;Viano
 3551;7748;100;Campascio
 3561;7710;100;Alp Grüm|Ospizio Bernina
 3561;7741;100;S. Carlo (Poschiavo)
 3561;7742;100;La Rösa|Poschiavo|Sfazù
-3561;7743;63;Miralago
+3561;7743;32;Miralago
 3561;7745;100;Li Curt
 3561;7746;100;Le Prese
 3572;7032;6;
@@ -2319,13 +2289,13 @@ _DATA = """\
 3575;7032;94;Laax GR
 3581;7152;100;Sagogn
 3582;7151;100;Schluein
-3603;7116;100;St. Martin (Lugnez)
+3603;7116;50;St. Martin (Lugnez)
 3603;7132;100;Vals
 3618;7110;100;Peiden
 3618;7113;100;Camuns
 3618;7114;100;Uors (Lumnezia)
 3618;7115;100;Surcasti
-3618;7116;100;Tersnaus
+3618;7116;50;Tersnaus
 3618;7142;99;Cumbel
 3618;7143;100;Morissen
 3618;7144;100;Vella
@@ -2352,7 +2322,7 @@ _DATA = """\
 3640;7411;100;Sils im Domleschg
 3661;7405;4;
 3661;7408;100;Cazis
-3661;7415;8;
+3661;7415;4;
 3661;7421;87;Summaprada
 3661;7422;100;Tartar
 3661;7423;100;Portein|Sarn
@@ -2360,7 +2330,7 @@ _DATA = """\
 3662;7426;100;Flerden
 3663;7421;13;Summaprada
 3663;7425;100;Masein
-3668;7430;100;Thusis
+3668;7430;50;Thusis
 3668;7431;100;Mutten|Obermutten
 3669;7428;100;Tschappina
 3670;7427;100;Urmein
@@ -2372,7 +2342,7 @@ _DATA = """\
 3672;7402;5;
 3673;7404;100;Feldis/Veulden
 3673;7407;100;Trans
-3673;7415;100;Pratval|Rodels
+3673;7415;96;Pratval|Rodels
 3673;7416;100;Almens
 3673;7417;100;Paspels
 3673;7418;100;Tumegl/Tomils
@@ -2383,7 +2353,7 @@ _DATA = """\
 3701;7440;100;Andeer
 3701;7442;100;Clugin
 3701;7443;100;Pignia
-3711;7430;100;Rongellen
+3711;7430;50;Rongellen
 3712;7432;100;Zillis
 3713;7444;100;Ausserferrera
 3713;7445;100;Innerferrera
@@ -2501,7 +2471,7 @@ _DATA = """\
 3891;7222;41;Lunden
 3891;7223;100;Buchen im Prättigau
 3891;7224;100;Putz
-3891;7226;19;Stels
+3891;7226;9;Stels
 3891;7240;10;Küblis
 3891;7242;100;Luzein
 3891;7243;100;Pany
@@ -2544,7 +2514,7 @@ _DATA = """\
 3961;7215;99;Fanas
 3962;7220;100;Schiers
 3962;7222;59;Lunden
-3962;7226;100;Fajauna|Stels
+3962;7226;91;Fajauna|Stels
 3962;7228;100;Pusserein|Schuders
 3972;7212;100;Seewis Dorf|Seewis-Pardisla|Seewis-Schmitten
 3981;7134;1;
@@ -2628,11 +2598,11 @@ _DATA = """\
 4048;5436;100;Würenlos
 4048;8109;100;Kloster Fahr
 4049;5420;100;Ehrendingen
-4061;8905;100;Arni AG
+4061;8905;50;Arni AG
 4062;8965;100;Berikon
 4063;5620;100;Bremgarten AG
 4063;5626;100;Hermetschwil-Staffeln
-4064;5619;100;Büttikon AG
+4064;5619;50;Büttikon AG
 4065;5605;80;Dottikon
 4066;5445;100;Eggenwil
 4067;5525;100;Fischbach-Göslikon
@@ -2646,7 +2616,7 @@ _DATA = """\
 4076;5614;100;Sarmenstorf
 4076;5618;3;
 4077;5522;99;Tägerig
-4078;5619;100;Uezwil
+4078;5619;50;Uezwil
 4079;8918;100;Unterlunkhofen
 4080;5605;20;Dottikon
 4080;5611;2;
@@ -2656,9 +2626,9 @@ _DATA = """\
 4082;5610;100;Wohlen AG
 4082;5611;98;Anglikon
 4083;5621;100;Zufikon
-4084;8905;100;Islisberg
+4084;8905;50;Islisberg
 4091;5105;100;Auenstein
-4092;5242;100;Birr
+4092;5242;50;Birr
 4093;5244;100;Birrhard
 4095;5116;100;Schinznach Bad
 4095;5200;100;Brugg AG
@@ -2666,7 +2636,7 @@ _DATA = """\
 4095;5222;100;Umiken
 4099;5245;100;Habsburg
 4100;5212;100;Hausen AG
-4104;5242;100;Lupfig
+4104;5242;50;Lupfig
 4104;5246;100;Scherz
 4105;5318;100;Mandach
 4106;5237;92;Mönthal
@@ -2686,7 +2656,7 @@ _DATA = """\
 4131;5712;100;Beinwil am See
 4132;5708;99;Birrwil
 4134;5724;99;Dürrenäsch
-4135;5046;8;
+4135;5046;5;
 4135;5728;100;Gontenschwil
 4136;5043;100;Holziken
 4137;5733;100;Leimbach AG
@@ -2696,7 +2666,7 @@ _DATA = """\
 4140;5727;100;Oberkulm
 4141;5734;100;Reinach AG
 4142;5044;100;Schlossrued
-4143;5046;99;Schmiedrued|Walde AG
+4143;5046;95;Schmiedrued|Walde AG
 4144;5040;100;Schöftland
 4145;5723;97;Teufenthal AG
 4146;5723;2;
@@ -2731,7 +2701,7 @@ _DATA = """\
 4185;5078;100;Effingen
 4186;5027;100;Herznach
 4186;5028;100;Ueken
-4191;5600;100;Ammerswil AG
+4191;5600;50;Ammerswil AG
 4192;5706;100;Boniswil
 4192;5708;1;
 4193;5505;100;Brunegg
@@ -2742,16 +2712,16 @@ _DATA = """\
 4198;5604;97;Hendschiken
 4199;5113;100;Holderbank AG
 4200;5502;100;Hunzenschwil
-4201;5600;100;Lenzburg
+4201;5600;50;Lenzburg
 4202;5616;100;Meisterschwanden
 4202;5617;100;Tennwil
-4203;5103;100;Möriken AG|Wildegg
-4204;5103;5;
+4203;5103;96;Möriken AG|Wildegg
+4204;5103;3;
 4204;5702;100;Niederlenz
 4205;5504;100;Othmarsingen
 4205;5604;2;
 4206;5102;100;Rupperswil
-4206;5103;3;
+4206;5103;1;
 4207;5503;100;Schafisheim
 4208;5707;100;Seengen
 4209;5703;100;Seon
@@ -2760,9 +2730,9 @@ _DATA = """\
 4222;5628;100;Aristau
 4222;5630;1;
 4223;5642;1;
-4223;5643;4;
+4223;5643;1;
 4223;5644;100;Auw
-4224;5637;99;Beinwil (Freiamt)
+4224;5637;50;Beinwil (Freiamt)
 4226;5627;100;Besenbüren
 4227;5618;97;Bettwil
 4227;5632;4;
@@ -2771,7 +2741,7 @@ _DATA = """\
 4229;5624;100;Bünzen|Waldhäusern AG
 4230;5632;89;Buttwil
 4231;6042;100;Dietwil
-4232;5637;100;Geltwil
+4232;5637;50;Geltwil
 4233;5625;100;Kallern
 4234;5634;100;Merenschwand
 4234;5636;100;Benzenschwil
@@ -2779,7 +2749,7 @@ _DATA = """\
 4236;5630;98;Muri AG
 4237;5647;100;Oberrüti
 4238;8919;100;Rottenschwil
-4239;5643;100;Alikon|Meienberg|Sins
+4239;5643;99;Alikon|Meienberg|Sins
 4239;5645;100;Aettenschwil|Fenkrieden
 4240;5622;100;Waltenschwil
 4251;4316;99;Hellikon
@@ -2804,10 +2774,10 @@ _DATA = """\
 4273;4814;94;Bottenwil
 4274;4803;2;
 4274;4805;100;Brittnau
-4275;5054;100;Kirchleerau
+4275;5054;50;Kirchleerau
 4276;4813;1;
 4276;5742;100;Kölliken
-4277;5054;100;Moosleerau
+4277;5054;50;Moosleerau
 4279;4853;100;Murgenthal|Riken AG
 4279;4856;100;Glashütten
 4279;4915;3;
@@ -2852,33 +2822,33 @@ _DATA = """\
 4324;5463;100;Wislikofen
 4324;5464;100;Rümikon AG
 4324;5466;100;Kaiserstuhl AG
-4401;9320;100;Arbon|Frasnacht|Stachen
+4401;9320;95;Arbon|Frasnacht|Stachen
 4406;8582;100;Dozwil
 4411;9314;100;Steinebrunn
-4411;9315;99;Neukirch (Egnach)|Winden
+4411;9315;98;Neukirch (Egnach)|Winden
 4411;9322;99;Egnach
-4416;8580;100;Hefenhofen
+4416;8580;20;Hefenhofen
 4421;9326;99;Horn
 4426;8593;100;Kesswil
 4431;9306;93;Freidorf TG
-4431;9315;3;
-4431;9320;12;Frasnacht
+4431;9315;2;
+4431;9320;5;Frasnacht
 4431;9325;100;Roggwil TG
 4436;8590;100;Romanshorn
 4441;8599;100;Salmsach
-4446;8580;100;Sommeri
+4446;8580;20;Sommeri
 4451;8592;100;Uttwil
-4461;8580;100;Amriswil|Biessenhofen|Hagenwil b. Amriswil
+4461;8580;59;Amriswil|Biessenhofen|Hagenwil b. Amriswil
 4461;8581;100;Schocherswil
 4461;8587;100;Oberaach
 4471;9220;88;Bischofszell
-4471;9223;100;Halden|Schweizersholz
-4476;8586;100;Buchackern|Engishofen|Ennetaach|Erlen|Kümmertshausen|Riedt b. Erlen
-4476;9216;3;
+4471;9223;96;Halden|Schweizersholz
+4476;8586;74;Buchackern|Engishofen|Ennetaach|Erlen|Kümmertshausen|Riedt b. Erlen
+4476;9216;1;
 4486;9213;95;Hauptwil
 4486;9220;4;
 4486;9225;100;St. Pelagiberg|Wilen (Gottshaus)
-4495;9216;100;Heldswil|Hohentannen
+4495;9216;99;Heldswil|Hohentannen
 4501;9214;99;Kradolf
 4501;9215;100;Buhwil|Schönenberg an der Thur
 4501;9217;100;Neukirch an der Thur
@@ -2898,38 +2868,37 @@ _DATA = """\
 4551;8522;100;Aawangen|Häuslenen
 4551;9547;100;Wittenwil
 4561;8552;100;Felben-Wellhausen
-4566;8500;99;Frauenfeld|Gerlikon
+4566;8500;95;Frauenfeld|Gerlikon
 4566;9548;4;
-4571;8500;7;
-4571;8546;100;Islikon|Kefikon TG
+4571;8500;4;
+4571;8546;67;Islikon|Kefikon TG
 4571;8547;100;Gachnang
 4590;8553;100;Eschikofen|Harenwilen|Hüttlingen|Mettendorf TG
 4591;9548;96;Matzingen
-4601;8525;100;Niederneunforn|Wilen b. Neunforn
+4601;8525;78;Niederneunforn|Wilen b. Neunforn
 4601;8526;100;Oberneunforn
 4606;9507;100;Stettfurt
 4611;8512;100;Lustdorf|Thundorf|Wetzikon TG
 4616;8524;100;Buch b. Frauenfeld|Uesslingen
-4621;8532;100;Warth|Weiningen TG
+4621;8532;99;Warth|Weiningen TG
 4641;8595;100;Altnau
 4643;8598;100;Bottighofen
 4646;8272;100;Ermatingen
 4646;8273;100;Triboltingen
-4651;8274;100;Gottlieben
+4651;8274;50;Gottlieben
 4656;8594;100;Güttingen
 4666;8565;100;Hugelshofen
 4666;8566;100;Dotnacht|Ellighausen|Lippoldswilen|Neuwilen
 4666;8573;100;Alterswilen|Altishausen|Siegershausen
 4671;8280;99;Kreuzlingen
-4681;8585;100;Herrenhof|Langrickenbach|Schönenbaumgarten|Zuben
-4681;8586;5;
+4681;8585;50;Herrenhof|Langrickenbach|Schönenbaumgarten|Zuben
 4683;8574;100;Dettighofen (Lengwil)|Illighausen|Lengwil|Oberhofen TG
 4691;8596;100;Münsterlingen|Scherzingen
 4691;8597;100;Landschlacht
-4696;8274;100;Tägerwilen
+4696;8274;50;Tägerwilen
 4696;8280;1;
 4701;8558;2;
-4701;8564;100;Engwilen|Gunterswilen|Hattenhausen|Hefenhausen|Lipperswil|Sonterswil|Wäldi
+4701;8564;86;Engwilen|Gunterswilen|Hattenhausen|Hefenhausen|Lipperswil|Sonterswil|Wäldi
 4711;8514;8;
 4711;9555;6;
 4711;9556;100;Affeltrangen|Zezikon
@@ -2938,15 +2907,15 @@ _DATA = """\
 4721;8362;100;Balterswil
 4721;8363;96;Bichelsee
 4723;9502;100;Braunau
-4724;8360;100;Eschlikon TG|Wallenwil
+4724;8360;96;Eschlikon TG|Wallenwil
 4726;8372;26;Wiezikon b. Sirnach
 4726;8374;100;Dussnang|Oberwangen TG
-4726;8376;94;Au TG|Fischingen
+4726;8376;92;Au TG|Fischingen
 4726;8495;25;Schmidrüti
 4726;8499;6;
 4741;9506;100;Lommis
 4741;9508;100;Weingarten-Kalthäusern
-4746;8360;7;
+4746;8360;4;
 4746;9542;100;Münchwilen TG
 4746;9543;97;St. Margarethen TG
 4751;9532;97;Rickenbach b. Wil
@@ -2965,7 +2934,6 @@ _DATA = """\
 4801;8267;100;Berlingen
 4806;8264;97;Eschenz
 4811;8506;100;Lanzenneunforn
-4811;8532;1;
 4811;8535;96;Herdern
 4811;8536;1;
 4816;8507;98;Hörhausen
@@ -2985,15 +2953,15 @@ _DATA = """\
 4864;8266;100;Steckborn
 4871;8259;100;Etzwilen|Kaltenbach|Rheinklingen|Wagenhausen
 4881;8514;92;Amlikon-Bissegg
-4881;8554;4;
+4881;8554;2;
 4891;8572;100;Andhausen|Berg TG|Graltshausen|Guntershausen b. Berg
 4891;8576;100;Mauren TG
-4891;8584;19;Opfershofen TG
-4901;8585;100;Birwinken|Happerswil|Klarsreuti|Mattwil
-4901;8586;100;Andwil TG|Buch b. Kümmertshausen
-4911;8575;100;Bürglen TG|Istighofen
-4911;8584;100;Leimbach TG|Opfershofen TG
-4921;8575;3;
+4891;8584;9;Opfershofen TG
+4901;8585;50;Birwinken|Happerswil|Klarsreuti|Mattwil
+4901;8586;25;Andwil TG|Buch b. Kümmertshausen
+4911;8575;98;Bürglen TG|Istighofen
+4911;8584;91;Leimbach TG|Opfershofen TG
+4921;8575;2;
 4921;9503;100;Lanterswil|Stehrenberg
 4921;9504;100;Friltschen
 4921;9517;100;Mettlen
@@ -3001,10 +2969,10 @@ _DATA = """\
 4941;8560;96;Märstetten
 4941;8561;100;Ottoberg
 4946;8570;99;Weinfelden
-4951;8554;100;Bonau|Müllheim-Wigoltingen
+4951;8554;98;Bonau|Müllheim-Wigoltingen
 4951;8556;100;Engwang|Illhart|Lamperswil TG|Wigoltingen
 4951;8560;4;
-4951;8564;100;Engwilen|Wagerswil
+4951;8564;14;Engwilen|Wagerswil
 5001;6517;100;Arbedo
 5001;6532;100;Castione
 5002;6500;100;Bellinzona
@@ -3030,7 +2998,7 @@ _DATA = """\
 5017;6592;93;S. Antonino
 5048;6715;100;Dongio
 5048;6716;100;Acquarossa|Leontica|Lottigna
-5048;6721;100;Motto (Blenio)
+5048;6721;50;Motto (Blenio)
 5048;6722;100;Corzoneso
 5048;6723;100;Castro|Marolta|Prugiasco
 5048;6724;100;Largario|Ponto Valentino
@@ -3040,7 +3008,7 @@ _DATA = """\
 5049;6720;100;Campo (Blenio)|Ghirone
 5050;6713;100;Malvaglia
 5050;6714;100;Semione
-5050;6721;100;Ludiano
+5050;6721;50;Ludiano
 5061;6780;100;Airolo
 5063;6781;100;Bedretto|Villa Bedretto
 5071;6774;100;Dalpe
@@ -3072,7 +3040,7 @@ _DATA = """\
 5113;6594;4;
 5113;6595;17;Riazzino
 5113;6596;5;
-5113;6600;100;Locarno|Solduno
+5113;6600;67;Locarno|Solduno
 5113;6605;93;Locarno
 5113;6612;2;
 5113;6652;9;
@@ -3081,8 +3049,7 @@ _DATA = """\
 5117;6647;100;Mergoscia
 5118;6645;21;Brione sopra Minusio
 5118;6648;100;Minusio
-5120;6600;99;Muralto
-5121;6600;1;
+5120;6600;33;Muralto
 5121;6605;7;
 5121;6644;99;Orselina
 5125;6613;100;Porto Ronco
@@ -3101,13 +3068,13 @@ _DATA = """\
 5148;6930;100;Bedano
 5151;6934;98;Bioggio
 5151;6935;100;Bosco Luganese
-5151;6992;100;Cimo
+5151;6992;50;Cimo
 5151;6993;100;Iseo
 5154;6816;100;Bissone
 5160;6827;100;Brusino Arsizio
 5160;6867;100;Serpiano
 5161;6936;100;Cademario
-5162;6814;99;Cadempino
+5162;6814;50;Cadempino
 5167;6952;100;Canobbio
 5171;6987;100;Caslano
 5176;6949;100;Comano
@@ -3115,9 +3082,9 @@ _DATA = """\
 5186;6916;100;Grancia
 5187;6929;100;Gravesano
 5189;6807;1;
-5189;6814;100;Lamone
+5189;6814;50;Lamone
 5192;6823;73;Pugerna
-5192;6900;100;Lugano
+5192;6900;34;Lugano
 5192;6912;100;Pazzallo
 5192;6913;100;Carabbia
 5192;6914;100;Carona
@@ -3143,7 +3110,7 @@ _DATA = """\
 5193;6983;96;Magliaso
 5194;6928;100;Manno
 5194;6934;1;
-5196;6900;100;Massagno
+5196;6900;33;Massagno
 5198;6815;100;Melide
 5199;6805;100;Mezzovico
 5203;6922;100;Morcote
@@ -3151,7 +3118,7 @@ _DATA = """\
 5206;6983;4;
 5206;6991;100;Neggio
 5208;6945;100;Origlio
-5210;6900;99;Paradiso
+5210;6900;33;Paradiso
 5212;6946;100;Ponte Capriasca
 5214;6942;3;
 5214;6948;100;Porza
@@ -3169,7 +3136,7 @@ _DATA = """\
 5226;6960;100;Odogno
 5227;6807;98;Taverne
 5227;6808;100;Torricella
-5230;6992;100;Vernate
+5230;6992;50;Vernate
 5231;6943;100;Vezia
 5233;6921;100;Vico Morcote
 5236;6919;100;Carabietta
@@ -3228,9 +3195,9 @@ _DATA = """\
 5287;6705;100;Cresciano
 5287;6707;100;Iragna
 5304;6685;100;Bosco/Gurin
-5307;6683;100;Niva (Vallemaggia)
+5307;6683;50;Niva (Vallemaggia)
 5307;6684;100;Campo (Vallemaggia)|Cimalmotto
-5309;6683;100;Cerentino
+5309;6683;50;Cerentino
 5310;6675;100;Cevio
 5310;6676;100;Bignasco
 5310;6690;100;Cavergno|S. Carlo (Val Bavona)
@@ -3277,11 +3244,11 @@ _DATA = """\
 5399;6636;100;Frasco
 5399;6637;100;Sonogno
 5401;1860;100;Aigle
-5402;1880;100;Bex|Fenalet-sur-Bex|Frenières-sur-Bex|Les Plans-sur-Bex|Les Posses-sur-Bex
+5402;1880;99;Bex|Fenalet-sur-Bex|Frenières-sur-Bex|Les Plans-sur-Bex|Les Posses-sur-Bex
 5402;1882;6;
 5403;1846;100;Chessel
 5404;1856;99;Corbeyrier
-5405;1880;6;
+5405;1880;1;
 5405;1882;94;Gryon
 5406;1892;100;Lavey-Village|Lavey-les-Bains|Morcles
 5407;1854;100;Leysin
@@ -3290,7 +3257,6 @@ _DATA = """\
 5409;1867;100;Ollon VD|Panex|St-Triphon
 5409;1884;100;Arveyes|Huémoz|Villars-sur-Ollon
 5409;1885;100;Chesières
-5410;1660;3;
 5410;1856;1;
 5410;1862;100;La Comballaz|Les Mosses
 5410;1863;100;Le Sépey
@@ -3310,46 +3276,45 @@ _DATA = """\
 5426;1172;97;Bougy-Villars
 5427;1166;1;
 5427;1173;100;Féchy
-5428;1188;100;Gimel
-5429;1261;100;Longirod
-5430;1261;100;Marchissy
+5428;1188;50;Gimel
+5429;1261;33;Longirod
+5430;1261;33;Marchissy
 5431;1146;100;Mollens VD
-5434;1188;100;St-George
+5434;1188;50;St-George
 5435;1176;100;St-Livres
 5436;1187;100;St-Oyens
 5437;1189;100;Saubraz
-5451;1580;100;Avenches|Donatyre|Oleyres
+5451;1580;94;Avenches|Donatyre|Oleyres
 5456;1588;100;Cudrefin
-5458;1595;100;Faoug
+5458;1595;50;Faoug
 5464;1584;100;Villars-le-Grand
 5464;1585;100;Bellerive VD|Cotterd|Salavaux
 5464;1586;100;Vallamand
 5464;1587;100;Constantine|Montmagny
 5464;1589;100;Chabrey
-5464;1787;100;Mur (Vully) VD
-5471;1042;100;Bettens
+5464;1787;33;Mur (Vully) VD
+5471;1042;33;Bettens
 5471;1306;2;
 5472;1035;100;Bournens
 5473;1034;100;Boussens
-5474;1148;2;
 5474;1308;100;La Chaux (Cossonay)
 5474;1316;4;
-5475;1148;98;Chavannes-le-Veyron
+5475;1148;11;Chavannes-le-Veyron
 5476;1316;96;Chevilly
-5477;1304;100;Allens|Cossonay-Ville
-5479;1148;100;Cuarnens
+5477;1304;50;Allens|Cossonay-Ville
+5479;1148;11;Cuarnens
 5480;1306;98;Daillens
-5481;1304;100;Dizy
+5481;1304;25;Dizy
 5482;1312;100;Eclépens
 5483;1313;100;Ferreyres
 5484;1124;100;Gollion
 5485;1117;100;Grancy
-5486;1148;100;L'Isle|La Coudre|Villars-Bozon
+5486;1148;33;L'Isle|La Coudre|Villars-Bozon
 5487;1307;100;Lussery-Villars
-5488;1148;100;Mauraz
+5488;1148;11;Mauraz
 5489;1031;99;Mex VD
-5490;1148;100;Moiry VD
-5491;1148;100;Mont-la-Ville
+5490;1148;11;Moiry VD
+5491;1148;11;Mont-la-Ville
 5491;1325;1;
 5492;1147;100;Montricher
 5493;1317;100;Orny
@@ -3358,16 +3323,16 @@ _DATA = """\
 5496;1303;100;Penthaz
 5497;1318;100;Pompaples
 5498;1315;100;La Sarraz
-5499;1304;100;Senarclens
+5499;1304;25;Senarclens
 5501;1036;100;Sullens
 5503;1031;1;
 5503;1302;100;Vufflens-la-Ville
-5511;1042;100;Assens|Bioley-Orjulaz
+5511;1042;67;Assens|Bioley-Orjulaz
 5512;1038;99;Bercher
-5514;1041;100;Bottens
-5515;1053;100;Bretigny-sur-Morrens
-5516;1053;90;Cugy VD
-5518;1040;100;Echallens
+5514;1041;17;Bottens
+5515;1053;50;Bretigny-sur-Morrens
+5516;1053;45;Cugy VD
+5518;1040;33;Echallens
 5520;1417;100;Epautheyres|Essertines-sur-Yverdon
 5521;1037;100;Etagnières
 5522;1044;100;Fey
@@ -3376,47 +3341,47 @@ _DATA = """\
 5529;1377;100;Oulens-sous-Echallens
 5530;1416;100;Pailly
 5531;1375;100;Penthéréaz
-5533;1041;100;Poliez-Pittet
+5533;1041;17;Poliez-Pittet
 5534;1046;100;Rueyres
-5535;1040;100;St-Barthélemy VD
-5537;1040;100;Villars-le-Terroir
+5535;1040;33;St-Barthélemy VD
+5537;1040;33;Villars-le-Terroir
 5539;1418;100;Vuarrens
-5540;1041;100;Dommartin|Naz|Poliez-le-Grand
+5540;1041;50;Dommartin|Naz|Poliez-le-Grand
 5540;1043;100;Sugnens
 5541;1376;100;Eclagnens|Goumoens-la-Ville|Goumoens-le-Jux
-5551;1423;27;Fontanezier
+5551;1423;7;Fontanezier
 5551;1427;100;Bonvillars
 5552;1452;85;Les Rasses
-5552;1453;97;Bullet
+5552;1453;49;Bullet
 5553;1424;100;Champagne
-5554;1426;100;Concise
+5554;1426;50;Concise
 5554;2028;6;
-5555;1426;100;Corcelles-près-Concise
+5555;1426;50;Corcelles-près-Concise
 5556;1420;100;Fiez
-5556;1453;3;
-5557;1421;100;Fontaines-sur-Grandson
-5557;1453;8;
+5556;1453;1;
+5557;1421;50;Fontaines-sur-Grandson
+5557;1453;4;
 5559;1429;100;Giez
-5560;1421;100;Grandevent
-5560;1453;3;
+5560;1421;50;Grandevent
+5560;1453;2;
 5561;1422;100;Grandson
-5562;1453;80;Mauborget
-5563;1428;100;Mutrux
-5564;1431;100;Novalles
+5562;1453;40;Mauborget
+5563;1428;50;Mutrux
+5564;1431;50;Novalles
 5565;1425;100;Onnens VD
-5566;1428;100;Provence
+5566;1428;50;Provence
 5566;2108;5;
 5568;1445;2;
 5568;1450;100;La Sagne (Ste-Croix)|Le Château-de-Ste-Croix|Ste-Croix
 5568;1452;15;Les Rasses
 5568;1454;100;L'Auberson|La Vraconnaz
-5571;1423;100;Fontanezier|Romairon|Vaugondry|Villars-Burquin
-5571;1453;9;
+5571;1423;93;Fontanezier|Romairon|Vaugondry|Villars-Burquin
+5571;1453;5;
 5581;1092;100;Belmont-sur-Lausanne
 5582;1033;92;Cheseaux-sur-Lausanne
 5583;1023;99;Crissier
 5584;1066;100;Epalinges
-5585;1008;100;Jouxtens-Mézery
+5585;1008;50;Jouxtens-Mézery
 5586;1000;100;Lausanne
 5586;1003;100;Lausanne
 5586;1004;100;Lausanne
@@ -3429,29 +3394,28 @@ _DATA = """\
 5586;1018;100;Lausanne
 5586;1032;19;Romanel-sur-Lausanne
 5586;1033;7;
-5586;1053;10;Cugy VD
+5586;1053;5;Cugy VD
 5587;1052;100;Le Mont-sur-Lausanne
 5588;1094;100;Paudex
-5589;1008;100;Prilly
+5589;1008;50;Prilly
 5590;1009;100;Pully
 5590;1068;100;Les Monts-de-Pully
 5591;1020;100;Renens VD
 5592;1032;81;Romanel-sur-Lausanne
-5601;1071;99;Chexbres
+5601;1071;33;Chexbres
 5604;1072;100;Forel (Lavaux)
 5606;1090;100;La Croix (Lutry)
 5606;1093;100;La Conversion
 5606;1095;100;Lutry
 5607;1070;100;Puidoux
-5607;1071;1;
-5607;1096;5;
+5607;1096;3;
 5607;1098;4;
-5607;1607;14;Les Thioleyres
-5609;1071;99;Rivaz
-5610;1071;100;St-Saphorin (Lavaux)
+5607;1607;3;Les Thioleyres
+5609;1071;33;Rivaz
+5610;1071;33;St-Saphorin (Lavaux)
 5611;1073;100;Mollie-Margot|Savigny
 5613;1091;100;Aran|Chenaux|Grandvaux
-5613;1096;100;Cully|Villette (Lavaux)
+5613;1096;97;Cully|Villette (Lavaux)
 5613;1097;100;Riex
 5613;1098;96;Epesses
 5621;1123;100;Aclens
@@ -3460,11 +3424,11 @@ _DATA = """\
 5624;1030;100;Bussigny
 5627;1015;8;
 5627;1022;100;Chavannes-près-Renens
-5628;1134;100;Chigny
+5628;1134;50;Chigny
 5629;1127;100;Clarmont
 5631;1135;100;Denens
-5632;1026;100;Denges
-5633;1026;100;Echandens
+5632;1026;50;Denges
+5633;1026;50;Echandens
 5634;1112;100;Echichens
 5634;1113;100;St-Saphorin-sur-Morges
 5634;1114;100;Colombier VD
@@ -3488,7 +3452,7 @@ _DATA = """\
 5650;1126;100;Vaux-sur-Morges
 5651;1029;100;Villars-Ste-Croix
 5652;1168;100;Villars-sous-Yens
-5653;1134;100;Vufflens-le-Château
+5653;1134;50;Vufflens-le-Château
 5654;1115;100;Vullierens
 5655;1169;100;Yens
 5656;1116;100;Cottens VD
@@ -3497,38 +3461,38 @@ _DATA = """\
 5656;1141;100;Sévery
 5656;1142;100;Pampigny
 5656;1143;100;Apples
-5661;1063;100;Boulens
+5661;1063;25;Boulens
 5663;1514;100;Bussy-sur-Moudon
 5665;1512;100;Chavannes-sur-Moudon
 5669;1521;100;Curtilles
-5671;1682;100;Dompierre VD
+5671;1682;20;Dompierre VD
 5673;1059;2;
-5673;1513;99;Hermenches
-5674;1682;100;Lovatens
+5673;1513;50;Hermenches
+5674;1682;20;Lovatens
 5675;1522;100;Lucens|Oulens-sur-Lucens
 5675;1526;100;Cremin|Forel-sur-Lucens
 5675;1683;100;Brenles|Chesalles-sur-Moudon|Sarzens
-5678;1510;100;Moudon
+5678;1510;50;Moudon
 5680;1045;98;Ogens
-5683;1682;100;Prévonloup
-5684;1513;100;Rossenges
-5688;1510;100;Syens
-5690;1515;100;Villars-le-Comte
+5683;1682;20;Prévonloup
+5684;1513;50;Rossenges
+5688;1510;50;Syens
+5690;1515;50;Villars-le-Comte
 5692;1509;100;Vucherens
-5693;1063;100;Chapelle-sur-Moudon|Martherenges|Peyres-Possens
+5693;1063;74;Chapelle-sur-Moudon|Martherenges|Peyres-Possens
 5693;1409;100;Chanéaz
-5693;1410;100;Correvon|Denezy|St-Cierges|Thierrens
-5693;1515;100;Neyruz-sur-Moudon
-5701;1277;100;Arnex-sur-Nyon
+5693;1410;80;Correvon|Denezy|St-Cierges|Thierrens
+5693;1515;50;Neyruz-sur-Moudon
+5701;1277;50;Arnex-sur-Nyon
 5702;1273;100;Arzier-Le Muids
 5703;1269;100;Bassins
-5704;1268;100;Begnins
-5705;1279;100;Bogis-Bossey
-5706;1277;100;Borex
-5707;1279;100;Chavannes-de-Bogis
-5708;1290;100;Chavannes-des-Bois
+5704;1268;50;Begnins
+5705;1279;50;Bogis-Bossey
+5706;1277;50;Borex
+5707;1279;50;Chavannes-de-Bogis
+5708;1290;50;Chavannes-des-Bois
 5709;1275;100;Chéserex
-5710;1267;100;Coinsins
+5710;1267;50;Coinsins
 5711;1291;100;Commugny
 5712;1296;100;Coppet
 5713;1299;100;Crans VD
@@ -3540,19 +3504,19 @@ _DATA = """\
 5719;1276;99;Gingins
 5720;1271;100;Givrins
 5721;1196;100;Gland
-5722;1274;100;Grens
-5723;1295;100;Mies
+5722;1274;50;Grens
+5723;1295;50;Mies
 5724;1260;100;Nyon
 5725;1197;100;Prangins
 5726;1278;100;La Rippe
 5727;1264;99;St-Cergue
 5727;1265;100;La Cure
-5728;1274;100;Signy
-5729;1295;100;Tannay
+5728;1274;50;Signy
+5729;1295;50;Tannay
 5730;1270;100;Trélex
-5731;1261;100;Le Vaud
-5732;1267;100;Vich
-5741;1355;100;L'Abergement
+5731;1261;33;Le Vaud
+5732;1267;50;Vich
+5741;1355;50;L'Abergement
 5741;1357;2;
 5742;1352;100;Agiez
 5743;1321;100;Arnex-sur-Orbe
@@ -3570,11 +3534,11 @@ _DATA = """\
 5755;1357;98;Lignerolle
 5756;1354;100;Montcherand
 5757;1350;100;Orbe
-5758;1148;100;La Praz
+5758;1148;11;La Praz
 5759;1324;100;Premier
 5760;1439;100;Rances
 5761;1323;100;Romainmôtier
-5762;1355;100;Sergey
+5762;1355;50;Sergey
 5763;1358;100;Valeyres-sous-Rances
 5764;1337;100;Vallorbe
 5765;1325;99;Vaulion
@@ -3586,15 +3550,14 @@ _DATA = """\
 5799;1077;100;Servion
 5799;1080;100;Les Cullayes
 5803;1085;100;Vulliens
-5804;1041;100;Montaubion-Chardonney
+5804;1041;17;Montaubion-Chardonney
 5804;1058;100;Villars-Tiercelin
 5804;1059;98;Peney-le-Jorat
 5804;1061;100;Villars-Mendraz
 5804;1062;100;Sottens
-5804;1063;4;
 5805;1078;100;Essertes
-5805;1607;100;Les Tavernes|Les Thioleyres|Palézieux|Palézieux-Village
-5805;1608;100;Bussigny-sur-Oron|Chesalles-sur-Oron|Oron-le-Châtel
+5805;1607;97;Les Tavernes|Les Thioleyres|Palézieux|Palézieux-Village
+5805;1608;75;Bussigny-sur-Oron|Chesalles-sur-Oron|Oron-le-Châtel
 5805;1610;100;Châtillens|Oron-la-Ville|Vuibroye
 5805;1612;100;Ecoteaux
 5806;1076;100;Ferlens VD
@@ -3604,8 +3567,8 @@ _DATA = """\
 5813;1545;100;Chevroux
 5816;1562;99;Corcelles-près-Payerne
 5817;1543;100;Grandcour
-5819;1525;100;Henniez
-5821;1565;100;Missy
+5819;1525;50;Henniez
+5821;1565;50;Missy
 5822;1530;100;Payerne
 5822;1551;100;Vers-chez-Perrin
 5827;1552;100;Trey
@@ -3615,34 +3578,33 @@ _DATA = """\
 5831;1485;5;
 5831;1523;100;Granges-près-Marnand
 5831;1524;100;Marnand
-5831;1525;94;Seigneux
-5831;1534;95;Sassel
+5831;1525;47;Seigneux
+5831;1534;47;Sassel
 5831;1535;100;Combremont-le-Grand
 5831;1536;100;Combremont-le-Petit
-5831;1682;100;Cerniaz VD|Villars-Bramard
-5841;1659;67;Flendruz
-5841;1660;100;Château-d'Oex|L'Etivaz|La Lécherette|Les Moulins
+5831;1682;40;Cerniaz VD|Villars-Bramard
+5841;1659;34;Flendruz
+5841;1660;99;Château-d'Oex|L'Etivaz|La Lécherette|Les Moulins
 5842;1658;100;La Tine|Rossinière
-5843;1659;100;Flendruz|Rougemont
+5843;1659;66;Flendruz|Rougemont
 5851;1165;100;Allaman
-5852;1195;99;Bursinel
+5852;1195;50;Bursinel
 5853;1183;97;Bursins
-5853;1268;6;
-5854;1268;93;Burtigny
-5855;1195;100;Dully
-5856;1180;8;
+5853;1268;3;
+5854;1268;46;Burtigny
+5855;1195;50;Dully
+5856;1180;7;
 5856;1186;98;Essertines-sur-Rolle
-5857;1180;3;
+5857;1180;2;
 5857;1182;100;Gilly
 5857;1183;3;
 5857;1186;2;
-5858;1184;100;Luins
+5858;1184;50;Luins
 5859;1185;100;Mont-sur-Rolle
 5860;1166;99;Perroy
-5861;1180;90;Rolle
-5862;1180;92;Tartegnin
-5863;1184;100;Vinzel
-5863;1268;1;
+5861;1180;45;Rolle
+5862;1180;46;Tartegnin
+5863;1184;50;Vinzel
 5871;1342;100;Le Pont
 5871;1344;100;L'Abbaye
 5871;1346;100;Les Bioux
@@ -3661,7 +3623,7 @@ _DATA = """\
 5886;1815;100;Clarens
 5886;1816;100;Chailly-Montreux
 5886;1817;100;Brent
-5886;1820;100;Montreux|Territet
+5886;1820;67;Montreux|Territet
 5886;1822;100;Chernex
 5886;1823;100;Glion
 5886;1824;100;Caux
@@ -3669,25 +3631,25 @@ _DATA = """\
 5886;1833;100;Les Avants
 5889;1814;100;La Tour-de-Peilz
 5890;1800;100;Vevey
-5891;1820;100;Veytaux
+5891;1820;33;Veytaux
 5892;1806;100;St-Légier-La Chiésaz
 5892;1807;100;Blonay
-5902;1432;100;Belmont-sur-Yverdon
+5902;1432;50;Belmont-sur-Yverdon
 5903;1045;2;
-5903;1407;100;Bioley-Magnoux
-5904;1436;100;Chamblon
+5903;1407;25;Bioley-Magnoux
+5904;1436;50;Chamblon
 5905;1443;100;Champvent|Essert-sous-Champvent|Villars-sous-Champvent
-5907;1464;100;Chavannes-le-Chêne
-5908;1464;100;Chêne-Pâquier
-5909;1400;100;Cheseaux-Noréaz
+5907;1464;50;Chavannes-le-Chêne
+5908;1464;50;Chêne-Pâquier
+5909;1400;50;Cheseaux-Noréaz
 5910;1406;100;Cronay
-5911;1404;100;Cuarny
-5912;1415;100;Démoret
-5913;1407;100;Donneloye|Gossens|Mézery-près-Donneloye
+5911;1404;50;Cuarny
+5912;1415;50;Démoret
+5913;1407;75;Donneloye|Gossens|Mézery-près-Donneloye
 5913;1408;100;Prahins
 5914;1434;100;Ependes VD
 5919;1438;100;Mathod
-5921;1415;100;Molondin
+5921;1415;50;Molondin
 5922;1442;100;Montagny-près-Yverdon
 5923;1047;100;Oppens
 5924;1430;100;Orges
@@ -3696,41 +3658,38 @@ _DATA = """\
 5928;1463;100;Rovray
 5929;1433;100;Suchy
 5930;1437;100;Suscévaz
-5931;1436;100;Treycovagnes
-5932;1412;100;Ursins
+5931;1436;50;Treycovagnes
+5932;1412;50;Ursins
 5933;1441;100;Valeyres-sous-Montagny
-5934;1412;100;Valeyres-sous-Ursins
-5935;1404;100;Villars-Epeney
-5937;1431;100;Vugelles-La Mothe
-5938;1400;100;Yverdon-les-Bains
-5938;1432;100;Gressy
+5934;1412;50;Valeyres-sous-Ursins
+5935;1404;50;Villars-Epeney
+5937;1431;50;Vugelles-La Mothe
+5938;1400;50;Yverdon-les-Bains
+5938;1432;50;Gressy
 5939;1462;100;Yvonand
-6002;3900;100;Brig|Brigerbad|Gamsen
+6002;3900;99;Brig|Brigerbad|Gamsen
 6002;3902;100;Glis
 6004;3939;100;Eggerberg
 6007;3903;100;Birgisch|Mund
 6007;3904;100;Naters
 6007;3914;100;Belalp|Blatten b. Naters
-6008;3900;1;
 6008;3901;100;Rothwald
 6008;3911;100;Ried-Brig
-6009;3907;100;Gabi (Simplon)|Simplon Dorf|Simplon Hospiz
-6010;3900;2;
+6009;3907;68;Gabi (Simplon)|Simplon Dorf|Simplon Hospiz
 6010;3912;100;Termen
 6010;3913;100;Rosswald
 6010;3982;4;
-6011;3907;100;Gabi (Simplon)|Gondo
+6011;3907;32;Gabi (Simplon)|Gondo
 6021;1957;100;Ardon
 6022;1955;100;Chamoson|Grugnay (Chamoson)|Les Vérines (Chamoson)|Mayens-de-Chamoson|Némiaz (Chamoson)|St-Pierre-de-Clages
 6023;1964;100;Conthey
 6023;1975;100;St-Séverin
-6023;1976;100;Aven|Daillon|Erde
-6024;1993;100;Clèbes (Nendaz)|Veysonnaz
+6023;1976;99;Aven|Daillon|Erde
+6024;1993;64;Clèbes (Nendaz)|Veysonnaz
 6024;1994;78;Aproz (Nendaz)
 6024;1996;100;Baar (Nendaz)|Basse-Nendaz|Beuson (Nendaz)|Bieudron (Nendaz)|Brignon (Nendaz)|Condémines (Nendaz)|Fey (Nendaz)|Saclentse
 6024;1997;100;Haute-Nendaz|Siviez (Nendaz)|Sornard (Nendaz)
 6025;1963;100;Vétroz
-6025;1976;2;
 6032;1946;95;Bourg-St-Pierre
 6033;1945;100;Chandonne (Liddes)|Chez Petit (Liddes)|Dranse (Liddes)|Fontaine Dessous (Liddes)|Fontaine Dessus (Liddes)|Fornex (Liddes)|Les Moulins VS (Liddes)|Liddes|Palasuit (Liddes)|Petit Vichères (Liddes)|Rive Haute (Liddes)|Vichères (Liddes)
 6033;1946;5;
@@ -3738,9 +3697,9 @@ _DATA = """\
 6034;1938;100;Champex-Lac
 6034;1943;100;Praz-de-Fort
 6034;1944;100;La Fouly VS
-6035;1933;100;Chamoille (Sembrancher)|La Garde (Sembrancher)|Sembrancher
+6035;1933;75;Chamoille (Sembrancher)|La Garde (Sembrancher)|Sembrancher
 6037;1927;57;Chemin
-6037;1933;100;Vens (Sembrancher)
+6037;1933;25;Vens (Sembrancher)
 6037;1934;100;Bruson|Le Châble VS
 6037;1936;100;Verbier
 6037;1941;100;Cries (Vollèges)|Vollèges
@@ -3750,16 +3709,15 @@ _DATA = """\
 6052;3997;100;Bellwald
 6054;3996;96;Binn
 6056;3995;100;Ausserbinn|Ernen|Mühlebach (Goms)|Steinhaus
-6057;3984;98;Fiesch
+6057;3984;49;Fiesch
 6058;3801;67;Jungfraujoch
-6058;3984;100;Fieschertal
-6061;3994;100;Lax
+6058;3984;51;Fieschertal
+6061;3994;50;Lax
 6076;3988;100;Obergesteln|Ulrichen
 6076;3999;100;Oberwald
 6077;3985;100;Geschinen|Münster VS
 6077;3989;100;Biel VS|Blitzingen|Niederwald|Ritzingen|Selkingen
 6077;3998;100;Gluringen|Reckingen VS
-6082;1958;1;
 6082;1966;100;Argnou (Ayent)|Blignou (Ayent)|Botyre (Ayent)|Fortunau (Ayent)|La Place (Ayent)|Luc (Ayent)|Saxonne (Ayent)|Signèse (Ayent)|St-Romain (Ayent)|Villa (Ayent)
 6082;1972;99;Anzère
 6082;1974;3;
@@ -3773,37 +3731,37 @@ _DATA = """\
 6087;1982;37;Euseigne
 6089;1981;100;Vex
 6089;1988;100;Les Collons|Thyon
-6089;1992;76;Les Mayens-de-Sion
+6089;1992;19;Les Mayens-de-Sion
 6090;1961;100;Vernamiège
 6090;1968;100;Mase
 6090;1973;100;Nax
 6101;3951;100;Agarn
 6102;3955;100;Albinen
-6104;3946;18;Gruben
+6104;3946;9;Gruben
 6104;3947;100;Ergisch
-6109;3953;93;Inden
-6110;3945;14;Niedergampel
+6109;3953;31;Inden
+6110;3945;7;Niedergampel
 6110;3952;100;Susten
-6110;3953;100;Leuk Stadt
-6110;3957;100;Erschmatt
-6111;3953;6;
+6110;3953;34;Leuk Stadt
+6110;3957;50;Erschmatt
+6111;3953;2;
 6111;3954;100;Leukerbad
-6112;3946;48;Gruben
-6112;3948;99;Oberems
+6112;3946;24;Gruben
+6112;3948;50;Oberems
 6113;3970;98;Salgesch
-6116;3953;100;Varen
+6116;3953;33;Varen
 6117;3956;100;Guttet-Feschel
-6118;3917;5;
+6118;3917;3;
 6118;3940;2;
-6118;3945;100;Gampel|Niedergampel
-6118;3957;100;Bratsch
+6118;3945;93;Gampel|Niedergampel
+6118;3957;50;Bratsch
 6119;3943;1;
-6119;3946;100;Gruben|Turtmann
-6119;3948;99;Unterems
+6119;3946;66;Gruben|Turtmann
+6119;3948;50;Unterems
 6131;1927;11;Chemin
 6131;1932;100;Bovernier|Les Valettes (Bovernier)
 6133;1926;100;Fully
-6134;1914;100;Isérables
+6134;1914;50;Isérables
 6135;1911;100;Ovronnaz
 6135;1912;100;Dugny (Leytron)|Leytron|Montagnon (Leytron)|Produit (Leytron)
 6136;1904;9;
@@ -3813,7 +3771,7 @@ _DATA = """\
 6137;1921;100;Martigny-Croix
 6137;1928;100;Ravoire
 6139;1908;99;Riddes
-6139;1914;100;Auddes-sur-Riddes
+6139;1914;50;Auddes-sur-Riddes
 6139;1918;100;La Tzoumaz
 6140;1913;100;Saillon
 6141;1907;100;Saxon
@@ -3822,53 +3780,49 @@ _DATA = """\
 6152;1868;100;Collombey
 6152;1893;100;Muraz (Collombey)
 6153;1870;100;Monthey
-6153;1871;100;Choëx|Les Giettes
+6153;1871;97;Choëx|Les Giettes
 6154;1897;100;Bouveret|Les Evouettes
 6155;1898;100;St-Gingolph
-6156;1871;2;
 6156;1872;100;Troistorrents
 6156;1875;100;Morgins
 6157;1873;100;Champoussin|Les Crosets|Val-d'Illiez
 6158;1895;100;Vionnaz
 6158;1899;100;Torgon
 6159;1896;100;Miex|Vouvry
-6172;3983;100;Bister
+6172;3983;20;Bister
 6173;3982;93;Bitsch
 6177;3993;100;Grengiols
-6177;3994;3;
+6177;3994;1;
 6177;3996;4;
 6181;3982;4;
-6181;3983;100;Goppisberg|Greich
+6181;3983;40;Goppisberg|Greich
 6181;3986;100;Ried-Mörel
 6181;3987;100;Riederalp
 6191;3938;100;Ausserberg
-6191;3942;5;
+6191;3942;2;
 6192;3919;100;Blatten (Lötschen)
 6193;3935;100;Bürchen
-6193;3942;2;
 6194;3943;98;Eischoll
 6195;3916;100;Ferden
-6195;3917;95;Goppenstein
-6197;3917;100;Kippel
-6198;3942;97;Niedergesteln
+6195;3917;47;Goppenstein
+6197;3917;50;Kippel
+6198;3942;34;Niedergesteln
 6198;3949;15;Hohtenn
-6199;3942;95;Raron|St. German
-6201;3942;2;
+6199;3942;63;Raron|St. German
 6201;3944;100;Unterbäch VS
 6202;3918;100;Wiler (Lötschen)
-6203;3983;100;Filet|Mörel
+6203;3983;40;Filet|Mörel
 6204;3940;98;Steg VS
 6204;3949;85;Hohtenn
-6205;3983;4;
 6205;3991;99;Betten
 6205;3992;100;Bettmeralp
-6205;3994;97;Martisberg
+6205;3994;49;Martisberg
 6211;1903;100;Collonges
 6212;1905;100;Dorénaz
 6213;1902;93;Evionnaz
 6214;1925;100;Finhaut|Le Châtelard VS
 6215;1869;100;Massongex
-6215;1871;5;
+6215;1871;3;
 6217;1890;100;Mex VS|St-Maurice
 6217;1902;7;
 6218;1922;100;Les Granges (Salvan)|Salvan
@@ -3876,57 +3830,54 @@ _DATA = """\
 6219;1904;91;Vernayaz
 6219;1920;2;
 6220;1891;100;Vérossaz
-6232;3966;100;Chalais|Réchy
+6232;3966;99;Chalais|Réchy
 6232;3967;100;Vercorin
 6235;3965;99;Chippis
 6238;3979;100;Grône
 6239;1977;100;Icogne
-6239;3963;15;Crans VS
+6239;3963;4;Crans VS
 6240;1978;100;Lens
-6240;3963;85;Crans VS
-6240;3971;4;
+6240;3963;21;Crans VS
+6240;3971;1;
 6240;3978;99;Flanthey
-6246;1958;100;St-Léonard
-6248;3960;100;Muraz (Sierre)|Sierre
+6246;1958;50;St-Léonard
+6248;3960;40;Muraz (Sierre)|Sierre
 6248;3965;1;
-6248;3966;2;
-6248;3976;97;Champzabé|Noës
+6248;3966;1;
+6248;3976;60;Champzabé|Noës
 6248;3977;100;Granges VS
-6252;3960;100;Niouc
+6252;3960;20;Niouc
 6252;3961;100;Ayer|Chandolin|Grimentz|Mission|St-Jean VS|St-Luc|Vissoie|Zinal
-6253;3960;100;Corin-de-la-Crête|Loc
-6253;3963;100;Aminona|Crans-Montana|Montana
-6253;3971;100;Chermignon|Chermignon-d'en-Bas|Ollon VS
+6253;3960;40;Corin-de-la-Crête|Loc
+6253;3963;75;Aminona|Crans-Montana|Montana
+6253;3971;98;Chermignon|Chermignon-d'en-Bas|Ollon VS
 6253;3972;14;Miège
 6253;3973;5;
 6253;3974;100;Mollens VS
 6253;3975;100;Randogne
-6253;3976;76;Champzabé
+6253;3976;40;Champzabé
 6254;3968;100;Veyras
 6254;3972;86;Miège
 6254;3973;95;Venthône
 6261;1974;97;Arbaz
-6263;1966;5;
-6263;1971;100;Champlan (Grimisuat)|Grimisuat
+6263;1971;99;Champlan (Grimisuat)|Grimisuat
 6265;1962;44;Pont-de-la-Morge (Sion)
 6265;1965;100;Savièse
 6266;1950;99;Sion
-6266;1958;99;Uvrier
+6266;1958;49;Uvrier
 6266;1962;56;Pont-de-la-Morge (Sion)
 6266;1967;100;Bramois
-6266;1971;1;
-6266;1991;100;Arvillard (Salins)|Misériez (Salins)|Pravidondaz (Salins)|Salins|Turin (Salins)
-6266;1992;100;Crête-à-l'Oeil (Les Agettes)|La Vernaz (Les Agettes)|Les Agettes|Les Mayens-de-Sion
-6266;1993;8;
+6266;1991;99;Arvillard (Salins)|Misériez (Salins)|Pravidondaz (Salins)|Salins|Turin (Salins)
+6266;1992;81;Crête-à-l'Oeil (Les Agettes)|La Vernaz (Les Agettes)|Les Agettes|Les Mayens-de-Sion
+6266;1993;4;
 6266;1994;22;Aproz (Nendaz)
-6267;1991;7;
-6267;1993;63;Veysonnaz
+6267;1991;1;
+6267;1993;32;Veysonnaz
 6281;3937;100;Baltschieder
 6282;3908;1;
-6282;3922;99;Eisten
-6283;3922;96;Kalpetran
+6282;3922;33;Eisten
+6283;3922;32;Kalpetran
 6283;3926;100;Embd
-6285;3922;2;
 6285;3925;100;Grächen
 6286;3931;99;Lalden
 6287;3928;100;Randa
@@ -3938,29 +3889,27 @@ _DATA = """\
 6291;3910;99;Saas-Grund
 6292;3924;100;St. Niklaus VS
 6292;3927;100;Herbriggen
-6293;3922;99;Stalden VS
+6293;3922;33;Stalden VS
 6293;3923;2;
 6294;3933;100;Staldenried
 6295;3929;100;Täsch
-6296;3922;2;
 6296;3923;98;Törbel
-6297;3930;100;Eyholz|Visp
-6298;3922;1;
-6298;3930;10;
+6297;3930;95;Eyholz|Visp
+6298;3930;5;
 6298;3932;100;Visperterminen
 6299;3934;100;Zeneggen
 6300;3920;100;Zermatt
 6404;2013;2;
 6404;2015;99;Areuse
 6404;2017;100;Boudry
-6404;2019;5;
-6404;2149;23;Champ-du-Moulin
+6404;2019;3;
+6404;2149;8;Champ-du-Moulin
 6408;2016;100;Cortaillod
-6413;2019;99;Chambrelien|Rochefort
+6413;2019;97;Chambrelien|Rochefort
 6413;2035;2;
-6413;2037;100;Montezillon
+6413;2037;50;Montezillon
 6413;2103;1;
-6413;2149;100;Brot-Dessous|Champ-du-Moulin|Fretereules
+6413;2149;92;Brot-Dessous|Champ-du-Moulin|Fretereules
 6413;2318;6;
 6416;2012;100;Auvernier
 6416;2013;98;Colombier NE
@@ -3977,24 +3926,22 @@ _DATA = """\
 6421;2300;100;La Chaux-de-Fonds|La Cibourg
 6421;2314;1;
 6421;2322;98;Le Crêt-du-Locle
-6421;2616;4;
+6421;2616;2;
 6422;2325;100;Les Planchettes
 6423;2314;98;La Sagne NE
-6432;2406;100;La Brévine|La Châtagne|Le Brouillet|Les Taillères
+6432;2406;92;La Brévine|La Châtagne|Le Brouillet|Les Taillères
 6433;2318;88;Brot-Plamboz
-6434;2400;20;Le Prévoux
+6434;2400;10;Le Prévoux
 6434;2405;5;
-6434;2406;4;
 6434;2414;100;Le Cerneux-Péquignot
-6435;2400;4;
+6435;2400;2;
 6435;2405;95;La Chaux-du-Milieu
-6435;2406;7;
+6435;2406;2;
 6436;2322;2;
-6436;2400;100;Le Locle|Le Prévoux
+6436;2400;88;Le Locle|Le Prévoux
 6436;2416;100;Les Brenets
-6437;2316;100;Les Ponts-de-Martel|Petit-Martel
+6437;2316;99;Les Ponts-de-Martel|Petit-Martel
 6451;2072;3;
-6451;2075;2;
 6451;2087;99;Cornaux NE
 6452;2072;2;
 6452;2088;100;Cressier NE
@@ -4006,11 +3953,10 @@ _DATA = """\
 6458;2034;100;Peseux
 6458;2035;97;Corcelles NE
 6458;2036;87;Cormondrèche
-6458;2037;11;Montmollin
+6458;2037;5;Montmollin
 6458;2042;100;Valangin
 6458;2067;68;Chaumont
-6487;2019;1;
-6487;2037;89;Montmollin
+6487;2037;45;Montmollin
 6487;2043;100;Boudevilliers
 6487;2046;100;Fontaines NE
 6487;2052;100;Fontainemelon|La Vue-des-Alpes
@@ -4026,11 +3972,9 @@ _DATA = """\
 6487;2207;100;Coffrane
 6487;2208;100;Les Hauts-Geneveys
 6487;2523;3;
-6487;2616;2;
 6504;2115;1;
 6504;2117;100;La Côte-aux-Fées
 6511;2126;100;Les Verrières
-6511;2406;2;
 6512;2103;98;Noiraigue
 6512;2105;99;Travers
 6512;2108;95;Couvet
@@ -4042,15 +3986,14 @@ _DATA = """\
 6512;2123;100;St-Sulpice NE
 6512;2124;99;Les Sagnettes
 6512;2127;100;Les Bayards
-6512;2316;2;
 6512;2318;5;
-6512;2406;18;Le Brouillet
+6512;2406;5;Le Brouillet
 6513;2067;1;
 6513;2068;100;Hauterive NE
 6513;2072;95;St-Blaise
 6513;2073;98;Enges
 6513;2074;100;Marin-Epagnier
-6513;2075;100;Thielle|Wavre
+6513;2075;99;Thielle|Wavre
 6601;1288;100;Aire-la-Ville
 6602;1247;100;Anières
 6603;1237;99;Avully
@@ -4061,7 +4004,7 @@ _DATA = """\
 6606;1293;100;Bellevue
 6607;1233;100;Bernex
 6607;1236;2;
-6608;1227;100;Carouge GE
+6608;1227;51;Carouge GE
 6609;1236;96;Cartigny
 6610;1298;100;Céligny
 6611;1284;100;Chancy
@@ -4071,7 +4014,7 @@ _DATA = """\
 6613;1225;100;Chêne-Bourg
 6614;1244;100;Choulex
 6615;1239;100;Collex
-6615;1290;3;
+6615;1290;2;
 6616;1222;100;Vésenaz
 6616;1245;100;Collonge-Bellerive
 6617;1223;100;Cologny
@@ -4087,8 +4030,8 @@ _DATA = """\
 6621;1207;100;Genève
 6621;1208;100;Genève
 6621;1209;98;Genève
-6621;1213;2;
-6621;1227;93;Les Acacias
+6621;1213;1;
+6621;1227;47;Les Acacias
 6622;1294;100;Genthod
 6623;1215;51;Genève
 6623;1218;100;Le Grand-Saconnex
@@ -4097,15 +4040,15 @@ _DATA = """\
 6626;1254;100;Jussy
 6627;1287;100;Laconnex
 6628;1212;92;Grand-Lancy
-6628;1213;98;Petit-Lancy
-6628;1227;5;
+6628;1213;49;Petit-Lancy
+6628;1227;3;
 6629;1252;100;Meinier
 6630;1214;2;
 6630;1215;49;Genève
 6630;1216;69;Cointrin
 6630;1217;100;Meyrin
 6631;1212;8;
-6631;1213;100;Onex
+6631;1213;50;Onex
 6632;1258;95;Perly
 6633;1228;99;Plan-les-Ouates
 6633;1257;1;
@@ -4124,7 +4067,7 @@ _DATA = """\
 6643;1216;30;Cointrin
 6643;1219;100;Aïre|Châtelaine|Le Lignon
 6643;1220;100;Les Avanchets
-6644;1290;97;Versoix
+6644;1290;48;Versoix
 6645;1234;100;Vessy
 6645;1255;100;Veyrier
 6702;2856;100;Boécourt
@@ -4133,30 +4076,29 @@ _DATA = """\
 6703;2803;99;Bourrignon
 6704;2843;100;Châtillon JU
 6706;2825;100;Courchapoix
-6708;2830;100;Courrendlin|Vellerat
+6708;2830;99;Courrendlin|Vellerat
 6708;2832;99;Rebeuvelier
 6709;2805;12;Soyhières
 6709;2822;100;Courroux
 6709;2823;100;Courcelon
-6709;2830;1;
 6710;2852;100;Courtételle
 6711;2800;99;Delémont
 6711;2806;7;
 6712;2802;100;Develier
 6713;2813;82;Ederswiler
 6713;2814;2;
-6715;2827;100;Mervelier
+6715;2827;50;Mervelier
 6716;2806;88;Mettembert
 6718;2812;100;Movelier
 6718;2813;5;
 6719;2806;5;
-6719;2807;100;Lucelle|Pleigne
+6719;2807;75;Lucelle|Pleigne
 6719;2813;13;Ederswiler
 6721;2842;100;Rossemaison
-6722;2718;10;
+6722;2718;5;
 6722;2873;98;Saulcy
 6724;2805;88;Soyhières
-6729;2748;36;Les Ecorcheresses
+6729;2748;18;Les Ecorcheresses
 6729;2853;100;Courfaivre
 6729;2854;100;Bassecourt
 6729;2855;100;Glovelier
@@ -4170,17 +4112,16 @@ _DATA = """\
 6741;2360;100;Le Bémont JU
 6741;2363;2;
 6742;2336;100;Les Bois
-6743;2345;100;La Chaux-des-Breuleux|Les Breuleux
+6743;2345;49;La Chaux-des-Breuleux|Les Breuleux
 6745;2353;7;
 6745;2363;98;Les Enfers
 6748;2714;100;Le Prédame|Les Genevez JU
-6750;2718;99;Fornet-Dessus|Lajoux JU
+6750;2718;94;Fornet-Dessus|Lajoux JU
 6751;2362;100;Montfaucon|Montfavergier
-6751;2718;1;
 6753;2338;100;Les Emibois|Muriaux
-6753;2345;77;Le Cerneux-Veusil|Le Peuchapatte
+6753;2345;33;Le Cerneux-Veusil|Le Peuchapatte
 6754;2340;100;Le Noirmont
-6754;2345;23;Le Peuchapatte
+6754;2345;6;Le Peuchapatte
 6757;2350;100;Saignelégier
 6757;2353;93;Les Pommerats
 6757;2354;100;Goumois
@@ -4220,7 +4161,7 @@ _DATA = """\
 6809;2907;100;Rocourt
 6809;2912;100;Roche-d'Or|Réclère
 6809;2914;100;Damvant
-6810;2807;50;Lucelle
+6810;2807;25;Lucelle
 6810;2946;100;Miécourt
 6810;2947;100;Charmoille
 6810;2953;100;Fregiécourt|Pleujouse

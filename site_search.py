@@ -522,7 +522,7 @@ class SearchIndex:
             expansion[term] = EXACT
         if len(term) >= 2 or term.isdigit():
             start = bisect.bisect_left(self._vocabulary, term)
-            for word in self._vocabulary[start : start + 400]:
+            for word in self._vocabulary[start:]:
                 if not word.startswith(term):
                     break
                 expansion.setdefault(word, PREFIX)
@@ -560,7 +560,7 @@ class SearchIndex:
                     found.append((word, distance))
         return found
 
-    def correction(self, term):
+    def correction(self, term, kinds=None):
         """The most likely intended word for a misspelt term, or None."""
         if term.isdigit() or len(term) < 3:
             return None
@@ -569,6 +569,12 @@ class SearchIndex:
             (distance, -self._frequency.get(word, 0), word)
             for word, distance in self._near(term, limit)
             if word in self._surface
+            and (
+                kinds is None
+                or any(
+                    self.documents[doc].kind in kinds for doc in self._postings[word]
+                )
+            )
         ]
         if not candidates:
             return None
@@ -606,7 +612,8 @@ class SearchIndex:
         ]
         return (meaningful or clauses)[:MAX_TERMS]
 
-    def _clause_scores(self, clause):
+    def _clause_scores(self, clause, kinds=None):
+        """Best weighted match per document, limited to the allowed kinds."""
         scores = {}
         if clause.concept:
             for doc_id, weight in self._postings.get(clause.concept, {}).items():
@@ -617,15 +624,24 @@ class SearchIndex:
                     value = weight * quality
                     if scores.get(doc_id, 0) < value:
                         scores[doc_id] = value
+        if kinds is not None:
+            scores = {
+                doc_id: value
+                for doc_id, value in scores.items()
+                if self.documents[doc_id].kind in kinds
+            }
         return scores
 
     def search(self, query, *, locale=None, kinds=None, limit=8, offset=0):
-        """Rank documents that match every query part; group them by kind."""
+        """Rank documents that match every query part; group them by kind.
+
+        With `kinds`, other documents neither match nor shape suggestions.
+        """
         query = clean_query(query)
         clauses = self._clauses(query)
         if not clauses:
             return SearchResult(query=query, groups=(), total=0)
-        scored = [(clause, self._clause_scores(clause)) for clause in clauses]
+        scored = [(clause, self._clause_scores(clause, kinds)) for clause in clauses]
         known = [(clause, scores) for clause, scores in scored if scores]
         ignored = ()
         if known and len(known) < len(scored):
@@ -643,7 +659,7 @@ class SearchIndex:
         clause_scores = [scores for _clause, scores in scored]
         matched = set.intersection(*(set(scores) for scores in clause_scores))
         hits = self._rank(query, clauses, clause_scores, matched, locale)
-        suggestion = self._suggest(query, clauses, locale)
+        suggestion = self._suggest(query, clauses, locale, kinds)
         grouped = {}
         for doc_id, score, secondary in hits:
             grouped.setdefault(self.documents[doc_id].kind, []).append(
@@ -724,7 +740,7 @@ class SearchIndex:
             kept.append((doc_id, score, secondary))
         return kept
 
-    def _suggest(self, query, clauses, locale):
+    def _suggest(self, query, clauses, locale, kinds=None):
         """Offer a corrected query when a typed word is not in the index.
 
         A word that matches nothing and has no likely spelling is left out.
@@ -736,10 +752,10 @@ class SearchIndex:
                 continue
             if any(quality >= PREFIX for quality in self._expand(term).values()):
                 continue
-            corrected = self.correction(term)
+            corrected = self.correction(term, kinds)
             if corrected:
                 replacements[term] = self._surface[corrected]
-            elif not self._clause_scores(clause):
+            elif not self._clause_scores(clause, kinds):
                 replacements[term] = ""
         if not any(replacements.values()):
             return None
@@ -752,7 +768,7 @@ class SearchIndex:
         suggestion = " ".join(suggestion.split())
         if not suggestion or fold(suggestion) == fold(query):
             return None
-        check = self.search(suggestion, locale=locale, limit=1)
+        check = self.search(suggestion, locale=locale, kinds=kinds, limit=1)
         if not check.total or check.ignored:
             return None
         return suggestion
