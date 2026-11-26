@@ -263,17 +263,19 @@ def test_ci_test_gate_fails_closed(tmp_path, result, responses, status, polls):
     assert len(slept) == max(polls - 1, 0), output
     assert sum(map(int, slept)) <= 60
 
-    last = responses[min(polls, len(responses)) - 1] if polls else None
-    if status and last is not None:
+    if status and polls:
         # A failed gate lists every shard with its attempt, status and conclusion.
-        seen = {job["name"]: job for page in last for job in page}
+        last = responses[min(polls, len(responses)) - 1]
+        if last is None:
+            assert "::error::Could not read the jobs of attempt 2" in output
+        seen = {job["name"]: job for page in last or [] for job in page}
         for index in SHARDS:
             name = f"{SHARD_PREFIX}{index}"
             job = seen.get(name)
             fields = (
                 [name, str(job["run_attempt"]), job["status"], job["conclusion"] or "-"]
                 if job
-                else [name, "-", "missing", "-"]
+                else [name, "-", "missing" if last is not None else "unknown", "-"]
             )
             assert "\t".join(fields) + "\n" in completed.stdout, output
 
