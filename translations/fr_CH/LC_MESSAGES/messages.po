@@ -15639,7 +15639,7 @@ msgstr "Date d'entrée en vigueur"
 #. Draft translation; native language and domain review pending.
 #: templates/release/navigation.html:11
 msgid "Wissen"
-msgstr "Connaissances"
+msgstr "Savoir"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/knowledge.html:2
@@ -20264,3 +20264,9 @@ msgstr ""
 "données soient complètes. Le projet utilise les tarifs enregistrés par votre CEL. Ce n'est qu'à "
 "la validation que naissent des factures qui ne peuvent plus être modifiées. Les corrections "
 "ultérieures restent visibles."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:10
+msgctxt "navigation"
+msgid "Für Gemeinden"
+msgstr "Communes"

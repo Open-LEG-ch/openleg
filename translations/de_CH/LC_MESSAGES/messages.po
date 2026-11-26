@@ -19252,3 +19252,8 @@ msgstr ""
 "vollständig sind. Der Entwurf rechnet mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der "
 "Freigabe entstehen Rechnungen, die sich nicht mehr ändern lassen. Spätere Korrekturen bleiben "
 "sichtbar."
+
+#: templates/release/navigation.html:10
+msgctxt "navigation"
+msgid "Für Gemeinden"
+msgstr "Für Gemeinden"

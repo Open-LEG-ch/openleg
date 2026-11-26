@@ -22651,3 +22651,9 @@ msgstr ""
 "have set up. If values are missing, billing for that period waits until the data is complete. The"
 " draft uses the tariffs your LEG has stored. Only approval creates invoices that can no longer be"
 " changed. Later corrections stay visible."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/navigation.html:10
+msgctxt "navigation"
+msgid "Für Gemeinden"
+msgstr "For municipalities"

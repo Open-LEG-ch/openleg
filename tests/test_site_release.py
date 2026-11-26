@@ -155,6 +155,99 @@ def test_release_header_offers_a_visible_github_button(web, monkeypatch, path):
     assert "<span>GitHub</span>" in button
 
 
+def _release_nav(html):
+    # The language switcher nests its own <nav>, so cut at the menu script.
+    return html.split("data-release-nav", 1)[1].split("site_navigation.js", 1)[0]
+
+
+def _nav_groups(nav):
+    """Return (details attributes, visible summary text) for each menu group."""
+    groups = re.findall(
+        r"<details\b([^>]*)>\s*<summary\b[^>]*>(.*?)</summary>", nav, re.DOTALL
+    )
+    return [
+        (attributes, unescape(re.sub(r"<[^>]+>", "", label)).strip())
+        for attributes, label in groups
+    ]
+
+
+def test_release_navigation_groups_open_one_at_a_time_without_arrows(web, monkeypatch):
+    """Groups are native disclosures, so every link stays reachable without JS."""
+    nav = _release_nav(_release_home(web, monkeypatch).get("/software").text)
+    assert "⌄" not in nav
+    groups = _nav_groups(nav)
+    labels = [label for _, label in groups]
+    # The bar shows the language code; the name completes the accessible label.
+    assert labels == [
+        "LEG gründen",
+        "Software",
+        "Für Gemeinden",
+        "Wissen",
+        "Verein",
+        "DE Deutsch",
+    ]
+    # A shared name makes the browser close the other groups when one opens.
+    assert all('name="release-nav"' in attributes for attributes, _ in groups)
+
+
+@pytest.mark.parametrize(
+    "path, section",
+    [
+        ("/rangliste", "Für Gemeinden"),
+        ("/software", "Software"),
+        ("/kontakt", "Verein"),
+    ],
+)
+def test_release_navigation_marks_the_section_of_the_current_page(
+    web, monkeypatch, path, section
+):
+    """The section keeps the logo line, so visitors see where they are."""
+    nav = _release_nav(_release_home(web, monkeypatch).get(path).text)
+    current = [
+        label
+        for attributes, label in _nav_groups(nav)
+        if "data-current-section" in attributes
+    ]
+    assert current == [section]
+
+
+def test_french_navigation_uses_short_labels_that_fit_one_row(web, monkeypatch):
+    """At 1100 px the French bar needs short labels; headings keep the full phrase."""
+    client = _release_home(web, monkeypatch)
+    html = client.get("/fuer-gemeinden?lang=fr-CH").text
+    nav = _release_nav(html)
+    labels = [label for _, label in _nav_groups(nav)]
+    assert labels[2:4] == ["Communes", "Savoir"]
+    assert "Pour les communes" in html.split("</nav>", 2)[-1]
+    german = _release_nav(client.get("/fuer-gemeinden?lang=de-CH").text)
+    assert '<span class="release-nav-line">Für Gemeinden</span>' in german
+
+
+def test_release_navigation_places_site_search_before_login(web, monkeypatch):
+    """A separate change adds the search partial; the bar already has its place."""
+    from jinja2 import ChoiceLoader, DictLoader
+
+    client = _release_home(web, monkeypatch)
+    without = _release_nav(client.get("/software").text)
+    assert "site-search-test" not in without
+    web.jinja_env.loader = ChoiceLoader(
+        [
+            DictLoader(
+                {"partials/site_search.html": '<form id="site-search-test"></form>'}
+            ),
+            web.jinja_env.loader,
+        ]
+    )
+    nav = _release_nav(client.get("/software").text)
+    assert nav.count('id="site-search-test"') == 1
+    groups_end = nav.rindex("</details>", 0, nav.index('class="release-login"'))
+    assert (
+        groups_end
+        < nav.index('id="site-search-test"')
+        < nav.index('class="release-login"')
+    )
+
+
 def test_homepage_github_invitation_is_a_button(web, monkeypatch):
     html = _release_home(web, monkeypatch).get("/").text
     verein = html.split('aria-labelledby="home-verein-title"', 1)[1].split(

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Rendered release layouts and colour contrast."""
 
+from itertools import pairwise, product
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import urlsplit
@@ -188,6 +189,187 @@ def test_text_on_dark_surfaces_is_white(release_page, path, surface):
     assert set(colours) <= {"rgb(255, 253, 248)", "rgb(255, 255, 255)"}, colours
 
 
+# The search partial arrives in a separate change; this stands in for its field.
+SEARCH_STAND_IN = """() => {
+    const slot = document.querySelector('.release-search-slot');
+    slot.innerHTML = '<form role="search"><input aria-label="Suche" style="width:200px;min-height:44px"></form>';
+}"""
+
+LINE = """el => {
+    const line = getComputedStyle(el.querySelector('.release-nav-line'), '::after');
+    return [line.backgroundColor, line.height, line.transform];
+}"""
+# The roof-coloured 2 px line under "LEG" in the wordmark, fully drawn or hidden.
+LINE_SHOWN = ["rgb(203, 129, 92)", "2px", "none"]
+LINE_HIDDEN = ["rgb(203, 129, 92)", "2px", "matrix(0, 0, 0, 1, 0, 0)"]
+
+
+def _nav_ready(page, path, width=1280):
+    page.set_viewport_size({"width": width, "height": 900})
+    assert page.goto("http://qa.test" + path).status == 200
+    page.wait_for_selector("[data-release-nav][data-enhanced='true']")
+
+
+def test_navigation_flyout_spans_the_viewport_and_stays_open_while_hovered(
+    release_page,
+):
+    page = release_page
+    _nav_ready(page, "/?lang=de-CH")
+    group = page.locator(".release-nav-group").nth(1)
+    summary = group.locator("summary")
+    assert summary.evaluate(LINE) == LINE_HIDDEN
+    summary.hover()
+    page.wait_for_timeout(400)
+    assert group.evaluate("el => el.open")
+    page.wait_for_timeout(300)
+    assert summary.evaluate(LINE) == LINE_SHOWN, "the open item keeps the logo line"
+    panel = group.locator(".release-nav-panel")
+    box = panel.bounding_box()
+    nav = page.locator(".release-nav").bounding_box()
+    assert box["x"] == 0
+    assert box["width"] == page.evaluate("document.documentElement.clientWidth")
+    assert box["y"] == nav["y"] + nav["height"]
+    # The links line up with the page content under the logo.
+    logo = page.locator(".release-nav .ol-logo").bounding_box()
+    assert panel.locator("a").first.bounding_box()["x"] == logo["x"]
+    assert panel.evaluate(
+        "el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).borderBottom]"
+    ) == ["rgb(255, 253, 248)", "1px solid rgb(188, 195, 208)"]
+    assert page.locator(".release-nav-panel:visible").count() == 1
+    # The pointer travels down across the bar into the panel and along its links.
+    links = panel.locator("a")
+    trigger = summary.bounding_box()
+    x = trigger["x"] + trigger["width"] / 2
+    page.mouse.move(x, nav["y"] + nav["height"] - 2, steps=3)
+    page.mouse.move(x, box["y"] + 10, steps=3)
+    links.first.hover()
+    links.last.hover()
+    page.wait_for_timeout(700)
+    assert group.evaluate("el => el.open")
+    page.mouse.move(640, 700, steps=4)
+    page.wait_for_timeout(700)
+    assert not group.evaluate("el => el.open")
+
+
+def test_navigation_keyboard_opens_enters_and_escapes_a_flyout(release_page):
+    page = release_page
+    _nav_ready(page, "/pricing?lang=de-CH")
+    summary = page.locator(".release-nav-group summary").first
+    page.keyboard.press("Tab")
+    summary.focus()
+    page.wait_for_timeout(300)
+    assert summary.evaluate(LINE) == LINE_SHOWN, "keyboard focus shows the logo line"
+    page.keyboard.press("Enter")
+    group = page.locator(".release-nav-group").first
+    assert group.evaluate("el => el.open")
+    page.keyboard.press("Tab")
+    first_link = group.locator(".release-nav-panel a").first
+    assert first_link.evaluate("el => el === document.activeElement")
+    page.keyboard.press("Escape")
+    assert not group.evaluate("el => el.open")
+    assert summary.evaluate("el => el === document.activeElement")
+    page.keyboard.press("ArrowDown")
+    assert first_link.evaluate("el => el === document.activeElement")
+    # The section of the current page keeps its line without hover or focus.
+    current = page.locator(".release-nav-group[data-current-section] summary")
+    page.keyboard.press("Escape")
+    page.locator("main").click(position={"x": 5, "y": 400})
+    page.wait_for_timeout(300)
+    assert current.inner_text() == "Software"
+    assert current.evaluate(LINE) == LINE_SHOWN
+    other = page.locator(".release-nav-group:not([data-current-section]) summary").first
+    assert other.evaluate(LINE) == LINE_HIDDEN
+
+
+@pytest.mark.parametrize("lang", ["de-CH", "fr-CH", "it-CH", "en"])
+def test_navigation_keeps_one_row_with_search_from_1100_px(release_page, lang):
+    page = release_page
+    # A page inside a section sets that label in bold, which makes it wider.
+    pages = ("/", "/leg-gruenden", "/software", "/fuer-gemeinden", "/wissen", "/verein")
+    for path, width in product(pages, (1100, 1200, 1280, 1440)):
+        _nav_ready(page, f"{path}?lang={lang}", width)
+        page.evaluate(SEARCH_STAND_IN)
+        row = page.locator(".release-nav-row")
+        tops = row.evaluate(
+            """el => [el.querySelector('.ol-logo'), ...el.querySelectorAll(
+                '.release-nav-group > summary, .release-search-slot, .release-login, .release-github'
+            )].map(node => Math.round(node.getBoundingClientRect().top + node.getBoundingClientRect().height / 2))"""
+        )
+        assert max(tops) - min(tops) <= 2, (lang, path, width, tops)
+        # Neighbours must not overlap, and the last one ends inside the container.
+        edges = row.evaluate(
+            """el => [el.querySelector('.ol-logo'), ...el.querySelectorAll(
+                '.release-nav-group > summary, .release-search-slot input, .release-login, .release-github'
+            )].map(node => [node.getBoundingClientRect().left, node.getBoundingClientRect().right])"""
+        )
+        edges.sort()
+        for (_, right), (left, _) in pairwise(edges):
+            assert right <= left + 0.5, (lang, path, width, edges)
+        assert edges[-1][1] <= width - 20, (lang, width)
+        assert row.bounding_box()["height"] <= 90, (lang, width)
+        assert page.evaluate("document.documentElement.scrollWidth") == width, (
+            lang,
+            width,
+        )
+        targets = page.locator(".release-nav-group > summary, .release-github")
+        for target in targets.all():
+            box = target.bounding_box()
+            assert box["width"] >= 44 and box["height"] >= 44, (lang, path, width, box)
+        search = page.locator(".release-search-slot input").bounding_box()
+        assert search["width"] >= 200, (lang, width)
+
+
+def test_navigation_menu_on_phones_keeps_github_and_starts_with_search(release_page):
+    page = release_page
+    for width in (320, 390, 768, 1099):
+        _nav_ready(page, "/?lang=fr-CH", width)
+        page.evaluate(SEARCH_STAND_IN)
+        assert page.locator(".release-menu-toggle").is_visible()
+        assert page.locator(".release-github").is_visible()
+        assert page.evaluate("document.documentElement.scrollWidth") == width
+        page.locator(".release-menu-toggle").click()
+        menu = page.locator("#release-menu")
+        first_visible = menu.evaluate(
+            "el => [...el.children].find(c => c.getClientRects().length).className"
+        )
+        assert first_visible == "release-search-slot", width
+        assert "⌄" not in menu.inner_text()
+        group = menu.locator(".release-nav-group").first
+        summary = group.locator("summary")
+        # A plus sign marks a closed group and a minus sign an open one.
+        closed = summary.evaluate(
+            "el => getComputedStyle(el, '::after').backgroundSize"
+        )
+        summary.click()
+        assert group.evaluate("el => el.open")
+        assert (
+            summary.evaluate("el => getComputedStyle(el, '::after').backgroundSize")
+            != closed
+        )
+        assert summary.bounding_box()["height"] >= 44
+        for link in group.locator(".release-nav-panel a").all():
+            assert link.is_visible() and link.bounding_box()["height"] >= 44
+        assert page.evaluate("document.documentElement.scrollWidth") == width
+        page.locator(".release-menu-toggle").click()
+
+
+LINE_DURATION = """el => getComputedStyle(
+    el.querySelector('.release-nav-line'), '::after'
+).transitionDuration"""
+
+
+def test_navigation_line_appears_without_motion_when_reduced(release_page):
+    page = release_page
+    page.emulate_media(reduced_motion="reduce")
+    _nav_ready(page, "/?lang=de-CH")
+    summary = page.locator(".release-nav-group summary").first
+    assert summary.evaluate(LINE_DURATION) == "0s"
+    page.emulate_media(reduced_motion="no-preference")
+    page.reload()
+    # The line grows from the left when motion is allowed.
+    assert summary.evaluate(LINE_DURATION) != "0s"
+
+
 @pytest.mark.parametrize("locale", ["de-CH", "fr-CH", "it-CH", "en"])
 def test_desktop_header_labels_stay_on_one_line(release_page, locale):
     """French labels wrapped once the GitHub button took room; each must fit."""
@@ -195,6 +377,7 @@ def test_desktop_header_labels_stay_on_one_line(release_page, locale):
     for width in (1100, 1150, 1200, 1280, 1300, 1320, 1340, 1440, 1920):
         page.set_viewport_size({"width": width, "height": 800})
         assert page.goto(f"http://qa.test/?lang={locale}").status == 200
+        page.evaluate(SEARCH_STAND_IN)
         # Compare with clientWidth: a classic scrollbar narrows the layout.
         assert page.evaluate(
             "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
@@ -204,9 +387,11 @@ def test_desktop_header_labels_stay_on_one_line(release_page, locale):
             "(r => r.scrollWidth <= r.clientWidth)"
             "(document.querySelector('.release-nav-row'))"
         )
+        # Every label sits on one line (one line of 16 px text is about 26 px).
         heights = page.evaluate(
             """() => [...document.querySelectorAll(
-                '.release-nav-group > summary, .release-login, .release-github'
-            )].map(el => Math.round(el.getBoundingClientRect().height))"""
+                '.release-nav-group > summary .release-nav-line'
+            )].filter(el => el.offsetParent)
+              .map(el => Math.round(el.getBoundingClientRect().height))"""
         )
-        assert heights and max(heights) <= 46, (width, heights)
+        assert heights and max(heights) <= 34, (width, heights)

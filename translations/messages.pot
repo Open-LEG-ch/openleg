@@ -1041,7 +1041,7 @@ msgstr ""
 msgid "Aktion"
 msgstr ""
 
-#: i18n.py:91
+#: i18n.py:92
 msgid "Aktion derzeit nicht möglich"
 msgstr ""
 
@@ -1295,7 +1295,7 @@ msgstr ""
 msgid "Anfrage ist zu gross"
 msgstr ""
 
-#: i18n.py:345
+#: i18n.py:355
 msgid "Anfrage nicht möglich"
 msgstr ""
 
@@ -1303,7 +1303,7 @@ msgstr ""
 msgid "Anfrage wird ausgeführt…"
 msgstr ""
 
-#: i18n.py:93
+#: i18n.py:94
 msgid "Anfrage zu gross"
 msgstr ""
 
@@ -1323,7 +1323,7 @@ msgstr ""
 msgid "Angaben der eintragenden Organisation"
 msgstr ""
 
-#: i18n.py:95
+#: i18n.py:96
 msgid "Angaben können nicht verarbeitet werden"
 msgstr ""
 
@@ -1355,7 +1355,7 @@ msgstr ""
 msgid "Anleitung zum privaten Netzwerk"
 msgstr ""
 
-#: templates/release/footer.html:10 templates/release/navigation.html:20 templates/verein/login.html:10
+#: templates/release/footer.html:10 templates/release/navigation.html:21 templates/verein/login.html:10
 msgid "Anmelden"
 msgstr ""
 
@@ -1383,7 +1383,7 @@ msgstr ""
 msgid "Anmeldung beim Netzbetreiber:"
 msgstr ""
 
-#: i18n.py:85
+#: i18n.py:86
 msgid "Anmeldung erforderlich"
 msgstr ""
 
@@ -3087,7 +3087,7 @@ msgstr ""
 msgid "Dateien für diese Rechnung anzeigen"
 msgstr ""
 
-#: i18n.py:94
+#: i18n.py:95
 msgid "Dateiformat nicht unterstützt"
 msgstr ""
 
@@ -4493,7 +4493,7 @@ msgstr ""
 msgid "Dienst"
 msgstr ""
 
-#: i18n.py:99 templates/leg_verzeichnis/leg_check.html:54 templates/leg_verzeichnis/liste.html:19
+#: i18n.py:100 templates/leg_verzeichnis/leg_check.html:54 templates/leg_verzeichnis/liste.html:19
 #: verein_event_routes.py:34 verein_finance_routes.py:40 verein_payment_routes.py:42
 #: verein_routes.py:64
 msgid "Dienst vorübergehend nicht verfügbar"
@@ -6081,7 +6081,7 @@ msgstr ""
 msgid "Fehler beim Login."
 msgstr ""
 
-#: i18n.py:98
+#: i18n.py:99
 msgid "Fehler beim vorgelagerten Dienst"
 msgstr ""
 
@@ -6204,7 +6204,7 @@ msgstr ""
 msgid "Fordern Sie einen Kontoauszug mit Einzelbeträgen an."
 msgstr ""
 
-#: i18n.py:89
+#: i18n.py:90
 msgid "Format nicht verfügbar"
 msgstr ""
 
@@ -6377,7 +6377,7 @@ msgstr ""
 msgid "Frühere Bestätigungen und Geräteangaben"
 msgstr ""
 
-#: i18n.py:97
+#: i18n.py:98
 msgid "Funktion nicht verfügbar"
 msgstr ""
 
@@ -6441,7 +6441,12 @@ msgstr ""
 
 #: templates/fuer_gemeinden.html:19 templates/how-it-works.html:145 templates/index.html:174
 #: templates/partials/site_nav.html:13 templates/partials/site_nav.html:38 templates/pricing.html:64
-#: templates/pricing.html:155 templates/release/navigation.html:10
+#: templates/pricing.html:155
+msgid "Für Gemeinden"
+msgstr ""
+
+#: templates/release/navigation.html:10
+msgctxt "navigation"
 msgid "Für Gemeinden"
 msgstr ""
 
@@ -8265,7 +8270,7 @@ msgstr ""
 msgid "Informiert lokale Beteiligte und begleitet die Anmeldung."
 msgstr ""
 
-#: i18n.py:92
+#: i18n.py:93
 msgid "Inhalt nicht mehr verfügbar"
 msgstr ""
 
@@ -8381,7 +8386,7 @@ msgid ""
 "Prüfung privat zugänglich."
 msgstr ""
 
-#: i18n.py:96
+#: i18n.py:97
 msgid "Interner Fehler"
 msgstr ""
 
@@ -10143,7 +10148,7 @@ msgstr ""
 msgid "Methode"
 msgstr ""
 
-#: i18n.py:88
+#: i18n.py:89
 msgid "Methode nicht erlaubt"
 msgstr ""
 
@@ -12838,7 +12843,7 @@ msgstr ""
 msgid "Routen, Formulare, Gemeindeprofile, Rangliste und JSON-API."
 msgstr ""
 
-#: i18n.py:142 member_invoices.py:745 templates/admin/abrechnungen.html:135
+#: i18n.py:143 member_invoices.py:745 templates/admin/abrechnungen.html:135
 #: templates/admin/abrechnungen.html:138 templates/documents/member_invoice.html:19
 #: templates/member_invoice_detail.html:50 templates/member_invoice_detail.html:51
 msgid "Rp./kWh"
@@ -13120,7 +13125,7 @@ msgstr ""
 msgid "Seite %(page)s"
 msgstr ""
 
-#: i18n.py:87
+#: i18n.py:88
 msgid "Seite nicht gefunden"
 msgstr ""
 
@@ -13696,7 +13701,7 @@ msgid "Spende"
 msgstr ""
 
 #: templates/http_error.html:10 templates/partials/language_switcher.html:1
-#: templates/product_base.html:21 templates/release/navigation.html:21
+#: templates/product_base.html:21 templates/release/navigation.html:23
 msgid "Sprache"
 msgstr ""
 
@@ -14355,7 +14360,7 @@ msgstr ""
 msgid "Ungleiche Summen herunterladen"
 msgstr ""
 
-#: i18n.py:84
+#: i18n.py:85
 msgid "Ungültige Anfrage"
 msgstr ""
 
@@ -15948,11 +15953,11 @@ msgid ""
 "bis 30. September 22:00."
 msgstr ""
 
-#: i18n.py:100
+#: i18n.py:101
 msgid "Zeitüberschreitung beim vorgelagerten Dienst"
 msgstr ""
 
-#: i18n.py:90
+#: i18n.py:91
 msgid "Zeitüberschreitung der Anfrage"
 msgstr ""
 
@@ -16029,7 +16034,7 @@ msgstr ""
 msgid "Zugestellt"
 msgstr ""
 
-#: i18n.py:86
+#: i18n.py:87
 msgid "Zugriff verweigert"
 msgstr ""
 
