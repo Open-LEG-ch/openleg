@@ -1,9 +1,11 @@
+import re
 from pathlib import Path
 
 README_PATH = Path("README.md")
 ARCHITECTURE_DOC = Path("docs/architecture.md")
 DATA_PIPELINE_DOC = Path("docs/data-pipeline.md")
 API_EXAMPLES_DOC = Path("docs/api-examples.md")
+ASSETS = Path(".github/assets")
 
 
 def _readme_text() -> str:
@@ -62,3 +64,27 @@ def test_readme_has_no_private_identity_or_local_paths() -> None:
     _forbidden = ("w" + "gusta", "baden" + "leg", "/" + "users/")
     for fragment in _forbidden:
         assert fragment not in text
+
+
+def test_readme_images_resolve_to_tracked_files() -> None:
+    sources = re.findall(r'(?:src|srcset)="([^"]+)"', _readme_text())
+    local = [source for source in sources if "://" not in source]
+    assert local, "README must show the wordmark and product images"
+    for source in local:
+        assert Path(source).is_file(), f"README image {source} does not exist"
+
+
+def test_readme_wordmark_matches_release_identity() -> None:
+    text = _readme_text()
+    assert 'media="(prefers-color-scheme: dark)"' in text
+    assert 'srcset=".github/assets/openleg-wordmark-dark.svg"' in text
+    assert 'src=".github/assets/openleg-wordmark.svg"' in text
+    expected = {
+        "openleg-wordmark.svg": {"#26324b", "#243b85", "#cb815c"},
+        "openleg-wordmark-dark.svg": {"#fffdf8", "#cb815c"},
+    }
+    for name, colours in expected.items():
+        svg = (ASSETS / name).read_text(encoding="utf-8")
+        # Outlined letters render the same without the viewer's fonts.
+        assert "<text" not in svg
+        assert set(re.findall(r'fill="(#[0-9a-f]{6})"', svg)) == colours
