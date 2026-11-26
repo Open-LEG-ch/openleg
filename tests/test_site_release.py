@@ -113,6 +113,33 @@ def test_text_on_dark_release_surfaces_is_white():
     assert "text-slate-400" not in script and "border-indigo-400" not in script
 
 
+@pytest.mark.parametrize("path", ["/", "/software", "/pricing", "/how-it-works"])
+def test_release_header_offers_a_visible_github_button(web, monkeypatch, path):
+    """The repository link sits outside the collapsible menu, so phones see it too."""
+    client = _release_home(web, monkeypatch)
+    html = client.get(path).text
+    # The language switcher nests its own <nav>, so cut at the menu script.
+    nav = html.split("data-release-nav", 1)[1].split("site_navigation.js", 1)[0]
+    # The link follows the closed menu container, not an item inside it.
+    assert re.search(r'</details>\s*</div>\s*<a class="release-github"', nav)
+    menu_end = nav.index('<a class="release-github"')
+    button = nav[menu_end:].split("</a>", 1)[0]
+    assert 'href="https://github.com/Open-LEG-ch/openleg"' in button
+    assert 'class="github-mark"' in button and 'aria-hidden="true"' in button
+    assert "<span>GitHub</span>" in button
+
+
+def test_homepage_github_invitation_is_a_button(web, monkeypatch):
+    html = _release_home(web, monkeypatch).get("/").text
+    verein = html.split('aria-labelledby="home-verein-title"', 1)[1].split(
+        "</section>", 1
+    )[0]
+    button = verein.split('class="release-button release-button-github"', 1)[1]
+    button = button.split("</a>", 1)[0]
+    assert 'href="https://github.com/Open-LEG-ch/openleg"' in button
+    assert 'class="github-mark"' in button and "Auf GitHub mitarbeiten" in button
+
+
 def test_verified_formation_metadata_updates_public_status_and_join_link(web):
     web.config.update(
         SITE_RELEASE_ENABLED=True,

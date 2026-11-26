@@ -37,7 +37,7 @@
 .release-container { max-width: 1280px; padding-inline: 48px; margin-inline: auto; }
 .release-nav { position: sticky; top: 0; z-index: 50; background: #f6f2ea; border-bottom: 1px solid #bcc3d0; }
 .release-nav-row { display: flex; align-items: center; justify-content: space-between; min-height: 88px; gap: 28px; }
-.release-menu { display: flex; align-items: center; gap: 18px; }
+.release-menu { display: flex; align-items: center; gap: 18px; margin-left: auto; }
 .release-menu-toggle { display: none; border: 1px solid #70798d; border-radius: 8px; padding: 8px 16px; min-height: 44px; }
 .release-nav-group { position: relative; }
 .release-nav-group summary { display: flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; list-style: none; font-size: 16px; }
@@ -46,6 +46,10 @@
 .release-nav-group a { display: block; padding: 10px; border-radius: 4px; }
 .release-nav-group a:hover { background: #edf1f9; }
 .release-login { border: 1px solid #243b85; border-radius: 999px; padding: 8px 16px; white-space: nowrap; }
+.release-github { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #243b85; border-radius: 999px; padding: 8px 18px; background: #243b85; color: #fffdf8; font-weight: 600; white-space: nowrap; }
+.release-github:hover { background: #1b2f6a; }
+.release-button-github { gap: 10px; }
+.github-mark { flex: none; }
 .release-language nav { gap: 0; }
 .release-language a { min-height: 44px; display: inline-flex; align-items: center; padding-inline: 6px; }
 .release-language-options { position: absolute; top: calc(100% + 8px); right: 0; width: 180px; padding: 12px; border: 1px solid #bcc3d0; border-radius: 12px; background: #fffdf8; }
@@ -166,6 +170,10 @@
   .release-language a { padding-inline: 12px; }
   .release-language-options { position: static; width: auto; }
   .release-login { align-self: flex-start; }
+  /* The GitHub button stays visible beside the menu toggle; the opened menu wraps below both. */
+  .release-github { order: 1; margin-left: auto; min-height: 44px; min-width: 44px; justify-content: center; padding: 8px 14px; }
+  .release-menu-toggle { order: 2; }
+  .release-menu { order: 3; }
 }
 @media (max-width: 767px) {
   .release-document { padding-block: 36px 48px; }
@@ -178,6 +186,9 @@
   .release-container { padding-inline: 20px; }
   .release-section { padding-block: 40px; }
   .release-nav { position: static; }
+}
+@media (max-width: 379px) {
+  .release-github span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 @media (prefers-reduced-motion: reduce) { .site-release *, .site-release *::before, .site-release *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
 

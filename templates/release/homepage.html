@@ -159,7 +159,7 @@
     {% if verein_formation_date %}<p>{{ _('Gegründet am %(date)s in %(seat)s.', date=verein_facts.formation_date|datelabel, seat=verein_facts.seat) }}</p>{% endif %}
     <div class="home-actions home-actions-center">
       <a class="release-button release-button-primary" href="{{ '/verein'|localized_url }}">{% if verein_formation_date %}{{ _('Verein und Mitgliedschaft') }}{% else %}{{ _('Zum Verein') }}{% endif %}</a>
-      <a class="home-link" href="https://github.com/Open-LEG-ch/openleg"><span class="home-link-text">{{ _('Auf GitHub mitarbeiten') }}</span> <span class="home-arrow" aria-hidden="true">&rarr;</span></a>
+      <a class="release-button release-button-github" href="https://github.com/Open-LEG-ch/openleg">{% include 'partials/github_mark.html' %}{{ _('Auf GitHub mitarbeiten') }}</a>
     </div>
   </div>
 </section>
