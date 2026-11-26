@@ -90,7 +90,8 @@ jobs:
   # that shard running, and on a rerun it lists the shards copied from the
   # previous attempt only seconds after this job starts. The gate therefore
   # polls this attempt's jobs for up to a minute, and stops at once when a
-  # shard has finished with anything but success.
+  # shard has finished with anything but success or the matrix failed. Every
+  # failure lists each shard's attempt, status and conclusion.
   test:
     name: ci/test
     needs: shard
@@ -111,7 +112,6 @@ jobs:
         run: |
           set -euo pipefail
           echo "Matrix result: ${RESULT}"
-          test "${RESULT}" = success
           expected=$(seq 1 "${SHARDS}" | sed 's|^|ci/test shard |' | sort -u)
           for poll in 1 2 3 4 5 6 7; do
             # One row per expected shard: name, run_attempt, status, conclusion.
@@ -123,11 +123,12 @@ jobs:
                   | (if . == [] then [[$name, "-", "missing", "-"]] else . end)[]
                   | @tsv')
             passed=$(printf '%s\n' "${shards}" | awk -F '\t' '$4 == "success" { print $1 }' | sort -u)
-            if [ "${passed}" = "${expected}" ]; then
+            if [ "${RESULT}" = success ] && [ "${passed}" = "${expected}" ]; then
               echo "All ${SHARDS} shards passed."
               exit 0
             fi
-            if printf '%s\n' "${shards}" | awk -F '\t' '$3 == "completed" && $4 != "success" { found = 1 } END { exit !found }'; then
+            if [ "${RESULT}" != success ] \
+              || printf '%s\n' "${shards}" | awk -F '\t' '$3 == "completed" && $4 != "success" { found = 1 } END { exit !found }'; then
               break
             fi
             if [ "${poll}" -lt 7 ]; then
@@ -135,7 +136,7 @@ jobs:
               sleep 10
             fi
           done
-          echo "::error::Not every shard passed in attempt ${RUN_ATTEMPT}."
+          echo "::error::Not every shard passed in attempt ${RUN_ATTEMPT} (matrix result: ${RESULT})."
           echo "Shard jobs (name, run_attempt, status, conclusion):"
           printf '%s\n' "${shards}"
           exit 1

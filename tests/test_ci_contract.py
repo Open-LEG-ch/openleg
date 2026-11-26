@@ -143,8 +143,9 @@ SHARD_3_NOT_COPIED_YET = [[_shard_job(index) for index in SHARDS if index != 3]]
             1,
         ),
         ("success", [None], 1, 1),
-        ("failure", [ALL_PASSED], 1, 0),
-        ("cancelled", [ALL_PASSED], 1, 0),
+        # A failed matrix fails the gate, after one read that names the shards.
+        ("failure", [ALL_PASSED], 1, 1),
+        ("cancelled", [ALL_PASSED], 1, 1),
         # Run 45491952156, attempt 1: the API still showed the last shard running.
         ("success", [SHARD_4_RUNNING, ALL_PASSED], 0, 2),
         # Attempt 2 of that run: a rerun had not yet copied shard 3's pass.
