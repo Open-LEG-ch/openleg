@@ -36,8 +36,8 @@
 .site-release .ol-logo--inverse .ol-word, .site-release .ol-logo--inverse .ol-leg { color: #fffdf8; }
 .release-container { max-width: 1280px; padding-inline: 48px; margin-inline: auto; }
 .release-nav { position: sticky; top: 0; z-index: 50; background: #f6f2ea; border-bottom: 1px solid #bcc3d0; }
-.release-nav-row { display: flex; align-items: center; justify-content: space-between; min-height: 88px; gap: 28px; }
-.release-menu { display: flex; align-items: center; gap: 18px; margin-left: auto; }
+.release-nav-row { display: flex; align-items: center; justify-content: space-between; min-height: 88px; gap: 24px; }
+.release-menu { display: flex; align-items: center; gap: 16px; margin-left: auto; }
 .release-menu-toggle { display: none; border: 1px solid #70798d; border-radius: 8px; padding: 8px 16px; min-height: 44px; }
 .release-nav-group { position: relative; }
 .release-nav-group summary { display: flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; list-style: none; font-size: 16px; white-space: nowrap; }
@@ -156,10 +156,11 @@
 .release-resource-list > li { padding-block: 20px; border-top: 1px solid #bcc3d0; }
 .release-resource-list a { font-size: 22px; }
 .release-plain-text { white-space: pre-line; }
-@media (max-width: 1299px) { .release-menu { gap: 12px; } .release-nav-row { gap: 20px; } .release-github { padding-inline: 14px; } }
+@media (max-width: 1339px) { .release-menu { gap: 12px; } .release-nav-row { gap: 20px; } .release-github { padding-inline: 14px; } }
 @media (max-width: 1199px) { .release-container { padding-inline: 24px; } .release-menu { gap: 10px; } .release-nav-row { gap: 16px; } }
-/* 1100-1299 px: the full desktop menu is tight in French, so the GitHub button shows its mark only. */
-@media (min-width: 1100px) and (max-width: 1299px) {
+/* 1100-1339 px: the full desktop menu is tight in French, so the GitHub button shows its mark only.
+   The upper bound leaves room for a classic scrollbar, which media queries count as width. */
+@media (min-width: 1100px) and (max-width: 1339px) {
   .release-github { min-width: 44px; min-height: 44px; justify-content: center; padding: 8px 12px; }
   .release-github span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }

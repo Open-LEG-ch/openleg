@@ -114,8 +114,23 @@ def test_text_on_dark_release_surfaces_is_white():
     api = (root / "templates" / "api_docs.html").read_text()
     example = re.search(r"\.api-copy-example \{([^}]*)\}", api)
     assert example and "color: #ffffff;" in example.group(1)
+    # No other rule or element inside the examples may set a different colour.
+    for selector, body in re.findall(r"([^{}]*api-copy-example[^{}]*)\{([^}]*)\}", api):
+        colours = re.findall(r"(?<![-\w])color:\s*([^;]+);", body)
+        assert colours in ([], ["#ffffff"]), (selector, colours)
+    examples = re.findall(
+        r'<pre class="api-copy-example"[^>]*>(.*?)</pre>', api, re.DOTALL
+    )
+    assert examples and all(e.startswith("<code>") for e in examples)
     profile = (root / "templates" / "gemeinde" / "profil.html").read_text()
-    assert "text-white/" not in profile
+    callout = profile.split('<section class="mt-8 bg-brand', 1)[1].split(
+        "</section>", 1
+    )[0]
+    grey = re.compile(r"\btext-(?:white/|ink|slate|gray|sage|stone|zinc|neutral|muted)")
+    for element in re.findall(r"<[a-z][^>]*>", callout):
+        # The white button keeps brand-coloured text on its own white background.
+        if "bg-white" not in element:
+            assert not grey.search(element), element
 
 
 @pytest.mark.parametrize("path", ["/", "/software", "/pricing", "/how-it-works"])

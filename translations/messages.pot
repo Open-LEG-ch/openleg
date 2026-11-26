@@ -2032,14 +2032,6 @@ msgstr ""
 msgid "Beilagen"
 msgstr ""
 
-#: templates/release/software.html:9
-msgid ""
-"Beim Import ordnet OpenLEG die Viertelstundenwerte über die erfassten Messpunkte den Mitgliedern "
-"zu. Fehlen Werte, wartet die Abrechnung für diesen Zeitraum, bis die Daten vollständig sind. Der "
-"Entwurf rechnet mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der Freigabe entstehen "
-"Rechnungen, die sich nicht mehr ändern lassen. Spätere Korrekturen bleiben sichtbar."
-msgstr ""
-
 #: templates/leg_workspace/members.html:68
 msgid "Beim Netzbetreiber einreichen"
 msgstr ""
@@ -6523,6 +6515,15 @@ msgstr ""
 msgid ""
 "Für das zuletzt abgeschlossene Quartal liegt noch kein freigegebener Bericht vor. Der neueste "
 "veröffentlichte Bericht zeigt einen früheren Zeitraum."
+msgstr ""
+
+#: templates/release/software.html:9
+msgid ""
+"Für die Abrechnung ordnet OpenLEG die Viertelstundenwerte über die erfassten Messpunkte den "
+"Mitgliedern zu. Fehlen Werte, wartet die Abrechnung für diesen Zeitraum, bis die Daten "
+"vollständig sind. Der Entwurf rechnet mit den Tarifen, die Ihre LEG hinterlegt hat. Erst mit der "
+"Freigabe entstehen Rechnungen, die sich nicht mehr ändern lassen. Spätere Korrekturen bleiben "
+"sichtbar."
 msgstr ""
 
 #: templates/release/homepage.html:136

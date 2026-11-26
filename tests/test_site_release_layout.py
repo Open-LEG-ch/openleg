@@ -192,10 +192,18 @@ def test_text_on_dark_surfaces_is_white(release_page, path, surface):
 def test_desktop_header_labels_stay_on_one_line(release_page, locale):
     """French labels wrapped once the GitHub button took room; each must fit."""
     page = release_page
-    for width in (1100, 1150, 1200, 1280, 1300, 1440):
+    for width in (1100, 1150, 1200, 1280, 1300, 1320, 1340, 1440, 1920):
         page.set_viewport_size({"width": width, "height": 800})
         assert page.goto(f"http://qa.test/?lang={locale}").status == 200
-        assert page.evaluate("document.documentElement.scrollWidth") == width
+        # Compare with clientWidth: a classic scrollbar narrows the layout.
+        assert page.evaluate(
+            "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+        )
+        # The bar's items must also fit inside the container, not its padding.
+        assert page.evaluate(
+            "(r => r.scrollWidth <= r.clientWidth)"
+            "(document.querySelector('.release-nav-row'))"
+        )
         heights = page.evaluate(
             """() => [...document.querySelectorAll(
                 '.release-nav-group > summary, .release-login, .release-github'
