@@ -20399,3 +20399,49 @@ msgstr "Exemples"
 #: templates/release/search.html:61
 msgid "Direkt weiter"
 msgstr "Accès direct"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:213
+#, python-format
+msgid "Alle Treffer für «%(query)s» anzeigen"
+msgstr "Afficher tous les résultats pour « %(query)s »"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:232
+#, python-format
+msgid "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgid_plural "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgstr[0] "%(num)s résultat. Choisissez avec les touches fléchées."
+msgstr[1] "%(num)s résultats. Choisissez avec les touches fléchées."
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Suchvorschläge"
+msgstr "Suggestions de recherche"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Suche läuft …"
+msgstr "Recherche en cours …"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Vorschläge sind gerade nicht verfügbar. Mit Enter öffnen Sie die Trefferseite."
+msgstr ""
+"Les suggestions ne sont pas disponibles pour le moment. Appuyez sur Entrée pour ouvrir la page de"
+" résultats."
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Zu viele Anfragen. Warten Sie einen Moment oder öffnen Sie mit Enter die Trefferseite."
+msgstr "Trop de requêtes. Attendez un instant ou appuyez sur Entrée pour ouvrir la page de résultats."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:19
+msgid "Taste / springt auf jeder Seite ins Suchfeld"
+msgstr "La touche / place le curseur dans le champ de recherche sur chaque page"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:19
+msgid "Ctrl+K oder Cmd+K funktioniert immer."
+msgstr "Ctrl+K ou Cmd+K fonctionne toujours."

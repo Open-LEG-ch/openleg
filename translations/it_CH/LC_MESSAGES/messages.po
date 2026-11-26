@@ -23053,3 +23053,47 @@ msgstr "Esempi"
 #: templates/release/search.html:61
 msgid "Direkt weiter"
 msgstr "Accesso diretto"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:213
+#, python-format
+msgid "Alle Treffer für «%(query)s» anzeigen"
+msgstr "Mostra tutti i risultati per «%(query)s»"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:232
+#, python-format
+msgid "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgid_plural "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgstr[0] "%(num)s risultato. Scelga con i tasti freccia."
+msgstr[1] "%(num)s risultati. Scelga con i tasti freccia."
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Suchvorschläge"
+msgstr "Suggerimenti di ricerca"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Suche läuft …"
+msgstr "Ricerca in corso …"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Vorschläge sind gerade nicht verfügbar. Mit Enter öffnen Sie die Trefferseite."
+msgstr "I suggerimenti non sono disponibili al momento. Prema Invio per aprire la pagina dei risultati."
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Zu viele Anfragen. Warten Sie einen Moment oder öffnen Sie mit Enter die Trefferseite."
+msgstr "Troppe richieste. Attenda un momento o prema Invio per aprire la pagina dei risultati."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:19
+msgid "Taste / springt auf jeder Seite ins Suchfeld"
+msgstr "Il tasto / porta al campo di ricerca su ogni pagina"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:19
+msgid "Ctrl+K oder Cmd+K funktioniert immer."
+msgstr "Ctrl+K o Cmd+K funziona sempre."
