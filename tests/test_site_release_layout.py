@@ -470,39 +470,17 @@ def test_navigation_search_field_keeps_its_width_on_desktop(release_page, locale
         )
 
 
-def _inject_navigation_search(page):
-    """Place the search partial where the navigation will include it."""
-    from flask import render_template
-
-    import app
-
-    web = app.create_app(
-        {"TESTING": True, "SITE_RELEASE_ENABLED": True, "SECRET_KEY": "layout-test"},
-        load_environment=False,
-        check_database=False,
-    )
-    with web.test_request_context("/"):
-        partial = render_template("partials/site_search.html")
-    page.evaluate(
-        """html => {
-            const template = document.createElement('template');
-            template.innerHTML = html;
-            template.content.querySelectorAll('script').forEach(node => node.remove());
-            document.querySelector('#release-menu .release-login').before(template.content);
-            const script = document.createElement('script');
-            script.src = '/static/js/site_search.js';
-            document.body.append(script);
-        }""",
-        partial,
-    )
+def _navigation_search_ready(page):
+    """The navigation renders the search partial itself; wait for its script."""
     page.wait_for_selector('.release-nav input[role="combobox"]', state="attached")
+    assert page.locator("#site-search-q").count() == 1
 
 
 def test_live_suggestions_drop_down_under_the_navigation(release_page):
     page = release_page
     page.set_viewport_size({"width": 1280, "height": 900})
     assert page.goto("http://qa.test/pricing").status == 200
-    _inject_navigation_search(page)
+    _navigation_search_ready(page)
     page.keyboard.press("/")
     field = page.locator('.release-nav input[role="combobox"]')
     assert field.evaluate("el => el === document.activeElement")
@@ -527,7 +505,7 @@ def test_live_suggestions_fit_the_opened_menu_on_phones(release_page):
     page = release_page
     page.set_viewport_size({"width": 320, "height": 800})
     assert page.goto("http://qa.test/pricing").status == 200
-    _inject_navigation_search(page)
+    _navigation_search_ready(page)
     page.keyboard.press("/")
     field = page.locator('.release-nav input[role="combobox"]')
     assert field.is_visible()
@@ -573,7 +551,7 @@ def test_a_long_unbroken_query_wraps_inside_the_suggestions(release_page, where)
         panel = page.locator(".site-search-page-form .site-search-panel")
     else:
         assert page.goto("http://qa.test/pricing").status == 200
-        _inject_navigation_search(page)
+        _navigation_search_ready(page)
         page.keyboard.press("/")
         field = page.locator('.release-nav input[role="combobox"]')
         panel = page.locator(".release-nav .site-search-panel")
