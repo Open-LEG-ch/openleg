@@ -2,7 +2,10 @@
 
 <div align="center">
 
-<img src=".github/assets/openleg-wordmark.svg" alt="OpenLEG wordmark: open in regular monospace, LEG in bold, followed by a gold caret" width="320">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/openleg-wordmark-dark.svg">
+  <img src=".github/assets/openleg-wordmark.svg" alt="openLEG" width="280">
+</picture>
 
 [Website](https://openleg.ch) · [Docs](docs/architecture.md) · [Contribute](docs/contributor-onboarding.md) · [Discussions](https://github.com/Open-LEG-ch/openleg/discussions) · [Milestones](https://github.com/Open-LEG-ch/openleg/milestones)
 
@@ -14,33 +17,48 @@
 
 [English](#english) | [Deutsch](#deutsch)
 
-Open-source infrastructure for Swiss Local Electricity Communities. Offene Infrastruktur für Schweizer Lokale Elektrizitätsgemeinschaften.
+Free, open-source software for local electricity communities (LEG) in Switzerland. Kostenlose Open-Source-Software für lokale Elektrizitätsgemeinschaften (LEG) in der Schweiz.
 
 ## English
 
-Try the [fictional village sandbox](docs/sandbox.md) locally with
-`python scripts/sandbox.py`. Each visitor gets a disposable village with demo
-accounts, captured mail and local signature and VNB simulations. Try household
-registration, energy profiles, neighbour consent, contacts and profile export or
-deletion. Form a LEG, confirm activation and complete a dated participant join.
-As Sam or Robin, import fictional E66 evidence, try refused inputs and corrections,
-then retry a local scheduled job. The linked guide explains each journey.
+OpenLEG is the public website, app and API for setting up and running a local
+electricity community (LEG) in Switzerland. In a LEG, neighbours share
+electricity produced nearby, for example by solar panels on their roofs. The
+private `openleg-ops` repository handles production deployment. It does not own
+the code that runs the public website, or its assets.
 
-OpenLEG is the public website, product application, and API for founding and operating a Swiss Local Electricity Community, known as a LEG. The private `openleg-ops` repository owns production deployment, not the public site runtime or assets.
+To try OpenLEG without real data, run `python scripts/sandbox.py` and follow the
+[fictional village sandbox](docs/sandbox.md) guide. Each visitor gets their own
+throwaway village with demo accounts. Mail goes to a simulated inbox, and
+signatures and the VNB are simulated locally. You can register a household, set an energy
+profile, give neighbour consent, manage contacts, and export or delete a profile.
+You can form a LEG, confirm its activation and add a participant who joins on a
+set date. As Sam or Robin, you can import fictional E66 metering files, see how
+the app refuses bad input and handles corrections, and retry a local scheduled
+job. The guide walks through each of these.
 
 ### Product preview
 
-Synthetic demo images with fictional data, not production screenshots:
+These are demo pages from the current app with fictional data, not production
+screenshots.
 
-<img src="static/images/product/leg-formation-static.webp" alt="Synthetic demo of the LEG formation flow in the OpenLEG app" width="800">
+<img src=".github/assets/readme-leg-dashboard.webp" alt="LEG dashboard demo with fictional data: formation status, readiness, member counts and next steps" width="800">
 
-<img src="static/images/product/municipality-dashboard-static.webp" alt="Synthetic demo of the municipality dashboard in the OpenLEG app" width="800">
+<img src=".github/assets/readme-municipality-dashboard.webp" alt="Municipality dashboard demo with fictional data: registered households, solar use, transition score and interest in a LEG" width="800">
 
 ### Operating model
 
-The LEG chooses its representative, participant agreements, internal energy price, administration, billing operator, and hosting provider. OpenLEG supplies inspectable, self-hostable infrastructure for that community-controlled work under AGPL-3.0-or-later.
+The LEG chooses its representative, participant agreements, internal energy
+price, administration, billing operator and hosting provider. OpenLEG provides
+the software for this work. Anyone can inspect it and host it themselves under
+AGPL-3.0-or-later.
 
-The distribution system operator (VNB) still verifies the statutory network-area and network-level requirements, performs its metering duties, charges network use with the statutory discount, and delivers the data assigned to it. The basic supplier supplies residual electricity where applicable. OpenLEG does not replace those duties. Formation submissions and data delivery must be configured for each VNB; end-to-end integration is not available for every VNB.
+The distribution system operator (VNB) keeps its legal duties. It checks the
+network-area and network-level requirements, does the metering, charges for
+network use with the legal discount, and delivers the data assigned to it. Where
+needed, the basic supplier delivers the remaining electricity. OpenLEG does not
+take over any of these duties. Formation submissions and data delivery have to be
+set up for each VNB, and an end-to-end connection is not available for every VNB.
 
 The current code covers formation records, VNB handovers, participant changes, scheduled SDAT ingestion, quarter-hour allocation, tariff versions, invoice approval, immutable invoices, payment reconciliation, and operational archive export and restore.
 
@@ -205,13 +223,26 @@ Never commit credentials or personal data. Use `.env.example` locally and report
 
 ## Deutsch
 
-OpenLEG ist die öffentliche Website, Produktanwendung und API für die Gründung und den Betrieb einer Schweizer Lokalen Elektrizitätsgemeinschaft, kurz LEG. Das private Repo `openleg-ops` verantwortet die Produktionsbereitstellung, nicht die öffentliche Website oder ihre Assets.
+OpenLEG ist die öffentliche Website, App und API, mit der Sie in der Schweiz eine
+lokale Elektrizitätsgemeinschaft (LEG) gründen und betreiben. In einer LEG teilen
+Nachbarinnen und Nachbarn Strom, der in der Nähe erzeugt wird, zum Beispiel von
+Solaranlagen auf ihren Dächern. Das private Repo `openleg-ops` übernimmt das
+Deployment in die Produktion. Der Code der öffentlichen Website und ihre Assets
+gehören nicht dazu.
 
 ### Betriebsmodell
 
-Die LEG wählt ihre Vertretung, Teilnehmerverträge, den internen Strompreis, die Administration, den Abrechnungsdienstleister und den Hosting-Anbieter. OpenLEG stellt für diese Aufgaben prüfbare, selbst betreibbare Infrastruktur unter AGPL-3.0-or-later bereit.
+Die LEG wählt ihre Vertretung, Teilnehmerverträge, den internen Strompreis, die
+Administration, den Abrechnungsdienstleister und den Hosting-Anbieter. OpenLEG
+stellt die Software für diese Aufgaben bereit. Alle können sie unter
+AGPL-3.0-or-later prüfen und selbst betreiben.
 
-Der Verteilnetzbetreiber (VNB) prüft weiterhin die gesetzlichen Anforderungen an Netzgebiet und Netzebene, erfüllt seine Messaufgaben, verrechnet die Netznutzung mit dem gesetzlichen Rabatt und stellt die ihm zugewiesenen Daten bereit. Der Grundversorger liefert gegebenenfalls den übrigen Strom. OpenLEG ersetzt diese Aufgaben nicht. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet werden; eine durchgängige Anbindung ist noch nicht für jeden VNB verfügbar.
+Der Verteilnetzbetreiber (VNB) behält seine gesetzlichen Aufgaben. Er prüft die
+Anforderungen an Netzgebiet und Netzebene, übernimmt die Messung, verrechnet die
+Netznutzung mit dem gesetzlichen Rabatt und liefert die ihm zugewiesenen Daten.
+Wo nötig liefert der Grundversorger den übrigen Strom. OpenLEG übernimmt keine
+dieser Aufgaben. Anmeldung und Datenlieferung müssen für jeden VNB eingerichtet
+werden. Eine durchgängige Anbindung gibt es noch nicht für jeden VNB.
 
 Der aktuelle Code deckt Gründungsunterlagen, VNB-Übergaben, Teilnehmeränderungen, den zeitgesteuerten SDAT-Abruf, die Viertelstundenverteilung, Tarifversionen, Rechnungsfreigabe, unveränderliche Rechnungen, Zahlungsabgleich sowie Export und Wiederherstellung der Betriebsdaten ab.
 
