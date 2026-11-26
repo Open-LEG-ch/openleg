@@ -43,7 +43,8 @@ function dispatch(target, type, init = {}) {
     const event = {type, target, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, ...init};
     const path = [];
     for (let node = target; node; node = node.parent) path.push(node);
-    if (init.bubbles) path.push(doc);
+    // Nodes appended under doc already reach it through their parents.
+    if (init.bubbles && path[path.length - 1] !== doc) path.push(doc);
     for (const node of init.bubbles ? path : [target]) for (const listener of node.listeners[type] || []) listener.call(node, event);
     return event;
 }
