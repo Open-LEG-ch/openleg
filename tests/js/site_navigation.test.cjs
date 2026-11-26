@@ -156,6 +156,20 @@ test('resting on another label swaps panels and keeps only one open', () => {
     assert.deepEqual(openLabels(), [0], 'a stale close timer must not close the panel the pointer rests on');
 });
 
+test('hovering another label leaves a panel opened by click or Enter alone', () => {
+    const {summaries, menu, pointer, click, wait, openLabels} = setup();
+    click(summaries[0]);
+    pointer(summaries[1]); wait(250);
+    assert.deepEqual(openLabels(), [0], 'a clicked panel stays until a click, a click elsewhere or Escape');
+    pointer(menu); wait(1000);
+    assert.deepEqual(openLabels(), [0]);
+    click(summaries[0]);
+    summaries[2].focus();
+    click(summaries[2]); // Enter on a focused summary activates it like a click
+    pointer(summaries[1]); wait(250);
+    assert.deepEqual(openLabels(), [2], 'Tab must still lead into the opened panel');
+});
+
 test('crossing another label on the way to the panel keeps the open panel', () => {
     const {summaries, panels, menu, main, pointer, wait, openLabels} = setup();
     pointer(summaries[2]); wait(250);

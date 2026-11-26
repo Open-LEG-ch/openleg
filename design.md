@@ -257,12 +257,14 @@ navigation uses no arrow glyphs.
 From 1100 px a group opens a flyout across the full viewport, directly under the
 bar, with its links in columns on the page grid. A pointer that rests on a label
 opens it after a short pause. The flyout stays open while the pointer is in it and
-closes shortly after the pointer leaves both label and flyout. A click keeps it
-open until a second click, a click elsewhere or Escape. Enter or Space opens a
-group, Tab or ArrowDown moves into its links, and focus that leaves the group
-closes it. To keep one row in all four languages, the bar shows the language as
-a two-letter code, the GitHub button shows only its mark from 1100 to 1279 px,
-and a label may use a shorter translation in the `navigation` context.
+closes shortly after the pointer leaves both label and flyout. Resting on another
+label replaces it after the same pause. A click keeps it open until a second
+click, a click elsewhere or Escape. Hovering another label then changes nothing.
+Enter or Space opens a group, Tab or ArrowDown moves into its links, and focus
+that leaves the group closes it. To keep one row in all four languages, the bar
+shows the language as a two-letter code, the GitHub button shows only its mark
+from 1100 to 1279 px, and a label may use a shorter translation in the
+`navigation` context.
 
 Below 1100 px the groups sit in the Menü and fold open in place, marked with a
 plus or minus sign. The GitHub button stays beside Menü. The site search

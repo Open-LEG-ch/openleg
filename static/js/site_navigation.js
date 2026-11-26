@@ -7,10 +7,11 @@
   const groups = [...nav.querySelectorAll('details')];
   const desktop = window.matchMedia('(min-width: 1100px)');
   // Wide screens open a group's panel when the pointer rests on its label,
-  // also while another panel is open, so a pointer crossing the bar changes
-  // nothing. A panel opened this way closes after a grace period once the
-  // pointer leaves label and panel; a clicked or keyed one stays open. The
-  // pointer never closes or replaces a panel whose link holds keyboard focus.
+  // also to replace another hover-opened panel, so a pointer crossing the bar
+  // changes nothing. A panel opened this way closes after a grace period once
+  // the pointer leaves label and panel. A clicked or keyed panel stays until a
+  // click or Escape, and the pointer never closes or replaces a panel whose
+  // link holds keyboard focus.
   const OPEN_DELAY = 120;
   const CLOSE_DELAY = 300;
   let openTimer = 0;
@@ -66,7 +67,8 @@
       clearTimeout(openTimer);
       openTimer = setTimeout(() => {
         const current = groups.find(other => other.open);
-        if (desktop.matches && !(current && holdsFocus(current))) openGroup(group, true);
+        const replaceable = !current || (current === hoverOpened && !holdsFocus(current));
+        if (desktop.matches && replaceable) openGroup(group, true);
       }, OPEN_DELAY);
     });
     summary.addEventListener('click', event => {
