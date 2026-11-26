@@ -90,6 +90,33 @@ def search_web(web, monkeypatch):
     return web
 
 
+@pytest.fixture
+def limited_search_web(search_web, app_module):
+    """The search app, built with the shared limiter switched on.
+
+    The limiter is one object for the whole process. Flask-Limiter keeps its
+    current ``enabled`` value when an app leaves RATELIMIT_ENABLED unset, and a
+    disabled limiter registers no request hook on the app at all. A module that
+    disabled it earlier would otherwise silence these tests, so the app sets
+    RATELIMIT_ENABLED explicitly, as tests/test_rate_limiting.py does.
+    """
+    return app_module.create_app(
+        {
+            "TESTING": True,
+            "SECRET_KEY": "search-rate-limit-test",
+            "APP_BASE_URL": "http://localhost",
+            "PUBLIC_SITE_URL": "https://openleg.ch",
+            "RATELIMIT_STORAGE_URI": "memory://",
+            "RATELIMIT_ENABLED": True,
+            "SESSION_COOKIE_SECURE": False,
+            "BABEL_DEFAULT_LOCALE": "de_CH",
+            "SITE_RELEASE_ENABLED": True,
+        },
+        load_environment=False,
+        check_database=False,
+    )
+
+
 def _results(html):
     """Result titles and their links, in page order."""
     return [
@@ -332,8 +359,8 @@ def test_query_length_is_capped(search_web):
     assert "«" + "a" * 100 + "»" in unescape(html)
 
 
-def test_search_is_rate_limited(search_web):
-    client = search_web.test_client()
+def test_search_is_rate_limited(limited_search_web):
+    client = limited_search_web.test_client()
     statuses = [client.get("/suche").status_code for _ in range(241)]
     assert statuses[:240] == [200] * 240
     assert statuses[240] == 429
@@ -357,7 +384,7 @@ def test_navigation_field_is_a_labelled_get_form(search_web):
         assert render_template("partials/site_search.html").strip() == ""
 
 
-def test_rendering_pages_spends_no_rate_limit(search_web):
+def test_rendering_pages_spends_no_rate_limit(limited_search_web):
     import site_search_index
     import tenant
     from security_extensions import rate_limit
@@ -366,13 +393,13 @@ def test_rendering_pages_spends_no_rate_limit(search_web):
     def limited_probe():
         return "<html><body><main><h1>Probe</h1></main></body></html>"
 
-    search_web.add_url_rule("/probe-limited", "limited_probe", limited_probe)
+    limited_search_web.add_url_rule("/probe-limited", "limited_probe", limited_probe)
     for _ in range(3):
         html = site_search_index.render_public_page(
-            search_web, "/probe-limited", "de_CH", tenant.DEFAULT_TENANT
+            limited_search_web, "/probe-limited", "de_CH", tenant.DEFAULT_TENANT
         )
         assert html and "Probe" in html
-    client = search_web.test_client()
+    client = limited_search_web.test_client()
     assert client.get("/probe-limited").status_code == 200
     assert client.get("/probe-limited").status_code == 429
 
