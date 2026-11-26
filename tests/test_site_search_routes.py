@@ -485,3 +485,70 @@ def test_rendering_tells_a_withdrawn_page_from_a_passing_failure(search_web):
         assert render(path) is gone, path
     for path in ("/probe-elsewhere", "/probe-down"):
         assert render(path) is None, path
+
+
+def test_suggestions_are_grouped_json_with_text_segments(search_web):
+    response = search_web.test_client().get("/api/search/suggestions?q=Baden")
+    assert response.status_code == 200
+    assert response.mimetype == "application/json"
+    assert response.headers["X-Robots-Tag"] == "noindex"
+    assert response.headers["Cache-Control"] == "private, max-age=60"
+    data = response.get_json()
+    assert data["query"] == "Baden"
+    assert data["results_url"] == "/suche?q=Baden"
+    assert data["results_label"] == "Alle Treffer für «Baden» anzeigen"
+    municipalities = next(g for g in data["groups"] if g["kind"] == "municipality")
+    assert municipalities["label"] == "Gemeinden"
+    baden = municipalities["hits"][0]
+    assert baden["url"] == "/gemeinde/profil/4021"
+    assert baden["title"] == [{"text": "Baden", "match": True}]
+    assert baden["meta"] == "Gemeinde im Kanton AG"
+    assert data["status"] == f"{data['total']} Treffer. Wählen Sie mit den Pfeiltasten."
+
+
+def test_suggestions_show_at_most_four_per_group(search_web):
+    data = search_web.test_client().get("/api/search/suggestions?q=Testdorf").get_json()
+    (group,) = data["groups"]
+    assert (len(group["hits"]), group["total"]) == (4, 30)
+    assert group["more_url"] == "/suche?q=Testdorf&typ=gemeinden"
+
+
+def test_suggestions_keep_markup_as_text(search_web):
+    data = search_web.test_client().get("/api/search/suggestions?q=Quartier").get_json()
+    titles = [
+        "".join(part["text"] for part in hit["title"])
+        for group in data["groups"]
+        for hit in group["hits"]
+    ]
+    assert "<script>alert('leg')</script>Quartier" in titles
+
+
+def test_suggestions_speak_the_requested_language(search_web):
+    client = search_web.test_client()
+    data = client.get("/api/search/suggestions?q=Zurich&lang=fr-CH").get_json()
+    hit = next(g for g in data["groups"] if g["kind"] == "municipality")["hits"][0]
+    assert hit["url"] == "/gemeinde/profil/261?lang=fr-CH"
+    assert data["results_url"] == "/suche?q=Zurich&lang=fr-CH"
+    assert hit["meta"] == "Commune du canton ZH"
+
+
+def test_suggestions_report_nothing_found_and_corrections(search_web):
+    client = search_web.test_client()
+    data = client.get("/api/search/suggestions?q=qqqqq").get_json()
+    assert (data["total"], data["groups"]) == (0, [])
+    assert data["status"] == "Keine Treffer für «qqqqq»"
+    data = client.get("/api/search/suggestions?q=Glosar").get_json()
+    assert data["suggestion"]["url"].lower() == "/suche?q=glossar"
+    assert data["suggestion"]["label"].lower() == "meinten sie «glossar»?"
+    assert client.get("/api/search/suggestions").get_json()["groups"] == []
+
+
+def test_suggestions_cap_the_query_and_are_rate_limited(search_web):
+    client = search_web.test_client()
+    data = client.get(
+        "/api/search/suggestions", query_string={"q": "x" * 400}
+    ).get_json()
+    assert data["query"] == "x" * 100
+    statuses = [client.get("/api/search/suggestions").status_code for _ in range(239)]
+    assert set(statuses) == {200}
+    assert client.get("/api/search/suggestions").status_code == 429

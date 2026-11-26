@@ -63,7 +63,7 @@ without code changes.
 | `equipment_bp` | `equipment_routes.py` | `/dashboard/equipment`, `/api/equipment/v1/records` |
 | `advisory_bp` | `advisory_routes.py` | `/api/admin/advisories/v1`, `/dashboard/equipment/{id}/advisories` |
 | `site_bp` | `site_release.py` | Public association, software, knowledge and participation destinations |
-| `site_search_bp` | `site_search_routes.py` | `/suche` |
+| `site_search_bp` | `site_search_routes.py` | `/suche`, `/api/search/suggestions` |
 | `verein_bp` | `verein_routes.py` | `/verein` membership and private board administration |
 | `events_bp` | `verein_event_routes.py` | `/veranstaltungen`, `/verein/vorstand/treffen` |
 | `finance_bp` | `verein_finance_routes.py` | `/verein/finanzen`, `/verein/vorstand/finanzen` |

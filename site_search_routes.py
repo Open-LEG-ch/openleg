@@ -3,10 +3,17 @@
 
 from urllib.parse import quote, urlencode
 
-from flask import Blueprint, current_app, make_response, render_template, request
+from flask import (
+    Blueprint,
+    current_app,
+    jsonify,
+    make_response,
+    render_template,
+    request,
+)
 from flask_babel import get_locale
 
-from i18n import RELEASE_LOCALES, localized_url
+from i18n import RELEASE_LOCALES, localized_url, ngettext
 from i18n import gettext as _
 from security_extensions import RATE_LIMIT_ANONYMOUS_READ, rate_limit
 from site_release import require_complete_site
@@ -40,6 +47,7 @@ EXAMPLE_QUERIES = (
     "3011",
 )
 PREVIEW_LIMIT = 8
+SUGGESTION_LIMIT = 4
 GROUP_PAGE_SIZE = 20
 MAX_GROUP_PAGES = 50
 
@@ -187,4 +195,49 @@ def results():
         )
     )
     response.headers["X-Robots-Tag"] = "noindex"
+    return response
+
+
+@site_search_bp.get("/api/search/suggestions")
+@rate_limit(RATE_LIMIT_ANONYMOUS_READ)
+def suggestions():
+    """Grouped suggestions for the search field; text only, never markup."""
+    query = clean_query(request.args.get("q", ""))
+    payload = {
+        "query": query,
+        "total": 0,
+        "groups": [],
+        "suggestion": None,
+        "ignored": [],
+        "results_url": search_url(query) if query else localized_url("/suche"),
+        "results_label": _("Alle Treffer für «%(query)s» anzeigen", query=query),
+        "status": "",
+    }
+    if query:
+        result = site_search().search(
+            query, locale=str(get_locale()), limit=SUGGESTION_LIMIT
+        )
+        payload["total"] = result.total
+        payload["groups"] = [present_group(group, query) for group in result.groups]
+        payload["ignored"] = list(result.ignored)
+        if result.suggestion:
+            payload["suggestion"] = {
+                "url": search_url(result.suggestion),
+                "label": _(
+                    "Meinten Sie «%(suggestion)s»?", suggestion=result.suggestion
+                ),
+            }
+        payload["status"] = (
+            ngettext(
+                "%(num)s Treffer. Wählen Sie mit den Pfeiltasten.",
+                "%(num)s Treffer. Wählen Sie mit den Pfeiltasten.",
+                result.total,
+            )
+            if result.total
+            else _("Keine Treffer für «%(query)s»", query=query)
+        )
+    response = jsonify(payload)
+    response.headers["X-Robots-Tag"] = "noindex"
+    response.headers["Cache-Control"] = "private, max-age=60"
+    response.vary.add("Cookie")
     return response

@@ -1,0 +1,4 @@
+{# Data attributes that site_search.js needs to suggest results in the current language. #}
+{% macro site_search_data() -%}
+data-site-search data-endpoint="/api/search/suggestions" data-lang="{{ current_locale }}" data-label-listbox="{{ _('Suchvorschläge') }}" data-message-loading="{{ _('Suche läuft …') }}" data-message-error="{{ _('Vorschläge sind gerade nicht verfügbar. Mit Enter öffnen Sie die Trefferseite.') }}" data-message-rate-limit="{{ _('Zu viele Anfragen. Warten Sie einen Moment oder öffnen Sie mit Enter die Trefferseite.') }}"
+{%- endmacro %}
