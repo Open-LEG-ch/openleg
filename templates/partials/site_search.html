@@ -1,8 +1,9 @@
-{% if site_release_enabled %}<link rel="stylesheet" href="/static/css/site_search.css">
-<form class="site-search" role="search" method="get" action="/suche" data-site-search>
+{% if site_release_enabled %}{% from 'partials/site_search_data.html' import site_search_data with context %}<link rel="stylesheet" href="/static/css/site_search.css">
+<form class="site-search" role="search" method="get" action="/suche" {{ site_search_data() }}>
   <label class="site-search-label" for="site-search-q">{{ _('Website durchsuchen') }}</label>
   <input id="site-search-q" class="site-search-input" type="search" name="q" maxlength="100" placeholder="{{ _('Suchen') }}" autocomplete="off" spellcheck="false" enterkeyhint="search">
   <input type="hidden" name="lang" value="{{ current_locale }}">
   <button class="site-search-submit" type="submit"><span class="site-search-label">{{ _('Suchen') }}</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="20" height="20"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 </form>
+<script src="/static/js/site_search.js" defer></script>
 {% endif %}

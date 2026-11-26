@@ -18,17 +18,74 @@
 }
 .site-search-submit:hover { color: #1b2f6a; }
 .site-search .site-search-input:focus-visible { outline: 3px solid #243b85; outline-offset: 2px; }
+.site-search { flex-wrap: wrap; }
+
+/* Suggestions: a full-width panel under the navigation bar, like the menu flyouts. */
+.site-search-panel {
+  position: fixed; z-index: 60; left: 0; right: 0; top: var(--site-search-top, 88px);
+  max-height: calc(100vh - var(--site-search-top, 88px) - 24px); overflow-y: auto;
+  border-bottom: 1px solid #bcc3d0; background: #fffdf8; box-shadow: 0 12px 24px #26324b14; color: #26324b;
+}
+.site-search-panel[hidden] { display: none; }
+.site-search-panel-inner { max-width: 1280px; margin-inline: auto; padding: 24px 48px 28px; }
+.site-search-status { margin: 0 0 12px; font-size: 16px; }
+.site-search-status[hidden] { display: none; }
+.site-search-listbox { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 32px; align-items: start; }
+.site-search-option-group { display: grid; gap: 4px; min-width: 0; }
+.site-search-listbox[inert] { opacity: .55; }
+.site-search-group-label { padding: 0 12px 6px; border-bottom: 1px solid #bcc3d0; font-size: 14px; font-weight: 600; color: #505869; }
+.site-search-option {
+  font-weight: 400;
+  display: grid; gap: 2px; min-height: 44px; padding: 10px 12px; border-radius: 4px;
+  color: #26324b; text-decoration: none; box-shadow: inset 3px 0 0 transparent;
+}
+.site-search-option:hover { background: #edf1f9; }
+.site-search-option[aria-selected='true'] { background: #edf1f9; box-shadow: inset 3px 0 0 #cb815c; outline: 2px solid #243b85; outline-offset: -2px; }
+.site-search-option-title { font-weight: 600; color: #243b85; }
+.site-search-option, .site-search-status, .site-search-page { overflow-wrap: anywhere; min-width: 0; }
+.site-search-option-meta { font-size: 14px; color: #505869; }
+.site-search-option-snippet { font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.site-search-option .site-search-language { margin-left: 4px; }
+.site-search-correction, .site-search-all { grid-column: 1 / -1; display: flex; align-items: center; font-weight: 600; color: #243b85; text-decoration: underline; text-underline-offset: 4px; }
+.site-search-all { border-top: 1px solid #bcc3d0; border-radius: 0; margin-top: 4px; padding-top: 12px; }
+.site-search-panel[data-layout='inline'] { position: static; max-height: none; margin-top: 12px; border: 1px solid #bcc3d0; border-radius: 12px; box-shadow: none; }
+.site-search-panel[data-layout='inline'] .site-search-panel-inner { padding: 16px; }
+@media (max-width: 1199px) {
+  .site-search-panel-inner { padding-inline: 32px; }
+}
 @media (max-width: 1099px) {
   .site-search { flex: none; width: 100%; }
+  .site-search-panel { position: static; flex: 1 0 100%; max-height: none; margin-top: 8px; border: 1px solid #bcc3d0; border-radius: 12px; box-shadow: none; }
+  .site-search-panel-inner { padding: 12px; }
+  .site-search-listbox { grid-template-columns: minmax(0, 1fr); }
+}
+/* From 768 to 1099 px the bar is sticky: the panel scrolls on its own, below
+   the field, so the field and the highlighted option both stay on screen. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .site-search-panel:not([data-layout='inline']) { max-height: var(--site-search-max, 50vh); overflow-y: auto; overscroll-behavior: contain; }
+}
+@media (forced-colors: active) {
+  .site-search-option[aria-selected='true'] { outline: 2px solid Highlight; }
 }
 
-/* Results page */
+/* Results page. It does not use .release-document, whose link rule would also
+   style the suggestion options; links are styled here instead. */
+.site-search-page { padding-block: var(--space-section, 64px); }
+.site-search-page h1 { font-size: clamp(36px, 5vw, 64px); }
+.site-search-header { max-width: 900px; }
+.site-search-header .release-lead { margin-top: 24px; max-width: 760px; }
+.site-search-page :where(a:not(.release-button, .site-search-option)) { color: #243b85; text-decoration: underline; text-underline-offset: 4px; }
+.site-search-page :where(a:not(.release-button, .site-search-option)):hover { text-decoration-color: #cb815c; }
 .site-search-page-form { margin-top: 32px; max-width: 720px; }
 .site-search-page-form label { display: block; margin-bottom: 8px; font-weight: 600; }
 .site-search-page-field { display: flex; flex-wrap: wrap; gap: 12px; }
 .site-search-page-field .site-search-input { flex: 1 1 14rem; min-width: 0; height: 48px; padding: 0 14px; border: 1px solid #70798d; border-radius: 8px; background: #fffdf8; color: #26324b; }
 .site-search-page-field .release-button { min-height: 48px; }
 .site-search-summary { margin-top: 32px; display: grid; gap: 8px; }
+.site-search-shortcut { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 14px; color: #505869; }
+.site-search-shortcut[hidden] { display: none; }
+.site-search-shortcut label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: #26324b; font-size: 16px; }
+.site-search-shortcut input { width: 20px; height: 20px; min-height: 0; accent-color: #243b85; }
 .site-search-suggestion a { font-weight: 600; }
 .site-search-group { margin-top: 40px; padding-top: 32px; border-top: 1px solid #bcc3d0; }
 .site-search-group h2 { display: flex; align-items: center; gap: 12px; font-size: 32px; }
@@ -53,6 +110,7 @@
 .site-search-source { margin-top: 16px; font-size: 14px; color: #505869; }
 .site-search-pages { margin-top: 32px; align-items: center; }
 .site-search-empty { margin-top: 40px; }
+.site-search-empty h2 { font-size: clamp(28px, 3vw, 40px); }
 .site-search-help { margin-top: 48px; padding-top: 32px; border-top: 1px solid #bcc3d0; }
 .site-search-help h2 { font-size: 28px; margin-bottom: 16px; }
 .site-search-examples { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }

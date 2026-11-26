@@ -429,6 +429,10 @@ def test_empty_search_offers_large_example_links(release_page):
         ".site-search-examples a, .site-search-shortcuts a"
     ).evaluate_all("nodes => nodes.map(node => node.getBoundingClientRect().height)")
     assert heights and min(heights) >= 44
+    size = page.locator(".site-search-empty h2").evaluate(
+        "el => parseFloat(getComputedStyle(el).fontSize)"
+    )
+    assert size >= 28
 
 
 def test_highlighted_result_titles_keep_word_spacing(release_page):
@@ -464,3 +468,229 @@ def test_navigation_search_field_keeps_its_width_on_desktop(release_page, locale
             "(r => r.scrollWidth <= r.clientWidth)"
             "(document.querySelector('.release-nav-row'))"
         )
+
+
+def _navigation_search_ready(page):
+    """The navigation renders the search partial itself; wait for its script."""
+    page.wait_for_selector('.release-nav input[role="combobox"]', state="attached")
+    assert page.locator("#site-search-q").count() == 1
+
+
+def test_live_suggestions_drop_down_under_the_navigation(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    assert page.goto("http://qa.test/pricing").status == 200
+    _navigation_search_ready(page)
+    page.keyboard.press("/")
+    field = page.locator('.release-nav input[role="combobox"]')
+    assert field.evaluate("el => el === document.activeElement")
+    field.type("Messpunkt")
+    option = page.locator('.release-nav [role="option"]').first
+    option.wait_for()
+    panel = page.locator(".release-nav .site-search-panel")
+    box = panel.bounding_box()
+    nav_bottom = page.locator(".release-nav").bounding_box()["height"]
+    assert (box["x"], box["width"]) == (0, 1280)
+    assert abs(box["y"] - nav_bottom) <= 1
+    assert page.evaluate("document.documentElement.scrollWidth") == 1280
+    page.keyboard.press("ArrowDown")
+    assert field.get_attribute("aria-activedescendant") == option.get_attribute("id")
+    assert option.get_attribute("aria-selected") == "true"
+    page.keyboard.press("Escape")
+    assert panel.is_hidden()
+    assert field.input_value() == "Messpunkt"
+
+
+def test_live_suggestions_fit_the_opened_menu_on_phones(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 320, "height": 800})
+    assert page.goto("http://qa.test/pricing").status == 200
+    _navigation_search_ready(page)
+    page.keyboard.press("/")
+    field = page.locator('.release-nav input[role="combobox"]')
+    assert field.is_visible()
+    assert field.evaluate("el => el === document.activeElement")
+    field.type("Messpunkt")
+    page.locator('.release-nav [role="option"]').first.wait_for()
+    assert page.evaluate("document.documentElement.scrollWidth") == 320
+    heights = page.locator('.release-nav [role="option"]').evaluate_all(
+        "nodes => nodes.map(node => node.getBoundingClientRect().height)"
+    )
+    assert heights and min(heights) >= 44
+
+
+def test_results_page_suggestions_open_with_the_keyboard(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    assert page.goto("http://qa.test/suche").status == 200
+    field = page.locator("#site-search-page-q")
+    field.fill("")
+    field.type("Messpunkt")
+    option = page.locator('.site-search-page-form [role="option"]').first
+    option.wait_for()
+    assert (
+        page.locator(".site-search-page-form .site-search-panel").get_attribute(
+            "data-layout"
+        )
+        == "inline"
+    )
+    target = option.get_attribute("href")
+    page.keyboard.press("ArrowDown")
+    with page.expect_navigation():
+        page.keyboard.press("Enter")
+    assert urlsplit(page.url).path == urlsplit(target).path
+
+
+@pytest.mark.parametrize("where", ["page", "navigation"])
+def test_a_long_unbroken_query_wraps_inside_the_suggestions(release_page, where):
+    page = release_page
+    page.set_viewport_size({"width": 320, "height": 800})
+    if where == "page":
+        assert page.goto("http://qa.test/suche").status == 200
+        field = page.locator("#site-search-page-q")
+        panel = page.locator(".site-search-page-form .site-search-panel")
+    else:
+        assert page.goto("http://qa.test/pricing").status == 200
+        _navigation_search_ready(page)
+        page.keyboard.press("/")
+        field = page.locator('.release-nav input[role="combobox"]')
+        panel = page.locator(".release-nav .site-search-panel")
+    field.fill("a" * 100)
+    field.dispatch_event("input")
+    page.locator(".site-search-all").first.wait_for()
+    assert panel.evaluate("el => el.scrollWidth <= el.clientWidth")
+    assert page.evaluate("document.documentElement.scrollWidth") == 320
+
+
+def test_the_slash_shortcut_can_be_switched_off(release_page):
+    page = release_page
+    assert page.goto("http://qa.test/suche").status == 200
+    switch = page.locator("[data-site-search-shortcut] input")
+    assert switch.is_visible() and switch.is_checked()
+    switch.uncheck()
+    page.locator("h1").click()
+    page.keyboard.press("/")
+    field = page.locator("#site-search-page-q")
+    assert not field.evaluate("el => el === document.activeElement")
+    page.keyboard.press("Control+k")
+    assert field.evaluate("el => el === document.activeElement")
+    assert field.get_attribute("aria-keyshortcuts") == "Control+K Meta+K"
+    page.reload()
+    assert not page.locator("[data-site-search-shortcut] input").is_checked()
+
+
+def test_suggestion_details_read_as_plain_text_on_the_results_page(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    assert page.goto("http://qa.test/suche").status == 200
+    field = page.locator("#site-search-page-q")
+    field.type("Messpunkt")
+    page.locator('.site-search-page-form [role="option"]').first.wait_for()
+    styles = page.locator(
+        ".site-search-page-form .site-search-option-meta, "
+        ".site-search-page-form .site-search-option-snippet"
+    ).evaluate_all(
+        """nodes => nodes.map(node => {
+            const style = getComputedStyle(node);
+            return [style.fontWeight, style.textDecorationLine];
+        })"""
+    )
+    assert styles and all(style == ["400", "none"] for style in styles), styles
+    decorations = page.locator(
+        '.site-search-page-form [role="option"]:not(.site-search-all, .site-search-correction)'
+    ).evaluate_all(
+        "nodes => nodes.map(node => getComputedStyle(node).textDecorationLine)"
+    )
+    assert set(decorations) == {"none"}, decorations
+    # Result links on the page keep a visible underline.
+    page.goto("http://qa.test/suche?q=Messpunkt")
+    title = page.locator(".site-search-title").first
+    assert (
+        title.evaluate("el => getComputedStyle(el).textDecorationLine") == "underline"
+    )
+
+
+def test_stale_suggestions_cannot_be_clicked(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    assert page.goto("http://qa.test/suche").status == 200
+    field = page.locator("#site-search-page-q")
+    field.type("Messpunkt")
+    option = page.locator('.site-search-page-form [role="option"]').first
+    option.wait_for()
+    hit = page.evaluate(
+        """() => {
+            const field = document.querySelector('#site-search-page-q');
+            const option = document.querySelector('.site-search-page-form [role="option"]');
+            const box = option.getBoundingClientRect();
+            field.value = 'Gossau';
+            field.dispatchEvent(new Event('input', {bubbles: true}));
+            const target = document.elementFromPoint(box.left + 10, box.top + 10);
+            return Boolean(target && target.closest('[role="option"]'));
+        }"""
+    )
+    assert hit is False
+
+
+def test_escape_closes_a_hovered_flyout_before_it_clears_the_search(release_page):
+    page = release_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    assert page.goto("http://qa.test/pricing").status == 200
+    _navigation_search_ready(page)
+    field = page.locator('.release-nav input[role="combobox"]')
+    field.click()
+    field.type("Messpunkt")
+    page.locator('.release-nav [role="option"]').first.wait_for()
+    group = page.locator(".release-nav-group").nth(1)
+    group.locator("summary").hover()
+    page.wait_for_timeout(400)
+    assert group.evaluate("el => el.open")
+    page.keyboard.press("Escape")
+    assert not group.evaluate("el => el.open")
+    assert field.input_value() == "Messpunkt"
+    assert field.evaluate("el => el === document.activeElement")
+
+
+@pytest.mark.parametrize("height", [600, 450, 280])
+def test_the_selected_suggestion_stays_on_screen_in_the_tablet_menu(
+    release_page, height
+):
+    """The panel scrolls on its own, so neither the field nor the option leaves."""
+    page = release_page
+    page.set_viewport_size({"width": 900, "height": height})
+    assert page.goto("http://qa.test/pricing").status == 200
+    _navigation_search_ready(page)
+    page.keyboard.press("/")
+    field = page.locator('.release-nav input[role="combobox"]')
+    field.type("Messpunkt")
+    page.locator('.release-nav [role="option"]').first.wait_for()
+    for key in ("ArrowUp", "ArrowDown", "ArrowDown"):
+        page.keyboard.press(key)
+        selected = page.locator('.release-nav [role="option"][aria-selected="true"]')
+        panel = page.locator(".release-nav .site-search-panel").bounding_box()
+        for name, box in (
+            ("option", selected.bounding_box()),
+            ("field", field.bounding_box()),
+            ("panel", panel),
+        ):
+            assert box and box["y"] >= 0 and box["y"] + box["height"] <= height, (
+                key,
+                name,
+                box,
+            )
+        # The panel scrolls on its own; the menu, and with it the field, stays put.
+        assert page.evaluate("document.querySelector('.release-nav').scrollTop") == 0
+
+
+def test_the_opened_tablet_menu_scrolls_to_its_last_entry(release_page):
+    """The bar is sticky from 768 px; a menu taller than the screen must scroll."""
+    page = release_page
+    page.set_viewport_size({"width": 900, "height": 450})
+    assert page.goto("http://qa.test/pricing").status == 200
+    _navigation_search_ready(page)
+    page.locator("[data-menu-toggle]").click()
+    page.locator(".release-nav-group summary").nth(1).click()
+    login = page.locator(".release-nav .release-login")
+    login.scroll_into_view_if_needed()
+    box = login.bounding_box()
+    assert box and box["y"] >= 0 and box["y"] + box["height"] <= 450, box

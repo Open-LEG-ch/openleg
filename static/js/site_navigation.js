@@ -100,15 +100,20 @@
     });
   });
   // Escape works anywhere, so a panel opened by hover can be dismissed without
-  // moving the pointer; focus returns to the trigger only from inside the nav.
+  // moving the pointer. In the phone menu focus returns to the closed group's
+  // trigger; on desktop only from inside that group. Typing in the nav search
+  // keeps the field either way.
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape') return;
+    if (event.key !== 'Escape' || event.isComposing || event.keyCode === 229) return;
     cancelTimers();
     const group = groups.find(candidate => candidate.open);
     const inside = nav.contains(document.activeElement);
     if (group) {
       group.open = false;
-      if (inside) group.querySelector('summary').focus();
+      const active = document.activeElement;
+      const inSearch = Boolean(search && active && search.contains(active));
+      const returnFocus = group.contains(active) || (!desktop.matches && inside && !inSearch);
+      if (returnFocus) group.querySelector('summary').focus();
     } else if (inside && toggle.getAttribute('aria-expanded') === 'true') {
       closeMenu();
       toggle.focus();

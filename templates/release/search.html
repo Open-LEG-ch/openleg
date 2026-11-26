@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 {% from 'partials/page_meta.html' import page_meta with context %}
+{% from 'partials/site_search_data.html' import site_search_data with context %}
 {% macro marked(segments) %}{% for segment in segments %}{% if segment.match %}<mark>{{ segment.text }}</mark>{% else %}{{ segment.text }}{% endif %}{% endfor %}{% endmacro %}
 {% block meta %}{{ page_meta(title=(_('Suche: %(query)s', query=query) if query else _('Suche')) ~ ' | OpenLEG', description=_('Durchsuchen Sie Seiten, Wissen, Gemeinden und LEGs auf OpenLEG.'), path='/suche', site_url=site_url, robots='noindex, follow') }}{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="/static/css/site_search.css">{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/css/site_search.css"><script src="/static/js/site_search.js" defer></script>{% endblock %}
 {% block content %}
-<div class="release-container release-document site-search-page">
-  <header class="release-document-header"><div><h1>{{ _('Suche') }}</h1><p class="release-lead">{{ _('Finden Sie Seiten, Antworten, Gemeinden und LEGs. Eine Postleitzahl führt zur passenden Gemeinde.') }}</p></div></header>
-  <form class="site-search-page-form" role="search" method="get" action="/suche" data-site-search data-site-search-layout="inline">
+<div class="release-container site-search-page">
+  <header class="site-search-header"><div><h1>{{ _('Suche') }}</h1><p class="release-lead">{{ _('Finden Sie Seiten, Antworten, Gemeinden und LEGs. Eine Postleitzahl führt zur passenden Gemeinde.') }}</p></div></header>
+  <form class="site-search-page-form" role="search" method="get" action="/suche" {{ site_search_data() }} data-site-search-layout="inline">
     <label for="site-search-page-q">{{ _('Suchbegriff') }}</label>
     <div class="site-search-page-field">
       <input id="site-search-page-q" class="site-search-input" type="search" name="q" value="{{ query }}" maxlength="100" autocomplete="off" spellcheck="false" enterkeyhint="search">
@@ -15,6 +16,7 @@
       <button class="release-button release-button-primary" type="submit">{{ _('Suchen') }}</button>
     </div>
   </form>
+  <p class="site-search-shortcut" data-site-search-shortcut hidden><label><input type="checkbox" checked> {{ _('Taste / springt auf jeder Seite ins Suchfeld') }}</label> <span>{{ _('Ctrl+K oder Cmd+K funktioniert immer.') }}</span></p>
   {% if query %}
   <div class="site-search-summary">
     {% if result.total %}

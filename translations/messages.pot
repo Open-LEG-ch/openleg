@@ -165,24 +165,31 @@ msgid_plural "%(num)s Tage"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/release/search.html:21
+#: templates/release/search.html:23
 #, python-format
 msgid "%(num)s Treffer für «%(query)s»"
 msgid_plural "%(num)s Treffer für «%(query)s»"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/release/search.html:40
+#: templates/release/search.html:42
 #, python-format
 msgid "%(num)s Treffer in «%(group)s» anzeigen"
 msgid_plural "%(num)s Treffer in «%(group)s» anzeigen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/release/search.html:21
+#: templates/release/search.html:23
 #, python-format
 msgid "%(num)s Treffer in «%(group)s» für «%(query)s»"
 msgid_plural "%(num)s Treffer in «%(group)s» für «%(query)s»"
+msgstr[0] ""
+msgstr[1] ""
+
+#: site_search_routes.py:232
+#, python-format
+msgid "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgid_plural "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -902,7 +909,7 @@ msgstr ""
 msgid "Abruffehler simulieren"
 msgstr ""
 
-#: site_search_routes.py:107
+#: site_search_routes.py:115
 #, python-format
 msgid "Abschnitt «%(section)s»"
 msgstr ""
@@ -1198,6 +1205,11 @@ msgstr ""
 
 #: templates/release/event.html:9
 msgid "Alle Treffen ansehen"
+msgstr ""
+
+#: site_search_routes.py:213
+#, python-format
+msgid "Alle Treffer für «%(query)s» anzeigen"
 msgstr ""
 
 #: templates/verein/queue.html:6
@@ -2076,7 +2088,7 @@ msgstr ""
 msgid "Beispiel-Dashboard öffnen"
 msgstr ""
 
-#: templates/release/search.html:57
+#: templates/release/search.html:59
 msgid "Beispiele"
 msgstr ""
 
@@ -2901,6 +2913,10 @@ msgstr ""
 
 #: templates/admin/ops.html:206 templates/admin/ops.html:237
 msgid "Created"
+msgstr ""
+
+#: templates/release/search.html:19
+msgid "Ctrl+K oder Cmd+K funktioniert immer."
 msgstr ""
 
 #: templates/gemeinde/methodik.html:58 templates/gemeinde/profil.html:58
@@ -4826,7 +4842,7 @@ msgstr ""
 msgid "Direkt im Terminal ausführen:"
 msgstr ""
 
-#: templates/release/search.html:61
+#: templates/release/search.html:63
 msgid "Direkt weiter"
 msgstr ""
 
@@ -4915,7 +4931,7 @@ msgid ""
 "Weitergabe entlang der Linien ab."
 msgstr ""
 
-#: templates/release/search.html:4
+#: templates/release/search.html:5
 msgid "Durchsuchen Sie Seiten, Wissen, Gemeinden und LEGs auf OpenLEG."
 msgstr ""
 
@@ -5835,7 +5851,7 @@ msgstr ""
 msgid "Ergebnis zum Fernzugriff"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:45
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
 msgid "Ergebnisseiten"
 msgstr ""
 
@@ -6176,7 +6192,7 @@ msgstr ""
 msgid "Finanzbericht vorbereiten"
 msgstr ""
 
-#: templates/release/search.html:8
+#: templates/release/search.html:9
 msgid "Finden Sie Seiten, Antworten, Gemeinden und LEGs. Eine Postleitzahl führt zur passenden Gemeinde."
 msgstr ""
 
@@ -6839,7 +6855,7 @@ msgstr ""
 msgid "Gelöscht nach %(idle)s ohne Aktivität"
 msgstr ""
 
-#: site_search_routes.py:78 templates/admin/ops.html:88 templates/fuer_gemeinden.html:54
+#: site_search_routes.py:86 templates/admin/ops.html:88 templates/fuer_gemeinden.html:54
 #: templates/gemeinde/rangliste.html:83 templates/index.html:62 templates/index.html:172
 #: templates/leg_verzeichnis/leg_check.html:23 templates/partials/address_intake.html:77
 msgid "Gemeinde"
@@ -6868,7 +6884,7 @@ msgstr ""
 msgid "Gemeinde auswählen"
 msgstr ""
 
-#: site_search_routes.py:76
+#: site_search_routes.py:84
 #, python-format
 msgid "Gemeinde im Kanton %(kanton)s"
 msgstr ""
@@ -6949,7 +6965,7 @@ msgstr ""
 msgid "Gemeindedaten, PV-Anlagen, Tarife, Registrierungen und Audit-Daten."
 msgstr ""
 
-#: site_search_routes.py:24
+#: site_search_routes.py:31
 msgid "Gemeinden"
 msgstr ""
 
@@ -6966,7 +6982,7 @@ msgid "Gemeinden unterstützen"
 msgstr ""
 
 #: templates/gemeinde/vergleich.html:18 templates/release/footer.html:9
-#: templates/release/navigation.html:10 templates/release/search.html:62
+#: templates/release/navigation.html:10 templates/release/search.html:64
 msgid "Gemeinden vergleichen"
 msgstr ""
 
@@ -7437,7 +7453,7 @@ msgstr ""
 msgid "Gründen Sie eine"
 msgstr ""
 
-#: site_search_routes.py:30 templates/leg_verzeichnis/detail.html:33
+#: site_search_routes.py:37 templates/leg_verzeichnis/detail.html:33
 #: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:14
 #: templates/leg_workspace_base.html:16
 msgid "Gründung"
@@ -7476,7 +7492,7 @@ msgstr ""
 
 #: templates/leg_gruenden.html:35 templates/leg_gruenden.html:170
 #: templates/release/how_it_works.html:64 templates/release/navigation.html:8
-#: templates/release/search.html:62 templates/release/software.html:15
+#: templates/release/search.html:64 templates/release/software.html:15
 msgid "Gründung vorbereiten"
 msgstr ""
 
@@ -8918,7 +8934,7 @@ msgstr ""
 msgid "Keine Tracking-Cookies."
 msgstr ""
 
-#: templates/release/search.html:49
+#: site_search_routes.py:237 templates/release/search.html:51
 #, python-format
 msgid "Keine Treffer für «%(query)s»"
 msgstr ""
@@ -9055,7 +9071,7 @@ msgstr ""
 #: templates/documents/dso_registration.html:32 templates/impressum.html:34
 #: templates/partials/site_footer.html:12 templates/release/community.html:3
 #: templates/release/footer.html:8 templates/release/navigation.html:12
-#: templates/release/search.html:62
+#: templates/release/search.html:64
 msgid "Kontakt"
 msgstr ""
 
@@ -9179,7 +9195,7 @@ msgstr ""
 msgid "Korrigiert durch:"
 msgstr ""
 
-#: site_search_routes.py:39 templates/pricing.html:24 templates/release/pricing.html:12
+#: site_search_routes.py:46 templates/pricing.html:24 templates/release/pricing.html:12
 msgid "Kosten"
 msgstr ""
 
@@ -9334,7 +9350,7 @@ msgstr ""
 msgid "LEG gesetzlich möglich"
 msgstr ""
 
-#: sandbox_seed.py:49 site_search_routes.py:36 templates/index.html:71 templates/index.html:165
+#: sandbox_seed.py:49 site_search_routes.py:43 templates/index.html:71 templates/index.html:165
 #: templates/leg_gruenden.html:24 templates/release/navigation.html:8
 #: templates/sandbox/formation.html:2 templates/sandbox/formation.html:5 templates/sandbox/home.html:66
 msgid "LEG gründen"
@@ -9381,7 +9397,7 @@ msgid "LEG nicht gefunden."
 msgstr ""
 
 #: templates/release/how_it_works.html:59 templates/release/navigation.html:8
-#: templates/release/search.html:62
+#: templates/release/search.html:64
 msgid "LEG prüfen"
 msgstr ""
 
@@ -9540,7 +9556,7 @@ msgstr ""
 msgid "LEG:"
 msgstr ""
 
-#: site_search_routes.py:25
+#: site_search_routes.py:32
 msgid "LEGs"
 msgstr ""
 
@@ -10050,7 +10066,7 @@ msgstr ""
 msgid "Meine Vereinsmitgliedschaft"
 msgstr ""
 
-#: templates/release/search.html:24
+#: site_search_routes.py:227 templates/release/search.html:26
 #, python-format
 msgid "Meinten Sie «%(suggestion)s»?"
 msgstr ""
@@ -10697,7 +10713,7 @@ msgstr ""
 msgid "Netz (kWh)"
 msgstr ""
 
-#: sandbox_seed.py:111 site_search_routes.py:38 templates/release/sandbox_preview.html:7
+#: sandbox_seed.py:111 site_search_routes.py:45 templates/release/sandbox_preview.html:7
 msgid "Netzbetreiber"
 msgstr ""
 
@@ -11256,7 +11272,7 @@ msgstr ""
 msgid "Nächste Schritte"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:45
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
 #: templates/verein/queue.html:17
 msgid "Nächste Seite"
 msgstr ""
@@ -11922,7 +11938,7 @@ msgstr ""
 msgid "Pilotgemeinde"
 msgstr ""
 
-#: site_search_routes.py:29 templates/leg_verzeichnis/liste.html:14
+#: site_search_routes.py:36 templates/leg_verzeichnis/liste.html:14
 msgid "Planung"
 msgstr ""
 
@@ -11955,7 +11971,7 @@ msgstr ""
 msgid "Postleitzahl"
 msgstr ""
 
-#: templates/release/search.html:41
+#: templates/release/search.html:43
 msgid "Postleitzahlen: amtliches Gebäudeadressverzeichnis von swisstopo."
 msgstr ""
 
@@ -12331,7 +12347,7 @@ msgstr ""
 msgid "Prüfen Sie die Schreibweise oder durchsuchen Sie das"
 msgstr ""
 
-#: templates/release/search.html:50
+#: templates/release/search.html:52
 msgid "Prüfen Sie die Schreibweise, verwenden Sie weniger Wörter oder suchen Sie nach einer Postleitzahl."
 msgstr ""
 
@@ -13197,7 +13213,7 @@ msgid ""
 "durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:45
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
 #, python-format
 msgid "Seite %(page)s"
 msgstr ""
@@ -13206,7 +13222,7 @@ msgstr ""
 msgid "Seite nicht gefunden"
 msgstr ""
 
-#: site_search_routes.py:22
+#: site_search_routes.py:29
 msgid "Seiten"
 msgstr ""
 
@@ -13473,7 +13489,7 @@ msgstr ""
 msgid "Simuliertes Postfach"
 msgstr ""
 
-#: site_search_routes.py:37 templates/index.html:215
+#: site_search_routes.py:44 templates/index.html:215
 msgid "Smart Meter"
 msgstr ""
 
@@ -14049,11 +14065,11 @@ msgstr ""
 msgid "Störungsmeldung senden"
 msgstr ""
 
-#: templates/release/search.html:10
+#: templates/release/search.html:11
 msgid "Suchbegriff"
 msgstr ""
 
-#: templates/release/search.html:4 templates/release/search.html:8
+#: templates/release/search.html:5 templates/release/search.html:9
 msgid "Suche"
 msgstr ""
 
@@ -14061,19 +14077,27 @@ msgstr ""
 msgid "Suche aktuell nicht verfügbar."
 msgstr ""
 
+#: templates/partials/site_search_data.html:3
+msgid "Suche läuft …"
+msgstr ""
+
 #: templates/leg_verzeichnis/liste.html:8 templates/leg_verzeichnis/liste.html:23
 msgid "Suche zurücksetzen"
 msgstr ""
 
-#: templates/release/search.html:4
+#: templates/release/search.html:5
 #, python-format
 msgid "Suche: %(query)s"
 msgstr ""
 
 #: templates/gemeinde/verzeichnis.html:35 templates/leg_verzeichnis/liste.html:16
 #: templates/partials/site_search.html:4 templates/partials/site_search.html:6
-#: templates/release/search.html:15
+#: templates/release/search.html:16
 msgid "Suchen"
+msgstr ""
+
+#: templates/partials/site_search_data.html:3
+msgid "Suchvorschläge"
 msgstr ""
 
 #: templates/admin/ops.html:205 templates/admin/ops.html:236
@@ -14137,6 +14161,10 @@ msgstr ""
 
 #: templates/api_docs.html:83
 msgid "Tariffs across municipalities"
+msgstr ""
+
+#: templates/release/search.html:19
+msgid "Taste / springt auf jeder Seite ins Suchfeld"
 msgstr ""
 
 #: templates/verein/events.html:6
@@ -15156,7 +15184,7 @@ msgstr ""
 msgid "Vorher prüfen"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:45
+#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
 #: templates/verein/queue.html:17
 msgid "Vorherige Seite"
 msgstr ""
@@ -15185,6 +15213,10 @@ msgstr ""
 
 #: templates/partials/address_intake.html:110
 msgid "Vorschläge nicht verfügbar. Sie können die Adresse trotzdem prüfen."
+msgstr ""
+
+#: templates/partials/site_search_data.html:3
+msgid "Vorschläge sind gerade nicht verfügbar. Mit Enter öffnen Sie die Trefferseite."
 msgstr ""
 
 #: app.py:164 formation_guide.py:86
@@ -15799,7 +15831,7 @@ msgstr ""
 msgid "Wirksamkeitsdatum"
 msgstr ""
 
-#: site_search_routes.py:23 templates/release/navigation.html:11
+#: site_search_routes.py:30 templates/release/navigation.html:11
 msgid "Wissen"
 msgstr ""
 
@@ -15812,7 +15844,7 @@ msgid "Wissen und Daten"
 msgstr ""
 
 #: templates/release/footer.html:9 templates/release/navigation.html:11
-#: templates/release/search.html:62
+#: templates/release/search.html:64
 msgid "Wissen und Quellen"
 msgstr ""
 
@@ -16105,6 +16137,10 @@ msgstr ""
 msgid "Zu viele Anfragen. Bitte warten Sie eine Minute."
 msgstr ""
 
+#: templates/partials/site_search_data.html:3
+msgid "Zu viele Anfragen. Warten Sie einen Moment oder öffnen Sie mit Enter die Trefferseite."
+msgstr ""
+
 #: templates/release/knowledge.html:20
 msgid "Zuerst die Anschlüsse und das Ziel klären"
 msgstr ""
@@ -16241,7 +16277,7 @@ msgstr ""
 msgid "Zurzeit sind keine weiteren Haushalte für eine Anfrage verfügbar."
 msgstr ""
 
-#: templates/release/search.html:25
+#: templates/release/search.html:27
 msgid "Zurück zu allen Treffern"
 msgstr ""
 
@@ -16367,7 +16403,7 @@ msgstr ""
 msgid "acknowledged"
 msgstr ""
 
-#: site_search_routes.py:31 templates/leg_verzeichnis/detail.html:33
+#: site_search_routes.py:38 templates/leg_verzeichnis/detail.html:33
 #: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:14
 msgid "aktiv"
 msgstr ""
@@ -16635,7 +16671,7 @@ msgstr ""
 msgid "other"
 msgstr ""
 
-#: site_search_routes.py:32 templates/leg_verzeichnis/detail.html:33
+#: site_search_routes.py:39 templates/leg_verzeichnis/detail.html:33
 #: templates/leg_verzeichnis/leg_check.html:58 templates/leg_verzeichnis/liste.html:14
 msgid "pausiert"
 msgstr ""
@@ -16808,7 +16844,7 @@ msgstr ""
 msgid "| OpenLEG"
 msgstr ""
 
-#: templates/release/search.html:22
+#: templates/release/search.html:24
 #, python-format
 msgid "«%(words)s» kommt auf der Website nicht vor. Die Treffer enthalten die übrigen Wörter."
 msgid_plural "«%(words)s» kommen auf der Website nicht vor. Die Treffer enthalten die übrigen Wörter."

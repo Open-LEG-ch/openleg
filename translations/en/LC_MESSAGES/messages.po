@@ -22784,3 +22784,47 @@ msgstr "Examples"
 #: templates/release/search.html:61
 msgid "Direkt weiter"
 msgstr "Shortcuts"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:213
+#, python-format
+msgid "Alle Treffer für «%(query)s» anzeigen"
+msgstr "Show all results for “%(query)s”"
+
+#. Draft translation; native language and domain review pending.
+#: site_search_routes.py:232
+#, python-format
+msgid "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgid_plural "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgstr[0] "%(num)s result. Use the arrow keys to choose."
+msgstr[1] "%(num)s results. Use the arrow keys to choose."
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Suchvorschläge"
+msgstr "Search suggestions"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Suche läuft …"
+msgstr "Searching …"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Vorschläge sind gerade nicht verfügbar. Mit Enter öffnen Sie die Trefferseite."
+msgstr "Suggestions are not available right now. Press Enter to open the results page."
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/site_search_data.html:3
+msgid "Zu viele Anfragen. Warten Sie einen Moment oder öffnen Sie mit Enter die Trefferseite."
+msgstr "Too many requests. Wait a moment or press Enter to open the results page."
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:19
+msgid "Taste / springt auf jeder Seite ins Suchfeld"
+msgstr "The / key jumps to the search field on every page"
+
+#. Draft translation; native language and domain review pending.
+#: templates/release/search.html:19
+msgid "Ctrl+K oder Cmd+K funktioniert immer."
+msgstr "Ctrl+K or Cmd+K always works."

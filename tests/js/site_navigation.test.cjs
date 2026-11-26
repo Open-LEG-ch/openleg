@@ -331,3 +331,45 @@ test('on narrow screens one Escape closes the open group, a second closes the me
     assert.equal(toggle.getAttribute('aria-expanded'), 'false', 'the second Escape closes the menu');
     assert.equal(doc.activeElement, toggle);
 });
+
+test('Escape closes a hovered panel but leaves focus in the nav search field', () => {
+    const {summaries, groups, slot, pointer, key, wait} = setup();
+    const field = slot.querySelector('input');
+    field.focus();
+    pointer(summaries[1]);
+    wait(200);
+    assert.equal(groups[1].open, true);
+    key(field, 'Escape');
+    assert.equal(groups[1].open, false);
+    assert.equal(doc.activeElement, field, 'typing continues in the search field');
+});
+
+
+test('in the phone menu Escape returns focus to the trigger of the closed group', () => {
+    const {toggle, summaries, groups, slot, click, key} = setup({desktop: false});
+    click(toggle);
+    click(summaries[0]);
+    assert.equal(groups[0].open, true);
+    summaries[1].focus();
+    key(summaries[1], 'Escape');
+    assert.equal(groups[0].open, false);
+    assert.equal(doc.activeElement, summaries[0]);
+    click(summaries[0]);
+    const field = slot.querySelector('input');
+    field.focus();
+    key(field, 'Escape');
+    assert.equal(groups[0].open, false);
+    assert.equal(doc.activeElement, field, 'the search field keeps focus');
+});
+
+test('an Escape that confirms IME text leaves the phone menu open', () => {
+    const {toggle, summaries, groups, slot, click} = setup({desktop: false});
+    click(toggle);
+    click(summaries[0]);
+    const field = slot.querySelector('input');
+    field.focus();
+    dispatch(field, 'keydown', {key: 'Escape', isComposing: true, bubbles: true});
+    assert.equal(groups[0].open, true);
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+    assert.equal(doc.activeElement, field);
+});

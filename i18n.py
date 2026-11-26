@@ -364,6 +364,9 @@ def init_app(app):
     @app.before_request
     def remember_language():
         selected = normalize_locale(request.args.get("lang"))
+        view = app.view_functions.get(request.endpoint)
+        if getattr(view, "keeps_session_language", False):
+            return  # The response still follows `lang`; the session does not.
         if request.method == "GET" and selected and request.endpoint != "static":
             session["locale"] = selected
 

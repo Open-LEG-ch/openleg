@@ -19362,3 +19362,39 @@ msgstr "Beispiele"
 #: templates/release/search.html:61
 msgid "Direkt weiter"
 msgstr "Direkt weiter"
+
+#: site_search_routes.py:213
+#, python-format
+msgid "Alle Treffer für «%(query)s» anzeigen"
+msgstr "Alle Treffer für «%(query)s» anzeigen"
+
+#: site_search_routes.py:232
+#, python-format
+msgid "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgid_plural "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgstr[0] "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+msgstr[1] "%(num)s Treffer. Wählen Sie mit den Pfeiltasten."
+
+#: templates/partials/site_search_data.html:3
+msgid "Suchvorschläge"
+msgstr "Suchvorschläge"
+
+#: templates/partials/site_search_data.html:3
+msgid "Suche läuft …"
+msgstr "Suche läuft …"
+
+#: templates/partials/site_search_data.html:3
+msgid "Vorschläge sind gerade nicht verfügbar. Mit Enter öffnen Sie die Trefferseite."
+msgstr "Vorschläge sind gerade nicht verfügbar. Mit Enter öffnen Sie die Trefferseite."
+
+#: templates/partials/site_search_data.html:3
+msgid "Zu viele Anfragen. Warten Sie einen Moment oder öffnen Sie mit Enter die Trefferseite."
+msgstr "Zu viele Anfragen. Warten Sie einen Moment oder öffnen Sie mit Enter die Trefferseite."
+
+#: templates/release/search.html:19
+msgid "Taste / springt auf jeder Seite ins Suchfeld"
+msgstr "Taste / springt auf jeder Seite ins Suchfeld"
+
+#: templates/release/search.html:19
+msgid "Ctrl+K oder Cmd+K funktioniert immer."
+msgstr "Ctrl+K oder Cmd+K funktioniert immer."
