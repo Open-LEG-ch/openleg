@@ -121,16 +121,22 @@ def test_text_on_dark_release_surfaces_is_white():
     examples = re.findall(
         r'<pre class="api-copy-example"[^>]*>(.*?)</pre>', api, re.DOTALL
     )
-    assert examples and all(e.startswith("<code>") for e in examples)
+    # Each example is plain text in a bare <code>, so nothing inside can recolour it.
+    assert examples and all(re.fullmatch(r"<code>[^<]*</code>", e) for e in examples)
     profile = (root / "templates" / "gemeinde" / "profil.html").read_text()
     callout = profile.split('<section class="mt-8 bg-brand', 1)[1].split(
         "</section>", 1
     )[0]
-    grey = re.compile(r"\btext-(?:white/|ink|slate|gray|sage|stone|zinc|neutral|muted)")
+    grey = re.compile(
+        r"(?:[\w-]+:)?text-(?:white/|ink|slate|gray|sage|stone|zinc|neutral|muted)"
+    )
     for element in re.findall(r"<[a-z][^>]*>", callout):
+        assert "style=" not in element, element
+        classes = re.search(r'class="([^"]*)"', element)
+        tokens = classes.group(1).split() if classes else []
         # The white button keeps brand-coloured text on its own white background.
-        if "bg-white" not in element:
-            assert not grey.search(element), element
+        if "bg-white" not in tokens:
+            assert not any(grey.match(token) for token in tokens), element
 
 
 @pytest.mark.parametrize("path", ["/", "/software", "/pricing", "/how-it-works"])
