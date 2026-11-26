@@ -128,6 +128,24 @@ def test_a_municipality_is_found_by_name_and_postcode(search_web):
     assert "amtliches Gebäudeadressverzeichnis von swisstopo" in html
 
 
+def test_a_shared_postcode_lists_the_larger_municipality_first(search_web, monkeypatch):
+    import database
+
+    monkeypatch.setattr(
+        database,
+        "get_all_municipality_profiles",
+        lambda **_kwargs: [
+            {"bfs_number": 737, "name": "Hermrigen", "kanton": "BE"},
+            {"bfs_number": 741, "name": "Merzligen", "kanton": "BE"},
+        ],
+    )
+    titles = [
+        title
+        for title, _href in _results(search_web.test_client().get("/suche?q=3274").text)
+    ]
+    assert titles[:2] == ["Merzligen", "Hermrigen"]
+
+
 def test_pages_questions_and_terms_are_found(search_web):
     client = search_web.test_client()
     assert ("Begriffe rund um Ihre LEG", "/wissen/glossar") in _results(
