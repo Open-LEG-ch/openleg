@@ -227,6 +227,9 @@
                 const response = await fetch(form.dataset.endpoint + '?' + params.toString(), {
                     headers: {Accept: 'application/json'},
                     credentials: 'same-origin',
+                    // Never answer from the HTTP cache: a stored response could
+                    // list a LEG the search has dropped since.
+                    cache: 'no-store',
                     signal: controller ? controller.signal : undefined,
                 });
                 if (response.status === 429) failure = form.dataset.messageRateLimit;

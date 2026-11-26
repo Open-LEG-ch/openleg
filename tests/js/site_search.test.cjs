@@ -601,3 +601,15 @@ test('leaving the field mid-request lets a later arrow ask again', async () => {
     await reply(requests[2], DATA);
     assert.equal(panel.hidden, false);
 });
+
+
+test('suggestions are always fetched fresh, never from the HTTP cache', async () => {
+    const {type, requests, reply, key, input, runTimers} = setup();
+    await type('Baden');
+    assert.equal(requests[0].init.cache, 'no-store');
+    await reply(requests[0], DATA);
+    key('Escape');
+    input.dispatch('focus');
+    await runTimers(120);
+    assert.equal(requests[1].init.cache, 'no-store', 'a refocus bypasses the cache too');
+});
