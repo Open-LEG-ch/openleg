@@ -19600,10 +19600,6 @@ msgstr "Importierte Einträge"
 msgid "Manuell zugeordnet"
 msgstr "Manuell zugeordnet"
 
-#: templates/leg_payments.html:82
-msgid "Warten auf Zuordnung"
-msgstr "Warten auf Zuordnung"
-
 #: templates/leg_payments.html:84
 msgid "Doppelte Einträge übersprungen"
 msgstr "Doppelte Einträge übersprungen"
@@ -19802,3 +19798,30 @@ msgstr "Bezahlt (CHF)"
 #: templates/leg_workspace/attention.html:36
 msgid "Offen (CHF)"
 msgstr "Offen (CHF)"
+
+#: dashboard.py:527
+#, python-format
+msgid "Eine Rechnungszustellung muss geprüft werden."
+msgid_plural "%(num)d Rechnungszustellungen müssen geprüft werden."
+msgstr[0] "Eine Rechnungszustellung muss geprüft werden."
+msgstr[1] "%(num)d Rechnungszustellungen müssen geprüft werden."
+
+#: dashboard.py:535
+msgid "Zustellung prüfen"
+msgstr "Zustellung prüfen"
+
+#: templates/leg_payments.html:19 templates/leg_payments.html:118
+msgid "Überfällige Rechnungen"
+msgstr "Überfällige Rechnungen"
+
+#: templates/leg_payments.html:88
+msgid "In diesem Import zur Zuordnung bereit"
+msgstr "In diesem Import zur Zuordnung bereit"
+
+#: templates/leg_payments.html:120
+msgid "Alle offenen Rechnungen"
+msgstr "Alle offenen Rechnungen"
+
+#: templates/leg_payments.html:143
+msgid "Keine überfälligen Rechnungen auf dieser Seite."
+msgstr "Keine überfälligen Rechnungen auf dieser Seite."

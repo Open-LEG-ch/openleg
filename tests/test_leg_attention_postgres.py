@@ -311,7 +311,7 @@ def test_invoice_payment_and_vnb_tasks_match_navigation(operating):
     assert "Eine Mitgliedermutation beim Netzbetreiber ist fehlgeschlagen." in html
     assert f'href="{ROOT}/invoices/{overdue}#questions"' in html
     assert f'href="{ROOT}/invoices/{delivery}"' in html
-    assert f'href="{ROOT}/payments#open-invoices"' in html
+    assert f'href="{ROOT}/payments?overdue=1#open-invoices"' in html
     assert f'href="{ROOT}/payments#statement-assignments"' in html
     assert f'href="{ROOT}/formation#vnb-submissions-title"' in html
     assert f'href="{ROOT}/members#vnb-mutations-title"' in html
@@ -445,6 +445,215 @@ def test_bank_attention_matches_payment_summary_and_assignment_forms(operating):
 
     payments = operating.get(ROOT + "/payments")
     assert payments.status_code == 200
-    assert "<dt>Warten auf Zuordnung</dt> <dd>1</dd>" in payments.text
+    assert "<dt>In diesem Import zur Zuordnung bereit</dt> <dd>1</dd>" in payments.text
     assert len(re.findall(r'action="[^"]*/statements/\d+/assign"', payments.text)) == 1
     _nav_count(payments.text, "payments", 1)
+
+
+def _extra_statement(entries, fingerprint="b"):
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO bank_statement_imports
+               (community_id, actor_id, source_name, message_type, fingerprint)
+               VALUES (%s, %s, 'extra.xml', 'camt.053', repeat(%s, 64)) RETURNING id""",
+            (COMMUNITY, ADMIN, fingerprint),
+        )
+        statement_id = cur.fetchone()["id"]
+        cur.executemany(
+            """INSERT INTO bank_statement_entries (
+                   statement_import_id, community_id, entry_reference, booking_date,
+                   amount, currency, payment_reference, credit_debit_indicator,
+                   match_decision, is_reversal, booking_status, amount_basis
+               ) VALUES (%s, %s, %s, '2026-11-26', 15, %s, %s,
+                         %s, 'unmatched', %s, %s, %s)""",
+            [
+                (statement_id, COMMUNITY, str(i), *entry)
+                for i, entry in enumerate(entries)
+            ],
+        )
+        return statement_id
+
+
+def test_bank_aggregate_matches_python_eligibility(operating):
+    from payment_reconciliation import payment_entry_refusal
+
+    whitespace = "".join(chr(code) for code in range(0x110000) if chr(code).isspace())
+    for i, (currency, reference, direction, reversal, booking, basis) in enumerate(
+        [
+            ("EUR", "ref", "CRDT", False, "BOOK", "entry"),
+            ("CHF", "ref", "DBIT", False, "BOOK", "entry"),
+            ("CHF", "ref", "CRDT", False, "PDNG", "entry"),
+            ("CHF", "ref", "CRDT", False, "BOOK", None),
+            ("CHF", None, "CRDT", False, "BOOK", "entry"),
+            ("CHF", "ref", "CRDT", True, "BOOK", "entry"),
+            *[
+                ("CHF", ref, "CRDT", False, "BOOK", "reconciled_batch")
+                for ref in (
+                    "",
+                    " ",
+                    "\t\n\r",
+                    "\u001c",
+                    "\u00a0\u2003",
+                    whitespace,
+                    "\u200b",
+                    "\ufeff",
+                    "\u00a0ref\t",
+                )
+            ],
+            ("CHF", "ref", "CRDT", False, None, "entry"),
+        ]
+    ):
+        statement_id = _extra_statement(
+            [(currency, reference, direction, reversal, booking, basis)],
+            fingerprint=f"{i:x}",
+        )
+        allowed = (
+            payment_entry_refusal(
+                {
+                    "currency": currency,
+                    "payment_reference": reference,
+                    "credit_debit_indicator": direction,
+                    "is_reversal": reversal,
+                    "booking_status": booking,
+                    "amount_basis": basis,
+                }
+            )
+            is None
+        )
+        assert db.get_bank_statement_summary(COMMUNITY, statement_id)[
+            "unassigned"
+        ] == int(allowed), (currency, reference, direction, reversal, booking, basis)
+    html = operating.get(OVERVIEW).text
+    _nav_count(html, "payments", 3)
+
+
+def test_navigation_counts_bank_assignments_in_one_sql_aggregate(
+    operating, monkeypatch
+):
+    from contextlib import contextmanager
+
+    _bank_entry(include_ineligible=True)
+    get_connection = db.get_connection
+    queries = []
+    named_cursors = []
+
+    class RecordingCursor:
+        def __init__(self, cursor):
+            self.cursor = cursor
+
+        def __enter__(self):
+            self.cursor.__enter__()
+            return self
+
+        def __exit__(self, *args):
+            return self.cursor.__exit__(*args)
+
+        def execute(self, query, *args):
+            queries.append(str(query))
+            return self.cursor.execute(query, *args)
+
+        def __iter__(self):
+            return iter(self.cursor)
+
+        def __getattr__(self, name):
+            return getattr(self.cursor, name)
+
+    class RecordingConnection:
+        def __init__(self, conn):
+            self.conn = conn
+
+        def cursor(self, *args, **kwargs):
+            if kwargs.get("name"):
+                named_cursors.append(kwargs["name"])
+            return RecordingCursor(self.conn.cursor(*args, **kwargs))
+
+    @contextmanager
+    def record():
+        with get_connection() as conn:
+            yield RecordingConnection(conn)
+
+    monkeypatch.setattr(db, "get_connection", record)
+    response = operating.get(ROOT + "/billing")
+    assert response.status_code == 200
+    _nav_count(response.text, "payments", 1)
+    count_queries = [q for q in queries if "bank_statement_entries" in q]
+    assert len(count_queries) == 1
+    assert "count(" in count_queries[0].lower()
+    assert named_cursors == []
+
+
+def test_system_draft_requires_human_preparation_under_dual_control(operating):
+    _dual_control()
+    draft = _period(10, status="draft", preparer="system")
+    html = operating.get(OVERVIEW).text
+    assert "<title>Oktober 2026 wartet auf Ihre Vorbereitung. | OpenLEG</title>" in html
+    detail = operating.get(f"{ROOT}/billing/period/{draft}").text
+    assert 'name="confirm_prepare"' in detail
+    assert 'name="confirm_approval"' not in detail
+
+    _roles(AUDITOR, "billing_approver")
+    _set_session(operating, AUDITOR)
+    html = operating.get(OVERVIEW).text
+    assert f'href="{ROOT}/billing/period/{draft}"' not in html
+
+
+def test_payments_shows_leg_wide_count_when_latest_import_has_no_eligible_entries(
+    operating,
+):
+    _bank_entry()
+    _extra_statement([("CHF", "ref", "CRDT", False, "PDNG", "entry")])
+    _nav_count(operating.get(OVERVIEW).text, "payments", 1)
+    html = operating.get(ROOT + "/payments").text
+    _nav_count(html, "payments", 1)
+    assert re.search(
+        r'id="statement-heading"[^>]*>\s*Zahlungsabgleich prüfen\s*<span[^>]*>1</span>',
+        html,
+    )
+    assert "<dt>In diesem Import zur Zuordnung bereit</dt> <dd>0</dd>" in html
+
+
+def test_overdue_task_filters_before_pagination(operating):
+    for index in range(51):
+        _event(_invoice(f"OVERDUE-{index:02}"), "delivered")
+    for index in range(51):
+        _event(_invoice(f"FUTURE-{index:02}", due_date="2026-11-27"), "delivered")
+
+    href = ROOT + "/payments?overdue=1#open-invoices"
+    assert f'href="{href}"' in operating.get(OVERVIEW).text
+    first = operating.get(href).text
+    assert "OVERDUE-50" in first
+    assert "OVERDUE-00" not in first
+    assert "FUTURE-" not in first
+    next_page = re.search(
+        r'href="([^"]*overdue=1[^"]*invoice_before=[^"]*#open-invoices)"', first
+    )
+    assert next_page
+    older = operating.get(unescape(next_page[1])).text
+    assert "OVERDUE-00" in older
+    assert "FUTURE-" not in older
+    assert f'href="{href}"' in older
+
+
+@pytest.mark.parametrize("job_status", [None, "pending", "failed"])
+def test_delivery_task_matches_invoice_detail_actions(operating, job_status):
+    invoice = _invoice("ISSUED")
+    if job_status:
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO invoice_delivery_jobs (invoice_id, community_id, delivery_method, status)
+                   VALUES (%s, %s, 'email', %s)""",
+                (invoice, COMMUNITY, job_status),
+            )
+    url = f"{ROOT}/invoices/{invoice}"
+    html = operating.get(OVERVIEW).text
+    detail = operating.get(url).text
+    task, action = (
+        ("Eine Rechnungszustellung muss geprüft werden.", "Zustellung prüfen")
+        if job_status
+        else ("Eine Rechnung wartet auf Zustellung.", "Zustellen")
+    )
+    assert f"<title>{task} | OpenLEG</title>" in html
+    assert re.search(rf'href="{url}"[^>]*>{action}</a>', html)
+    assert (
+        "Zustellung als erfolgt bestätigen" if job_status else ">Zustellen</button>"
+    ) in detail

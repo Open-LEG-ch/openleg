@@ -515,7 +515,7 @@ def _workspace_tasks(community_id, facts, today):
             "payments",
             title,
             _("Überfällige Rechnungen prüfen"),
-            "payments#open-invoices",
+            "payments?overdue=1#open-invoices",
         )
 
     if row := facts.get("approve"):
@@ -532,6 +532,20 @@ def _workspace_tasks(community_id, facts, today):
             title,
             _("Rechnungen freigeben"),
             f"billing/period/{row['target']}",
+        )
+
+    if row := facts.get("review_delivery"):
+        title = ngettext(
+            "Eine Rechnungszustellung muss geprüft werden.",
+            "%(num)d Rechnungszustellungen müssen geprüft werden.",
+            row["count"],
+        )
+        add(
+            "review_delivery",
+            "invoices",
+            title,
+            _("Zustellung prüfen"),
+            f"invoices/{row['target']}",
         )
 
     if row := facts.get("deliver"):
@@ -638,11 +652,15 @@ def _workspace_tasks(community_id, facts, today):
     return tasks
 
 
+def _workspace_today() -> date:
+    return datetime.now(ZoneInfo(billing_workspace.PERIOD_TIMEZONE)).date()
+
+
 def leg_workspace_attention(
     community_id, building_id, member, *, require_dual_control, include_ledger=False
 ):
     """Use the same role-scoped tasks for overview content and navigation."""
-    today = datetime.now(ZoneInfo(billing_workspace.PERIOD_TIMEZONE)).date()
+    today = _workspace_today()
     capabilities = community_access.capabilities_for(member)
     task_capabilities = {
         "can_prepare": community_access.PREPARE_BILLING in capabilities,
@@ -673,7 +691,14 @@ def leg_workspace_attention(
         section = task["section"]
         counts[section] = counts.get(section, 0) + task["count"]
 
-    result: dict = {"counts": counts}
+    result: dict = {
+        "counts": counts,
+        "bank_assignment_count": (
+            facts.get("bank", {}).get("count", 0)
+            if task_capabilities["can_prepare"] and not unavailable
+            else None
+        ),
+    }
     if not include_ledger:
         return result
 
@@ -1167,6 +1192,7 @@ def leg_payments_view(
     invoice_before: int | None = None,
     statement_upload: str | None = None,
     review_invoice_id: int | None = None,
+    overdue_only: bool = False,
 ) -> dict:
     """Read a bounded payment workspace for a member with billing audit access."""
     member = _require_capability(
@@ -1217,10 +1243,13 @@ def leg_payments_view(
     ):
         review_invoice = None
 
+    today = _workspace_today()
     open_invoice_rows = db.page_open_payment_invoices(
-        community_id, limit=_BILLING_PAGE_SIZE + 1, before=invoice_before
+        community_id,
+        limit=_BILLING_PAGE_SIZE + 1,
+        before=invoice_before,
+        overdue_before=today if overdue_only else None,
     )
-    today = datetime.now(ZoneInfo("Europe/Zurich")).date()
     open_invoices = []
     for row in open_invoice_rows[:_BILLING_PAGE_SIZE]:
         invoice = _describe_payment_invoice(row)
@@ -1253,6 +1282,7 @@ def leg_payments_view(
             community_id, statement_upload, building_id
         ),
         "open_invoices": open_invoices,
+        "overdue_only": overdue_only,
         "invoice_before": invoice_before,
         "next_invoice_before": (
             open_invoices[-1]["id"]

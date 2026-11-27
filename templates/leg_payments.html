@@ -4,8 +4,8 @@
 {% macro invoice_pagination(anchor) %}
   {% if invoice_before or next_invoice_before %}
   <div class="my-2 flex flex-wrap gap-4">
-    {% if invoice_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, statement_before=statement_before, _anchor=anchor) }}">{{ _('Neueste offene Rechnungen') }}</a>{% endif %}
-    {% if next_invoice_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, statement_before=statement_before, invoice_before=next_invoice_before, _anchor=anchor) }}">{{ _('Ältere offene Rechnungen') }}</a>{% endif %}
+    {% if invoice_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, overdue=1 if overdue_only else none, statement_before=statement_before, _anchor=anchor) }}">{{ _('Neueste offene Rechnungen') }}</a>{% endif %}
+    {% if next_invoice_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, overdue=1 if overdue_only else none, statement_before=statement_before, invoice_before=next_invoice_before, _anchor=anchor) }}">{{ _('Ältere offene Rechnungen') }}</a>{% endif %}
   </div>
   {% endif %}
 {% endmacro %}
@@ -15,7 +15,7 @@
   {% if not payment_notice_only %}
   <nav aria-labelledby="payments-title" class="mb-4 flex flex-wrap gap-x-4">
     <a class="inline-flex items-center text-brand underline" href="#statement-assignments">{{ _('Zahlungsabgleich prüfen') }}</a>
-    <a class="inline-flex items-center text-brand underline" href="#open-invoices">{{ _('Offene Rechnungen') }}</a>
+    <a class="inline-flex items-center text-brand underline" href="#open-invoices">{{ _('Überfällige Rechnungen') if overdue_only else _('Offene Rechnungen') }}</a>
   </nav>
   {% endif %}
   <section id="payments" aria-labelledby="payments-title" class="mb-6">
@@ -26,7 +26,7 @@
       {{ _(assignment_feedback.error) }}{% if assignment_feedback.recovery %} {{ _(assignment_feedback.recovery) }}{% endif %}
     </p>
     {% if assignment_feedback.duplicate_review and can_prepare_billing %}
-    <form method="post" action="{{ url_for('.leg_billing_statement_assign', community_id=community_id, entry_id=assignment_feedback.entry_id, statement_before=statement_before, invoice_before=invoice_before) }}" class="mb-4 rounded-xl bg-white border border-line p-4">
+    <form method="post" action="{{ url_for('.leg_billing_statement_assign', community_id=community_id, entry_id=assignment_feedback.entry_id, overdue=1 if overdue_only else none, statement_before=statement_before, invoice_before=invoice_before) }}" class="mb-4 rounded-xl bg-white border border-line p-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="invoice_id" value="{{ assignment_feedback.invoice_id }}">
       <input type="hidden" name="confirm" value="yes">
@@ -84,7 +84,7 @@
       <div><dt>{{ _('Importierte Einträge') }}</dt> <dd>{{ statement_summary.entries }}</dd></div>
       <div><dt>{{ _('Automatisch verbucht') }}</dt> <dd>{{ statement_summary.automatic }}</dd></div>
       <div><dt>{{ _('Manuell zugeordnet') }}</dt> <dd>{{ statement_summary.booked - statement_summary.automatic }}</dd></div>
-      <div><dt>{{ _('Warten auf Zuordnung') }}</dt> <dd>{{ statement_summary.unassigned }}</dd></div>
+      <div><dt>{{ _('In diesem Import zur Zuordnung bereit') }}</dt> <dd>{{ statement_summary.unassigned }}</dd></div>
       <div><dt>{{ _('Doppelte Einträge übersprungen') }}</dt> <dd>{{ statement_summary.entries if statement_summary.duplicate else 0 }}</dd></div>
     </dl>
   </section>
@@ -93,11 +93,11 @@
   {% endif %}
 
   <section id="statement-assignments" class="mb-6" aria-labelledby="statement-heading">
-    <h2 id="statement-heading" class="font-bold mb-3">{{ _('Zahlungsabgleich prüfen') }}</h2>
+    <h2 id="statement-heading" class="font-bold mb-3">{{ _('Zahlungsabgleich prüfen') }}{% if bank_assignment_count is defined and bank_assignment_count is not none %} <span class="tabular-nums">{{ bank_assignment_count }}</span>{% endif %}</h2>
     {% if statement_before or next_statement_before %}
     <div class="mb-4 flex flex-wrap gap-4">
-      {% if statement_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, invoice_before=invoice_before, _anchor='payments') }}">{{ _('Neueste offene Buchungen') }}</a>{% endif %}
-      {% if next_statement_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, statement_before=next_statement_before, invoice_before=invoice_before, _anchor='payments') }}">{{ _('Ältere offene Buchungen') }}</a>{% endif %}
+      {% if statement_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, overdue=1 if overdue_only else none, invoice_before=invoice_before, _anchor='payments') }}">{{ _('Neueste offene Buchungen') }}</a>{% endif %}
+      {% if next_statement_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, overdue=1 if overdue_only else none, statement_before=next_statement_before, invoice_before=invoice_before, _anchor='payments') }}">{{ _('Ältere offene Buchungen') }}</a>{% endif %}
     </div>
     {% endif %}
     {% if can_prepare_billing and statement_entries and (invoice_before or next_invoice_before) %}
@@ -114,7 +114,10 @@
   </section>
 
   <section id="open-invoices" class="mb-6" aria-labelledby="open-invoices-title">
-    <h2 id="open-invoices-title" class="mb-3 text-xl font-bold">{{ _('Offene Rechnungen') }}</h2>
+    <h2 id="open-invoices-title" class="mb-3 text-xl font-bold">{{ _('Überfällige Rechnungen') if overdue_only else _('Offene Rechnungen') }}</h2>
+    {% if overdue_only %}
+    <a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, statement_before=statement_before, _anchor='open-invoices') }}">{{ _('Alle offenen Rechnungen') }}</a>
+    {% endif %}
     {% if open_invoices %}
     <ul class="space-y-3">
       {% for invoice in open_invoices %}
@@ -136,7 +139,7 @@
       {% endfor %}
     </ul>
     {% else %}
-    <p class="text-sm text-ink-muted">{{ _('Keine weiteren offenen Rechnungen.') if invoice_before else _('Keine offenen Rechnungen.') }}</p>
+    <p class="text-sm text-ink-muted">{{ _('Keine überfälligen Rechnungen auf dieser Seite.') if overdue_only else _('Keine weiteren offenen Rechnungen.') if invoice_before else _('Keine offenen Rechnungen.') }}</p>
     {% endif %}
     {{ invoice_pagination('open-invoices') }}
   </section>

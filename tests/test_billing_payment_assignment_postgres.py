@@ -1859,7 +1859,7 @@ def test_payments_summarizes_upload_replay_and_assignment(workspace):
         ("Importierte Einträge", 2),
         ("Automatisch verbucht", 1),
         ("Manuell zugeordnet", 0),
-        ("Warten auf Zuordnung", 1),
+        ("In diesem Import zur Zuordnung bereit", 1),
         ("Doppelte Einträge übersprungen", 0),
     ):
         assert f"<dt>{label}</dt> <dd>{count}</dd>" in " ".join(first.text.split())
@@ -1883,7 +1883,7 @@ def test_payments_summarizes_upload_replay_and_assignment(workspace):
     summary = " ".join(after_assignment.text.split())
     assert "<dt>Automatisch verbucht</dt> <dd>1</dd>" in summary
     assert "<dt>Manuell zugeordnet</dt> <dd>1</dd>" in summary
-    assert "<dt>Warten auf Zuordnung</dt> <dd>0</dd>" in summary
+    assert "<dt>In diesem Import zur Zuordnung bereit</dt> <dd>0</dd>" in summary
 
 
 def test_payments_lists_only_delivered_unpaid_invoices_with_due_state(workspace):
@@ -2089,7 +2089,9 @@ def test_payment_summary_excludes_entry_level_refusals(workspace, facts, refusal
     assert page.status_code == 200
     assert refusal in page.text
     assert f"/statements/{entry}/assign" not in page.text
-    assert "<dt>Warten auf Zuordnung</dt> <dd>0</dd>" in " ".join(page.text.split())
+    assert "<dt>In diesem Import zur Zuordnung bereit</dt> <dd>0</dd>" in " ".join(
+        page.text.split()
+    )
 
 
 def _upload_statement(client, body):

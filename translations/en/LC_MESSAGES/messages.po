@@ -23074,11 +23074,6 @@ msgid "Manuell zugeordnet"
 msgstr "Manually assigned"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_payments.html:82
-msgid "Warten auf Zuordnung"
-msgstr "Waiting for assignment"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_payments.html:84
 msgid "Doppelte Einträge übersprungen"
 msgstr "Duplicate entries skipped"
@@ -23308,3 +23303,36 @@ msgstr "Paid (CHF)"
 #: templates/leg_workspace/attention.html:36
 msgid "Offen (CHF)"
 msgstr "Outstanding (CHF)"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:527
+#, python-format
+msgid "Eine Rechnungszustellung muss geprüft werden."
+msgid_plural "%(num)d Rechnungszustellungen müssen geprüft werden."
+msgstr[0] "One invoice delivery needs review."
+msgstr[1] "%(num)d invoice deliveries need review."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:535
+msgid "Zustellung prüfen"
+msgstr "Review delivery"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:19 templates/leg_payments.html:118
+msgid "Überfällige Rechnungen"
+msgstr "Overdue invoices"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:88
+msgid "In diesem Import zur Zuordnung bereit"
+msgstr "Ready to match in this import"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:120
+msgid "Alle offenen Rechnungen"
+msgstr "All outstanding invoices"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:143
+msgid "Keine überfälligen Rechnungen auf dieser Seite."
+msgstr "There are no overdue invoices on this page."

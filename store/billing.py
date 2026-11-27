@@ -1085,6 +1085,7 @@ LEFT JOIN buildings b ON b.building_id = i.participant_id
 LEFT JOIN billing_periods period ON period.id = i.billing_period_id
   AND period.community_id = i.community_id
 LEFT JOIN invoice_delivery_jobs delivery ON delivery.invoice_id = i.id
+  AND delivery.community_id = i.community_id
 LEFT JOIN invoice_corrections correction
   ON correction.corrected_invoice_id = i.id
 LEFT JOIN invoices original
@@ -1189,7 +1190,11 @@ def list_community_invoice_payment_rows(
 
 
 def page_open_payment_invoices(
-    community_id: str, *, limit: int, before: int | None
+    community_id: str,
+    *,
+    limit: int,
+    before: int | None,
+    overdue_before: date | None = None,
 ) -> list[dict]:
     """Read only delivered, unpaid invoices for the payments page."""
     return _read_community_invoice_rows(
@@ -1198,10 +1203,11 @@ def page_open_payment_invoices(
         FROM invoices i
         WHERE i.community_id = %s AND i.status = 'issued'
           AND (%s IS NULL OR i.id < %s)
+          AND (%s IS NULL OR i.due_date < %s)
           AND {_INVOICE_LIFECYCLE_STATE} = 'delivered'
         ORDER BY i.id DESC LIMIT %s
         """,
-        (community_id, before, before, limit),
+        (community_id, before, before, overdue_before, overdue_before, limit),
     )
 
 
@@ -2064,55 +2070,41 @@ def reconcile_bank_statement(
         raise BillingStoreError("Could not reconcile bank statement") from error
 
 
-def count_assignable_statement_entries(
-    conn, community_id: str, import_id: int | None = None
-) -> int:
-    """Count reviewable entries with the same eligibility check as the assignment card."""
-    # Stream only the fields needed by the shared refusal check.
-    with conn.cursor(name="statement_assignment_count") as entries:
-        entries.execute(
-            """
-            SELECT e.is_reversal, e.booking_status, e.amount_basis,
-                   e.credit_debit_indicator, e.currency, e.payment_reference,
-                    e.servicer_reference
-            FROM bank_statement_entries e
-            JOIN bank_statement_imports s ON s.id = e.statement_import_id
-              AND s.community_id = e.community_id
-            WHERE e.community_id = %s AND (%s IS NULL OR s.id = %s)
-              AND e.match_decision = ANY(%s)
-            """,
-            (
-                community_id,
-                import_id,
-                import_id,
-                sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
-            ),
-        )
-        return sum(
-            payment_reconciliation.payment_entry_refusal(entry) is None
-            for entry in entries
-        )
+# Keep the aggregate in parity with payment_reconciliation.payment_entry_refusal.
+_BANK_ASSIGNABLE_SQL = """
+    e.match_decision = ANY(%(reviewable_decisions)s)
+    AND e.is_reversal IS FALSE
+    AND e.booking_status = 'BOOK'
+    AND e.amount_basis IN ('entry', 'reconciled_batch')
+    AND e.credit_debit_indicator = 'CRDT'
+    AND e.currency = 'CHF'
+    AND btrim(e.payment_reference, %(bank_reference_whitespace)s) <> ''
+"""
+
+
+def bank_assignment_query_parameters() -> dict:
+    return {
+        "reviewable_decisions": sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
+        "bank_reference_whitespace": payment_reconciliation.BANK_REFERENCE_WHITESPACE,
+    }
 
 
 def get_bank_statement_summary(community_id, upload_id, building_id):
     """Summarize one import and apply the workspace's entry eligibility rules."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
-            # Keep the booking counts and the assignment eligibility scan in
-            # the same snapshot while another request assigns an entry.
-            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
             cur.execute(
-                """
+                f"""
                 WITH statement AS (
                     SELECT i.id, i.source_name, i.imported_at, i.community_id, u.duplicate
                     FROM bank_statement_imports i
                     LEFT JOIN bank_statement_uploads u
-                      ON u.id = %s AND u.statement_import_id = i.id AND u.membership_id = (
+                      ON u.id = %(upload)s AND u.statement_import_id = i.id AND u.membership_id = (
                           SELECT m.id FROM community_members m
-                          WHERE m.community_id = i.community_id AND m.building_id = %s
+                          WHERE m.community_id = i.community_id AND m.building_id = %(building)s
                             AND m.status = 'confirmed'
                       )
-                    WHERE i.community_id = %s AND (%s IS NULL OR u.id IS NOT NULL)
+                    WHERE i.community_id = %(community)s AND (%(upload)s IS NULL OR u.id IS NOT NULL)
                     ORDER BY i.id DESC LIMIT 1
                 )
                 SELECT s.id, s.source_name, s.imported_at, s.duplicate,
@@ -2126,23 +2118,22 @@ def get_bank_statement_summary(community_id, upload_id, building_id):
                                  AND event.event_type = 'paid'
                                  AND starts_with(event.idempotency_key, 'bank:' || s.id::text || ':')
                            )
-                       ) AS automatic
+                       ) AS automatic,
+                       count(*) FILTER (WHERE {_BANK_ASSIGNABLE_SQL}) AS unassigned
                 FROM statement s
                 LEFT JOIN bank_statement_entries e
                     ON e.statement_import_id = s.id AND e.community_id = s.community_id
                 GROUP BY s.id, s.source_name, s.imported_at, s.duplicate
                 """,
-                (upload_id, building_id, community_id, upload_id),
+                {
+                    "community": community_id,
+                    "upload": upload_id,
+                    "building": building_id,
+                    **bank_assignment_query_parameters(),
+                },
             )
             summary = cur.fetchone()
-            if not summary:
-                return None
-            return {
-                **summary,
-                "unassigned": count_assignable_statement_entries(
-                    conn, community_id, summary["id"]
-                ),
-            }
+            return dict(summary) if summary else None
     except Exception as error:
         logger.error("[DB] Error summarizing statement import: %s", error)
         raise BillingStoreError("Could not summarize statement import") from error

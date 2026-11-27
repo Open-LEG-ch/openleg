@@ -6,10 +6,11 @@ from datetime import date
 import psycopg2
 
 from store.billing import (
+    _BANK_ASSIGNABLE_SQL,
     _INVOICE_LIFECYCLE_STATE,
     _UNREADABLE_GROSS,
     BillingStoreError,
-    count_assignable_statement_entries,
+    bank_assignment_query_parameters,
 )
 
 # Match billing_workspace.readiness_flags for the draft review affordance.
@@ -54,6 +55,12 @@ _READY_DRAFT = """
 """
 
 
+def _dual_control_approval_sql() -> str:
+    # TODO(#1018): replace with billing_approval.dual_control_allows_approval
+    return """(NOT %(dual)s OR
+               (p.prepared_by NOT IN ('', 'system') AND p.prepared_by <> s.actor))"""
+
+
 def get_workspace_attention(
     community_id: str,
     building_id: str,
@@ -70,11 +77,6 @@ def get_workspace_attention(
 
     try:
         with database.get_connection() as conn, conn.cursor() as cur:
-            if can_prepare:
-                # The task aggregates and the eligibility scan must see the same bookings.
-                cur.execute(
-                    "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"
-                )
             cur.execute(
                 f"""
                 WITH scope AS (
@@ -84,8 +86,7 @@ def get_workspace_attention(
                     SELECT p.id, p.period_start,
                            CASE
                                WHEN %(approve)s
-                                 AND (NOT %(dual)s OR
-                                      (NULLIF(p.prepared_by, '') IS NOT NULL AND p.prepared_by <> s.actor))
+                                 AND {_dual_control_approval_sql()}
                                    THEN 'approve'
                                WHEN %(prepare)s
                                  AND COALESCE(p.prepared_by, '') IN ('', 'system')
@@ -117,8 +118,14 @@ def get_workspace_attention(
                     ORDER BY period_start, id LIMIT 1
                 ) oldest
                 UNION ALL
-                SELECT 'deliver', count(*), min(id), NULL, NULL, FALSE
-                FROM issued WHERE state = 'issued'
+                SELECT CASE WHEN j.status IS NULL THEN 'deliver' ELSE 'review_delivery' END,
+                       count(*), min(i.id), NULL, NULL, FALSE
+                FROM issued i
+                JOIN scope s ON TRUE
+                LEFT JOIN invoice_delivery_jobs j ON j.invoice_id = i.id
+                  AND j.community_id = s.community_id
+                WHERE i.state = 'issued' AND (j.status IS NULL OR j.status IN ('pending', 'failed'))
+                GROUP BY (j.status IS NULL)
                 UNION ALL
                 SELECT 'overdue', count(*), NULL, NULL,
                        sum(gross_chf) FILTER (WHERE NOT ({_UNREADABLE_GROSS})),
@@ -134,6 +141,12 @@ def get_workspace_attention(
                         ORDER BY response_due_at NULLS LAST, id LIMIT 1),
                        min(response_due_at), NULL, FALSE
                 FROM open_questions
+                UNION ALL
+                SELECT 'bank', count(*), NULL, NULL, NULL, FALSE
+                FROM bank_statement_entries e JOIN scope s USING (community_id)
+                JOIN bank_statement_imports b ON b.id = e.statement_import_id
+                  AND b.community_id = e.community_id
+                WHERE %(prepare)s AND {_BANK_ASSIGNABLE_SQL}
                 UNION ALL
                 SELECT 'submission', count(*), NULL, NULL, NULL, FALSE
                 FROM vnb_submission_cases JOIN scope USING (community_id)
@@ -152,17 +165,13 @@ def get_workspace_attention(
                     "dual": require_dual_control,
                     "documents": can_manage_documents,
                     "members": can_manage_members,
+                    **bank_assignment_query_parameters(),
                 },
             )
-            tasks = {
+            return {
                 row["task"]: dict(row)
                 for row in cur.fetchall()
                 if row["count"] or row["at"]
             }
-            if can_prepare and (
-                count := count_assignable_statement_entries(conn, community_id)
-            ):
-                tasks["bank"] = {"count": count}
-            return tasks
     except psycopg2.Error as error:
         raise BillingStoreError("Could not load workspace attention") from error

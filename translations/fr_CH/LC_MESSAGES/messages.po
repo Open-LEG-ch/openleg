@@ -20704,11 +20704,6 @@ msgid "Manuell zugeordnet"
 msgstr "Affectées manuellement"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_payments.html:82
-msgid "Warten auf Zuordnung"
-msgstr "En attente d’affectation"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_payments.html:84
 msgid "Doppelte Einträge übersprungen"
 msgstr "Écritures en double ignorées"
@@ -20938,3 +20933,36 @@ msgstr "Payé (CHF)"
 #: templates/leg_workspace/attention.html:36
 msgid "Offen (CHF)"
 msgstr "À payer (CHF)"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:527
+#, python-format
+msgid "Eine Rechnungszustellung muss geprüft werden."
+msgid_plural "%(num)d Rechnungszustellungen müssen geprüft werden."
+msgstr[0] "L’envoi d’une facture doit être vérifié."
+msgstr[1] "L’envoi de %(num)d factures doit être vérifié."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:535
+msgid "Zustellung prüfen"
+msgstr "Vérifier l’envoi"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:19 templates/leg_payments.html:118
+msgid "Überfällige Rechnungen"
+msgstr "Factures échues"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:88
+msgid "In diesem Import zur Zuordnung bereit"
+msgstr "Écritures de cet import à rapprocher"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:120
+msgid "Alle offenen Rechnungen"
+msgstr "Toutes les factures ouvertes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:143
+msgid "Keine überfälligen Rechnungen auf dieser Seite."
+msgstr "Cette page ne contient aucune facture échue."

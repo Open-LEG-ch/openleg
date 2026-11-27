@@ -575,23 +575,27 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 for member in memberships
                 if member["member_status"] == "confirmed"
             ]
-            if attention := view.get("attention"):
-                view["workspace_counts"] = attention["counts"]
-            elif current := next(
-                (
-                    member
-                    for member in view["workspace_communities"]
-                    if member["community_id"] == community_id
-                    and member.get("status") == "active"
-                ),
-                None,
+            attention = view.get("attention")
+            if not attention and (
+                current := next(
+                    (
+                        member
+                        for member in view["workspace_communities"]
+                        if member["community_id"] == community_id
+                        and member.get("status") == "active"
+                    ),
+                    None,
+                )
             ):
-                view["workspace_counts"] = dashboard_module.leg_workspace_attention(
+                attention = dashboard_module.leg_workspace_attention(
                     community_id,
                     building_id,
                     {**current, "status": current["member_status"]},
                     require_dual_control=bool(current.get("require_dual_control")),
-                )["counts"]
+                )
+            if attention:
+                view["workspace_counts"] = attention["counts"]
+                view["bank_assignment_count"] = attention["bank_assignment_count"]
             profile = db.get_building(building_id) or {}
             view["workspace_account"] = profile.get("email")
         return render_city_template(template, **view)
@@ -1055,6 +1059,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 if invoice_before and invoice_before > 0
                 else None,
                 statement_upload=statement_upload,
+                overdue_only=request.args.get("overdue") == "1",
                 review_invoice_id=(
                     feedback["invoice_id"]
                     if feedback and feedback.get("duplicate_review_required")
@@ -1265,6 +1270,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 ".leg_payments",
                 community_id=community_id,
                 assignment=receipt,
+                overdue=1 if request.args.get("overdue") == "1" else None,
                 statement_before=statement_before,
                 invoice_before=request.args.get("invoice_before", type=int)
                 if error_status
