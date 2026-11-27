@@ -55,12 +55,6 @@ _READY_DRAFT = """
 """
 
 
-def _dual_control_approval_sql() -> str:
-    # TODO(#1018): replace with billing_approval.dual_control_allows_approval
-    return """(NOT %(dual)s OR
-               (p.prepared_by NOT IN ('', 'system') AND p.prepared_by <> s.actor))"""
-
-
 def get_workspace_attention(
     community_id: str,
     building_id: str,
@@ -73,20 +67,40 @@ def get_workspace_attention(
     can_manage_members: bool,
 ) -> dict[str, dict]:
     """Return at most one count and one destination per task in this LEG."""
+    import billing_approval
     import database
 
     try:
+        eligible_preparers = []
+        if can_approve and require_dual_control:
+            with database.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT DISTINCT prepared_by
+                    FROM billing_periods
+                    WHERE community_id = %s AND status = 'draft'
+                    """,
+                    (community_id,),
+                )
+                preparers = [row["prepared_by"] for row in cur.fetchall()]
+            eligible_preparers = [
+                preparer
+                for preparer in preparers
+                if billing_approval.dual_control_allows_approval(
+                    community_id, preparer, building_id, require_dual_control=True
+                )
+            ]
         with database.get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 f"""
                 WITH scope AS (
-                    SELECT %(community)s AS community_id, %(actor)s AS actor,
+                    SELECT %(community)s AS community_id,
                            %(today)s::date AS today
                 ), draft_tasks AS (
                     SELECT p.id, p.period_start,
                            CASE
                                WHEN %(approve)s
-                                 AND {_dual_control_approval_sql()}
+                                 AND (NOT %(dual)s OR p.prepared_by = ANY(%(eligible_preparers)s))
                                    THEN 'approve'
                                WHEN %(prepare)s
                                  AND COALESCE(p.prepared_by, '') IN ('', 'system')
@@ -158,11 +172,11 @@ def get_workspace_attention(
                 """,
                 {
                     "community": community_id,
-                    "actor": building_id,
                     "today": today,
                     "prepare": can_prepare,
                     "approve": can_approve,
                     "dual": require_dual_control,
+                    "eligible_preparers": eligible_preparers,
                     "documents": can_manage_documents,
                     "members": can_manage_members,
                     **bank_assignment_query_parameters(),

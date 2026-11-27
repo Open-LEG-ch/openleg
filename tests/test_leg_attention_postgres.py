@@ -39,6 +39,10 @@ def operating(workspace, monkeypatch):  # noqa: F811
 
     monkeypatch.setattr(dashboard, "datetime", November)
     with db.get_connection() as conn, conn.cursor() as cur:
+        cur.executemany(
+            "UPDATE buildings SET email=%s WHERE building_id=%s",
+            [(actor + "@example.org", actor) for actor in (ADMIN, AUDITOR)],
+        )
         cur.execute(
             "UPDATE communities SET status='active' WHERE community_id=%s",
             (COMMUNITY,),
@@ -427,6 +431,33 @@ def test_overdue_invoice_precedes_question_with_time_to_answer(operating):
         "<title>Eine Rechnung über CHF 12.30 ist überfällig. | OpenLEG</title>" in html
     )
     assert "Eine Rechnungsfrage ist bis 30. November 2026 zu beantworten." in html
+
+
+@pytest.mark.parametrize("preparer_issue", ["unconfirmed", "same-mailbox"])
+def test_approval_attention_agrees_with_period_page_for_ineligible_preparer(
+    operating, preparer_issue
+):
+    _dual_control()
+    period = _period(10, status="draft", preparer=ADMIN)
+    _roles(AUDITOR, "billing_approver")
+    _set_session(operating, AUDITOR)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        if preparer_issue == "unconfirmed":
+            cur.execute(
+                "UPDATE community_members SET status='invited' WHERE community_id=%s AND building_id=%s",
+                (COMMUNITY, ADMIN),
+            )
+        else:
+            cur.execute(
+                "UPDATE buildings SET email=%s WHERE building_id=%s",
+                (AUDITOR.upper() + "@example.org", ADMIN),
+            )
+    url = f"{ROOT}/billing/period/{period}"
+    overview = operating.get(OVERVIEW)
+    detail = operating.get(url)
+    assert overview.status_code == detail.status_code == 200
+    assert 'name="confirm_approval"' not in detail.text
+    assert f'href="{url}"' not in overview.text
 
 
 def test_bank_attention_matches_payment_summary_and_assignment_forms(operating):
