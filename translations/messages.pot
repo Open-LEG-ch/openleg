@@ -94,6 +94,11 @@ msgstr ""
 msgid "%(interest_label)s in %(profile_name)s"
 msgstr ""
 
+#: templates/gemeinde/rangliste_fortschritte.html:92
+#, python-format
+msgid "%(kanton)s · %(score)s%% Ende %(year)s"
+msgstr ""
+
 #: pv_badge.py:61
 #, python-format
 msgid "%(kw)s kW ungenutztes Dachpotenzial"
@@ -220,11 +225,6 @@ msgstr ""
 #: app.py:245
 #, python-format
 msgid "%(platform_name)s: Interessenmeldung bestätigen"
-msgstr ""
-
-#: templates/gemeinde/rangliste_fortschritte.html:92
-#, python-format
-msgid "%(r_kanton)s · %(value_1f_format_r_score_now_float_100_min)s%% heute"
 msgstr ""
 
 #: templates/dashboard.html:77
@@ -3386,12 +3386,6 @@ msgstr ""
 msgid "Der Eintrag konnte nicht gespeichert werden."
 msgstr ""
 
-#: templates/gemeinde/methodik.html:87
-msgid ""
-"Der Fortschritt misst die Veränderung des Scores im letzten vollen Jahr, in Prozentpunkten.\n"
-"        Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt."
-msgstr ""
-
 #: sandbox_telemetry.py:35
 msgid "Der Geräteschlüssel ist widerrufen oder nicht mehr gültig. Erneuern Sie ihn als Eigentümer."
 msgstr ""
@@ -3528,6 +3522,14 @@ msgid ""
 "%(url)s"
 msgstr ""
 
+#: templates/gemeinde/methodik.html:87
+msgid ""
+"Der Stand in der Fortschritts-Ansicht zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt "
+"deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten "
+"vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
+"nie mit dem Snapshot vermischt."
+msgstr ""
+
 #: templates/release/how_it_works.html:44
 msgid "Der Strom fliesst durch das bestehende Netz."
 msgstr ""
@@ -3634,6 +3636,13 @@ msgid ""
 "Teilnahme (30 Prozentpunkte). Die LEG erstellt Dokumente oder sammelt Unterschriften (30 "
 "Prozentpunkte). Die LEG reicht die Anmeldung beim Netzbetreiber ein (20 Prozentpunkte). Der "
 "Netzbetreiber genehmigt sie (20 Prozentpunkte)."
+msgstr ""
+
+#: templates/gemeinde/rangliste_fortschritte.html:109
+msgid ""
+"Der Wert zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt deshalb unter dem Wert in der "
+"Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten vom Ende des Vorjahres bis zum"
+" Ende des angegebenen Jahres."
 msgstr ""
 
 #: payment_reconciliation.py:298 payment_reconciliation.py:305
@@ -6268,12 +6277,6 @@ msgstr ""
 
 #: templates/gemeinde/dashboard.html:46
 msgid "Formel und Datengrenzen ansehen"
-msgstr ""
-
-#: templates/gemeinde/rangliste_fortschritte.html:109
-msgid ""
-"Fortschritt = Veränderung des Solarnutzungs-Scores in Prozentpunkten gegenüber dem Vorjahr,\n"
-"      aus dem 10-Jahres-Panel. Bewusst getrennt vom aktuellen Snapshot der Rangliste."
 msgstr ""
 
 #: templates/gemeinde/methodik.html:76

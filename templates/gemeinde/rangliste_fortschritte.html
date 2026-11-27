@@ -89,7 +89,7 @@
         <span class="font-mono tabular-nums text-xs text-ink-muted">{{ loop.index }}</span>
         <span class="min-w-0">
           <a href="/gemeinde/profil/{{ r.bfs_number }}" class="font-medium hover:text-brand truncate block">{{ r.name }}</a>
-          <span class="text-xs text-ink-muted">{{ _("%(r_kanton)s · %(value_1f_format_r_score_now_float_100_min)s%% heute", r_kanton=r.kanton, value_1f_format_r_score_now_float_100_min="%.1f"|format([r.score_now|float, 100]|min)) }}</span>
+          <span class="text-xs text-ink-muted">{{ _("%(kanton)s · %(score)s%% Ende %(year)s", kanton=r.kanton, year=r.year, score="%.1f"|format([r.score_now|float, 100]|min)) }}</span>
         </span>
         <span class="font-mono tabular-nums font-semibold text-right {{ 'text-green-700' if is_up else 'text-ink-muted' }}">
           {{ _("%(if_is_up_else)s%(value_2f_format_r_delta_float)s Pkt", if_is_up_else='+' if is_up else '', value_2f_format_r_delta_float="%.2f"|format(r.delta|float)) }}
@@ -106,7 +106,7 @@
       {% endfor %}
     </div>
     <p class="text-xs text-ink-muted mt-4">
-      {{ _("Fortschritt = Veränderung des Solarnutzungs-Scores in Prozentpunkten gegenüber dem Vorjahr,\n      aus dem 10-Jahres-Panel. Bewusst getrennt vom aktuellen Snapshot der Rangliste.") }}
+      {{ _("Der Wert zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten vom Ende des Vorjahres bis zum Ende des angegebenen Jahres.") }}
     </p>
     {% else %}
     <div class="border border-slate-200 rounded-xl p-8 text-center">

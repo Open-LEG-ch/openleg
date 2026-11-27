@@ -98,3 +98,30 @@ def test_og_card_preserves_profile_energy_potential(web, monkeypatch):
     }
     assert Ranking([profile]).og_card_svg(1) == "synthetic-svg"
     assert captured["untapped_kw"] == 1234
+
+
+def test_progress_score_names_each_rows_panel_year(web, monkeypatch):
+    rows = [
+        {
+            "bfs_number": 1,
+            "name": "A",
+            "kanton": "VD",
+            "score_now": 16,
+            "delta": 3,
+            "year": 2024,
+        },
+        {
+            "bfs_number": 2,
+            "name": "B",
+            "kanton": "ZH",
+            "score_now": 13.5,
+            "delta": 2.03,
+            "year": 2022,
+        },
+    ]
+    monkeypatch.setattr(Ranking, "movers", lambda *args, **kwargs: rows)
+    response = web.test_client().get("/rangliste/fortschritte?lang=de-CH")
+    assert response.status_code == 200
+    row = response.text.split('href="/gemeinde/profil/2"', 1)[1].split("</div>", 1)[0]
+    assert "ZH · 13.5% Ende 2022" in row
+    assert "heute" not in row

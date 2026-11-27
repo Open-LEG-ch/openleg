@@ -196,11 +196,6 @@ msgstr "%(platform_name)s · CEL pour %(city_name)s"
 msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr "%(platform_name)s : confirmer votre déclaration d’intérêt"
 
-#: templates/gemeinde/rangliste_fortschritte.html:92
-#, python-format
-msgid "%(r_kanton)s · %(value_1f_format_r_score_now_float_100_min)s%% heute"
-msgstr "%(r_kanton)s · %(value_1f_format_r_score_now_float_100_min)s%% aujourd’hui"
-
 #: templates/dashboard.html:77
 #, python-format
 msgid "%(score)s Prozent bereit"
@@ -3330,16 +3325,6 @@ msgstr "L'envoi d'e-mails est momentanément indisponible."
 msgid "Der Eintrag konnte nicht gespeichert werden."
 msgstr "L’inscription n’a pas pu être enregistrée."
 
-#: templates/gemeinde/methodik.html:87
-msgid ""
-"Der Fortschritt misst die Veränderung des Scores im letzten vollen Jahr, in "
-"Prozentpunkten.\n"
-"        Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt."
-msgstr ""
-"La progression mesure l’évolution du score durant la dernière année complète, en "
-"points de pourcentage. Elle provient uniquement du panel et n’est jamais mélangée à "
-"l’état actuel."
-
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/index.html:7
 msgid ""
@@ -6358,16 +6343,6 @@ msgstr "Format non disponible"
 #: templates/gemeinde/dashboard.html:46
 msgid "Formel und Datengrenzen ansehen"
 msgstr "Consulter la formule et les limites des données"
-
-#: templates/gemeinde/rangliste_fortschritte.html:109
-msgid ""
-"Fortschritt = Veränderung des Solarnutzungs-Scores in Prozentpunkten gegenüber dem "
-"Vorjahr,\n"
-"      aus dem 10-Jahres-Panel. Bewusst getrennt vom aktuellen Snapshot der Rangliste."
-msgstr ""
-"Progression = évolution du score d’exploitation du potentiel solaire en points de "
-"pourcentage par rapport à l’année précédente, à partir du panel sur 10 ans. Présentée"
-" séparément de l’état actuel du classement."
 
 #: templates/gemeinde/methodik.html:76
 msgid "Fortschritt:"
@@ -20445,3 +20420,26 @@ msgstr "La touche / place le curseur dans le champ de recherche sur chaque page"
 #: templates/release/search.html:19
 msgid "Ctrl+K oder Cmd+K funktioniert immer."
 msgstr "Ctrl+K ou Cmd+K fonctionne toujours."
+
+#. Draft translation; native language and domain review pending.
+#: templates/gemeinde/methodik.html:87 templates/gemeinde/rangliste_fortschritte.html:109
+msgid ""
+"Der Wert zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt deshalb unter dem Wert in der "
+"Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten vom Ende des Vorjahres bis zum"
+" Ende des angegebenen Jahres."
+msgstr "Cette valeur tient compte uniquement des installations mises en service depuis 2016. Elle est donc inférieure à celle du classement. La progression indique la variation en points de pourcentage entre la fin de l’année précédente et la fin de l’année indiquée."
+
+#. Draft translation; native language and domain review pending.
+#: templates/gemeinde/rangliste_fortschritte.html:92
+#, python-format
+msgid "%(kanton)s · %(score)s%% Ende %(year)s"
+msgstr "%(kanton)s · %(score)s%% fin %(year)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/gemeinde/methodik.html:87
+msgid ""
+"Der Stand in der Fortschritts-Ansicht zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt "
+"deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten "
+"vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
+"nie mit dem Snapshot vermischt."
+msgstr "La valeur affichée dans la vue des progressions tient compte uniquement des installations mises en service depuis 2016. Elle est donc inférieure à celle du classement. La progression indique la variation en points de pourcentage entre la fin de l’année précédente et la fin de l’année indiquée. Elle provient uniquement du panel et n’est jamais mélangée à l’état actuel."
