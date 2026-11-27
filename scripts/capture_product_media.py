@@ -74,8 +74,20 @@ def open_demo(browser_page, name, locale, **query):
         or not browser_page.locator(".product-shell h1").is_visible()
     ):
         raise RuntimeError(f"Could not render {name} in {locale}")
+    # Chromium's native select border can vary by a few pixels between captures.
     browser_page.add_style_tag(
-        content="*, *::before, *::after { transition: none !important; }"
+        content="""
+            *, *::before, *::after { transition: none !important; }
+            #has-solar {
+                appearance: none;
+                background-image:
+                    linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+                background-position: right 10px center, right 6px center;
+                background-repeat: no-repeat;
+                background-size: 4px 4px;
+            }
+        """
     )
 
 
@@ -176,8 +188,13 @@ def capture_all(browser):
 def main():
     """Capture both locales before replacing the checked-in media."""
     with sync_playwright() as driver:
+        # Use software rendering to keep native form-control edges stable.
         browser = driver.chromium.launch(
-            args=["--disable-lcd-text", "--disable-font-subpixel-positioning"]
+            args=[
+                "--disable-gpu",
+                "--disable-lcd-text",
+                "--disable-font-subpixel-positioning",
+            ]
         )
         try:
             outputs = capture_all(browser)
