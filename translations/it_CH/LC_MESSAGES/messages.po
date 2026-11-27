@@ -324,11 +324,6 @@ msgid ", Stand %(profile_pv_snapshot_year)s"
 msgstr ", stand %(profile_pv_snapshot_year)s"
 
 #. Draft translation; native language and domain review pending.
-#: templates/partials/registry_trust.html:16
-msgid ", aber nicht durch einen beanspruchten Betreiber."
-msgstr ", ma non da parte di un operatore rivendicato."
-
-#. Draft translation; native language and domain review pending.
 #: templates/gemeinde/rangliste.html:76 templates/gemeinde/rangliste_fortschritte.html:80
 #, python-format
 msgid ", angezeigt die ersten %(rows_length)s"
@@ -468,7 +463,7 @@ msgstr ". Nessun blocco fornitore: è possibile cambiare il modello operativo."
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/detail.html:8
 msgid ". Moderierte Selbstauskunft, unabhängig von der Gründungsplattform."
-msgstr ". Informazioni di sé moderato, indipendentemente dalla piattaforma di fondazione."
+msgstr ". Autodichiarazione moderata, indipendente dalla piattaforma di costituzione."
 
 #. Draft translation; native language and domain review pending.
 #: templates/open_source.html:139
@@ -2520,11 +2515,6 @@ msgstr ""
 #: templates/datenschutz.html:73
 msgid "Beschwerderecht bei einer Aufsichtsbehörde"
 msgstr "Diritto di ricorso presso un'autorità di controllo"
-
-#. Draft translation; native language and domain review pending.
-#: templates/gemeinde/profil.html:132
-msgid "Bestehende LEG eintragen"
-msgstr "LEGImpostazione esistente"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_gruenden.html:149
@@ -11911,7 +11901,7 @@ msgstr "Parte del risparmio modello"
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:13
 msgid "Moderierte Selbstauskunft"
-msgstr "L'autoinformazione moderato"
+msgstr "Autodichiarazione moderata"
 
 #. Draft translation; native language and domain review pending.
 #: templates/index.html:216
@@ -12164,7 +12154,7 @@ msgstr "Gestore di rete"
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/detail.html:44
 msgid "Netzbetreiber (Selbstauskunft)"
-msgstr "Gestore di rete (autoinformazione)"
+msgstr "Gestore di rete (autodichiarazione)"
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_verzeichnis/eintragen.html:74
@@ -12666,7 +12656,7 @@ msgstr "Non ancora controllato pubblicamente o sbloccato."
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:11 templates/partials/registry_trust.html:17
 msgid "Noch nie erneut bestätigt."
-msgstr "Mai più confermato."
+msgstr "Mai riconfermata."
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/finance_edit.html:11
@@ -12878,11 +12868,7 @@ msgid ""
 "Offen für jede LEG, unabhängig davon, welche Plattform bei der Gründung half. "
 "Einträge sind moderierte Selbstauskünfte: OpenLEG prüft keine Netz-Topologie und "
 "keine Eignung einzelner Adressen. Details dazu stehen bei jedem Eintrag."
-msgstr ""
-"Aperto per ogni LEG, indipendentemente dalla piattaforma che ha contribuito alla "
-"creazione. Le voci sono informazioni di auto-guida moderato: OpenLEG non controlla la"
-" topologia della rete e non misura l'idoneità dei singoli indirizzi. I dettagli sono "
-"disponibili per ogni voce."
+msgstr "Aperto a ogni LEG, indipendentemente dalla piattaforma che ha contribuito alla costituzione. Le voci sono autodichiarazioni moderate: OpenLEG non verifica la topologia della rete né l'idoneità dei singoli indirizzi. I dettagli sono indicati in ogni voce."
 
 #. Draft translation; native language and domain review pending.
 #: templates/self_host.html:78
@@ -13157,7 +13143,7 @@ msgstr "Contribuire allo sviluppo di OpenLEG"
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:14
 msgid "OpenLEG hat den Eintrag freigeschaltet. Kein Betreiber hat ihn beansprucht."
-msgstr "OpenLEG ha sbloccato la voce. Nessun operatore l'ha richiesto."
+msgstr "OpenLEG ha pubblicato la voce. Nessun operatore l'ha rivendicata."
 
 #. Draft translation; native language and domain review pending.
 #: templates/leg_dashboard.html:269
@@ -17129,7 +17115,7 @@ msgstr "Richiedi scorciatoia nella dashboard personale"
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:8
 msgid "Vom Betreiber beansprucht am"
-msgstr "L'operatore chiede:"
+msgstr "Rivendicata dall'operatore il"
 
 #. Draft translation; native language and domain review pending.
 #: templates/partials/registry_trust.html:7
@@ -23103,3 +23089,8 @@ msgstr "Riferimento bancario (AcctSvcrRef) al posto del riferimento di pagamento
 #: templates/leg_workspace/formation.html:82
 msgid "Erneut einleiten"
 msgstr "Invia di nuovo"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/registry_trust.html:16
+msgid ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
+msgstr ", ma non da un operatore che ha rivendicato la voce."

@@ -215,7 +215,9 @@ def profile_context(bfs, *, site_url):
         raw = None
     if raw is not None:
         _PROFILE_CACHE_METRICS["hits"] += 1
-        return _localize_profile_context(_ContextEncoder.loads(raw))
+        return _with_published_entries(
+            _localize_profile_context(_ContextEncoder.loads(raw))
+        )
 
     _PROFILE_CACHE_METRICS["misses"] += 1
     context = _build_profile_context(bfs, site_url=site_url)
@@ -223,7 +225,32 @@ def profile_context(bfs, *, site_url):
         cache.cache_set(
             key, _ContextEncoder.dumps(context), ttl=MUNICIPALITY_PROFILE_TTL_SECONDS
         )
-    return _localize_profile_context(context)
+    return _with_published_entries(_localize_profile_context(context))
+
+
+def _with_published_entries(context):
+    """Read the municipality's registry entries per request by BFS number.
+
+    Moderation decisions apply on the next request, and private registry
+    columns never enter the shared profile cache. ``None`` marks a failed read,
+    which the page must not present as an empty directory.
+    """
+    if context is None:
+        return None
+    bfs = context["profile"].get("bfs_number")
+    try:
+        result = (
+            db.read_public_registry(filters={"bfs_number": bfs})
+            if bfs
+            else {"entries": [], "has_next": False}
+        )
+    except db.PublicRegistryUnavailable:
+        result = {"entries": None, "has_next": False}
+    return {
+        **context,
+        "leg_entries": result["entries"],
+        "leg_entries_more": result["has_next"],
+    }
 
 
 def _localize_profile_context(context):
@@ -291,11 +318,8 @@ def _build_profile_context(bfs, *, site_url):
     seo_title, seo_description = _profile_seo(name, h4, translate=False)
     jsonld = _profile_jsonld(profile, bfs, h4, site_url, canonical_url)
 
-    leg_entries = db.list_registry_entries(q=name) if name else []
-
     return {
         "profile": profile,
-        "leg_entries": leg_entries,
         "tariffs": tariffs,
         "solar": solar,
         "value_gap": gap,

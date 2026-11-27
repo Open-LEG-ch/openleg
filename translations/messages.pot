@@ -302,7 +302,7 @@ msgid ", Stand %(profile_pv_snapshot_year)s"
 msgstr ""
 
 #: templates/partials/registry_trust.html:16
-msgid ", aber nicht durch einen beanspruchten Betreiber."
+msgid ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
 msgstr ""
 
 #: templates/gemeinde/rangliste.html:76 templates/gemeinde/rangliste_fortschritte.html:80
@@ -2307,10 +2307,6 @@ msgstr ""
 msgid "Beschädigtes Manifest simulieren"
 msgstr ""
 
-#: templates/gemeinde/profil.html:132
-msgid "Bestehende LEG eintragen"
-msgstr ""
-
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
 msgstr ""
@@ -2684,8 +2680,9 @@ msgstr ""
 msgid "Bitte geben Sie mindestens %(value)s Zeichen ein."
 msgstr ""
 
-#: templates/leg_verzeichnis/leg_check.html:54 templates/leg_verzeichnis/liste.html:19
-#: templates/telemetry_dashboard.html:46 templates/telemetry_shared.html:19
+#: templates/gemeinde/profil.html:132 templates/leg_verzeichnis/leg_check.html:54
+#: templates/leg_verzeichnis/liste.html:19 templates/telemetry_dashboard.html:46
+#: templates/telemetry_shared.html:19
 msgid "Bitte laden Sie die Seite später erneut."
 msgstr ""
 
@@ -3052,7 +3049,7 @@ msgstr ""
 msgid "Das Verteilmodell der Richtlinie ist ungültig."
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:23
+#: templates/leg_verzeichnis/liste.html:24
 msgid ""
 "Das Verzeichnis enthält nur freigeschaltete Selbstauskünfte. Ein fehlender Eintrag sagt nichts "
 "über die Eignung einer Adresse aus."
@@ -3927,7 +3924,7 @@ msgid ""
 "Rangliste."
 msgstr ""
 
-#: site_release.py:85
+#: site_release.py:85 templates/leg_verzeichnis/liste.html:23
 msgid "Die Ergebnisseite ist ungültig. Starten Sie die Suche erneut."
 msgstr ""
 
@@ -4553,9 +4550,9 @@ msgstr ""
 msgid "Dienst"
 msgstr ""
 
-#: i18n.py:100 templates/leg_verzeichnis/leg_check.html:54 templates/leg_verzeichnis/liste.html:19
-#: verein_event_routes.py:34 verein_finance_routes.py:40 verein_payment_routes.py:42
-#: verein_routes.py:64
+#: i18n.py:100 templates/gemeinde/profil.html:132 templates/leg_verzeichnis/leg_check.html:54
+#: templates/leg_verzeichnis/liste.html:19 verein_event_routes.py:34 verein_finance_routes.py:40
+#: verein_payment_routes.py:42 verein_routes.py:64
 msgid "Dienst vorübergehend nicht verfügbar"
 msgstr ""
 
@@ -6111,7 +6108,7 @@ msgstr ""
 msgid "Fallstudie: LEG-Potenzial in "
 msgstr ""
 
-#: municipality_profile.py:343
+#: municipality_profile.py:367
 #, python-format
 msgid "Fallstudie: LEG-Potenzial in %(name)s"
 msgstr ""
@@ -6331,7 +6328,7 @@ msgstr ""
 msgid "Fragen zum Betrieb?"
 msgstr ""
 
-#: templates/leg_verzeichnis/detail.html:64 templates/leg_verzeichnis/liste.html:24
+#: templates/leg_verzeichnis/detail.html:64 templates/leg_verzeichnis/liste.html:25
 msgid "Fragen zum Verzeichnis"
 msgstr ""
 
@@ -7010,7 +7007,7 @@ msgstr ""
 msgid "Gemeindeverwaltung"
 msgstr ""
 
-#: municipality_profile.py:244 templates/gemeinde/profil.html:24 templates/gemeinde/verzeichnis.html:17
+#: municipality_profile.py:271 templates/gemeinde/profil.html:24 templates/gemeinde/verzeichnis.html:17
 #: templates/leg_verzeichnis/leg_check.html:92
 msgid "Gemeindeverzeichnis"
 msgstr ""
@@ -8681,7 +8678,7 @@ msgstr ""
 msgid "Kanton %(b_kanton)s"
 msgstr ""
 
-#: municipality_profile.py:249 pv_badge.py:50
+#: municipality_profile.py:276 pv_badge.py:50
 #, python-format
 msgid "Kanton %(kanton)s"
 msgstr ""
@@ -8886,7 +8883,7 @@ msgstr ""
 msgid "Keine Gutschriften."
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:23
+#: templates/leg_verzeichnis/liste.html:24
 msgid "Keine LEGs gefunden"
 msgstr ""
 
@@ -9547,8 +9544,8 @@ msgid "LEG-Verwaltung"
 msgstr ""
 
 #: templates/admin/ops.html:36 templates/api_docs.html:50 templates/fuer_gemeinden.html:107
-#: templates/leg_verzeichnis/detail.html:57 templates/leg_verzeichnis/leg_check.html:66
-#: templates/release/navigation.html:8
+#: templates/gemeinde/profil.html:132 templates/leg_verzeichnis/detail.html:57
+#: templates/leg_verzeichnis/leg_check.html:66 templates/release/navigation.html:8
 msgid "LEG-Verzeichnis"
 msgstr ""
 
@@ -13225,7 +13222,8 @@ msgid ""
 "durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:22 templates/release/search.html:47
+#: templates/leg_verzeichnis/liste.html:22 templates/leg_verzeichnis/liste.html:23
+#: templates/release/search.html:47
 #, python-format
 msgid "Seite %(page)s"
 msgstr ""
@@ -14093,7 +14091,7 @@ msgstr ""
 msgid "Suche läuft …"
 msgstr ""
 
-#: templates/leg_verzeichnis/liste.html:8 templates/leg_verzeichnis/liste.html:23
+#: templates/leg_verzeichnis/liste.html:8 templates/leg_verzeichnis/liste.html:24
 msgid "Suche zurücksetzen"
 msgstr ""
 
@@ -14875,7 +14873,7 @@ msgstr ""
 msgid "Verteilmodell:"
 msgstr ""
 
-#: municipality_profile.py:246 templates/fuer_gemeinden.html:70
+#: municipality_profile.py:273 templates/fuer_gemeinden.html:70
 #: templates/gemeinde/pilotgemeinde.html:23
 msgid "Verteilnetzbetreiber"
 msgstr ""

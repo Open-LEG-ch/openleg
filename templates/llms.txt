@@ -23,8 +23,8 @@
 {{ _("- [Für Bewohner und Gründer](%(url)s): Adresse prüfen, Nachbarn finden, gründen", url=(site_url ~ "/fuer-bewohner")|localized_url) }}
 {{ _("- [Für Gemeinden](%(url)s): Dashboard, Verantwortlichkeiten, Betriebsmodelle", url=(site_url ~ "/fuer-gemeinden")|localized_url) }}
 {{ _("- [Solarnutzungs-Rangliste](%(url)s): alle Schweizer Gemeinden mit prüfbarer Solarnutzung", url=(site_url ~ "/rangliste")|localized_url) }}
-{{ _("- [LEG-Verzeichnis](%(url)s): bestehende Lokale Elektrizitätsgemeinschaften", url=(site_url ~ "/leg-verzeichnis")|localized_url) }}
-{{ _("- [Gemeinde-Verzeichnis](%(url)s): Profile aller Schweizer Gemeinden", url=(site_url ~ "/gemeinde/verzeichnis")|localized_url) }}
+{% if site_release_enabled %}{{ _("- [LEG-Verzeichnis](%(url)s): bestehende Lokale Elektrizitätsgemeinschaften", url=(site_url ~ "/leg-verzeichnis")|localized_url) }}
+{% endif %}{{ _("- [Gemeinde-Verzeichnis](%(url)s): Profile aller Schweizer Gemeinden", url=(site_url ~ "/gemeinde/verzeichnis")|localized_url) }}
 {{ _("- [Ersparnis-Kalkulator](%(url)s): Ersparnis für eine LEG berechnen", url=(site_url ~ "/leg-kalkulator")|localized_url) }}
 {{ _("- [Fallstudie Baden](%(url)s): Tarife, Solardaten und Potenzial für Baden AG", url=(site_url ~ "/pilotgemeinde/baden")|localized_url) }}
 {{ _("- [Open Source](%(url)s): Architektur, Repos und Datenpipeline", url=(site_url ~ "/open-source")|localized_url) }}

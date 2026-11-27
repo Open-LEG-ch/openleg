@@ -168,7 +168,9 @@ def directory(slug=None):
         return render_template(
             "leg_verzeichnis/detail.html", entry=result["entries"][0], **context
         )
-    return render_template("leg_verzeichnis/liste.html", **result, **context)
+    # A page beyond the last result is missing, not an empty search.
+    status = 404 if page > 1 and not result["entries"] else 200
+    return render_template("leg_verzeichnis/liste.html", **result, **context), status
 
 
 def formation_date():

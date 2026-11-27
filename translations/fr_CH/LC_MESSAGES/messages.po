@@ -284,10 +284,6 @@ msgstr ", les pages dans"
 msgid ", Stand %(profile_pv_snapshot_year)s"
 msgstr ", état %(profile_pv_snapshot_year)s"
 
-#: templates/partials/registry_trust.html:16
-msgid ", aber nicht durch einen beanspruchten Betreiber."
-msgstr ", mais pas par un exploitant ayant revendiqué l’entrée."
-
 #: templates/gemeinde/rangliste.html:76 templates/gemeinde/rangliste_fortschritte.html:80
 #, python-format
 msgid ", angezeigt die ersten %(rows_length)s"
@@ -2188,10 +2184,6 @@ msgstr ""
 #: templates/datenschutz.html:73
 msgid "Beschwerderecht bei einer Aufsichtsbehörde"
 msgstr "Droit de déposer une réclamation auprès d’une autorité de surveillance"
-
-#: templates/gemeinde/profil.html:132
-msgid "Bestehende LEG eintragen"
-msgstr "Inscrire une CEL existante"
 
 #: templates/leg_gruenden.html:149
 msgid "Bestehende LEGs im Verzeichnis prüfen"
@@ -20453,3 +20445,8 @@ msgstr "Référence bancaire (AcctSvcrRef) à la place de la référence de paie
 #: templates/leg_workspace/formation.html:82
 msgid "Erneut einleiten"
 msgstr "Soumettre à nouveau"
+
+#. Draft translation; native language and domain review pending.
+#: templates/partials/registry_trust.html:16
+msgid ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
+msgstr ", mais pas par un exploitant ayant revendiqué l’entrée."

@@ -13,7 +13,7 @@
   <p class="font-semibold"><span aria-hidden="true">◇</span> {{ _("Moderierte Selbstauskunft") }}</p>
   <p class="text-xs text-ink-muted">{{ _("OpenLEG hat den Eintrag freigeschaltet. Kein Betreiber hat ihn beansprucht.") }}</p>
   {% if entry.get('last_verified_at') %}
-  <p class="text-xs text-ink-muted">{{ _("Gemeldete Angaben bestätigt am") }} <span class="font-mono tabular-nums">{{ format_date(entry.last_verified_at) }}</span>{{ _(", aber nicht durch einen beanspruchten Betreiber.") }}</p>
+  <p class="text-xs text-ink-muted">{{ _("Gemeldete Angaben bestätigt am") }} <span class="font-mono tabular-nums">{{ format_date(entry.last_verified_at) }}</span>{{ _(", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat.") }}</p>
   {% else %}<p class="text-xs text-ink-muted">{{ _("Noch nie erneut bestätigt.") }}</p>{% endif %}
   {% endif %}
 </div>
