@@ -343,7 +343,7 @@ def test_dual_control_rejects_ineligible_preparer(rounded_delivery, preparer):
     _set_session(client, "member")
     workspace = f"/leg/community/{cid}/billing"
     approve = f"{workspace}/period/{period_id}/approve"
-    page = client.get(workspace)
+    page = client.get(f"{workspace}/period/{period_id}")
     assert page.status_code == 200
     assert approve not in page.text
     assert f"{workspace}/period/{period_id}/prepare" in page.text
@@ -376,7 +376,7 @@ def test_automated_draft_can_be_submitted_for_separate_approval(
     approval_form = {"csrf_token": "csrf-secret", "confirm_approval": "yes"}
 
     _set_session(client, "producer")
-    page = client.get(workspace)
+    page = client.get(f"{workspace}/period/{period_id}")
     assert page.status_code == 200
     assert prepare in page.text
     assert approve not in page.text
@@ -390,12 +390,12 @@ def test_automated_draft_can_be_submitted_for_separate_approval(
 
     with pytest.raises(billing_approval.BillingApprovalError, match="Dual-control"):
         billing_approval.approve_billing_period(period_id, cid, approver_id="producer")
-    assert approve not in client.get(workspace).text
+    assert approve not in client.get(f"{workspace}/period/{period_id}").text
     assert client.post(approve, data=approval_form).status_code == 403
     assert db.list_community_invoices(cid) == []
 
     _set_session(client, "member")
-    assert approve in client.get(workspace).text
+    assert approve in client.get(f"{workspace}/period/{period_id}").text
     assert client.post(approve, data=approval_form).status_code == 302
     assert db.get_billing_period(period_id, cid)["status"] == "issued"
     assert len(db.list_community_invoices(cid)) == 3
@@ -439,7 +439,7 @@ def test_dual_control_operation_rejects_shared_sign_in_address(
 
     _set_session(client, "member")
     workspace = f"/leg/community/{cid}/billing"
-    page = client.get(workspace)
+    page = client.get(f"{workspace}/period/{period_id}")
     assert page.status_code == 200
 
     with pytest.raises(billing_approval.DualControlApprovalError, match="Dual-control"):
@@ -551,7 +551,7 @@ def test_billing_approval_rechecks_committed_approver_revocation(
     _set_session(client, "member")
     workspace = f"/leg/community/{cid}/billing"
     approve = f"{workspace}/period/{period_id}/approve"
-    assert approve in client.get(workspace).text
+    assert approve in client.get(f"{workspace}/period/{period_id}").text
     approval = {"csrf_token": "csrf-secret", "confirm_approval": "yes"}
     if issued:
         assert client.post(approve, data=approval).status_code == 302
@@ -751,7 +751,7 @@ def test_dual_control_explains_membership_change_during_approval(
     _set_session(client, "member")
     workspace = f"/leg/community/{cid}/billing"
     approve = f"{workspace}/period/{period_id}/approve"
-    assert approve in client.get(workspace).text
+    assert approve in client.get(f"{workspace}/period/{period_id}").text
     operation = billing_approval.approve_billing_period
 
     def revoke_before_issuing(*args, **kwargs):
@@ -788,7 +788,7 @@ def test_repreparing_replaces_the_eligible_preparer_and_refuses_self_approval(
     _set_session(client, "member")
     workspace = f"/leg/community/{cid}/billing"
     approve = f"{workspace}/period/{period_id}/approve"
-    assert approve in client.get(workspace).text
+    assert approve in client.get(f"{workspace}/period/{period_id}").text
     assert (
         client.post(
             f"{workspace}/period/{period_id}/prepare",
@@ -799,7 +799,7 @@ def test_repreparing_replaces_the_eligible_preparer_and_refuses_self_approval(
     assert db.get_billing_period(period_id, cid)["prepared_by"] == "member"
     with pytest.raises(billing_approval.DualControlApprovalError, match="Dual-control"):
         billing_approval.approve_billing_period(period_id, cid, approver_id="member")
-    assert approve not in client.get(workspace).text
+    assert approve not in client.get(f"{workspace}/period/{period_id}").text
     response = client.post(
         approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}
     )
@@ -816,7 +816,7 @@ def test_automated_draft_can_be_approved_without_dual_control(rounded_delivery):
     _set_session(client, "member")
     workspace = f"/leg/community/{cid}/billing"
     approve = f"{workspace}/period/{period_id}/approve"
-    assert approve in client.get(workspace).text
+    assert approve in client.get(f"{workspace}/period/{period_id}").text
     assert (
         client.post(
             approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}

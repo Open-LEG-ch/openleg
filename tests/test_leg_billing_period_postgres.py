@@ -96,6 +96,10 @@ def _valid_draft(period):
     }
     draft["billing_policy_snapshot"]["community_id"] = COMMUNITY
     with db.get_connection() as conn, conn.cursor() as cur:
+        cur.executemany(
+            "UPDATE buildings SET email=%s WHERE building_id=%s",
+            [(actor + "@example.org", actor) for actor in (ADMIN, AUDITOR)],
+        )
         cur.execute(
             "UPDATE communities SET status='active', require_dual_control=true "
             "WHERE community_id=%s",
@@ -511,7 +515,7 @@ def test_period_page_and_post_agree_when_preparer_is_ineligible(
         else:
             cur.execute(
                 "UPDATE buildings SET email=%s WHERE building_id=%s",
-                (ADMIN.upper() + "@example.invalid", AUDITOR),
+                (ADMIN.upper() + "@example.org", AUDITOR),
             )
 
     url = f"{BILLING}/period/{period}"
