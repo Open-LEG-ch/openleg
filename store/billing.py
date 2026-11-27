@@ -1268,6 +1268,11 @@ def get_community_billing_ledger(
                    bool_and(state IN ('delivered', 'paid')) AS all_delivered
             FROM active_invoices
             GROUP BY GROUPING SETS ((month), ())
+        ), closed_months AS (
+            SELECT month
+            FROM invoice_months
+            GROUP BY month
+            HAVING bool_and(state IN ('cancelled', 'corrected'))
         ), period_months AS (
             SELECT DISTINCT ON (month) month, status, prepared_by
             FROM periods
@@ -1275,8 +1280,10 @@ def get_community_billing_ledger(
         )
         SELECT month, t.invoices, t.amount, t.amount_unreadable, t.paid, t.paid_unreadable,
                t.open, t.open_unreadable, t.all_paid, t.all_delivered, p.prepared_by,
-               COALESCE(p.status, CASE WHEN t.month IS NOT NULL THEN 'issued' END) AS status
+               c.month IS NOT NULL AS all_cancelled,
+               COALESCE(p.status, CASE WHEN t.month IS NOT NULL OR c.month IS NOT NULL THEN 'issued' END) AS status
         FROM invoice_totals t FULL JOIN period_months p USING (month)
+        FULL JOIN closed_months c USING (month)
         """,
         (community_id, start, end),
     )

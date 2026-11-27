@@ -145,6 +145,29 @@ def test_ledger_groups_zurich_months_and_excludes_void_old_and_foreign_invoices(
     ]
 
 
+def test_ledger_marks_month_with_only_cancelled_or_corrected_invoices(operating):
+    period = _period(8)
+    _event(_invoice("cancelled", amount="18.00", period=period), "cancelled")
+    _event(
+        _invoice("corrected", amount="30.00", period=period, participant=ADMIN),
+        "corrected",
+    )
+
+    detail = operating.get(f"{ROOT}/billing/period/{period}")
+    assert detail.status_code == 200
+    assert "Keine Zahlung fällig" in detail.text
+    overview = operating.get(OVERVIEW)
+    assert overview.status_code == 200
+    assert _ledger_row(overview.text, "2026-08") == [
+        "August",
+        "",
+        "",
+        "",
+        "",
+        "Storniert",
+    ]
+
+
 @pytest.mark.parametrize("amount", [None, "NaN"])
 def test_ledger_flags_unreadable_amounts_without_hiding_known_paid_amounts(
     operating, amount
