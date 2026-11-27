@@ -531,3 +531,46 @@ def test_billing_and_payments_skip_invoice_detail_reads(workspace, monkeypatch, 
     monkeypatch.setattr(db, "list_community_invoice_events", unexpected)
     monkeypatch.setattr(db, "list_community_invoices", unexpected)
     assert workspace.get(path).status_code == 200
+
+
+@pytest.mark.parametrize(
+    ("query", "target"),
+    [
+        ("bahnhofstrasse", "folded"),
+        ("BAHNHOFSTRASSE", "folded"),
+        ("Bahnhofstraße", "folded"),
+        ("inv-grossweg", "folded"),
+        ("bank-aussen", "folded"),
+        ("INV-STRaẞE", "plain"),
+    ],
+)
+def test_invoice_search_folds_sharp_s_in_every_field(workspace, query, target):
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE buildings SET address = 'Bahnhofstraße 12' WHERE building_id = %s",
+            (PARTICIPANT,),
+        )
+    ids = {
+        "folded": _invoice("INV-Groẞweg"),
+        "plain": _invoice("INV-STRASSE", participant=ADMIN),
+    }
+    _event(ids["folded"], "paid", reference="BANK-Außen")
+
+    response = workspace.get(LIST, query_string={"q": query})
+    assert response.status_code == 200
+    assert _invoice_links(response.text) == {str(ids[target])}
+
+
+def test_correction_form_excludes_replacement_linked_to_unnumbered_invoice(workspace):
+    legacy = _invoice(None)
+    linked = _invoice("INV-LINKED")
+    cancelled = _invoice("INV-CANCELLED")
+    available = _invoice("INV-AVAILABLE")
+    for original in (legacy, cancelled):
+        db.cancel_invoice(original, COMMUNITY, ADMIN, "Falscher Tarif")
+    db.correct_invoice(legacy, linked, COMMUNITY, ADMIN, "Tarif korrigiert")
+
+    response = workspace.get(f"{LIST}/{cancelled}")
+    assert response.status_code == 200
+    assert f'<option value="{available}">INV-AVAILABLE</option>' in response.text
+    assert f'<option value="{linked}">INV-LINKED</option>' not in response.text

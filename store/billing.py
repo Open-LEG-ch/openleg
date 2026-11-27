@@ -922,6 +922,7 @@ SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
        i.provenance_snapshot->>'participant_registration_id'
            AS participant_registration_id,
        {_INVOICE_LIFECYCLE_STATE} AS lifecycle_state,
+       correction.original_invoice_id AS corrects_invoice_id,
        original.invoice_number AS corrects_invoice_number,
        replacement.invoice_number AS corrected_by_invoice_number,
        delivery.status AS delivery_job_status
@@ -973,15 +974,17 @@ def page_community_invoices(
     if with_question:
         conditions.append("has_question")
     if search:
-        # Use Unicode case matching even when the database defaults to C locale.
+        # ICU handles accented capitals and ẞ. Expand ß for Swiss ss spellings.
         literal = search.replace("!", "!!").replace("%", "!%").replace("_", "!_")
         pattern = f"%{literal}%"
-        conditions.append("""
-            (invoice_number ILIKE %s COLLATE "und-x-icu" ESCAPE '!'
-             OR participant_address ILIKE %s COLLATE "und-x-icu" ESCAPE '!'
-             OR payment_reference ILIKE %s COLLATE "und-x-icu" ESCAPE '!')
-        """)
-        params.extend((pattern, pattern, pattern))
+        fold_sql = """replace(lower({} COLLATE "und-x-icu"), 'ß', 'ss')"""
+        fields = ("invoice_number", "participant_address", "payment_reference")
+        matches = [
+            f"{fold_sql.format(field)} LIKE {fold_sql.format('%s')} ESCAPE '!'"
+            for field in fields
+        ]
+        conditions.append("(" + " OR ".join(matches) + ")")
+        params.extend([pattern] * len(fields))
     filters = "WHERE " + " AND ".join(conditions) if conditions else ""
     return _read_community_invoice_rows(
         f"""

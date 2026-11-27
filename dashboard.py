@@ -551,7 +551,7 @@ def _describe_leg_invoice_details(invoice, events, queries, invoices):
         if candidate["id"] != invoice["id"]
         and candidate.get("participant_id") == invoice.get("participant_id")
         and candidate["lifecycle_state"] == "issued"
-        and not candidate.get("corrects_invoice_number")
+        and candidate.get("corrects_invoice_id") is None
     ]
     invoice["queries"] = queries
 
