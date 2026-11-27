@@ -18,7 +18,7 @@
         <td class="px-3 py-2">{{ _("Eingang") if entry.direction == "in" else _("Ausgang") }}</td>
         <td class="px-3 py-2 text-ink-muted">{{ _("Brief") if entry.channel == "post" else _("E-Mail") }}</td>
         <td class="px-3 py-2">{{ entry.counterparty }}</td>
-        <td class="px-3 py-2">{{ entry.subject }}</td>
+        <td class="px-3 py-2">{{ entry.subject }}{% if entry.notes %}<p class="mt-1 text-ink-muted wrap-anywhere">{{ _('Notiz') }}: {{ entry.notes }}</p>{% endif %}</td>
         <td class="px-3 py-2 text-right text-xs text-ink-muted">{{ entry.created_at }}</td>
       </tr>
       {% if entry.attachment_filename %}<tr><td colspan="5" class="px-3 pb-3 text-right"><a class="inline-flex items-center text-sm font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/correspondence/{{ entry.id }}/attachment">{{ entry.attachment_filename }} {{ _('herunterladen') }}</a></td></tr>{% endif %}
