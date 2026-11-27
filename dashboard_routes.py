@@ -592,7 +592,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
 
     @bp.get(
         "/leg/community/<community_id>/"
-        "<any(members,correspondence,formation,settings,payments):page>"
+        "<any(members,correspondence,formation,settings):page>"
     )
     def leg_workspace_page(community_id, page):
         building_id = _require_dashboard_session()
@@ -1007,11 +1007,13 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             current_app.secret_key, salt="leg-payment-duplicate-review-set"
         )
 
-    def render_billing_workspace(community_id, building_id, **extra):
+    @bp.get("/leg/community/<community_id>/payments")
+    def leg_payments(community_id):
+        building_id = _require_dashboard_session()
         statement_before = request.args.get("statement_before", type=int)
-        period_before = request.args.get("period_before", type=int)
-        payment_section = request.args.get("section") == "payments"
-        receipt = request.args.get("assignment") if payment_section else None
+        invoice_before = request.args.get("invoice_before", type=int)
+        statement_import = request.args.get("statement_import", type=int)
+        receipt = request.args.get("assignment")
         pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})
         submission = pending.get(receipt)
         feedback = (
@@ -1021,17 +1023,21 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         consume_receipt = feedback is not None
         try:
-            view = dashboard_module.leg_billing_workspace_view(
+            view = dashboard_module.leg_payments_view(
                 community_id,
                 building_id,
-                include_statement_entries=True,
                 statement_before=statement_before
                 if statement_before and statement_before > 0
                 else None,
-                period_before=period_before
-                if period_before and period_before > 0
+                invoice_before=invoice_before
+                if invoice_before and invoice_before > 0
                 else None,
-                **extra,
+                statement_import=statement_import,
+                review_invoice_id=(
+                    feedback["invoice_id"]
+                    if feedback and feedback.get("duplicate_review_required")
+                    else None
+                ),
             )
         except db.BillingStoreError:
             abort(503)
@@ -1047,6 +1053,8 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             feedback = {
                 "error": _("Sie dürfen in dieser LEG keine Zahlungen zuordnen."),
             }
+        elif statement_import is not None and view["statement_summary"] is None:
+            abort(404)
         if (
             feedback
             and feedback.get("duplicate_review_required")
@@ -1060,14 +1068,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             except psycopg2.Error:
                 abort(503)
             feedback = {**feedback, **current_review}
-            invoice = next(
-                (
-                    row
-                    for row in view["statement_invoice_candidates"]
-                    if row["id"] == invoice_id
-                ),
-                None,
-            )
+            invoice = view["review_invoice"]
             if invoice and "reviewed_duplicates" in current_review:
                 feedback["target_invoice"] = invoice["invoice_number"]
                 feedback["duplicate_review"] = payment_review_signer().dumps(
@@ -1080,10 +1081,12 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                     ]
                 )
         page = render_leg_workspace(
-            "leg_billing.html",
+            "leg_payments.html",
             csrf_token=_dashboard_csrf_token(),
-            payment_section=payment_section,
             assignment_feedback=feedback,
+            statement_status=request.args.get("statement")
+            if statement_import is not None
+            else None,
             **view,
         )
         if consume_receipt:
@@ -1094,11 +1097,30 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.route("/leg/community/<community_id>/billing")
     def leg_billing_workspace(community_id):
         building_id = _require_dashboard_session()
-        return render_billing_workspace(
-            community_id,
-            building_id,
-            statement_status=request.args.get("statement"),
-        )
+        if request.args.get("section") == "payments":
+            return redirect(
+                url_for(
+                    ".leg_payments",
+                    community_id=community_id,
+                    assignment=request.args.get("assignment"),
+                    statement_before=request.args.get("statement_before", type=int),
+                    _anchor="payments",
+                )
+            )
+        period_before = request.args.get("period_before", type=int)
+        try:
+            view = dashboard_module.leg_billing_workspace_view(
+                community_id,
+                building_id,
+                period_before=period_before
+                if period_before and period_before > 0
+                else None,
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if view["error"]:
+            abort(403)
+        return render_leg_workspace("leg_billing.html", **view)
 
     def render_billing_period(community_id, building_id, period_id, **extra):
         after = request.args.get("after", "")
@@ -1153,11 +1175,13 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if result["error"]:
             abort(403)
-        suffix = (
-            "?statement=duplicate" if result["duplicate"] else "?statement=imported"
-        )
         return redirect(
-            dashboard_module.leg_billing_workspace_location(community_id) + suffix
+            url_for(
+                ".leg_payments",
+                community_id=community_id,
+                statement_import=result["statement_import_id"],
+                statement="duplicate" if result["duplicate"] else "imported",
+            )
         )
 
     @bp.post("/leg/community/<community_id>/billing/statements/<int:entry_id>/assign")
@@ -1217,13 +1241,15 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         )
         return redirect(
             url_for(
-                ".leg_billing_workspace",
+                ".leg_payments",
                 community_id=community_id,
-                section="payments",
                 assignment=receipt,
                 statement_before=statement_before,
-            )
-            + "#payments",
+                invoice_before=request.args.get("invoice_before", type=int)
+                if error_status
+                else None,
+                _anchor="payments",
+            ),
             code=303,
         )
 

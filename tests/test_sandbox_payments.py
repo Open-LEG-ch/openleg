@@ -33,7 +33,7 @@ def _issued(village, client):
         )
         period = cur.fetchone()[0]
     _switch(client, prefix, "administrator")
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + "/payments")
     assert (
         client.post(
             prefix + COMMUNITY + f"/billing/period/{period}/approve",
@@ -48,7 +48,7 @@ def _issued(village, client):
         cur.execute("SELECT participant_id,id FROM invoices")
         invoices = dict(cur.fetchall())
     for member in ("sonnwil-resident", "sonnwil-neighbour"):
-        page = client.get(prefix + COMMUNITY + "/billing")
+        page = client.get(prefix + COMMUNITY + "/payments")
         assert (
             client.post(
                 prefix + COMMUNITY + f"/billing/invoice/{invoices[member]}/deliver",
@@ -64,7 +64,7 @@ def _statement(client, prefix, fixture, *, booking_date=None):
     content = fixture.data
     if booking_date:
         content = re.sub(rb"(?<=<BookgDt><Dt>)[0-9-]+", booking_date.encode(), content)
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + "/payments")
     return client.post(
         prefix + COMMUNITY + "/billing/statements",
         data={
@@ -139,7 +139,7 @@ def test_exact_import_and_reviewed_unknown_reference_share_payment_guards(villag
     )
     assert refused.status_code == 409
     assert "Mögliche Doppelzahlung." in refused.text
-    assert f'{COMMUNITY}/billing?section=payments#payments"' in refused.text
+    assert f'{COMMUNITY}/payments#payments"' in refused.text
     page = client.get(path)
     assert "invoice.paid" in page.text and "payment.match.confirmed" in page.text
     with (
@@ -226,7 +226,7 @@ def test_payment_review_rejects_issued_and_cancelled_invoices(village):
     prefix, invoices = _issued(village, client)
     path = prefix + "/sandbox/payments"
     resident = invoices["sonnwil-resident"]
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + "/payments")
     assert (
         client.post(
             prefix + COMMUNITY + f"/billing/invoice/{resident}/cancel",

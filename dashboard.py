@@ -4,7 +4,7 @@
 import json
 import logging
 import math
-from datetime import UTC, date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
@@ -263,7 +263,7 @@ def leg_overview(
 
     capabilities = community_access.capabilities_for(member)
     can_audit_billing = community_access.AUDIT_BILLING in capabilities
-    if workspace_page in ("settings", "payments") and not can_audit_billing:
+    if workspace_page == "settings" and not can_audit_billing:
         return {"error": _N("Kein Zugriff."), "community": None}
 
     needs_start_evidence = (
@@ -413,11 +413,6 @@ def _require_capability(community_id: str, building_id: str, capability: str):
     """Return a confirmed member when the central access policy permits it."""
     member = _community_member(community_id, building_id)
     return member if community_access.allows(member, capability) else None
-
-
-def leg_billing_workspace_location(community_id: str) -> str:
-    """Build the billing workspace path; quote keeps it a relative path."""
-    return leg_workspace_location(community_id, "billing")
 
 
 _BILLING_STATUS_LABELS = {
@@ -794,10 +789,12 @@ def _billing_statement_entry(entry, invoices_by_id):
         heading = _N("Zahlung zugeordnet")
     related_invoice = invoices_by_id.get(entry["invoice_id"])
     shortfall = None
+    display_amount = _display_statement_amount(entry.get("amount"))
     if (
         decision == "split_payment"
         and related_invoice
         and not related_invoice["gross_unreadable"]
+        and display_amount != _N("Unlesbar")
     ):
         shortfall = _display_statement_amount(
             finite_decimal(related_invoice["gross_chf"])
@@ -812,7 +809,7 @@ def _billing_statement_entry(entry, invoices_by_id):
             else _PAYMENT_TITLES[decision]
         ),
         "recovery": recovery,
-        "display_amount": _display_statement_amount(entry["amount"]),
+        "display_amount": display_amount,
         "related_invoice": related_invoice,
         "shortfall": shortfall,
         "can_assign": reviewable and not recovery,
@@ -823,10 +820,7 @@ def leg_billing_workspace_view(
     community_id: str,
     building_id: str,
     *,
-    include_statement_entries: bool = False,
-    statement_before: int | None = None,
     period_before: int | None = None,
-    **extra,
 ) -> dict:
     """Capability-gated view model for the billing approval workspace."""
     member = _require_capability(
@@ -834,8 +828,6 @@ def leg_billing_workspace_view(
     )
     if not member:
         return {"error": _N("Kein Zugriff.")}
-    capabilities = community_access.capabilities_for(member)
-    can_prepare = community_access.PREPARE_BILLING in capabilities
     periods = db.list_community_billing_periods(
         community_id, limit=_BILLING_PAGE_SIZE + 1, before=period_before
     )
@@ -845,30 +837,7 @@ def leg_billing_workspace_view(
         community_id,
         [period["id"] for period in periods if period["status"] == "issued"],
     )
-    statement_invoices = {}
-    statement_entries = []
-    next_statement_before = None
-    if include_statement_entries:
-        for invoice in db.list_community_invoice_payment_rows(community_id):
-            invoice["gross_unreadable"] = _display_gross_chf(invoice)[1]
-            invoice["statement_amount"] = _display_statement_amount(
-                invoice["gross_chf"]
-            )
-            statement_invoices[invoice["id"]] = invoice
-        open_entries = db.list_bank_statement_entries(
-            community_id, limit=201, reviewable=True, before=statement_before
-        )
-        if len(open_entries) > 200:
-            open_entries = open_entries[:200]
-            next_statement_before = open_entries[-1]["id"]
-        statement_entries = open_entries
-        if statement_before is None:
-            statement_entries += db.list_bank_statement_entries(
-                community_id,
-                reviewable=False,
-                confirmation_key_prefix=_DASHBOARD_PAYMENT_KEY_PREFIX,
-            )
-    view = {
+    return {
         "error": None,
         "community_id": community_id,
         "periods": [
@@ -877,26 +846,124 @@ def leg_billing_workspace_view(
         ],
         "period_before": period_before,
         "next_period_before": periods[-1]["id"] if has_older_periods else None,
+    }
+
+
+def _describe_payment_invoice(row):
+    amount = _display_statement_amount(row.get("gross_chf"))
+    return {
+        **row,
+        "statement_amount": amount,
+        "gross_unreadable": amount == _N("Unlesbar"),
+    }
+
+
+_STATEMENT_REVIEW_PAGE_SIZE = 200
+
+
+def leg_payments_view(
+    community_id: str,
+    building_id: str,
+    *,
+    statement_before: int | None = None,
+    invoice_before: int | None = None,
+    statement_import: int | None = None,
+    review_invoice_id: int | None = None,
+) -> dict:
+    """Read a bounded payment workspace for a member with billing audit access."""
+    member = _require_capability(
+        community_id, building_id, community_access.AUDIT_BILLING
+    )
+    if not member:
+        return {"error": _N("Kein Zugriff.")}
+
+    can_prepare = community_access.allows(member, community_access.PREPARE_BILLING)
+    statement_entries = db.list_bank_statement_entries(
+        community_id,
+        limit=_STATEMENT_REVIEW_PAGE_SIZE + 1,
+        reviewable=True,
+        before=statement_before,
+    )
+    next_statement_before = (
+        statement_entries[_STATEMENT_REVIEW_PAGE_SIZE - 1]["id"]
+        if len(statement_entries) > _STATEMENT_REVIEW_PAGE_SIZE
+        else None
+    )
+    statement_entries = statement_entries[:_STATEMENT_REVIEW_PAGE_SIZE]
+    statement_history = (
+        db.list_bank_statement_entries(
+            community_id,
+            reviewable=False,
+            confirmation_key_prefix=_DASHBOARD_PAYMENT_KEY_PREFIX,
+        )
+        if statement_before is None
+        else []
+    )
+    invoice_ids = {
+        entry["invoice_id"]
+        for entry in statement_entries + statement_history
+        if entry["invoice_id"] is not None
+    }
+    if can_prepare and review_invoice_id is not None:
+        invoice_ids.add(review_invoice_id)
+    related_invoices = {
+        row["id"]: _describe_payment_invoice(row)
+        for row in db.list_community_invoice_payment_rows(
+            community_id, list(invoice_ids)
+        )
+    }
+    review_invoice = related_invoices.get(review_invoice_id)
+    if review_invoice and (
+        review_invoice["lifecycle_state"] != "delivered"
+        or review_invoice["gross_unreadable"]
+    ):
+        review_invoice = None
+
+    open_invoice_rows = db.page_open_payment_invoices(
+        community_id, limit=_BILLING_PAGE_SIZE + 1, before=invoice_before
+    )
+    today = datetime.now(ZoneInfo("Europe/Zurich")).date()
+    open_invoices = []
+    for row in open_invoice_rows[:_BILLING_PAGE_SIZE]:
+        invoice = _describe_payment_invoice(row)
+        due_date = invoice["due_date"]
+        invoice["overdue"] = due_date is not None and due_date < today
+        invoice["due_today"] = due_date == today
+        open_invoices.append(invoice)
+
+    return {
+        "error": None,
+        "community_id": community_id,
+        "statement_entries": [
+            _billing_statement_entry(entry, related_invoices)
+            for entry in statement_entries
+        ],
+        "statement_history": [
+            _billing_statement_entry(entry, related_invoices)
+            for entry in statement_history
+        ],
         "statement_invoice_candidates": [
-            invoice
-            for invoice in statement_invoices.values()
-            if invoice["lifecycle_state"] == "delivered"
-            and not invoice["gross_unreadable"]
+            invoice for invoice in open_invoices if not invoice["gross_unreadable"]
         ]
         if can_prepare
         else [],
-        "statement_entries_loaded": include_statement_entries,
-        "statement_entries": [
-            _billing_statement_entry(entry, statement_invoices)
-            for entry in statement_entries
-        ],
+        "review_invoice": review_invoice,
         "statement_before": statement_before,
         "next_statement_before": next_statement_before,
+        "statement_import": statement_import,
+        "statement_summary": db.get_bank_statement_summary(
+            community_id, statement_import
+        ),
+        "open_invoices": open_invoices,
+        "invoice_before": invoice_before,
+        "next_invoice_before": (
+            open_invoices[-1]["id"]
+            if len(open_invoice_rows) > _BILLING_PAGE_SIZE
+            else None
+        ),
         "can_prepare_billing": can_prepare,
         "can_import_bank_statement": _is_confirmed_admin(member),
     }
-    view.update(extra)
-    return view
 
 
 def leg_import_bank_statement(community_id, building_id, source_name, content):

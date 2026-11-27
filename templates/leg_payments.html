@@ -1,0 +1,158 @@
+{% extends "leg_workspace_base.html" %}
+{% set workspace_page = "payments" %}
+{% set workspace_billing = not payment_notice_only %}
+{% block meta %}<title>{{ _('Zahlungen') }} | OpenLEG</title>{% endblock %}
+{% macro invoice_pagination(anchor) %}
+  {% if invoice_before or next_invoice_before %}
+  <div class="my-2 flex flex-wrap gap-4">
+    {% if invoice_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, statement_before=statement_before, _anchor=anchor) }}">{{ _('Neueste offene Rechnungen') }}</a>{% endif %}
+    {% if next_invoice_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, statement_before=statement_before, invoice_before=next_invoice_before, _anchor=anchor) }}">{{ _('Ältere offene Rechnungen') }}</a>{% endif %}
+  </div>
+  {% endif %}
+{% endmacro %}
+{% block workspace_content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <h1 id="payments-title" class="text-2xl font-bold mb-4">{{ _('Zahlungen') }}</h1>
+  {% if not payment_notice_only %}
+  <nav aria-labelledby="payments-title" class="mb-4 flex flex-wrap gap-x-4">
+    <a class="inline-flex items-center text-brand underline" href="#statement-assignments">{{ _('Zahlungsabgleich prüfen') }}</a>
+    <a class="inline-flex items-center text-brand underline" href="#open-invoices">{{ _('Offene Rechnungen') }}</a>
+  </nav>
+  {% endif %}
+  <section id="payments" aria-labelledby="payments-title" class="mb-6">
+
+    {% if assignment_feedback %}
+    {% if assignment_feedback.error %}
+    <p id="assignment-feedback" role="alert" class="mb-4 rounded-lg border border-line bg-paper-deep p-3">
+      {{ _(assignment_feedback.error) }}{% if assignment_feedback.recovery %} {{ _(assignment_feedback.recovery) }}{% endif %}
+    </p>
+    {% if assignment_feedback.duplicate_review and can_prepare_billing %}
+    <form method="post" action="{{ url_for('.leg_billing_statement_assign', community_id=community_id, entry_id=assignment_feedback.entry_id, statement_before=statement_before, invoice_before=invoice_before) }}" class="mb-4 rounded-xl bg-white border border-line p-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="invoice_id" value="{{ assignment_feedback.invoice_id }}">
+      <input type="hidden" name="confirm" value="yes">
+      <input type="hidden" name="duplicate_review" value="{{ assignment_feedback.duplicate_review }}">
+      <dl class="mb-3 grid gap-2 wrap-anywhere sm:grid-cols-2">
+        <div><dt class="text-sm text-ink-muted">{{ _('Zahlung zuordnen') }}</dt><dd>{{ assignment_feedback.candidate.booking_date|datelabel }} <span class="font-mono">{{ assignment_feedback.candidate.currency }} {{ assignment_feedback.candidate.display_amount }}</span></dd><dd>{{ assignment_feedback.candidate.review_reference }}</dd></div>
+        <div><dt class="text-sm text-ink-muted">{{ _('Rechnung') }}</dt><dd>{{ assignment_feedback.target_invoice }}</dd></div>
+      </dl>
+      <ul id="duplicate-review-matches" class="mb-4 divide-y divide-line wrap-anywhere">
+        {% for match in assignment_feedback.matches %}
+        <li class="py-3">
+          <p class="font-semibold">{{ match.booking_date|datelabel }} <span class="font-mono">{{ match.currency }} {{ match.display_amount }}</span></p>
+          {% if match.likely_repeat %}<p class="mt-1 font-semibold">{{ _('Sehr wahrscheinlich dieselbe Zahlung') }}</p>{% endif %}
+          {% if match.indirect %}<p class="mt-1 text-sm text-ink-muted">{{ _('Über einen weiteren Eintrag verbunden.') }}</p>{% endif %}
+          <p class="mt-1 text-sm text-ink-muted">{% for reason in match.reasons %}{{ _(reason) }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+          <dl class="mt-2 grid gap-2 sm:grid-cols-3">
+            <div><dt class="text-sm text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ match.review_reference }}</dd></div>
+            <div><dt class="text-sm text-ink-muted">{{ _('Kontoauszug') }}</dt><dd>{{ match.statement_reference or match.source_name }}{% if match.statement_reference and match.source_name %}<span class="block text-sm text-ink-muted">{{ match.source_name }}</span>{% endif %}</dd></div>
+            {% if match.invoice_number %}<div><dt class="text-sm text-ink-muted">{{ _('Rechnung') }}</dt><dd>{{ match.invoice_number }}</dd></div>{% endif %}
+          </dl>
+        </li>
+        {% endfor %}
+      </ul>
+      <label class="flex items-start gap-2">
+        <input type="checkbox" name="confirm_distinct" value="yes" required class="mt-1">
+        <span>{{ _('Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung.') }}</span>
+      </label>
+      <button type="submit" class="mt-3 rounded-full bg-brand px-5 py-3 font-semibold text-white">{{ _('Trotzdem zuordnen') }}</button>
+    </form>
+    {% endif %}
+    {% else %}
+    <p id="assignment-feedback" role="status" class="mb-4 rounded-lg border border-brand bg-brand/10 p-3">{{ _('Zahlung zugeordnet') }}</p>
+    {% endif %}
+    {% endif %}
+    {% if not payment_notice_only %}
+    {% if can_import_bank_statement %}
+    <section class="bg-white rounded-xl border p-6 mb-6">
+      <h2 class="font-bold mb-2">{{ _('Bankzahlungen abgleichen') }}</h2>
+      <p class="text-sm text-ink-muted mb-4">{{ _('Laden Sie einen ISO-20022-Kontoauszug im Format camt.053 oder camt.054 hoch. Nur eine eindeutige Zahlung mit passender Referenz, CHF-Betrag und LEG wird automatisch verbucht.') }}</p>
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('.leg_billing_statement_import', community_id=community_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="file" name="statement" aria-label="{{ _('Kontoauszug') }}" accept=".xml,application/xml,text/xml" required class="block w-full border rounded-lg px-3 py-2 mb-3">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">{{ _('Kontoauszug importieren') }}</button>
+      </form>
+    </section>
+    {% endif %}
+
+  {% if statement_summary %}
+  <section class="mb-6 rounded-xl border border-line bg-white p-4" aria-labelledby="statement-summary-title">
+    <h2 id="statement-summary-title" class="font-bold">{{ _('Letzter Import') if not statement_import else _('Importierter Kontoauszug') }}</h2>
+    <p class="mt-1 text-sm text-ink-muted wrap-anywhere">{{ statement_summary.source_name }} · {{ statement_summary.imported_at|datelabel }}</p>
+    {% if statement_status == 'imported' %}<p class="mt-3" role="status">{{ _('Der Kontoauszug wurde importiert und abgeglichen.') }}</p>{% endif %}
+    {% if statement_status == 'duplicate' %}<p class="mt-3" role="status">{{ _('Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht.') }}</p>{% endif %}
+    <dl class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+      <div><dt>{{ _('Importierte Einträge') }}</dt> <dd>{{ statement_summary.entries }}</dd></div>
+      <div><dt>{{ _('Automatisch verbucht') }}</dt> <dd>{{ statement_summary.automatic }}</dd></div>
+      <div><dt>{{ _('Manuell zugeordnet') }}</dt> <dd>{{ statement_summary.booked - statement_summary.automatic }}</dd></div>
+      <div><dt>{{ _('Warten auf Zuordnung') }}</dt> <dd>{{ statement_summary.unassigned }}</dd></div>
+      <div><dt>{{ _('Doppelte Einträge übersprungen') }}</dt> <dd>{{ statement_summary.entries if statement_status == 'duplicate' else 0 }}</dd></div>
+    </dl>
+  </section>
+  {% else %}
+  <p class="mb-4 text-sm text-ink-muted">{{ _('Noch kein Kontoauszug importiert.') }}</p>
+  {% endif %}
+
+  <section id="statement-assignments" class="mb-6" aria-labelledby="statement-heading">
+    <h2 id="statement-heading" class="font-bold mb-3">{{ _('Zahlungsabgleich prüfen') }}</h2>
+    {% if statement_before or next_statement_before %}
+    <div class="mb-4 flex flex-wrap gap-4">
+      {% if statement_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, invoice_before=invoice_before, _anchor='payments') }}">{{ _('Neueste offene Buchungen') }}</a>{% endif %}
+      {% if next_statement_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, statement_before=next_statement_before, invoice_before=invoice_before, _anchor='payments') }}">{{ _('Ältere offene Buchungen') }}</a>{% endif %}
+    </div>
+    {% endif %}
+    {% if can_prepare_billing and statement_entries and (invoice_before or next_invoice_before) %}
+    <p class="mb-2 text-sm text-ink-muted">{{ _('Die Rechnungsauswahl zeigt die offenen Rechnungen dieser Seite.') }}</p>
+    {{ invoice_pagination('payments') }}
+    {% endif %}
+    <div class="space-y-4">
+      {% for entry in statement_entries %}
+      {% include "leg_workspace/payment_entry.html" %}
+      {% else %}
+      <p class="text-sm text-ink-muted">{{ _('Keine Einträge warten auf eine Zuordnung.') }}</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section id="open-invoices" class="mb-6" aria-labelledby="open-invoices-title">
+    <h2 id="open-invoices-title" class="mb-3 text-xl font-bold">{{ _('Offene Rechnungen') }}</h2>
+    {% if open_invoices %}
+    <ul class="space-y-3">
+      {% for invoice in open_invoices %}
+      {% set invoice_url = url_for('.leg_invoice_detail', community_id=community_id, invoice_id=invoice.id) %}
+      <li id="open-invoice-{{ invoice.id }}" class="rounded-xl border border-line bg-white p-4 wrap-anywhere">
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <a href="{{ invoice_url }}" class="inline-flex items-center font-semibold text-brand underline">{{ invoice.invoice_number }}</a>
+          <span class="tabular-nums">{{ _('Gesamtbetrag unlesbar') if invoice.gross_unreadable else 'CHF ' ~ invoice.statement_amount }}</span>
+        </div>
+        <p class="text-sm text-ink-muted">
+          {{ _('Fällig am') }}
+          {% if invoice.due_date %}<time datetime="{{ invoice.due_date.isoformat() }}">{{ invoice.due_date|datelabel }}</time>{% else %}{{ _('Nicht angegeben') }}{% endif %}
+          {% if invoice.overdue %} · <strong class="text-accent-dark">{{ _('Überfällig') }}</strong>{% elif invoice.due_today %} · <strong>{{ _('Fällig heute') }}</strong>{% endif %}
+        </p>
+        {% if can_prepare_billing %}
+        <a href="{{ invoice_url }}#record-payment" class="mt-2 inline-flex items-center text-brand underline">{{ _('Zahlung erfassen') }}</a>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-ink-muted">{{ _('Keine weiteren offenen Rechnungen.') if invoice_before else _('Keine offenen Rechnungen.') }}</p>
+    {% endif %}
+    {{ invoice_pagination('open-invoices') }}
+  </section>
+
+  {% if statement_history %}
+  <details class="mb-6">
+    <summary class="cursor-pointer font-semibold">{{ _('Weitere importierte Einträge') }}</summary>
+    <div class="space-y-4">
+      {% for entry in statement_history %}
+      {% include "leg_workspace/payment_entry.html" %}
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+  {% endif %}
+  </section>
+</div>
+{% endblock %}

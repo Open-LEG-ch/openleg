@@ -35,7 +35,7 @@ def _prepared(village, client, *, delivery_method="email"):
 def _issued(village, client, *, deliver=True, delivery_method="email"):
     """Issue the fictional invoices and optionally deliver them normally."""
     prefix, period = _prepared(village, client, delivery_method=delivery_method)
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + "/payments")
     assert (
         client.post(
             prefix + COMMUNITY + f"/billing/period/{period}/approve",
@@ -51,7 +51,7 @@ def _issued(village, client, *, deliver=True, delivery_method="email"):
         invoices = dict(cursor.fetchall())
     if deliver:
         for member in ("sonnwil-resident", "sonnwil-neighbour"):
-            page = client.get(prefix + COMMUNITY + "/billing")
+            page = client.get(prefix + COMMUNITY + "/payments")
             assert (
                 client.post(
                     prefix + COMMUNITY + f"/billing/invoice/{invoices[member]}/deliver",
@@ -208,7 +208,7 @@ def test_changed_draft_registration_cannot_be_approved(village):
         cursor.execute(
             "UPDATE buildings SET referral_code='replacement-registration' WHERE building_id='sonnwil-resident'"
         )
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + "/payments")
     refused = client.post(
         prefix + COMMUNITY + f"/billing/period/{period}/approve",
         data={"csrf_token": _csrf(page), "confirm_approval": "yes"},
@@ -242,7 +242,7 @@ def test_delivery_never_uses_a_replacement_registration_email(
         cursor.execute(
             "UPDATE buildings SET referral_code='replacement-registration', email='replacement@example.org' WHERE building_id='sonnwil-resident'"
         )
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + "/payments")
     refused = client.post(
         prefix + COMMUNITY + f"/billing/invoice/{invoice}/deliver",
         data={"csrf_token": _csrf(page)},
@@ -273,7 +273,7 @@ def test_malformed_draft_reconciliation_is_a_domain_conflict(village, reconcilia
             "UPDATE billing_periods SET reconciliation=%s WHERE id=%s",
             (psycopg2.extras.Json(reconciliation), period),
         )
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + "/payments")
     refused = client.post(
         prefix + COMMUNITY + f"/billing/period/{period}/approve",
         data={"csrf_token": _csrf(page), "confirm_approval": "yes"},
@@ -346,7 +346,7 @@ def test_legacy_draft_can_be_prepared_again_without_withdrawing_source(
         )
         schema.create_tables()
     _switch(client, prefix, "administrator")
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + "/payments")
     assert (
         client.post(
             prefix + COMMUNITY + f"/billing/period/{replacement}/approve",

@@ -21,7 +21,7 @@ ACTOR = "fictional-preparer"
 AUDITOR = "fictional-auditor"
 ADMIN = "fictional-admin"
 BILLING = f"/leg/community/{COMMUNITY}/billing"
-PAYMENTS = f"{BILLING}?section=payments"
+PAYMENTS = f"/leg/community/{COMMUNITY}/payments"
 
 
 @pytest.fixture
@@ -85,15 +85,12 @@ def _follow_assignment(client, response):
     assert response.status_code == 303
     location = urlsplit(response.location)
     query = parse_qs(location.query)
-    assert location.path == BILLING
+    assert location.path == PAYMENTS
     assert location.fragment == "payments"
-    assert query["section"] == ["payments"]
     assert len(query["assignment"]) == 1
     page = client.get(response.location)
     assert page.status_code == 200
-    assert f'href="{PAYMENTS}#payments" aria-current="page"' in " ".join(
-        page.text.split()
-    )
+    assert f'href="{PAYMENTS}" aria-current="page"' in " ".join(page.text.split())
     return page
 
 
@@ -111,7 +108,7 @@ def test_preparer_assigns_exact_credit_and_can_replay(workspace):
     for _ in range(2):
         response = _assign(workspace, entry, invoice)
         assert _assignment_outcome(workspace, response) == "assigned"
-    page = workspace.get(BILLING)
+    page = workspace.get(PAYMENTS)
     assert "Zahlung zugeordnet" in page.text
     assert f"/statements/{entry}/assign" not in page.text
 
@@ -224,7 +221,7 @@ def test_refused_assignment_has_no_financial_side_effects(workspace, case, messa
                 )
     if case == "auditor":
         _set_session(workspace, AUDITOR)
-        page = workspace.get(BILLING)
+        page = workspace.get(PAYMENTS)
         assert page.status_code == 200
         assert f"/statements/{entry}/assign" not in page.text
     if case == "anonymous":
@@ -333,7 +330,7 @@ def test_payment_assignment_feedback_survives_a_failed_get(workspace, monkeypatc
         raise db.BillingStoreError("fictional outage")
 
     with monkeypatch.context() as failure:
-        failure.setattr(dashboard, "leg_billing_workspace_view", unavailable)
+        failure.setattr(dashboard, "leg_payments_view", unavailable)
         assert workspace.get(response.location).status_code == 503
     page = workspace.get(response.location)
     assert 'id="assignment-feedback" role="alert"' in page.text
@@ -417,7 +414,7 @@ def test_workspace_renders_imported_bank_details_and_only_delivered_leg_invoices
         == 302
     )
     _set_session(workspace, ACTOR)
-    page = workspace.get(BILLING)
+    page = workspace.get(PAYMENTS)
 
     assert page.status_code == 200
     form = page.text.split("/assign", 1)[1].split("</form>", 1)[0]
@@ -532,7 +529,7 @@ def test_newer_history_cannot_hide_an_unresolved_entry(workspace):
     assert len(entries) == 201
     assert all(row["match_decision"] == "reversal" for row in entries[:-1])
     assert entries[-1]["id"] == older["id"]
-    page = workspace.get(BILLING)
+    page = workspace.get(PAYMENTS)
     assert page.status_code == 200
     assert "old unresolved reference" in page.text
     assert f"/statements/{older['id']}/assign" in page.text
@@ -549,7 +546,7 @@ def test_debtor_contact_name_is_not_a_party_name(workspace):
     )
     (entry,) = db.list_bank_statement_entries(COMMUNITY)
     assert entry["debtor_name"] is None
-    assert "Fictional contact only" not in workspace.get(BILLING).text
+    assert "Fictional contact only" not in workspace.get(PAYMENTS).text
 
 
 def _entry_booking(entry_id):
@@ -575,10 +572,10 @@ def test_older_unresolved_entries_have_a_link_when_review_queue_is_full(workspac
         for index in range(200)
     )
     _upload_xml(workspace, statement[:start] + newer + statement[end:])
-    first_page = workspace.get(BILLING)
+    first_page = workspace.get(PAYMENTS)
     assert "old unresolved reference" not in first_page.text
     assert "Ältere offene Buchungen" in first_page.text
-    older_path = f"{PAYMENTS}&statement_before={older['id'] + 1}#payments"
+    older_path = f"{PAYMENTS}?statement_before={older['id'] + 1}#payments"
     assert f'href="{older_path}"' in unescape(first_page.text)
     next_page = workspace.get(older_path)
     assert "old unresolved reference" in next_page.text
@@ -808,8 +805,10 @@ def _with_servicer(xml, bic):
     )
 
 
-@pytest.mark.parametrize("case", ["distinct-banks", "iban-and-other", "identical"])
-def test_likely_repeat_needs_audited_dashboard_review(workspace, case):
+@pytest.mark.parametrize(
+    "case", ["distinct-banks", "iban-and-other", "identical", "older-invoice-page"]
+)
+def test_likely_repeat_needs_audited_dashboard_review(workspace, monkeypatch, case):
     first, second = _invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")
     iban = {"account": "CH0000000000000000000", "account_is_iban": True}
     if case == "distinct-banks":
@@ -822,12 +821,19 @@ def test_likely_repeat_needs_audited_dashboard_review(workspace, case):
         repeat = _statement_xml(
             statement="repeat",
             reference="SECOND-INVOICE",
-            **(iban if case == "identical" else {}),
+            **(iban if case in {"identical", "older-invoice-page"} else {}),
         )
+    if case == "older-invoice-page":
+        import dashboard
+
+        monkeypatch.setattr(dashboard, "_BILLING_PAGE_SIZE", 1)
+        _invoice("NEWER-OPEN-INVOICE")
     _upload_xml(workspace, original, repeat)
     candidate, prior = db.list_bank_statement_entries(COMMUNITY)
     assert _entry_booking(prior["id"]) == ("matched", first)
     assert candidate["duplicate_reason"] == "possible_duplicate_payment"
+    if case == "older-invoice-page":
+        assert f'<option value="{second}">' not in workspace.get(PAYMENTS).text
     page = _follow_assignment(workspace, _assign(workspace, candidate["id"], second))
     assert "Sehr wahrscheinlich dieselbe Zahlung" in page.text
     card = page.text.split(f'id="statement-{candidate["id"]}"', 1)[1].split(
@@ -1778,3 +1784,268 @@ def test_operator_cannot_replay_a_workspace_assignment_without_reference(
         db.list_bank_statement_entries(COMMUNITY),
         db.list_community_invoice_events(COMMUNITY),
     ) == before
+
+
+def test_payments_is_the_workspace_for_import_and_review(workspace):
+    _set_session(workspace, ADMIN)
+    response = workspace.get(PAYMENTS)
+    assert response.status_code == 200
+    assert "<title>Zahlungen | OpenLEG</title>" in response.text
+    assert f'href="{PAYMENTS}" aria-current="page"' in " ".join(response.text.split())
+    assert "camt.053 oder camt.054" in response.text
+    assert f'action="{BILLING}/statements"' in response.text
+    assert 'name="statement"' in response.text
+    assert "Noch kein Kontoauszug importiert." in response.text
+    assert "Keine Einträge warten auf eine Zuordnung." in response.text
+    assert "Keine offenen Rechnungen." in response.text
+    assert 'name="statement"' not in workspace.get(BILLING).text
+    legacy = workspace.get(BILLING + "?section=payments&statement_before=12")
+    assert legacy.location == PAYMENTS + "?statement_before=12#payments"
+
+
+def test_payments_summarizes_upload_replay_and_assignment(workspace):
+    from io import BytesIO
+
+    _invoice("AUTO-BOOKED")
+    manual = _invoice("FOR-MANUAL-ASSIGNMENT")
+    auto_xml = _statement_xml(reference="AUTO-BOOKED")
+    pending_xml = _booking_on(
+        _statement_xml(reference="NEEDS-ASSIGNMENT", servicer="bank-entry-2"),
+        "2026-10-14",
+    )
+    end = auto_xml.index(b"</Ntry>") + len(b"</Ntry>")
+    pending_start = pending_xml.index(b"<Ntry>")
+    pending_end = pending_xml.index(b"</Ntry>") + len(b"</Ntry>")
+    statement = auto_xml[:end] + pending_xml[pending_start:pending_end] + auto_xml[end:]
+
+    def upload():
+        _set_session(workspace, ADMIN)
+        return workspace.post(
+            f"{BILLING}/statements",
+            data={
+                "csrf_token": "csrf-secret",
+                "statement": (BytesIO(statement), "summary.xml"),
+            },
+        )
+
+    response = upload()
+    assert response.status_code == 302
+    assert urlsplit(response.location).path == PAYMENTS
+    first = workspace.get(response.location)
+    assert "Der Kontoauszug wurde importiert und abgeglichen." in first.text
+    assert "summary.xml" in first.text
+    for label, count in (
+        ("Importierte Einträge", 2),
+        ("Automatisch verbucht", 1),
+        ("Manuell zugeordnet", 0),
+        ("Warten auf Zuordnung", 1),
+        ("Doppelte Einträge übersprungen", 0),
+    ):
+        assert f"<dt>{label}</dt> <dd>{count}</dd>" in " ".join(first.text.split())
+
+    duplicate = workspace.get(upload().location)
+    assert "Dieser Kontoauszug wurde bereits importiert." in duplicate.text
+    assert "<dt>Doppelte Einträge übersprungen</dt> <dd>2</dd>" in " ".join(
+        duplicate.text.split()
+    )
+    assert len(_paid_events()) == 1
+
+    pending = next(
+        row
+        for row in db.list_bank_statement_entries(COMMUNITY)
+        if row["payment_reference"] == "NEEDS-ASSIGNMENT"
+    )
+    _set_session(workspace, ACTOR)
+    after_assignment = _follow_assignment(
+        workspace, _assign(workspace, pending["id"], manual)
+    )
+    summary = " ".join(after_assignment.text.split())
+    assert "<dt>Automatisch verbucht</dt> <dd>1</dd>" in summary
+    assert "<dt>Manuell zugeordnet</dt> <dd>1</dd>" in summary
+    assert "<dt>Warten auf Zuordnung</dt> <dd>0</dd>" in summary
+
+
+def test_payments_lists_only_delivered_unpaid_invoices_with_due_state(workspace):
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+
+    from tests.test_store_billing_postgres import _insert_issued_invoice
+
+    today = datetime.now(ZoneInfo("Europe/Zurich")).date()
+    overdue = _invoice("OVERDUE-INVOICE")
+    due = _invoice("DUE-TODAY-INVOICE")
+    unknown = _invoice("NO-DUE-DATE-INVOICE")
+    unreadable = _invoice("UNREADABLE-TOTAL-INVOICE")
+    paid = _invoice("PAID-INVOICE")
+    cancelled = _invoice("CANCELLED-INVOICE")
+    foreign = _invoice("FOREIGN-INVOICE")
+    _insert_issued_invoice("ISSUED-ONLY-INVOICE")
+    db.record_invoice_payment(paid, COMMUNITY, ACTOR, today, "manual")
+    db.cancel_invoice(cancelled, COMMUNITY, ACTOR, "cancelled")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("ALTER TABLE invoices DISABLE TRIGGER USER")
+        cur.execute(
+            "UPDATE invoices SET due_date=%s, gross_chf=1234.50 WHERE id=%s",
+            (today - timedelta(days=1), overdue),
+        )
+        cur.execute("UPDATE invoices SET due_date=%s WHERE id=%s", (today, due))
+        cur.execute(
+            "UPDATE invoices SET due_date=NULL, gross_chf=NULL WHERE id=%s", (unknown,)
+        )
+        cur.execute("UPDATE invoices SET gross_chf='NaN' WHERE id=%s", (unreadable,))
+        cur.execute(
+            "UPDATE invoices SET community_id='foreign' WHERE id=%s", (foreign,)
+        )
+        cur.execute("ALTER TABLE invoices ENABLE TRIGGER USER")
+        cur.execute("ALTER TABLE invoice_lifecycle_events DISABLE TRIGGER USER")
+        cur.execute(
+            "UPDATE invoice_lifecycle_events SET community_id='foreign' WHERE invoice_id=%s",
+            (foreign,),
+        )
+        cur.execute("ALTER TABLE invoice_lifecycle_events ENABLE TRIGGER USER")
+
+    response = workspace.get(PAYMENTS)
+    assert response.status_code == 200
+    assert "Keine offenen Rechnungen." not in response.text
+    open_section = response.text.split('id="open-invoices"', 1)[1]
+
+    def invoice_card(invoice):
+        return unescape(
+            open_section.split(f'id="open-invoice-{invoice}"', 1)[1].split("</li>", 1)[
+                0
+            ]
+        )
+
+    for number in ("PAID", "CANCELLED", "FOREIGN", "ISSUED-ONLY"):
+        assert f"{number}-INVOICE" not in open_section
+
+    overdue_card = invoice_card(overdue)
+    assert "CHF 1'234.50" in overdue_card
+    assert "Überfällig" in overdue_card
+    assert f'datetime="{(today - timedelta(days=1)).isoformat()}"' in overdue_card
+    assert "Überfällig" not in invoice_card(due)
+    assert "Fällig heute" in invoice_card(due)
+    assert "Nicht angegeben" in invoice_card(unknown)
+    assert "Gesamtbetrag unlesbar" in invoice_card(unknown)
+    assert "Gesamtbetrag unlesbar" in invoice_card(unreadable)
+
+    invoice_url = f"{PAYMENTS.removesuffix('/payments')}/invoices/{overdue}"
+    assert f'href="{invoice_url}#record-payment"' in overdue_card
+    assert "Zahlung erfassen" in overdue_card
+    detail = workspace.get(f"{invoice_url}#record-payment")
+    assert f'action="{BILLING}/invoice/{overdue}/paid"' in detail.text
+    assert 'id="record-payment"' in detail.text
+
+    _set_session(workspace, AUDITOR)
+    readonly = workspace.get(PAYMENTS)
+    assert "OVERDUE-INVOICE" in readonly.text
+    assert "#record-payment" not in readonly.text
+
+
+def test_payment_invoice_pagination_keeps_older_assignment_targets(
+    workspace, monkeypatch
+):
+    import dashboard
+
+    monkeypatch.setattr(dashboard, "_BILLING_PAGE_SIZE", 2)
+    older = _invoice("OLDER-OPEN")
+    _invoice("NEWER-OPEN")
+    newer = _invoice("NEWEST-OPEN")
+    entry, _ = _import()
+    first_page = workspace.get(PAYMENTS)
+    assert "OLDER-OPEN" not in first_page.text
+    assert f'<option value="{newer}">NEWEST-OPEN' in first_page.text
+
+    older_url = f"{PAYMENTS}?invoice_before={newer - 1}#payments"
+    assert f'href="{older_url}"' in first_page.text
+    older_page = workspace.get(older_url)
+    assert f'<option value="{older}">OLDER-OPEN' in older_page.text
+    assert f'id="open-invoice-{older}"' in older_page.text
+    assert "NEWEST-OPEN" not in older_page.text
+    assert (
+        _assignment_outcome(workspace, _assign(workspace, entry, older)) == "assigned"
+    )
+
+
+def test_payment_summary_cannot_read_another_legs_import(workspace):
+    _upload_xml(workspace, _statement_xml(reference="LOCAL-ENTRY"))
+    _upload_xml(
+        workspace,
+        _statement_xml(
+            statement="other", reference="FOREIGN-ENTRY", servicer="foreign"
+        ),
+    )
+    foreign = db.list_bank_statement_entries(COMMUNITY)[0]
+    import_id = foreign["statement_import_id"]
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE bank_statement_imports SET community_id='foreign', source_name='foreign.xml' WHERE id=%s",
+            (import_id,),
+        )
+        cur.execute(
+            "UPDATE bank_statement_entries SET community_id='foreign' WHERE statement_import_id=%s",
+            (import_id,),
+        )
+
+    latest = workspace.get(PAYMENTS)
+    assert latest.status_code == 200
+    assert "LOCAL-ENTRY" in latest.text
+    assert "fictional.xml" in latest.text
+    assert "FOREIGN-ENTRY" not in latest.text
+    assert "foreign.xml" not in latest.text
+    for selection in (import_id, import_id + 1):
+        page = workspace.get(
+            f"{PAYMENTS}?statement=duplicate&statement_import={selection}"
+        )
+        assert page.status_code == 404
+        assert "foreign.xml" not in page.text
+
+
+@pytest.mark.parametrize(
+    ("actor", "csrf", "amount", "expected"),
+    [
+        (ADMIN, "", b'<Amt Ccy="CHF">9.67</Amt>', 400),
+        (ACTOR, "csrf-secret", b'<Amt Ccy="CHF">9.67</Amt>', 403),
+        (ADMIN, "csrf-secret", b'<Amt Ccy="CHF">NaN</Amt>', 400),
+        (ADMIN, "csrf-secret", b"", 400),
+    ],
+    ids=["csrf", "preparer", "unreadable-amount", "missing-amount"],
+)
+def test_statement_upload_refusals_leave_the_payments_page_empty(
+    workspace, actor, csrf, amount, expected
+):
+    from io import BytesIO
+
+    _set_session(workspace, actor)
+    statement = _statement_xml().replace(b'<Amt Ccy="CHF">9.67</Amt>', amount)
+    response = workspace.post(
+        f"{BILLING}/statements",
+        data={"csrf_token": csrf, "statement": (BytesIO(statement), "refused.xml")},
+    )
+    assert response.status_code == expected
+    page = workspace.get(PAYMENTS)
+    assert "Noch kein Kontoauszug importiert." in page.text
+    assert "Keine Einträge warten auf eine Zuordnung." in page.text
+    assert db.list_bank_statement_entries(COMMUNITY) == []
+
+
+@pytest.mark.parametrize(
+    ("locale", "title", "empty"),
+    [
+        ("fr-CH", "Paiements", "Aucun relevé bancaire importé pour le moment."),
+        ("en", "Payments", "No bank statement has been imported yet."),
+        ("it-CH", "Pagamenti", "Non è ancora stato importato alcun estratto conto."),
+    ],
+)
+def test_payment_title_and_empty_state_are_localized(
+    workspace, app_module, monkeypatch, locale, title, empty
+):
+    monkeypatch.setitem(
+        app_module.web.config, "SITE_RELEASE_ENABLED", locale != "fr-CH"
+    )
+    response = workspace.get(
+        PAYMENTS, query_string={"lang": locale}, follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert f"<title>{title} | OpenLEG</title>" in response.text
+    assert empty in response.text

@@ -38,12 +38,13 @@ def workspace(app_module, monkeypatch):  # noqa: F811
         "list_leg_documents",
         "list_correspondence",
         "list_community_billing_periods",
-        "list_community_invoice_payment_rows",
         "list_billing_policies",
     ):
         monkeypatch.setattr(app_module.db, operation, lambda _cid, **kwargs: [])
+    for operation in ("page_community_invoices", "page_open_payment_invoices"):
+        monkeypatch.setattr(app_module.db, operation, lambda _cid, **_filters: [])
     monkeypatch.setattr(
-        app_module.db, "page_community_invoices", lambda _cid, **_filters: []
+        app_module.db, "get_bank_statement_summary", lambda _cid, _import: None
     )
     monkeypatch.setattr(
         app_module.db, "list_bank_statement_entries", lambda _cid, **_filters: []
@@ -117,7 +118,7 @@ def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
         ("correspondence", "Eintrag hinzufügen"),
         ("formation", "Anmeldung beim Netzbetreiber"),
         ("settings", "Quartierakku speichern"),
-        ("payments", "Bankzahlungen in der Abrechnung öffnen"),
+        ("payments", "Kontoauszug importieren"),
         ("invoices", "Noch keine freigegebenen Rechnungen vorhanden."),
         ("billing", "Freigegebene Rechnungen"),
         ("billing-policy", "Neue Version erfassen"),
@@ -229,7 +230,7 @@ def test_auditor_can_open_billing_links_but_cannot_change_policy(workspace):
     for page in ("billing", "payments", "invoices"):
         assert f'href="{ROOT}/{page}"' in response.text
         assert client.get(f"{ROOT}/{page}").status_code == 200
-    assert 'name="statement"' not in client.get(ROOT + "/billing").text
+    assert 'name="statement"' not in client.get(ROOT + "/payments").text
     assert f'href="{ROOT}/billing-policy"' not in client.get(ROOT + "/settings").text
     assert client.get(ROOT + "/billing-policy").status_code == 403
 
@@ -346,14 +347,17 @@ def test_formation_feedback_is_shown_only_on_its_destination(
     assert message not in client.get(result.location).text
 
 
-def test_payments_shortcut_jumps_to_a_visible_billing_section(workspace):
+def test_payments_and_billing_have_separate_titles_and_data(workspace):
     client, _ = workspace
     _set_session(client, "auditor")
-    assert (
-        f'href="{ROOT}/billing?section=payments#payments"'
-        in client.get(ROOT + "/payments").text
-    )
-    assert 'id="payments"' in client.get(ROOT + "/billing").text
+    payments = client.get(ROOT + "/payments").text
+    billing = client.get(ROOT + "/billing").text
+    assert "<title>Zahlungen | OpenLEG</title>" in payments
+    assert "<title>Abrechnungen | OpenLEG</title>" in billing
+    assert 'id="payments"' in payments
+    assert 'id="payments"' not in billing
+    assert 'id="billing-periods"' in billing
+    assert 'id="billing-periods"' not in payments
 
 
 def test_billing_invoice_bookmark_links_to_the_invoice_list(workspace):
@@ -383,7 +387,7 @@ def test_statement_import_form_is_reserved_for_confirmed_admins(
         }
     )
     _set_session(client, actor)
-    response = client.get(ROOT + "/billing")
+    response = client.get(ROOT + "/payments")
     assert response.status_code == 200
     assert ('name="statement"' in response.text) is may_import
 
@@ -456,7 +460,7 @@ def test_billing_approval_error_keeps_the_period_context(workspace, monkeypatch)
     monkeypatch.setattr(
         dashboard.db, "list_billing_draft_items", lambda *args, **kwargs: []
     )
-    assert "SYNTHETIC-PAID" in client.get(ROOT + "/billing").text
+    assert "SYNTHETIC-PAID" in client.get(ROOT + "/payments").text
     response = client.post(
         ROOT + "/billing/period/1/approve",
         data={"csrf_token": "csrf-secret", "confirm_approval": "yes"},

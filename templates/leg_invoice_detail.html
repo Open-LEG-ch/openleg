@@ -50,7 +50,7 @@
   </div>
   {% endif %}
   {% if can_prepare_billing and invoice.lifecycle_state == 'delivered' %}
-  <form method="post" action="{{ url_for('.leg_billing_invoice_paid', community_id=community_id, invoice_id=invoice.id) }}" class="mb-3 grid items-end gap-2 sm:grid-cols-3">
+  <form method="post" action="{{ url_for('.leg_billing_invoice_paid', community_id=community_id, invoice_id=invoice.id) }}" id="record-payment" class="mb-3 grid items-end gap-2 sm:grid-cols-3">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div>
       <label for="paid-date" class="block font-semibold">{{ _('Zahlungsdatum') }}</label>

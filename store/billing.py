@@ -1170,17 +1170,38 @@ def has_community_invoices(community_id: str) -> bool:
         raise BillingStoreError("Could not check for community invoices") from e
 
 
-def list_community_invoice_payment_rows(community_id: str) -> list[dict]:
-    """Read invoice amounts and lifecycle state for bank statement review."""
+def list_community_invoice_payment_rows(
+    community_id: str, invoice_ids: list[int]
+) -> list[dict]:
+    """Read the invoices referenced by this page of bank statement entries."""
+    if not invoice_ids:
+        return []
     return _read_community_invoice_rows(
         f"""
         SELECT i.id, i.invoice_number, i.gross_chf,
                {_INVOICE_LIFECYCLE_STATE} AS lifecycle_state
         FROM invoices i
         WHERE i.community_id = %s AND i.status = 'issued'
-        ORDER BY i.issue_date DESC, i.id DESC
+          AND i.id = ANY(%s)
         """,
-        (community_id,),
+        (community_id, invoice_ids),
+    )
+
+
+def page_open_payment_invoices(
+    community_id: str, *, limit: int, before: int | None
+) -> list[dict]:
+    """Read only delivered, unpaid invoices for the payments page."""
+    return _read_community_invoice_rows(
+        f"""
+        SELECT i.id, i.invoice_number, i.gross_chf, i.due_date
+        FROM invoices i
+        WHERE i.community_id = %s AND i.status = 'issued'
+          AND (%s IS NULL OR i.id < %s)
+          AND {_INVOICE_LIFECYCLE_STATE} = 'delivered'
+        ORDER BY i.id DESC LIMIT %s
+        """,
+        (community_id, before, before, limit),
     )
 
 
@@ -1937,6 +1958,50 @@ def reconcile_bank_statement(
     except Exception as error:
         logger.error("[DB] Error reconciling bank statement: %s", error)
         raise BillingStoreError("Could not reconcile bank statement") from error
+
+
+def get_bank_statement_summary(community_id, import_id=None):
+    """Summarize one statement import without materializing its entries."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                WITH statement AS (
+                    SELECT id, source_name, imported_at, community_id
+                    FROM bank_statement_imports
+                    WHERE community_id = %s AND (%s IS NULL OR id = %s)
+                    ORDER BY id DESC LIMIT 1
+                )
+                SELECT s.source_name, s.imported_at,
+                       count(e.id) AS entries,
+                       count(*) FILTER (WHERE e.match_decision = 'matched') AS booked,
+                       count(*) FILTER (
+                           WHERE e.match_decision = 'matched' AND EXISTS (
+                               SELECT 1 FROM invoice_lifecycle_events event
+                               WHERE event.community_id = s.community_id
+                                 AND event.invoice_id = e.invoice_id
+                                 AND event.event_type = 'paid'
+                                 AND starts_with(event.idempotency_key, 'bank:' || s.id::text || ':')
+                           )
+                       ) AS automatic,
+                       count(*) FILTER (WHERE e.match_decision = ANY(%s)) AS unassigned
+                FROM statement s
+                LEFT JOIN bank_statement_entries e
+                    ON e.statement_import_id = s.id AND e.community_id = s.community_id
+                GROUP BY s.id, s.source_name, s.imported_at
+                """,
+                (
+                    community_id,
+                    import_id,
+                    import_id,
+                    sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
+                ),
+            )
+            result = cur.fetchone()
+            return dict(result) if result else None
+    except Exception as error:
+        logger.error("[DB] Error summarizing statement import: %s", error)
+        raise BillingStoreError("Could not summarize statement import") from error
 
 
 def list_bank_statement_entries(
