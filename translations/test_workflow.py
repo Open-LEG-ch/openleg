@@ -224,3 +224,25 @@ def test_sync_preserves_authored_labels_in_po_and_compiled_catalog(tree, locale,
         Translations.load(tree / "translations", locales=[locale]).gettext("enterprise")
         == label
     )
+
+
+def test_check_accepts_catalogs_synced_in_a_previous_minute(tree, monkeypatch):
+    import datetime as dt
+    from types import SimpleNamespace
+
+    from babel.messages import catalog as babel_catalog
+
+    now = dt.datetime(2026, 11, 27, 12, 0, 59, tzinfo=dt.UTC)
+
+    class Clock(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now.replace(tzinfo=tz)
+
+    clock_module = SimpleNamespace(**vars(dt))
+    clock_module.datetime = Clock
+    monkeypatch.setattr(babel_catalog, "datetime", clock_module)
+
+    workflow.run("sync")
+    now += dt.timedelta(seconds=1)
+    workflow.run("check")
