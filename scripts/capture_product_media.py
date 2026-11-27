@@ -74,6 +74,9 @@ def open_demo(browser_page, name, locale, **query):
         or not browser_page.locator(".product-shell h1").is_visible()
     ):
         raise RuntimeError(f"Could not render {name} in {locale}")
+    browser_page.add_style_tag(
+        content="*, *::before, *::after { transition: none !important; }"
+    )
 
 
 def screenshot(page, selector=None, *, top=16):
@@ -85,7 +88,15 @@ def screenshot(page, selector=None, *, top=16):
             }""",
             top,
         )
-    page.evaluate("document.fonts.ready")
+    # Let Chromium paint the final layout after scrolling or changing a form.
+    page.evaluate(
+        """async () => {
+            await document.fonts.ready;
+            await new Promise(resolve => requestAnimationFrame(
+                () => requestAnimationFrame(resolve)
+            ));
+        }"""
+    )
     with Image.open(BytesIO(page.screenshot(animations="disabled"))) as image:
         return image.convert("RGB").resize(OUTPUT_SIZE, Image.Resampling.LANCZOS)
 
@@ -101,10 +112,12 @@ def capture_flow(page, name, locale):
         action = screenshot(page, "#savings-result", top=300)
     elif name == "municipality-dashboard":
         details = screenshot(page, 'section[aria-labelledby="interest-summary-title"]')
+        # Leave space to align the last row without slicing the metrics above it.
+        page.locator("main").evaluate("el => { el.style.paddingBottom = '8rem'; }")
         action = screenshot(page, 'section[aria-labelledby="steps-title"]')
     else:
         details = screenshot(
-            page, "#main-content [data-leg-workspace] section:first-of-type"
+            page, "#main-content [data-leg-workspace] section:nth-of-type(2)", top=32
         )
         open_demo(page, name, locale, page="members")
         action = screenshot(page)
@@ -163,7 +176,9 @@ def capture_all(browser):
 def main():
     """Capture both locales before replacing the checked-in media."""
     with sync_playwright() as driver:
-        browser = driver.chromium.launch()
+        browser = driver.chromium.launch(
+            args=["--disable-lcd-text", "--disable-font-subpixel-positioning"]
+        )
         try:
             outputs = capture_all(browser)
         finally:
