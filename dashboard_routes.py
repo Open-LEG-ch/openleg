@@ -591,7 +591,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
 
     @bp.get(
         "/leg/community/<community_id>/"
-        "<any(members,correspondence,formation,settings,payments,invoices):page>"
+        "<any(members,correspondence,formation,settings,payments):page>"
     )
     def leg_workspace_page(community_id, page):
         building_id = _require_dashboard_session()
@@ -607,6 +607,45 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             viewer_has_session=True,
             csrf_token=_dashboard_csrf_token(),
         )
+
+    @bp.get("/leg/community/<community_id>/invoices")
+    def leg_invoice_list(community_id):
+        building_id = _require_dashboard_session()
+        try:
+            view = dashboard_module.leg_invoice_list(
+                community_id,
+                building_id,
+                state=request.args.get("state"),
+                search=request.args.get("q", ""),
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if view["error"]:
+            abort(403)
+        return render_leg_workspace("leg_invoices.html", **view)
+
+    def render_invoice_detail(community_id, building_id, invoice_id, *, error=None):
+        try:
+            view = dashboard_module.leg_invoice_detail(
+                community_id, building_id, invoice_id
+            )
+        except (db.BillingStoreError, psycopg2.Error):
+            abort(503)
+        if view["error"]:
+            abort(403)
+        if not view["invoice"]:
+            abort(404)
+        return render_leg_workspace(
+            "leg_invoice_detail.html",
+            csrf_token=_dashboard_csrf_token(),
+            lifecycle_error=error,
+            **view,
+        )
+
+    @bp.get("/leg/community/<community_id>/invoices/<int:invoice_id>")
+    def leg_invoice_detail(community_id, invoice_id):
+        building_id = _require_dashboard_session()
+        return render_invoice_detail(community_id, building_id, invoice_id)
 
     @bp.route("/leg/dashboard/demo")
     def leg_dashboard_demo():
@@ -1241,26 +1280,20 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             + "?approved=1"
         )
 
-    def _invoice_lifecycle_response(community_id, action):
+    def _invoice_lifecycle_response(community_id, invoice_id, action):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
         try:
             result = action(building_id)
         except dashboard_module.InvoiceLifecycleError:
-            try:
-                view = dashboard_module.leg_billing_workspace_view(
-                    community_id, building_id
-                )
-            except db.BillingStoreError:
-                abort(503)
-            view["lifecycle_error"] = _(
-                "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
-            )
             return (
-                render_leg_workspace(
-                    "leg_billing.html",
-                    csrf_token=_dashboard_csrf_token(),
-                    **view,
+                render_invoice_detail(
+                    community_id,
+                    building_id,
+                    invoice_id,
+                    error=_(
+                        "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
+                    ),
                 ),
                 409,
             )
@@ -1269,23 +1302,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if result["error"] == "Kein Zugriff.":
             abort(403)
         if result["error"]:
-            try:
-                view = dashboard_module.leg_billing_workspace_view(
-                    community_id, building_id
-                )
-            except db.BillingStoreError:
-                abort(503)
-            view["lifecycle_error"] = result["error"]
             return (
-                render_leg_workspace(
-                    "leg_billing.html",
-                    csrf_token=_dashboard_csrf_token(),
-                    **view,
+                render_invoice_detail(
+                    community_id, building_id, invoice_id, error=result["error"]
                 ),
                 502,
             )
         return redirect(
-            dashboard_module.leg_billing_workspace_location(community_id) + "?updated=1"
+            url_for(
+                ".leg_invoice_detail", community_id=community_id, invoice_id=invoice_id
+            )
         )
 
     @bp.route(
@@ -1295,6 +1321,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_billing_invoice_deliver(community_id, invoice_id):
         return _invoice_lifecycle_response(
             community_id,
+            invoice_id,
             lambda building_id: dashboard_module.leg_deliver_invoice(
                 community_id,
                 building_id,
@@ -1314,6 +1341,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_billing_invoice_delivery_confirmed(community_id, invoice_id):
         return _invoice_lifecycle_response(
             community_id,
+            invoice_id,
             lambda building_id: dashboard_module.leg_confirm_invoice_delivery(
                 community_id, building_id, invoice_id
             ),
@@ -1326,6 +1354,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_billing_invoice_paid(community_id, invoice_id):
         return _invoice_lifecycle_response(
             community_id,
+            invoice_id,
             lambda building_id: dashboard_module.leg_record_invoice_payment(
                 community_id,
                 building_id,
@@ -1342,6 +1371,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_billing_invoice_cancel(community_id, invoice_id):
         return _invoice_lifecycle_response(
             community_id,
+            invoice_id,
             lambda building_id: dashboard_module.leg_cancel_invoice(
                 community_id,
                 building_id,
@@ -1357,6 +1387,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_billing_invoice_correct(community_id, invoice_id):
         return _invoice_lifecycle_response(
             community_id,
+            invoice_id,
             lambda building_id: dashboard_module.leg_correct_invoice(
                 community_id,
                 building_id,
@@ -1373,16 +1404,26 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     def leg_billing_query_update(community_id, query_id):
         building_id = _require_dashboard_session()
         _require_dashboard_csrf()
-        result = dashboard_module.operator_update_invoice_query(
-            community_id,
-            building_id,
-            query_id,
-            message=request.form.get("message", ""),
-            status=request.form.get("status", ""),
-        )
+        try:
+            result = dashboard_module.operator_update_invoice_query(
+                community_id,
+                building_id,
+                query_id,
+                message=request.form.get("message", ""),
+                status=request.form.get("status", ""),
+            )
+        except psycopg2.Error:
+            abort(503)
         if result["error"]:
-            abort(400)
-        return redirect(dashboard_module.leg_billing_workspace_location(community_id))
+            abort(result["error_status"])
+        return redirect(
+            url_for(
+                ".leg_invoice_detail",
+                community_id=community_id,
+                invoice_id=result["invoice_id"],
+            )
+            + "#questions"
+        )
 
     @bp.route("/leg/community/<community_id>/billing-policy")
     def leg_billing_policy_page(community_id):

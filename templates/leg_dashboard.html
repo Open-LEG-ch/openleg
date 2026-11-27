@@ -62,9 +62,9 @@
   {% else %}
   <a href="{{ workspace_overview }}" class="inline-flex items-center rounded-full border border-brand px-4 py-2 font-semibold text-brand hover:bg-brand/10">{{ _('Gründungsstand auf der Übersicht öffnen') }}</a>
   {% endif %}
-{% elif page in ("payments", "invoices") %}
-  <a href="{{ workspace_root }}/billing{% if page == 'payments' %}?section=payments{% endif %}#{{ page }}" class="inline-flex items-center rounded-full bg-brand px-5 py-2 font-semibold text-white hover:bg-brand-dark">
-    {% if page == "payments" %}{{ _('Bankzahlungen in der Abrechnung öffnen') }}{% else %}{{ _('Rechnungen in der Abrechnung öffnen') }}{% endif %}
+{% elif page == "payments" %}
+  <a href="{{ workspace_root }}/billing?section=payments#payments" class="inline-flex items-center rounded-full bg-brand px-5 py-2 font-semibold text-white hover:bg-brand-dark">
+    {{ _('Bankzahlungen in der Abrechnung öffnen') }}
   </a>
 {% elif page == "members" %}
   {% include "leg_workspace/members.html" %}

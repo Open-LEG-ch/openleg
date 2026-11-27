@@ -288,6 +288,7 @@ from store.invoice_identity import InvoiceRegistrationMismatch  # noqa: F401
 from store.invoice_query import (  # noqa: F401
     add_invoice_query_message,
     get_invoice_query_attachment,
+    invoice_id_for_query,
     list_invoice_queries,
     open_invoice_query,
     respond_operator_invoice_case,

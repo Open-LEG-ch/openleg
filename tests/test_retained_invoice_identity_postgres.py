@@ -144,10 +144,7 @@ def test_recreated_household_cannot_read_previous_registration_invoice(
     assert invoice_path not in client.get(prefix + "/sandbox/inbox").text
     assert invoice_path not in client.get(prefix + "/dashboard/invoices").text
     _switch(client, prefix, "administrator")
-    assert (
-        "43.20"
-        in client.get(prefix + "/leg/community/sonnwil-operating-leg/billing").text
-    )
+    assert "43.20" in client.get(prefix + COMMUNITY + f"/invoices/{invoice}").text
     with (
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cursor,
@@ -181,7 +178,7 @@ def test_legacy_unbound_invoice_stays_retained_without_member_access(village):
     assert client.get(own + "/pdf").status_code == 404
     assert own not in client.get(prefix + "/dashboard/invoices").text
     _switch(client, prefix, "administrator")
-    page = client.get(prefix + COMMUNITY + "/billing")
+    page = client.get(prefix + COMMUNITY + f"/invoices/{invoice}")
     assert "43.20" in page.text
     refused = client.post(
         prefix + COMMUNITY + f"/billing/invoice/{invoice}/deliver",

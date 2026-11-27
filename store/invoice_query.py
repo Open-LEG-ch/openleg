@@ -268,6 +268,21 @@ def mark_invoice_query_reminded(case_id: int, actor: str) -> bool:
         return True
 
 
+def invoice_id_for_query(query_id: int, community_id: str) -> int | None:
+    """Resolve the parent of a query in the same LEG as its invoice."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT q.invoice_id FROM invoice_queries q
+            JOIN invoices i ON i.id = q.invoice_id AND i.community_id = q.community_id
+            WHERE q.id = %s AND q.community_id = %s AND i.status = 'issued'
+            """,
+            (query_id, community_id),
+        )
+        row = cur.fetchone()
+        return row["invoice_id"] if row else None
+
+
 def update_invoice_query(
     query_id: int,
     community_id: str,

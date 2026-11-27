@@ -1,0 +1,141 @@
+{% extends "leg_workspace_base.html" %}
+{% set workspace_page = "invoice-detail" %}
+{% set workspace_section = "invoices" %}
+{% set workspace_billing = true %}
+{% set invoice_title = _('Rechnung %(number)s', number=invoice.invoice_number or invoice.id) %}
+{% block meta %}<title>{{ invoice_title }} | OpenLEG</title>{% endblock %}
+{% block workspace_content %}
+<div class="max-w-3xl wrap-anywhere">
+  <a href="{{ url_for('.leg_invoice_list', community_id=community_id) }}" class="inline-flex items-center font-semibold text-brand underline">{{ _('Zurück zu den Rechnungen') }}</a>
+  <h1 class="mb-4 text-3xl">{{ invoice_title }}</h1>
+
+  {% if lifecycle_error %}
+  <p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(lifecycle_error) }}</p>
+  {% endif %}
+
+  <dl class="mb-6 grid gap-3 rounded-xl border border-line bg-white p-4 sm:grid-cols-2">
+    <div><dt class="text-ink-muted">{{ _('Teilnehmer') }}</dt><dd>{{ invoice.participant_address or invoice.participant_id or _('Nicht angegeben') }}</dd></div>
+    <div><dt class="text-ink-muted">{{ _('Periode') }}</dt><dd>{{ invoice.period_label|periodlabel if invoice.period_label else _('Nicht angegeben') }}</dd></div>
+    <div><dt class="text-ink-muted">{{ _('Betrag') }}</dt><dd>
+      {% if invoice.gross_unreadable %}<span class="font-semibold text-accent">{{ _('Gesamtbetrag unlesbar') }}</span>{% else %}<span class="tabular-nums">{{ invoice.display_gross_chf }} CHF</span>{% endif %}
+    </dd></div>
+    <div><dt class="text-ink-muted">{{ _('Status') }}</dt><dd>{{ _(invoice.status_label) }}</dd></div>
+    <div><dt class="text-ink-muted">{{ _('Fällig am') }}</dt><dd>{{ invoice.due_date|datelabel if invoice.due_date else _('Nicht angegeben') }}</dd></div>
+    <div><dt class="text-ink-muted">{{ _('Zustellart') }}</dt><dd>{{ _(invoice.delivery_method_label) }}</dd></div>
+    <div><dt class="text-ink-muted">{{ _('Interner Preis') }}</dt><dd>{{ invoice.display_unit_price_rp|ratelabel }}</dd></div>
+    {% if invoice.payment_reference %}
+    <div><dt class="text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ invoice.payment_reference }}</dd></div>
+    {% endif %}
+  </dl>
+
+  {% set query_categories = {'amount': _('amount'), 'metering': _('metering'), 'payment': _('payment'), 'other': _('other')} %}
+  {% set query_states = {'open': _('open'), 'acknowledged': _('acknowledged'), 'resolved': _('resolved')} %}
+  {% if can_prepare_billing and invoice.lifecycle_state == 'issued' and not invoice.delivery_job_status %}
+  <form method="post" action="{{ url_for('.leg_billing_invoice_deliver', community_id=community_id, invoice_id=invoice.id) }}" class="mb-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">{{ _('Zustellen') }}</button>
+  </form>
+  {% endif %}
+  {% if can_prepare_billing and invoice.lifecycle_state == 'issued' and invoice.delivery_job_status in ('pending', 'failed') %}
+  <div class="mb-3 rounded-lg border border-accent bg-accent/10 p-4 text-sm">
+    <p class="mb-3">{{ _('Der letzte Zustellversuch ist unklar. OpenLEG sendet nicht automatisch erneut, damit das Mitglied keine doppelte E-Mail erhält. Prüfen Sie den Versand und bestätigen Sie die Zustellung anschliessend.') }}</p>
+    <form method="post" action="{{ url_for('.leg_billing_invoice_delivery_confirmed', community_id=community_id, invoice_id=invoice.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="border border-brand px-4 py-2 rounded-lg font-semibold">{{ _('Zustellung als erfolgt bestätigen') }}</button>
+    </form>
+  </div>
+  {% endif %}
+  {% if can_prepare_billing and invoice.lifecycle_state == 'delivered' %}
+  <form method="post" action="{{ url_for('.leg_billing_invoice_paid', community_id=community_id, invoice_id=invoice.id) }}" class="mb-3 grid items-end gap-2 sm:grid-cols-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div>
+      <label for="paid-date" class="block font-semibold">{{ _('Zahlungsdatum') }}</label>
+      <input type="date" id="paid-date" name="paid_date" required class="w-full rounded-lg border px-3 py-2">
+    </div>
+    <div>
+      <label for="payment-reference" class="block font-semibold">{{ _('Zahlungsreferenz') }}</label>
+      <input type="text" id="payment-reference" name="reference" required class="w-full rounded-lg border px-3 py-2">
+    </div>
+    <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">{{ _('Zahlung erfassen') }}</button>
+  </form>
+  {% endif %}
+  {% if can_prepare_billing and invoice.lifecycle_state in ('issued', 'delivered') %}
+  <form method="post" action="{{ url_for('.leg_billing_invoice_cancel', community_id=community_id, invoice_id=invoice.id) }}" class="mb-3 grid items-end gap-2 sm:grid-cols-[1fr_auto]">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div>
+      <label for="cancel-reason" class="block font-semibold">{{ _('Stornierungsgrund') }}</label>
+      <input type="text" id="cancel-reason" name="reason" required class="w-full rounded-lg border px-3 py-2">
+    </div>
+    <button type="submit" class="border border-accent px-4 py-2 rounded-lg font-semibold">{{ _('Stornieren') }}</button>
+  </form>
+  {% endif %}
+  {% if can_prepare_billing and invoice.lifecycle_state == 'cancelled' and invoice.correction_candidates %}
+  <form method="post" action="{{ url_for('.leg_billing_invoice_correct', community_id=community_id, invoice_id=invoice.id) }}" class="grid items-end gap-2 sm:grid-cols-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div>
+      <label for="replacement-invoice" class="block font-semibold">{{ _('Ersatzrechnung') }}</label>
+      <select id="replacement-invoice" name="corrected_invoice_id" required class="w-full rounded-lg border px-3 py-2">
+        <option value="">{{ _('Ersatzrechnung wählen') }}</option>
+        {% for candidate in invoice.correction_candidates %}<option value="{{ candidate.id }}">{{ candidate.invoice_number }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="correction-reason" class="block font-semibold">{{ _('Korrekturgrund') }}</label>
+      <input type="text" id="correction-reason" name="reason" required class="w-full rounded-lg border px-3 py-2">
+    </div>
+    <button type="submit" class="border border-brand px-4 py-2 rounded-lg font-semibold">{{ _('Korrektur verknüpfen') }}</button>
+  </form>
+  {% endif %}
+  <details class="mt-4 border-t pt-4">
+    <summary class="cursor-pointer font-semibold">{{ _('Audit-Verlauf') }}</summary>
+    {% if invoice.events %}
+    <ol class="mt-3 space-y-3 text-sm">
+      {% for event in invoice.events %}
+      <li class="border-l-2 border-brand pl-3">
+        <p><span class="font-semibold">{{ _(event.previous_status_label) }}</span> {{ _('zu') }} <span class="font-semibold">{{ _(event.new_status_label) }}</span></p>
+        <p class="text-ink-muted">{{ event.created_at }} · {{ event.actor_id }}</p>
+        {% if event.reason %}<p>{{ _('Grund:') }} {{ event.reason }}</p>{% endif %}
+        {% if event.reference and (event.payment_match or {}).get('reference_stand_in') == 'AcctSvcrRef' %}<p>{{ _('Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz') }}: {{ event.reference }}</p>
+        {% elif event.reference %}<p>{{ _('Referenz:') }} {{ event.reference }}</p>{% endif %}
+        {% if event.effective_date %}<p>{{ _('Datum:') }} {{ event.effective_date }}</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="mt-3 text-sm text-ink-muted">{{ _('Noch keine Statusänderung protokolliert.') }}</p>
+    {% endif %}
+  </details>
+  <section id="questions" aria-labelledby="questions-title" class="mt-4 border-t pt-4">
+    <h2 id="questions-title" class="font-semibold">{{ _('Rechnungsfragen') }}</h2>
+    {% for query in invoice.queries %}
+    <div class="mt-3 rounded-lg border border-line p-3 text-sm">
+      <p>{{ query_categories.get(query.category, query.category) }} · {{ query_states.get(query.status, query.status) }} {{ _('· Antwort bis') }} {{ query.response_due_at }}</p>
+      {% for event in query.events if event.linked_reference %}
+      <p class="mt-1 text-ink-muted">{{ _('Verknüpft mit Korrektur:') }} <span class="font-semibold">{{ event.linked_reference }}</span></p>
+      {% endfor %}
+      {% for message in query.messages %}<p class="mt-1"><strong>{{ message.actor_id }}:</strong> {{ message.message }} {% with actor=message.actor %}{% include "partials/operator_actor.html" %}{% endwith %}</p>{% endfor %}
+      {% if can_prepare_billing and query.status != 'resolved' %}
+      <form method="post" action="{{ url_for('.leg_billing_query_update', community_id=community_id, query_id=query.id) }}" class="mt-2 grid items-end gap-2 sm:grid-cols-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label for="reply-{{ query.id }}" class="block font-semibold">{{ _('Antwort') }}</label>
+          <textarea id="reply-{{ query.id }}" name="message" rows="2" maxlength="4000" class="block w-full rounded-lg border px-3 py-2"></textarea>
+        </div>
+        <div>
+          <label for="question-status-{{ query.id }}" class="block font-semibold">{{ _('Status') }}</label>
+          <select id="question-status-{{ query.id }}" name="status" class="w-full rounded-lg border px-3 py-2">
+            <option value="">{{ _('Status behalten') }}</option>
+            <option value="acknowledged">{{ _('Bestätigen') }}</option>
+            <option value="resolved">{{ _('Erledigen') }}</option>
+          </select>
+        </div>
+        <button type="submit" class="border border-line rounded-lg px-3 py-2 font-semibold">{{ _('Speichern') }}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="mt-3 text-sm text-ink-muted">{{ _('Noch keine Rechnungsfragen vorhanden.') }}</p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

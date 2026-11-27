@@ -1,0 +1,63 @@
+{% extends "leg_workspace_base.html" %}
+{% set workspace_page = "invoices" %}
+{% set workspace_billing = true %}
+{% block meta %}<title>{{ _('Rechnungen') }} | OpenLEG</title>{% endblock %}
+{% block workspace_content %}
+<h1 class="mb-6 text-3xl">{{ _('Rechnungen') }}</h1>
+
+<form method="get" action="{{ url_for('.leg_invoice_list', community_id=community_id) }}" class="mb-4">
+  <input type="hidden" name="state" value="{{ state }}">
+  <label for="invoice-search" class="block font-semibold">{{ _('Rechnungen suchen') }}</label>
+  <div class="mt-2 flex flex-wrap gap-2">
+    <input type="search" id="invoice-search" name="q" value="{{ search }}"
+           class="min-w-0 flex-1 rounded-lg border border-ink-muted px-3 py-2"
+           placeholder="{{ _('Nummer, Adresse oder Zahlungsreferenz') }}">
+    <button type="submit" class="bg-brand px-4 py-2 font-semibold text-white">{{ _('Suchen') }}</button>
+  </div>
+</form>
+
+<nav aria-label="{{ _('Rechnungsstatus filtern') }}" class="mb-6 flex flex-wrap gap-2">
+  {% for value, label in filters.items() %}
+  <a href="{{ url_for('.leg_invoice_list', community_id=community_id, state=value, q=search or none) }}"{% if value == state %} aria-current="true"{% endif %}
+     class="inline-flex items-center rounded-full border border-brand px-4 py-2 font-semibold {% if value == state %}bg-brand text-white{% else %}text-brand{% endif %}">{{ _(label) }}</a>
+  {% endfor %}
+</nav>
+
+{% if invoices %}
+<div class="overflow-x-auto rounded-lg border border-line bg-white focus-visible:outline-solid focus-visible:outline-3 focus-visible:outline-brand"
+     role="region" aria-label="{{ _('Rechnungen') }}" tabindex="0">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-paper-deep">
+      <tr>
+        <th scope="col" class="px-3 py-2">{{ _('Rechnungsnummer') }}</th>
+        <th scope="col" class="px-3 py-2">{{ _('Periode') }}</th>
+        <th scope="col" class="px-3 py-2">{{ _('Teilnehmer') }}</th>
+        <th scope="col" class="px-3 py-2 text-right">{{ _('Betrag') }}</th>
+        <th scope="col" class="px-3 py-2">{{ _('Status') }}</th>
+        <th scope="col" class="px-3 py-2">{{ _('Fällig am') }}</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-line">
+      {% for invoice in invoices %}
+      <tr>
+        <th scope="row" class="px-3 py-2">
+          <a href="{{ url_for('.leg_invoice_detail', community_id=community_id, invoice_id=invoice.id) }}" class="inline-flex items-center text-brand underline">{{ invoice.invoice_number or invoice.id }}</a>
+        </th>
+        <td class="px-3 py-2">{{ invoice.period_label|periodlabel if invoice.period_label else _('Nicht angegeben') }}</td>
+        <td class="px-3 py-2">{{ invoice.participant_address or invoice.participant_id or _('Nicht angegeben') }}</td>
+        <td class="px-3 py-2 text-right">
+          {% if invoice.gross_unreadable %}<span class="font-semibold text-accent">{{ _('Gesamtbetrag unlesbar') }}</span>{% else %}<span class="whitespace-nowrap tabular-nums">{{ invoice.display_gross_chf }} CHF</span>{% endif %}
+        </td>
+        <td class="px-3 py-2">{{ _(invoice.status_label) }}</td>
+        <td class="px-3 py-2">{{ invoice.due_date|datelabel if invoice.due_date else _('Nicht angegeben') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% elif has_invoices %}
+<p>{{ _('Keine Rechnungen gefunden.') }}</p>
+{% else %}
+<p>{{ _('Noch keine freigegebenen Rechnungen vorhanden.') }}</p>
+{% endif %}
+{% endblock %}

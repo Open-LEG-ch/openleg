@@ -896,24 +896,46 @@ def _policy_dict(value):
     )
 
 
-def list_community_invoices(community_id: str) -> list[dict]:
+def list_community_invoices(
+    community_id: str, *, invoice_id: int | None = None
+) -> list[dict]:
     """List issued invoices with their derived lifecycle and correction links."""
+    invoice_filter = "" if invoice_id is None else "AND i.id = %s"
+    params = (community_id,) if invoice_id is None else (community_id, invoice_id)
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
-                """
+                f"""
                 SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
                        i.gross_chf, i.issue_date, i.due_date, i.policy_snapshot,
+                       b.address AS participant_address,
+                       COALESCE(i.provenance_snapshot->>'period_start',
+                                period.period_start::text) AS period_start,
+                       EXISTS (
+                           SELECT 1 FROM invoice_queries q
+                           WHERE q.invoice_id = i.id AND q.community_id = i.community_id
+                       ) AS has_question,
+                       (
+                           SELECT e.reference FROM invoice_lifecycle_events e
+                           WHERE e.invoice_id = i.id AND e.community_id = i.community_id
+                             AND e.event_type = 'paid'
+                           ORDER BY e.id DESC LIMIT 1
+                       ) AS payment_reference,
                        i.provenance_snapshot->>'participant_registration_id'
                            AS participant_registration_id,
                        COALESCE((
                            SELECT e.new_state FROM invoice_lifecycle_events e
-                           WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
+                           WHERE e.invoice_id = i.id AND e.community_id = i.community_id
+                           ORDER BY e.id DESC LIMIT 1
                        ), 'issued') AS lifecycle_state,
                        original.invoice_number AS corrects_invoice_number,
                        replacement.invoice_number AS corrected_by_invoice_number,
                        delivery.status AS delivery_job_status
                 FROM invoices i
+                LEFT JOIN buildings b ON b.building_id = i.participant_id
+                  AND {REGISTRATION_MATCH_SQL}
+                LEFT JOIN billing_periods period ON period.id = i.billing_period_id
+                  AND period.community_id = i.community_id
                 LEFT JOIN invoice_delivery_jobs delivery ON delivery.invoice_id = i.id
                 LEFT JOIN invoice_corrections correction
                   ON correction.corrected_invoice_id = i.id
@@ -923,10 +945,10 @@ def list_community_invoices(community_id: str) -> list[dict]:
                   ON reverse_correction.original_invoice_id = i.id
                 LEFT JOIN invoices replacement
                   ON replacement.id = reverse_correction.corrected_invoice_id
-                WHERE i.community_id = %s AND i.status = 'issued'
+                WHERE i.community_id = %s AND i.status = 'issued' {invoice_filter}
                 ORDER BY i.issue_date DESC, i.id DESC
                 """,
-                (community_id,),
+                params,
             )
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:

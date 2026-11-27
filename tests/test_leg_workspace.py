@@ -115,7 +115,7 @@ def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
         ("formation", "Anmeldung beim Netzbetreiber"),
         ("settings", "Quartierakku speichern"),
         ("payments", "Bankzahlungen in der Abrechnung öffnen"),
-        ("invoices", "Rechnungen in der Abrechnung öffnen"),
+        ("invoices", "Noch keine freigegebenen Rechnungen vorhanden."),
         ("billing", "Freigegebene Rechnungen"),
         ("billing-policy", "Neue Version erfassen"),
     ],
@@ -341,16 +341,25 @@ def test_formation_feedback_is_shown_only_on_its_destination(
     assert message not in client.get(result.location).text
 
 
-@pytest.mark.parametrize("section", ["payments", "invoices"])
-def test_billing_shortcuts_jump_to_a_visible_section(workspace, section):
+def test_payments_shortcut_jumps_to_a_visible_billing_section(workspace):
     client, _ = workspace
     _set_session(client, "auditor")
-    query = "?section=payments" if section == "payments" else ""
     assert (
-        f'href="{ROOT}/billing{query}#{section}"'
-        in client.get(ROOT + f"/{section}").text
+        f'href="{ROOT}/billing?section=payments#payments"'
+        in client.get(ROOT + "/payments").text
     )
-    assert f'id="{section}"' in client.get(ROOT + "/billing").text
+    assert 'id="payments"' in client.get(ROOT + "/billing").text
+
+
+def test_billing_invoice_bookmark_links_to_the_invoice_list(workspace):
+    client, _ = workspace
+    _set_session(client, "auditor")
+    billing = client.get(ROOT + "/billing").text
+    invoice_section = billing.split('<section id="invoices"', 1)[1].split(
+        "</section>", 1
+    )[0]
+    assert f'href="{ROOT}/invoices"' in invoice_section
+    assert client.get(ROOT + "/invoices").status_code == 200
 
 
 @pytest.mark.parametrize(

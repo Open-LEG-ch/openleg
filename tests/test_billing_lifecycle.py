@@ -135,7 +135,7 @@ def test_member_routes_render_all_states_and_correction_links(
     assert "LEG-2026-000042" in rendered_detail
 
 
-def test_admin_workspace_renders_every_lifecycle_control(
+def test_admin_invoice_details_render_every_lifecycle_control(
     dashboard_app_module,  # noqa: F811
     monkeypatch,
 ):
@@ -184,29 +184,36 @@ def test_admin_workspace_renders_every_lifecycle_control(
     ]
     monkeypatch.setattr(
         dashboard_app_module.dashboard_module,
-        "leg_billing_workspace_view",
-        MagicMock(
-            return_value={
-                "error": None,
-                "community_id": COMMUNITY,
-                "periods": [],
-                "invoices": invoices,
-                "billing_approved": False,
-                "approval_error": None,
-                "can_prepare_billing": True,
-                "can_approve_billing": True,
-            }
-        ),
+        "leg_invoice_detail",
+        lambda community, _actor, invoice_id: {
+            "error": None,
+            "community_id": community,
+            "invoice": next(
+                invoice for invoice in invoices if invoice["id"] == invoice_id
+            ),
+            "can_prepare_billing": True,
+        },
     )
     client = dashboard_app_module.web.test_client()
     _set_session(client, building_id="admin-building")
 
-    response = client.get(f"/leg/community/{COMMUNITY}/billing")
-    html = response.get_data(as_text=True)
-
-    assert response.status_code == 200
-    for action in ("deliver", "delivery-confirmed", "paid", "cancel", "correct"):
-        assert "/invoice/" in html and f"/{action}" in html
+    pages = []
+    for invoice_id, action in (
+        (1, "deliver"),
+        (2, "paid"),
+        (3, "correct"),
+        (5, "delivery-confirmed"),
+        (1, "cancel"),
+    ):
+        response = client.get(f"/leg/community/{COMMUNITY}/invoices/{invoice_id}")
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert (
+            f'action="/leg/community/{COMMUNITY}/billing/invoice/{invoice_id}/{action}"'
+            in html
+        )
+        pages.append(html)
+    html = "".join(pages)
     for text in (
         "Zustellen",
         "Zahlung erfassen",
@@ -508,18 +515,14 @@ def test_invalid_transition_is_private_conflict(
     )
     monkeypatch.setattr(
         dashboard_app_module.dashboard_module,
-        "leg_billing_workspace_view",
+        "leg_invoice_detail",
         MagicMock(
             return_value={
                 "error": None,
                 "community_id": COMMUNITY,
-                "periods": [],
-                "invoices": [],
-                "billing_approved": False,
-                "approval_error": None,
+                "invoice": {"id": 42, "invoice_number": "LEG-42"},
             }
         ),
-        raising=False,
     )
     client = dashboard_app_module.web.test_client()
     _set_session(client, building_id="admin-building")
@@ -546,18 +549,14 @@ def test_email_failure_returns_private_bad_gateway(
     )
     monkeypatch.setattr(
         dashboard_app_module.dashboard_module,
-        "leg_billing_workspace_view",
+        "leg_invoice_detail",
         MagicMock(
             return_value={
                 "error": None,
                 "community_id": COMMUNITY,
-                "periods": [],
-                "invoices": [],
-                "billing_approved": False,
-                "approval_error": None,
+                "invoice": {"id": 42, "invoice_number": "LEG-42"},
             }
         ),
-        raising=False,
     )
     client = dashboard_app_module.web.test_client()
     _set_session(client, building_id="admin-building")
@@ -752,22 +751,19 @@ def test_workspace_marks_unreadable_totals_without_a_rendered_amount(
     }
     monkeypatch.setattr(
         dashboard_app_module.dashboard_module,
-        "leg_billing_workspace_view",
+        "leg_invoice_detail",
         MagicMock(
             return_value={
                 "error": None,
                 "community_id": COMMUNITY,
-                "periods": [],
-                "invoices": [invoice],
-                "billing_approved": False,
-                "approval_error": None,
+                "invoice": invoice,
             }
         ),
     )
     client = dashboard_app_module.web.test_client()
     _set_session(client, building_id="admin-building")
 
-    response = client.get(f"/leg/community/{COMMUNITY}/billing")
+    response = client.get(f"/leg/community/{COMMUNITY}/invoices/42")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
