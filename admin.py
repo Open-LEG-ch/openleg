@@ -609,7 +609,15 @@ def admin_registry_approve(entry_id):
 def admin_registry_reject(entry_id):
     require_admin()
     reason = (request.form.get("reason") or "").strip()
-    db.update_registry_entry_moderation(entry_id, "rejected", reason)
+    try:
+        rejected = db.update_registry_entry_moderation(entry_id, "rejected", reason)
+    except psycopg2.Error:
+        abort(503)
+    if not rejected:
+        abort(
+            409,
+            _("Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."),
+        )
     return redirect("/admin/ops")
 
 

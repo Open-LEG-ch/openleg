@@ -153,20 +153,20 @@
                   {% else %}
                   {% if not entry.municipality_candidates %}
                   <p class="text-sm text-gray-400">{{ _('Keine passende Gemeinde gefunden.') }}</p>
-                  <label class="block mb-2">
-                    {{ _('BFS-Nummer') }}
-                    <input name="manual_bfs_number" inputmode="numeric" pattern="[1-9][0-9]{0,3}" maxlength="4" class="w-16 rounded-sm bg-gray-800 p-1">
-                  </label>
                   {% endif %}
                   <label class="block mb-2">
                     {{ _('Gemeinde') }}
-                    <select name="municipality" {% if entry.municipality_candidates %}required{% endif %} class="rounded-sm bg-gray-800 p-1">
+                    <select name="municipality" class="rounded-sm bg-gray-800 p-1">
                       <option value="">{{ _('Bitte wählen') }}</option>
                       {% for municipality in entry.municipality_candidates %}
                       <option value="{{ municipality.bfs_number }}">{{ municipality.name }} ({{ municipality.kanton }}, {{ municipality.bfs_number }})</option>
                       {% endfor %}
                       <option value="none">{{ _('Keine Gemeinde') }}</option>
                     </select>
+                  </label>
+                  <label class="block mb-2">
+                    {{ _('Oder BFS-Nummer eingeben') }}
+                    <input name="manual_bfs_number" inputmode="numeric" pattern="[1-9][0-9]{0,3}" maxlength="4" class="w-16 rounded-sm bg-gray-800 p-1">
                   </label>
                   {% endif %}
                   <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Gemeindezuordnung speichern') if entry.moderation_status == 'published' else _('Freischalten') }}</button>

@@ -279,21 +279,17 @@ def update_registry_entry_moderation(
     entry_id: int, moderation_status: str, moderation_note: str = ""
 ) -> bool:
     """Approve or reject a pending registry entry."""
-    try:
-        with _get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    UPDATE leg_registry
-                    SET moderation_status = %s, moderation_note = %s,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = %s
-                """,
-                (moderation_status, moderation_note, entry_id),
-            )
-            return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error updating registry entry moderation: {e}")
-        return False
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                UPDATE leg_registry
+                SET moderation_status = %s, moderation_note = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s AND moderation_status = 'pending'
+            """,
+            (moderation_status, moderation_note, entry_id),
+        )
+        return cur.rowcount > 0
 
 
 def get_registry_pending_count() -> int:

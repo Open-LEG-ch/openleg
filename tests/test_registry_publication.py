@@ -173,6 +173,74 @@ def test_unmatched_entry_can_use_a_moderator_supplied_bfs_number(registry):
     assert NAME in client.get("/leg-check?q=Baden&bfs=4021").text
 
 
+@pytest.mark.parametrize("first", ["approve", "reject"])
+def test_stale_moderation_cannot_reverse_the_first_decision(registry, first):
+    client, db = registry
+    entry = submit(client, db, ort="Baden", plz="5400", kanton="AG")
+    paths = {
+        "approve": approval_path(entry),
+        "reject": f"/admin/registry/{entry['id']}/reject",
+    }
+    page = moderation_page(client)
+    assert all(f'action="{path}"' in page for path in paths.values())
+    with client.session_transaction() as session:
+        csrf = session["admin_csrf"]
+    decisions = {
+        "approve": {"csrf_token": csrf, "municipality": "4021"},
+        "reject": {"csrf_token": csrf, "reason": "Duplikat"},
+    }
+    second = "reject" if first == "approve" else "approve"
+    check = "/leg-check?q=Baden&bfs=4021"
+    assert client.post(paths[first], data=decisions[first]).status_code == 302
+    assert (NAME in client.get(check).text) == (first == "approve")
+    assert client.post(paths[second], data=decisions[second]).status_code == (
+        409 if second == "reject" else 422
+    )
+    assert (NAME in client.get(check).text) == (first == "approve")
+
+
+@pytest.mark.parametrize("moderation_status", ["pending", "published"])
+def test_moderator_can_override_a_suggestion(registry, moderation_status):
+    client, db = registry
+    assert db.save_municipality_profile(
+        {"bfs_number": 261, "name": "Zürich", "kanton": "ZH"}
+    )
+    entry = submit(client, db, plz="8001")
+    if moderation_status == "published":
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE leg_registry SET moderation_status = 'published' WHERE id = %s",
+                (entry["id"],),
+            )
+
+    form = approval_form(client, entry)
+    assert re.findall(r'<option value="([0-9]+)"', form) == ["261"]
+    assert 'name="manual_bfs_number"' in form
+    select = re.search(r'<select\b[^>]*name="municipality"[^>]*>', form)
+    assert select is not None
+    assert "required" not in select[0]
+
+    path = approval_path(entry)
+    for data in (
+        {"municipality": "", "manual_bfs_number": ""},
+        {"municipality": "261", "manual_bfs_number": "4021"},
+        {"municipality": "none", "manual_bfs_number": "4021"},
+        {"municipality": "", "manual_bfs_number": "9876"},
+    ):
+        assert client.post(path, headers=ADMIN_HEADERS, data=data).status_code == 422
+    unchanged = db.get_registry_entry(entry["id"])
+    assert unchanged["moderation_status"] == moderation_status
+    assert unchanged["bfs_number"] is None
+    response = client.post(
+        path,
+        headers=ADMIN_HEADERS,
+        data={"municipality": "", "manual_bfs_number": "4021"},
+    )
+    assert response.status_code == 302
+    assert NAME in client.get("/leg-check?q=Baden&bfs=4021").text
+    assert NAME not in client.get("/leg-check?q=Zürich&bfs=261").text
+
+
 def test_legacy_publication_can_be_repaired_without_exposing_private_data(registry):
     client, db = registry
     slug = "legacy-solar-leg"
