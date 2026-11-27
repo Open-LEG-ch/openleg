@@ -238,22 +238,20 @@ def _confirmed_admin(monkeypatch, dashboard):
     )
 
 
-def test_workspace_reads_invoice_queries_once_for_the_community(monkeypatch):
+def test_invoice_detail_reads_questions_once_for_the_scoped_invoice(monkeypatch):
     import dashboard
 
     _confirmed_admin(monkeypatch, dashboard)
     monkeypatch.setattr(
-        dashboard.db, "list_community_billing_periods", MagicMock(return_value=[])
+        dashboard.db,
+        "list_community_invoices",
+        MagicMock(return_value=[{"id": 42, "lifecycle_state": "issued"}]),
     )
-    monkeypatch.setattr(
-        dashboard.db, "list_community_invoices", MagicMock(return_value=[])
-    )
-    monkeypatch.setattr(dashboard.db, "is_db_available", lambda: True)
-
-    dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
+    monkeypatch.setattr(dashboard.db, "list_invoice_events", MagicMock(return_value=[]))
+    dashboard.leg_invoice_detail(COMMUNITY, "admin-building", 42)
 
     dashboard.db.list_invoice_queries.assert_called_once_with(
-        None, community_id=COMMUNITY
+        42, community_id=COMMUNITY
     )
 
 
@@ -568,13 +566,10 @@ def test_email_failure_returns_private_bad_gateway(
     assert "no-store" in response.headers["Cache-Control"]
 
 
-def test_workspace_loads_complete_audit_history(monkeypatch):
+def test_invoice_detail_loads_complete_audit_history(monkeypatch):
     import dashboard
 
     _confirmed_admin(monkeypatch, dashboard)
-    monkeypatch.setattr(
-        dashboard.db, "list_community_billing_periods", MagicMock(return_value=[])
-    )
     monkeypatch.setattr(
         dashboard.db,
         "list_community_invoices",
@@ -606,26 +601,25 @@ def test_workspace_loads_complete_audit_history(monkeypatch):
             }
         ]
     )
-    monkeypatch.setattr(dashboard.db, "list_community_invoice_events", events)
+    monkeypatch.setattr(dashboard.db, "list_invoice_events", events)
 
-    view = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
+    view = dashboard.leg_invoice_detail(COMMUNITY, "admin-building", 42)
 
-    events.assert_called_once_with(COMMUNITY)
-    assert view["invoices"][0]["events"][0]["previous_status_label"] == "Freigegeben"
-    assert view["invoices"][0]["events"][0]["new_status_label"] == "Zugestellt"
-    assert view["invoices"][0]["delivery_method_label"] == "E-Mail"
-    assert view["invoices"][0]["display_unit_price_rp"] == "15.00 Rp./kWh"
+    events.assert_called_once_with(42, COMMUNITY)
+    assert view["invoice"]["events"][0]["previous_status_label"] == "Freigegeben"
+    assert view["invoice"]["events"][0]["new_status_label"] == "Zugestellt"
+    assert view["invoice"]["delivery_method_label"] == "E-Mail"
+    assert view["invoice"]["display_unit_price_rp"] == "15.00 Rp./kWh"
 
 
-def test_workspace_shows_nicht_angegangen_when_the_frozen_price_is_missing(monkeypatch):
+def test_invoice_detail_shows_nicht_angegangen_when_the_frozen_price_is_missing(
+    monkeypatch,
+):
     """An invoice whose frozen snapshot carries no readable internal price is
     shown as "Nicht angegeben", never as an invented tariff."""
     import dashboard
 
     _confirmed_admin(monkeypatch, dashboard)
-    monkeypatch.setattr(
-        dashboard.db, "list_community_billing_periods", MagicMock(return_value=[])
-    )
     monkeypatch.setattr(
         dashboard.db,
         "list_community_invoices",
@@ -642,16 +636,14 @@ def test_workspace_shows_nicht_angegangen_when_the_frozen_price_is_missing(monke
             ]
         ),
     )
-    monkeypatch.setattr(
-        dashboard.db, "list_community_invoice_events", MagicMock(return_value=[])
-    )
+    monkeypatch.setattr(dashboard.db, "list_invoice_events", MagicMock(return_value=[]))
 
-    view = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
+    view = dashboard.leg_invoice_detail(COMMUNITY, "admin-building", 42)
 
-    assert view["invoices"][0]["display_unit_price_rp"] == "Nicht angegeben"
+    assert view["invoice"]["display_unit_price_rp"] == "Nicht angegeben"
 
 
-def test_workspace_marks_unreadable_totals_instead_of_inventing_zero(monkeypatch):
+def test_invoice_list_marks_unreadable_totals_instead_of_inventing_zero(monkeypatch):
     from decimal import Decimal
 
     import dashboard
@@ -699,16 +691,11 @@ def test_workspace_marks_unreadable_totals_instead_of_inventing_zero(monkeypatch
         },
     ]
     monkeypatch.setattr(
-        dashboard.db, "list_community_billing_periods", MagicMock(return_value=[])
+        dashboard.db, "page_community_invoices", MagicMock(return_value=rows)
     )
-    monkeypatch.setattr(
-        dashboard.db, "list_community_invoices", MagicMock(return_value=rows)
+    view = dashboard.leg_invoice_list(
+        COMMUNITY, "admin-building", state="all", search=""
     )
-    monkeypatch.setattr(
-        dashboard.db, "list_community_invoice_events", MagicMock(return_value=[])
-    )
-
-    view = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
 
     displays = {
         invoice["invoice_number"]: invoice["display_gross_chf"]
@@ -1469,13 +1456,13 @@ def test_issued_invoice_total_display_preserves_rounding_and_unreadable_flag(
 
     _confirmed_admin(monkeypatch, dashboard)
     row = {"id": 42, "lifecycle_state": "issued", "policy_snapshot": {}, **raw}
-    monkeypatch.setattr(dashboard.db, "list_community_billing_periods", lambda _: [])
-    monkeypatch.setattr(dashboard.db, "list_community_invoices", lambda _: [row])
-    monkeypatch.setattr(dashboard.db, "list_community_invoice_events", lambda _: [])
+    monkeypatch.setattr(
+        dashboard.db, "page_community_invoices", lambda _, **kwargs: [row]
+    )
 
-    invoice = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")[
-        "invoices"
-    ][0]
+    invoice = dashboard.leg_invoice_list(
+        COMMUNITY, "admin-building", state="all", search=""
+    )["invoices"][0]
 
     assert invoice["display_gross_chf"] == display
     assert invoice["gross_unreadable"] is unreadable

@@ -556,39 +556,43 @@ def _describe_leg_invoice_details(invoice, events, queries, invoices):
     invoice["queries"] = queries
 
 
-def leg_invoice_list(community_id, building_id, *, state, search):
+_INVOICE_PAGE_SIZE = 50
+
+
+def leg_invoice_list(community_id, building_id, *, state, search, page=1):
     if not _require_capability(
         community_id, building_id, community_access.AUDIT_BILLING
     ):
-        return {"error": _N("Kein Zugriff.")}
+        return {"error_status": 403}
+    if page < 1 or "\x00" in search:
+        return {"error_status": 400}
 
     state = state if state in _INVOICE_FILTERS else "all"
     search = search.strip()
-    needle = search.casefold()
-    rows = db.list_community_invoices(community_id)
-    invoices = []
-    for row in rows:
-        if state == "with-question" and not row.get("has_question"):
-            continue
-        if (
-            state in _INVOICE_FILTER_STATES
-            and row["lifecycle_state"] not in _INVOICE_FILTER_STATES[state]
-        ):
-            continue
-        if needle and not any(
-            needle in (row.get(field) or "").casefold()
-            for field in ("invoice_number", "participant_address", "payment_reference")
-        ):
-            continue
-        invoices.append(_describe_leg_invoice(row))
+    rows = db.page_community_invoices(
+        community_id,
+        states=_INVOICE_FILTER_STATES.get(state, ()),
+        with_question=state == "with-question",
+        search=search,
+        limit=_INVOICE_PAGE_SIZE + 1,
+        offset=(page - 1) * _INVOICE_PAGE_SIZE,
+    )
+    if page > 1 and not rows:
+        return {"error_status": 404}
+
     return {
-        "error": None,
+        "error_status": None,
         "community_id": community_id,
-        "invoices": invoices,
-        "has_invoices": bool(rows),
+        "invoices": [_describe_leg_invoice(row) for row in rows[:_INVOICE_PAGE_SIZE]],
+        "has_invoices": bool(rows)
+        or (
+            (state != "all" or bool(search)) and db.has_community_invoices(community_id)
+        ),
         "filters": _INVOICE_FILTERS,
         "state": state,
         "search": search,
+        "invoice_page": page,
+        "has_next": len(rows) > _INVOICE_PAGE_SIZE,
     }
 
 
@@ -770,43 +774,16 @@ def leg_billing_workspace_view(
             )
         )
         periods.append(period)
-    invoices = [
-        _describe_leg_invoice(invoice)
-        for invoice in db.list_community_invoices(community_id)
-    ]
-    events_by_invoice = {}
-    community_events = (
-        db.list_community_invoice_events(community_id) if invoices else []
-    )
-    for event in community_events:
-        events_by_invoice.setdefault(event["invoice_id"], []).append(event)
-    queries_by_invoice = {}
-    if db.is_db_available():
-        invoice_queries = db.list_invoice_queries(None, community_id=community_id)
-    else:
-        # Unit and demo configurations can intentionally run without a DB pool.
-        invoice_queries = []
-    for query in invoice_queries:
-        queries_by_invoice.setdefault(query["invoice_id"], []).append(query)
-    for invoice in invoices:
-        _describe_leg_invoice_details(
-            invoice,
-            events_by_invoice.get(invoice["id"], []),
-            queries_by_invoice.get(invoice["id"], []),
-            invoices,
-        )
-        if include_statement_entries:
-            invoice["statement_amount"] = _display_statement_amount(
-                invoice.get("gross_chf")
-            )
-    statement_invoices = (
-        {invoice["id"]: invoice for invoice in invoices}
-        if include_statement_entries
-        else {}
-    )
+    statement_invoices = {}
     statement_entries = []
     next_statement_before = None
     if include_statement_entries:
+        for invoice in db.list_community_invoice_payment_rows(community_id):
+            invoice["gross_unreadable"] = _display_gross_chf(invoice)[1]
+            invoice["statement_amount"] = _display_statement_amount(
+                invoice["gross_chf"]
+            )
+            statement_invoices[invoice["id"]] = invoice
         open_entries = db.list_bank_statement_entries(
             community_id, limit=201, reviewable=True, before=statement_before
         )
@@ -824,7 +801,6 @@ def leg_billing_workspace_view(
         "error": None,
         "community_id": community_id,
         "periods": periods,
-        "invoices": invoices,
         "statement_invoice_candidates": [
             invoice
             for invoice in statement_invoices.values()

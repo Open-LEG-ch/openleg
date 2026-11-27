@@ -408,3 +408,126 @@ def test_query_reply_needs_csrf(workspace):
     )
     assert response.status_code == 400
     assert not db.list_invoice_queries(invoice, community_id=COMMUNITY)[0]["messages"]
+
+
+def test_invoice_pages_bound_rows_and_keep_search_and_state(workspace):
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO invoices (community_id, invoice_number, status, issue_date)
+               SELECT %s, 'BULK-' || n, 'issued', '2020-02-01'
+               FROM generate_series(1, 101) AS n RETURNING id""",
+            (COMMUNITY,),
+        )
+        ids = sorted((row["id"] for row in cur.fetchall()), reverse=True)
+
+    for page, expected in enumerate((ids[:50], ids[50:100], ids[100:]), start=1):
+        response = workspace.get(
+            LIST, query_string={"state": "open", "q": "BULK", "page": page}
+        )
+        assert response.status_code == 200
+        assert re.findall(rf'href="{LIST}/(\d+)"', response.text) == list(
+            map(str, expected)
+        )
+        for delta, label in ((-1, "Vorherige Seite"), (1, "Nächste Seite")):
+            if 1 <= page + delta <= 3:
+                assert (
+                    f'href="{LIST}?state=open&amp;q=BULK&amp;page={page + delta}"'
+                    in response.text
+                )
+                assert label in response.text
+            else:
+                assert label not in response.text
+    assert workspace.get(LIST, query_string={"page": 4}).status_code == 404
+
+
+@pytest.mark.parametrize("page", ["", "0", "-1", "1.5", "NaN", "9" * 40])
+def test_invoice_list_rejects_invalid_page(workspace, page):
+    assert workspace.get(LIST, query_string={"page": page}).status_code == 400
+
+
+@pytest.mark.parametrize("term", ["%", "_", "!", "\\\\"])
+def test_invoice_search_treats_wildcards_as_literal(workspace, term):
+    expected = _invoice(f"INV-{term}-1")
+    _invoice("INV-X-1")
+    assert _invoice_links(workspace.get(LIST, query_string={"q": term}).text) == {
+        str(expected)
+    }
+
+
+def test_filtered_invoice_list_transfers_only_matching_rows(
+    workspace, invoices, monkeypatch
+):
+    from contextlib import contextmanager
+
+    from psycopg2.extras import RealDictCursor
+
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO invoices (community_id, invoice_number, status)
+               SELECT %s, 'HISTORY-' || n, 'issued'
+               FROM generate_series(1, 12000) AS n""",
+            (COMMUNITY,),
+        )
+
+    reads = []
+
+    class RecordingCursor(RealDictCursor):
+        def fetchall(self):
+            rows = super().fetchall()
+            if b"FROM invoices " in (self.query or b""):
+                reads.append((self.query, len(rows)))
+            return rows
+
+    get_connection = db.get_connection
+
+    @contextmanager
+    def recording_connection():
+        with get_connection() as conn:
+            factory = conn.cursor_factory
+            conn.cursor_factory = RecordingCursor
+            try:
+                yield conn
+            finally:
+                conn.cursor_factory = factory
+
+    monkeypatch.setattr(db, "get_connection", recording_connection)
+    response = workspace.get(LIST)
+    assert response.status_code == 200
+    assert len(_invoice_links(response.text)) == 50
+    assert [row_count for _, row_count in reads] == [51]
+    reads.clear()
+    for state, query, expected in (
+        ("paid", "INV-", {str(invoices["paid"])}),
+        ("all", "absent", set()),
+    ):
+        response = workspace.get(LIST, query_string={"state": state, "q": query})
+        assert response.status_code == 200
+        assert _invoice_links(response.text) == expected
+        assert len(reads) == 1
+        sql, row_count = reads.pop()
+        assert b"LIMIT 51" in sql
+        assert row_count == len(expected)
+
+
+def test_invoice_address_and_participant_id_appear_together(workspace):
+    invoice = _invoice("INV-PARTICIPANT")
+    for path in (LIST, f"{LIST}/{invoice}"):
+        response = workspace.get(path)
+        assert response.status_code == 200
+        assert "Bärenweg 12" in response.text
+        assert PARTICIPANT in response.text
+
+
+@pytest.mark.parametrize(
+    "path", [ROOT + "/billing", ROOT + "/billing?section=payments"]
+)
+def test_billing_and_payments_skip_invoice_detail_reads(workspace, monkeypatch, path):
+    _question(_invoice("INV-WITH-DETAILS"))
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("Billing and Payments should load only payment invoice fields")
+
+    monkeypatch.setattr(db, "list_invoice_queries", unexpected)
+    monkeypatch.setattr(db, "list_community_invoice_events", unexpected)
+    monkeypatch.setattr(db, "list_community_invoices", unexpected)
+    assert workspace.get(path).status_code == 200

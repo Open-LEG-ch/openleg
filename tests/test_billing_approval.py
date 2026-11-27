@@ -229,7 +229,7 @@ def _patch_workspace(monkeypatch, app_module, *, members=None):  # noqa: F811
     )
     monkeypatch.setattr(
         app_module.db,
-        "list_community_invoices",
+        "list_community_invoice_payment_rows",
         MagicMock(return_value=[]),
         raising=False,
     )

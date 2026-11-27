@@ -44,7 +44,10 @@
           <a href="{{ url_for('.leg_invoice_detail', community_id=community_id, invoice_id=invoice.id) }}" class="inline-flex items-center text-brand underline">{{ invoice.invoice_number or invoice.id }}</a>
         </th>
         <td class="px-3 py-2">{{ invoice.period_label|periodlabel if invoice.period_label else _('Nicht angegeben') }}</td>
-        <td class="px-3 py-2">{{ invoice.participant_address or invoice.participant_id or _('Nicht angegeben') }}</td>
+        <td class="px-3 py-2">
+          {% if invoice.participant_address %}<div>{{ invoice.participant_address }}</div>{% endif %}
+          <div class="wrap-anywhere text-ink-muted">{{ invoice.participant_id or _('Nicht angegeben') }}</div>
+        </td>
         <td class="px-3 py-2 text-right">
           {% if invoice.gross_unreadable %}<span class="font-semibold text-accent">{{ _('Gesamtbetrag unlesbar') }}</span>{% else %}<span class="whitespace-nowrap tabular-nums">{{ invoice.display_gross_chf }} CHF</span>{% endif %}
         </td>
@@ -55,6 +58,17 @@
     </tbody>
   </table>
 </div>
+{% if invoice_page > 1 or has_next %}
+<nav aria-label="{{ _('Ergebnisseiten') }}" class="mt-6 flex flex-wrap items-center gap-4">
+  {% if invoice_page > 1 %}
+  <a href="{{ url_for('.leg_invoice_list', community_id=community_id, state=state, q=search or none, page=invoice_page-1) }}" class="inline-flex items-center text-brand underline">{{ _('Vorherige Seite') }}</a>
+  {% endif %}
+  <span>{{ _('Seite %(page)s', page=invoice_page) }}</span>
+  {% if has_next %}
+  <a href="{{ url_for('.leg_invoice_list', community_id=community_id, state=state, q=search or none, page=invoice_page+1) }}" class="inline-flex items-center text-brand underline">{{ _('Nächste Seite') }}</a>
+  {% endif %}
+</nav>
+{% endif %}
 {% elif has_invoices %}
 <p>{{ _('Keine Rechnungen gefunden.') }}</p>
 {% else %}

@@ -38,10 +38,13 @@ def workspace(app_module, monkeypatch):  # noqa: F811
         "list_leg_documents",
         "list_correspondence",
         "list_community_billing_periods",
-        "list_community_invoices",
+        "list_community_invoice_payment_rows",
         "list_billing_policies",
     ):
         monkeypatch.setattr(app_module.db, operation, lambda _cid: [])
+    monkeypatch.setattr(
+        app_module.db, "page_community_invoices", lambda _cid, **_filters: []
+    )
     monkeypatch.setattr(
         app_module.db, "list_bank_statement_entries", lambda _cid, **_filters: []
     )

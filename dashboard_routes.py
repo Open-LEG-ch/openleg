@@ -10,6 +10,7 @@ closures across test reloads.
 import hmac
 import io
 import json
+import re
 import secrets
 
 import psycopg2
@@ -611,17 +612,19 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.get("/leg/community/<community_id>/invoices")
     def leg_invoice_list(community_id):
         building_id = _require_dashboard_session()
+        page = request.args.get("page", "1")
         try:
             view = dashboard_module.leg_invoice_list(
                 community_id,
                 building_id,
                 state=request.args.get("state"),
                 search=request.args.get("q", ""),
+                page=int(page) if re.fullmatch(r"[0-9]{1,9}", page) else 0,
             )
         except db.BillingStoreError:
             abort(503)
-        if view["error"]:
-            abort(403)
+        if view["error_status"]:
+            abort(view["error_status"])
         return render_leg_workspace("leg_invoices.html", **view)
 
     def render_invoice_detail(community_id, building_id, invoice_id, *, error=None):

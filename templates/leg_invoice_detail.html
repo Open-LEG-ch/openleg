@@ -14,7 +14,11 @@
   {% endif %}
 
   <dl class="mb-6 grid gap-3 rounded-xl border border-line bg-white p-4 sm:grid-cols-2">
-    <div><dt class="text-ink-muted">{{ _('Teilnehmer') }}</dt><dd>{{ invoice.participant_address or invoice.participant_id or _('Nicht angegeben') }}</dd></div>
+    <div>
+      <dt class="text-ink-muted">{{ _('Teilnehmer') }}</dt>
+      {% if invoice.participant_address %}<dd>{{ invoice.participant_address }}</dd>{% endif %}
+      <dd>{{ invoice.participant_id or _('Nicht angegeben') }}</dd>
+    </div>
     <div><dt class="text-ink-muted">{{ _('Periode') }}</dt><dd>{{ invoice.period_label|periodlabel if invoice.period_label else _('Nicht angegeben') }}</dd></div>
     <div><dt class="text-ink-muted">{{ _('Betrag') }}</dt><dd>
       {% if invoice.gross_unreadable %}<span class="font-semibold text-accent">{{ _('Gesamtbetrag unlesbar') }}</span>{% else %}<span class="tabular-nums">{{ invoice.display_gross_chf }} CHF</span>{% endif %}
