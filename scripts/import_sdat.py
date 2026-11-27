@@ -39,7 +39,7 @@ _MESSAGES = {
     sdat_import.MISSING_PATH: "Fehler: Pfad nicht gefunden: {detail}",
     sdat_import.STORAGE_UNAVAILABLE: "DATABASE_URL fehlt oder DB nicht erreichbar.",
     sdat_import.LEDGER_UNREADABLE: (
-        "Warnung: Import-Ledger nicht lesbar, alle Dateien werden vollständig geprüft"
+        "Fehler: Import-Ledger nicht lesbar, keine Datei importiert."
     ),
     sdat_import.UNREADABLE: "  Fehler: Datei nicht lesbar ({detail})",
     sdat_import.INVALID_DOCUMENT: "  Fehler: {detail}",
@@ -146,7 +146,7 @@ def main(argv=None) -> int:
         initialize=_initialize_database,
         reporter=reporter,
     )
-    if report.storage_unavailable:
+    if report.storage_unavailable or report.ledger_unreadable:
         return 1
 
     print(

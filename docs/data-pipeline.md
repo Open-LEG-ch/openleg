@@ -175,7 +175,7 @@ Recovery by error code:
 | --- | --- |
 | `fetch_failed` | Check Datahub reachability, TLS settings, and credentials, then trigger the cron endpoint again. |
 | `fetch_partial_failure` | Keep the remote files in place, check connectivity and disk space, then retry. Existing downloads are skipped. |
-| `import_failed` | Run `scripts/import_sdat.py <local_dir> --dry-run`, correct the reported document or database problem, then retry. |
+| `import_failed` | Run `scripts/import_sdat.py <local_dir> --dry-run`, correct the reported document or database problem, then retry. An unreadable import ledger also fails the run before any write; restore database access and retry without `--force`. |
 | `import_report_unavailable` | Recorded only by releases that read the import command's printed summary. Current releases no longer produce it; retry after deploying a current release. |
 
 Disabling a schedule stops future due runs without deleting files or history.
@@ -538,10 +538,21 @@ the test fixture a full parse is 0.736 ms against 0.0003 ms for a head scan, and
 the gap widens with file size.
 
 Every readable but uncertain case does the full work instead of skipping: a
-head that yields no document id, a ledger read that failed, and `--force`.
-Skipping a delivery the ledger does not know about would lose it silently, so
-uncertainty costs time rather than data. If the head itself is unreadable, the
-import reports the file as failed and leaves it in place.
+head that yields no document id, and `--force`. Skipping a delivery the ledger
+does not know about would lose it silently, so uncertainty costs time rather
+than data. If the head itself is unreadable, the import reports the file as
+failed and leaves it in place.
+
+A failed ledger read is not an empty ledger. The reading upsert does not check
+which document is newer, so an older delivery imported again without its
+correction in the same run overwrites the corrected values. If
+`get_sdat_import_index` fails, a live import without `--force` therefore stops
+before the first file: it writes no readings and no ledger rows and packs
+nothing. The command prints `Fehler: Import-Ledger nicht lesbar, keine Datei
+importiert.` and exits with 1. Scheduled ingestion records `import_failed` and
+retries within its attempt budget. An empty ledger that was read successfully
+still imports every delivery. `--force` ignores the ledger and does not read
+it, and `--dry-run` never touches the database, so neither is affected.
 
 Two consequences worth knowing:
 

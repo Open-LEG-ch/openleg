@@ -15,7 +15,9 @@ import psycopg2.pool
 import pytest
 
 import database
+import sdat_import
 import store.metering
+from tests.sdat_import_helpers import delivery
 
 POINT = "CH000000000000000000000000000001"
 MEASURED_AT = datetime(2026, 1, 5, 23, 0, tzinfo=UTC)
@@ -70,6 +72,17 @@ METERING_SCHEMA = """
         new_count INTEGER DEFAULT 0,
         corrected_count INTEGER DEFAULT 0,
         imported_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE sdat_veracity_flags (
+        id SERIAL PRIMARY KEY,
+        document_id VARCHAR(64) NOT NULL,
+        metering_point_id VARCHAR(64) NOT NULL,
+        direction VARCHAR(16) NOT NULL,
+        window_start TIMESTAMPTZ,
+        window_end TIMESTAMPTZ,
+        kind VARCHAR(32) NOT NULL,
+        detail TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
     )
 """
 
@@ -266,6 +279,85 @@ def test_sdat_ledger_conflict_updates_audit_fields_without_replacing_identity():
     assert updated["document_created_at"] == created_at
     assert updated["period_start"] == period_start
     assert updated["period_end"] == period_end
+
+
+def _ledger_read_fails(monkeypatch):
+    """The ledger query gets no connection; every write still gets one."""
+    real_connection = database.get_connection
+    real_index = store.metering.get_sdat_import_index
+
+    def exhausted():
+        raise psycopg2.pool.PoolError("connection pool exhausted")
+
+    def index():
+        monkeypatch.setattr(database, "get_connection", exhausted)
+        try:
+            return real_index()
+        finally:
+            monkeypatch.setattr(database, "get_connection", real_connection)
+
+    monkeypatch.setattr(database, "get_sdat_import_index", index)
+
+
+def _stored_state():
+    with database.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT * FROM metering_point_readings "
+            "ORDER BY metering_point_id, direction, measured_at"
+        )
+        readings = [dict(row) for row in cur.fetchall()]
+        cur.execute("SELECT * FROM sdat_imports ORDER BY document_id")
+        ledger = [dict(row) for row in cur.fetchall()]
+    return readings, ledger
+
+
+@pytest.mark.integration
+def test_an_unreadable_ledger_never_replays_over_a_stored_correction(
+    monkeypatch, tmp_path
+):
+    """#941: an older delivery must not overwrite its correction.
+
+    The correction is not part of the replayed run, so date order cannot save
+    it. Only reading the ledger can.
+    """
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("needs a live database")
+
+    archive = tmp_path / "archive"
+    archive.mkdir()
+    later = tmp_path / "later"
+    later.mkdir()
+
+    with _temporary_database() as url, _pool_against(url):
+        _setup_schema()
+        delivery(archive, "20260106_010000_original.xml", document_id="DOC-1")
+        assert sdat_import.import_paths([str(archive)]).succeeded
+        original, _ = _stored_state()
+        delivery(
+            later, "20260107_010000_correction.xml", document_id="DOC-2", corrected=True
+        )
+        assert sdat_import.import_paths([str(later)]).succeeded
+        before = _stored_state()
+
+        _ledger_read_fails(monkeypatch)
+        replay = sdat_import.import_paths([str(archive)])
+
+        after = _stored_state()
+
+    (changed,) = [
+        index
+        for index, row in enumerate(before[0])
+        if row["community_kwh"] != original[index]["community_kwh"]
+    ]
+    assert original[changed]["community_kwh"] == Decimal("0.0400")
+    assert after[0][changed]["community_kwh"] == Decimal("0.0410"), (
+        "the replayed older delivery overwrote the stored correction"
+    )
+    assert after[0][changed]["source_document_id"] == "DOC-2"
+    assert after == before, "no reading and no ledger row may change"
+    assert not replay.succeeded
+    assert replay.files == ()
+    assert [item.code for item in replay.diagnostics] == [sdat_import.LEDGER_UNREADABLE]
 
 
 @pytest.mark.integration
