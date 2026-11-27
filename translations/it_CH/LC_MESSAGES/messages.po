@@ -222,12 +222,6 @@ msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr "%(platform_name)s: Conferma dichiarazione di interesse"
 
 #. Draft translation; native language and domain review pending.
-#: templates/gemeinde/rangliste_fortschritte.html:92
-#, python-format
-msgid "%(r_kanton)s · %(value_1f_format_r_score_now_float_100_min)s%% heute"
-msgstr "%(r_kanton)s · %(value_1f_format_r_score_now_float_100_min)s%% oggi"
-
-#. Draft translation; native language and domain review pending.
 #: templates/dashboard.html:77
 #, python-format
 msgid "%(score)s Prozent bereit"
@@ -3815,16 +3809,6 @@ msgstr "La spedizione di posta elettronica non è attualmente disponibile."
 msgid "Der Eintrag konnte nicht gespeichert werden."
 msgstr "Impossibile salvare la voce."
 
-#. Draft translation; native language and domain review pending.
-#: templates/gemeinde/methodik.html:87
-msgid ""
-"Der Fortschritt misst die Veränderung des Scores im letzten vollen Jahr, in "
-"Prozentpunkten.\n"
-"        Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt."
-msgstr ""
-"Il progresso misura la variazione del punteggio nell'ultimo anno intero, in punti "
-"percentuali. E 'solo dal pannello e non viene mai mescolato con lo snapshot."
-
 #. Draft checked against source; native language and domain review pending.
 #: templates/verein/index.html:7
 msgid ""
@@ -7224,17 +7208,6 @@ msgstr "Formato non disponibile"
 #: templates/gemeinde/dashboard.html:46
 msgid "Formel und Datengrenzen ansehen"
 msgstr "Visualizza formula e limiti di dati"
-
-#. Draft translation; native language and domain review pending.
-#: templates/gemeinde/rangliste_fortschritte.html:109
-msgid ""
-"Fortschritt = Veränderung des Solarnutzungs-Scores in Prozentpunkten gegenüber dem "
-"Vorjahr,\n"
-"      aus dem 10-Jahres-Panel. Bewusst getrennt vom aktuellen Snapshot der Rangliste."
-msgstr ""
-"Progresso = variazione del punteggio di utilizzo del solare in punti percentuali "
-"rispetto all'anno precedente, dal pannello di 10 anni. Separato con coscienza "
-"dall'attuale snapshot della classifica."
 
 #. Draft translation; native language and domain review pending.
 #: templates/gemeinde/methodik.html:76
@@ -23097,3 +23070,17 @@ msgstr "Il tasto / porta al campo di ricerca su ogni pagina"
 #: templates/release/search.html:19
 msgid "Ctrl+K oder Cmd+K funktioniert immer."
 msgstr "Ctrl+K o Cmd+K funziona sempre."
+
+#. Draft translation; native language and domain review pending.
+#: templates/gemeinde/methodik.html:87 templates/gemeinde/rangliste_fortschritte.html:109
+msgid ""
+"Der Wert zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt deshalb unter dem Wert in der "
+"Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten vom Ende des Vorjahres bis zum"
+" Ende des angegebenen Jahres."
+msgstr "Questo valore considera solo gli impianti entrati in servizio dal 2016 ed è quindi inferiore al valore in classifica. Il progresso indica la variazione in punti percentuali tra la fine dell’anno precedente e la fine dell’anno indicato."
+
+#. Draft translation; native language and domain review pending.
+#: templates/gemeinde/rangliste_fortschritte.html:92
+#, python-format
+msgid "%(kanton)s · %(score)s%% Ende %(year)s"
+msgstr "%(kanton)s · %(score)s%% a fine %(year)s"

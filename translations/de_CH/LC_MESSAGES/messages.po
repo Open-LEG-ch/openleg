@@ -195,11 +195,6 @@ msgstr "%(platform_name)s · LEG für %(city_name)s"
 msgid "%(platform_name)s: Interessenmeldung bestätigen"
 msgstr "%(platform_name)s: Interessenmeldung bestätigen"
 
-#: templates/gemeinde/rangliste_fortschritte.html:92
-#, python-format
-msgid "%(r_kanton)s · %(value_1f_format_r_score_now_float_100_min)s%% heute"
-msgstr "%(r_kanton)s · %(value_1f_format_r_score_now_float_100_min)s%% heute"
-
 #: templates/dashboard.html:77
 #, python-format
 msgid "%(score)s Prozent bereit"
@@ -3192,16 +3187,6 @@ msgstr "Der E-Mail-Versand ist derzeit nicht verfügbar."
 msgid "Der Eintrag konnte nicht gespeichert werden."
 msgstr "Der Eintrag konnte nicht gespeichert werden."
 
-#: templates/gemeinde/methodik.html:87
-msgid ""
-"Der Fortschritt misst die Veränderung des Scores im letzten vollen Jahr, in "
-"Prozentpunkten.\n"
-"        Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt."
-msgstr ""
-"Der Fortschritt misst die Veränderung des Scores im letzten vollen Jahr, in "
-"Prozentpunkten.\n"
-"        Er stammt nur aus dem Panel und wird nie mit dem Snapshot vermischt."
-
 #: templates/verein/index.html:7
 msgid ""
 "Bei etablierten Energieversorgern erlebte er Zurückhaltung. Das ist sein persönlicher"
@@ -6114,16 +6099,6 @@ msgstr "Format nicht verfügbar"
 #: templates/gemeinde/dashboard.html:46
 msgid "Formel und Datengrenzen ansehen"
 msgstr "Formel und Datengrenzen ansehen"
-
-#: templates/gemeinde/rangliste_fortschritte.html:109
-msgid ""
-"Fortschritt = Veränderung des Solarnutzungs-Scores in Prozentpunkten gegenüber dem "
-"Vorjahr,\n"
-"      aus dem 10-Jahres-Panel. Bewusst getrennt vom aktuellen Snapshot der Rangliste."
-msgstr ""
-"Fortschritt = Veränderung des Solarnutzungs-Scores in Prozentpunkten gegenüber dem "
-"Vorjahr,\n"
-"      aus dem 10-Jahres-Panel. Bewusst getrennt vom aktuellen Snapshot der Rangliste."
 
 #: templates/gemeinde/methodik.html:76
 msgid "Fortschritt:"
@@ -19398,3 +19373,18 @@ msgstr "Taste / springt auf jeder Seite ins Suchfeld"
 #: templates/release/search.html:19
 msgid "Ctrl+K oder Cmd+K funktioniert immer."
 msgstr "Ctrl+K oder Cmd+K funktioniert immer."
+
+#: templates/gemeinde/methodik.html:87 templates/gemeinde/rangliste_fortschritte.html:109
+msgid ""
+"Der Wert zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt deshalb unter dem Wert in der "
+"Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten vom Ende des Vorjahres bis zum"
+" Ende des angegebenen Jahres."
+msgstr ""
+"Der Wert zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt deshalb unter dem Wert in der "
+"Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten vom Ende des Vorjahres bis zum"
+" Ende des angegebenen Jahres."
+
+#: templates/gemeinde/rangliste_fortschritte.html:92
+#, python-format
+msgid "%(kanton)s · %(score)s%% Ende %(year)s"
+msgstr "%(kanton)s · %(score)s%% Ende %(year)s"
