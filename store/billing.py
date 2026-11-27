@@ -2042,7 +2042,8 @@ def get_bank_statement_summary(community_id, upload_id, building_id):
                 entries.execute(
                     """
                     SELECT is_reversal, booking_status, amount_basis,
-                           credit_debit_indicator, currency, payment_reference
+                           credit_debit_indicator, currency, payment_reference,
+                           servicer_reference
                     FROM bank_statement_entries
                     WHERE community_id = %s AND statement_import_id = %s
                       AND match_decision = ANY(%s)

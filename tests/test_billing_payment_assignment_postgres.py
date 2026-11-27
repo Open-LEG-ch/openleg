@@ -1679,6 +1679,22 @@ def test_preparer_assigns_credit_without_reference_by_servicer_reference(workspa
     assert f"{STAND_IN}: bank-entry-1" in audit
 
 
+def test_statement_summary_counts_only_credits_that_can_be_assigned(workspace):
+    _invoice()
+    eligible = _statement_xml(reference="", servicer="stand-in")
+    ineligible = _statement_xml(reference="", servicer="notprovided")
+    _upload_xml(workspace, _one_upload(eligible, ineligible))
+    rows = db.list_bank_statement_entries(COMMUNITY)
+    assert len(rows) == 2
+    eligible_entry = next(row for row in rows if row["servicer_reference"])
+    refused_entry = next(row for row in rows if not row["servicer_reference"])
+
+    page = workspace.get(PAYMENTS).text
+    assert f"/statements/{eligible_entry['id']}/assign" in page
+    assert f"/statements/{refused_entry['id']}/assign" not in page
+    assert "<dt>Warten auf Zuordnung</dt> <dd>1</dd>" in " ".join(page.split())
+
+
 def test_repeated_credit_without_reference_needs_duplicate_review(workspace):
     first, second = _invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")
     _upload_xml(
