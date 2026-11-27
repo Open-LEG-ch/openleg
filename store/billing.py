@@ -1135,9 +1135,10 @@ def _with_payment_reference_keys(entry, invoice_reference_keys):
     payment_key = normalise(entry["payment_reference"])
     if payment_key in invoice_reference_keys:
         creditor_keys.add(payment_key)
-    bank_keys = {key for ref in entry["bank_references"] if (key := ref.strip())}
+    bank_key = payment_reconciliation.bank_reference_key
+    bank_keys = {key for ref in entry["bank_references"] if (key := bank_key(ref))}
     legacy_keys = {
-        key for ref in entry.get("legacy_bank_references", ()) if (key := ref.strip())
+        key for ref in entry.get("legacy_bank_references", ()) if (key := bank_key(ref))
     }
     return {
         **entry,
@@ -1593,8 +1594,7 @@ def list_bank_statement_entries(
                           AND EXISTS (
                               SELECT 1 FROM unnest(e.bank_references) AS booked(reference)
                               JOIN unnest(c.bank_references) AS reported(reference)
-                                ON regexp_replace(booked.reference, '^[[:space:]]+|[[:space:]]+$', '', 'g')
-                                 = regexp_replace(reported.reference, '^[[:space:]]+|[[:space:]]+$', '', 'g')
+                                ON btrim(booked.reference, %s) = btrim(reported.reference, %s)
                           )
                         ORDER BY e.id LIMIT 1) AS likely_duplicate_invoice_number,
                        EXISTS (
@@ -1613,6 +1613,8 @@ def list_bank_statement_entries(
                 LIMIT %s
                 """,
                 (
+                    payment_reconciliation.BANK_REFERENCE_WHITESPACE,
+                    payment_reconciliation.BANK_REFERENCE_WHITESPACE,
                     confirmation_key_prefix,
                     community_id,
                     community_id,

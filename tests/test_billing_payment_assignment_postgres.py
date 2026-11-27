@@ -1066,6 +1066,35 @@ def test_bank_reference_comparison_ignores_surrounding_whitespace(
     assert len(_paid_events()) == 1
 
 
+@pytest.mark.parametrize("padding", ["\u00a0", "\u2007", "\u202f"])
+def test_no_break_space_padding_shows_label_and_card_hint(workspace, padding):
+    _invoice("FIRST-INVOICE")
+    second = _invoice("SECOND-INVOICE")
+    account = {"account": "CH0000000000000000000", "account_is_iban": True}
+    padded = f"{padding}PAYMENT-123{padding}"
+    _upload_xml(
+        workspace,
+        _statement_xml(reference="FIRST-INVOICE", servicer=padded, **account),
+        _statement_xml(
+            statement="repeat",
+            reference="SECOND-INVOICE",
+            servicer="PAYMENT-123",
+            **account,
+        ),
+    )
+    candidate, prior = db.list_bank_statement_entries(COMMUNITY)
+    assert prior["bank_references"] == [padded]
+    page = _follow_assignment(workspace, _assign(workspace, candidate["id"], second))
+    review = page.text.split('id="duplicate-review-matches"', 1)[1].split("</ul>", 1)[0]
+    card = page.text.split(f'id="statement-{candidate["id"]}"', 1)[1].split(
+        "</article>", 1
+    )[0]
+    assert "Sehr wahrscheinlich dieselbe Zahlung" in review
+    assert "Wahrscheinlich bereits auf Rechnung FIRST-INVOICE gebucht." in card
+    _review_token(page)
+    assert len(_paid_events()) == 1
+
+
 def _drop_bank_reference_columns(cur):
     # Restore the persisted row shape from 7b47c415 before running the upgrade.
     cur.execute("""
