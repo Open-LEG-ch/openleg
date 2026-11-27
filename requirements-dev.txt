@@ -6,7 +6,7 @@ pyyaml>=6.0.3
 pillow>=12.1.0
 mypy==2.4.1
 ruff==0.17.6
-coverage==7.17.2
+coverage==7.17.5
 mutmut==3.7.0
 
 # OpenAPI contract validation (test only)
