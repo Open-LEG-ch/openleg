@@ -492,8 +492,15 @@ def test_period_approval_action_requires_another_human_under_dual_control(
     assert ('name="confirm_prepare"' in response.text) is not may_approve
 
 
-@pytest.mark.parametrize("deliver_all", [True, False])
-def test_cancelled_period_keeps_its_recorded_delivery_milestone(workspace, deliver_all):  # noqa: F811
+@pytest.mark.parametrize(
+    ("deliveries", "cancel_undelivered_first"),
+    [("all", False), ("none", False), ("one", True), ("one", False)],
+)
+def test_cancelled_period_keeps_its_recorded_delivery_milestone(
+    workspace,  # noqa: F811
+    deliveries,
+    cancel_undelivered_first,
+):
     period = _period()
     _valid_draft(period)
     url = f"{BILLING}/period/{period}"
@@ -517,17 +524,33 @@ def test_cancelled_period_keeps_its_recorded_delivery_milestone(workspace, deliv
             "SELECT id FROM invoices WHERE billing_period_id=%s ORDER BY id", (period,)
         )
         invoices = [row["id"] for row in cur.fetchall()]
-    for invoice in invoices if deliver_all else invoices[:-1]:
+    delivered = (
+        invoices if deliveries == "all" else invoices[:1] if deliveries == "one" else []
+    )
+    undelivered = [invoice for invoice in invoices if invoice not in delivered]
+    if cancel_undelivered_first:
+        for invoice in undelivered:
+            db.cancel_invoice(invoice, COMMUNITY, AUDITOR, "Teststorno")
+    for invoice in delivered:
         db.prepare_invoice_delivery(invoice, COMMUNITY, AUDITOR)
         db.complete_invoice_delivery(invoice, COMMUNITY, AUDITOR)
-    for invoice in invoices:
+    if not cancel_undelivered_first:
+        for invoice in undelivered:
+            db.cancel_invoice(invoice, COMMUNITY, AUDITOR, "Teststorno")
+    if delivered:
+        before = _assert_stage(workspace, url, "delivered", "Zugestellt")
+        delivery_time = before.split('id="delivered-at"', 1)[1].split("</time>", 1)[0]
+    for invoice in delivered:
         db.cancel_invoice(invoice, COMMUNITY, AUDITOR, "Teststorno")
     html = _assert_stage(workspace, url, "cancelled", "Storniert")
-    assert ('id="delivered-at"' in html) is deliver_all
+    if delivered:
+        assert f'id="delivered-at"{delivery_time}</time>' in html
+    else:
+        assert 'id="delivered-at"' not in html
     assert 'id="cancelled-at"' in html
     assert "Keine Zahlung fällig" in html
     delivery_step = html.split('id="step-delivered"', 1)[1].split("</li>", 1)[0]
-    assert ("Entfällt" in delivery_step) is not deliver_all
+    assert ("Entfällt" in delivery_step) is (not delivered)
     assert "Ausstehend" not in delivery_step
 
 

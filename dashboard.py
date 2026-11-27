@@ -513,6 +513,7 @@ def leg_billing_period_detail(community_id, building_id, period_id, *, after=Non
     policy = period.get("billing_policy_snapshot")
     version = policy.get("tariff_id") if isinstance(policy, dict) else None
     stage = summary["stage"]
+    closed_delivered_at = progress.get("closed_delivered_at")
     drafted_at = period.get("created_at")
     if drafted_at is not None and drafted_at.tzinfo is None:
         drafted_at = drafted_at.replace(tzinfo=UTC)
@@ -547,8 +548,10 @@ def leg_billing_period_detail(community_id, building_id, period_id, *, after=Non
                 (
                     "delivered",
                     stage in ("delivered", "paid")
-                    or progress.get("all_previously_delivered"),
-                    progress.get("delivered_at"),
+                    or (stage == "cancelled" and closed_delivered_at is not None),
+                    closed_delivered_at
+                    if stage == "cancelled"
+                    else progress.get("delivered_at"),
                 ),
                 ("paid", stage == "paid", progress.get("paid_at")),
                 ("cancelled", stage == "cancelled", progress.get("cancelled_at")),

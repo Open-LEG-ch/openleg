@@ -520,13 +520,12 @@ def get_community_billing_progress(
                            AS all_paid,
                        bool_and(COALESCE(state.new_state, 'issued') IN ('cancelled', 'corrected'))
                            AS all_cancelled,
-                       bool_and(history.delivered_at IS NOT NULL)
-                           AS all_previously_delivered,
-                       CASE WHEN bool_and(history.delivered_at IS NOT NULL)
-                           THEN max(history.delivered_at)
-                           ELSE max(history.delivered_at)
-                               FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
-                       END AS delivered_at,
+                       CASE WHEN bool_and(
+                           history.delivered_at IS NOT NULL OR history.cancelled_before_delivery
+                       ) THEN max(history.delivered_at) END AS closed_delivered_at,
+                       max(history.delivered_at)
+                           FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
+                           AS delivered_at,
                        max(history.cancelled_at) AS cancelled_at,
                        max(history.paid_at)
                            FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
@@ -546,7 +545,10 @@ def get_community_billing_progress(
                            max(e.created_at) FILTER (WHERE e.new_state = 'paid')
                                AS paid_at,
                            max(e.created_at) FILTER (WHERE e.new_state = 'cancelled')
-                               AS cancelled_at
+                               AS cancelled_at,
+                           count(*) FILTER (
+                               WHERE e.new_state = 'cancelled' AND e.previous_state = 'issued'
+                           ) > 0 AS cancelled_before_delivery
                     FROM invoice_lifecycle_events e
                     WHERE %s AND e.invoice_id = i.id AND e.community_id = i.community_id
                       AND e.new_state <> e.previous_state
