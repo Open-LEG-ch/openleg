@@ -63,7 +63,7 @@
   {% endif %}
 </section>
 <section class="mb-10">
-  <h2 class="font-bold mb-2">{{ _('Anmeldung beim Netzbetreiber') }}</h2>
+  <h2 id="vnb-submissions-title" class="font-bold mb-2">{{ _('Anmeldung beim Netzbetreiber') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('OpenLEG hält Paket, Zustellung und Antwort als eigenen Vorgang fest. Ohne konfigurierte Schnittstelle laden Sie dasselbe Paket herunter und bestätigen die Zustellung von Hand.') }}</p>
   {% if not vnb_exchange_available|default(true) %}
   <p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar.') }}</p>

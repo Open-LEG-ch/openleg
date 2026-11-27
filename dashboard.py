@@ -27,8 +27,8 @@ import security_utils
 import telemetry
 import vnb_exchange
 from email_localization import gettext
+from i18n import format_date_label, format_period_label, localized_url, ngettext
 from i18n import gettext as _
-from i18n import localized_url
 from locale_policy import resolve_locale
 from money_display import InvalidMoneyAmount, finite_decimal, format_amount
 from operator_errors import IdempotencyConflict
@@ -276,11 +276,21 @@ def leg_overview(
         if workspace_page == "correspondence" or needs_start_evidence
         else []
     )
+    operating = status["status"] == "active"
+    show_formation = (workspace_page == "overview" and not operating) or (
+        workspace_page == "formation" and operating
+    )
     vnb_exchange_available = db.is_db_available()
     if vnb_exchange_available:
         try:
-            vnb_submissions = db.list_vnb_submission_cases(community_id)
-            vnb_mutations = db.list_vnb_mutations(community_id)
+            vnb_submissions = (
+                db.list_vnb_submission_cases(community_id) if show_formation else []
+            )
+            vnb_mutations = (
+                db.list_vnb_mutations(community_id)
+                if workspace_page == "members"
+                else []
+            )
         except db.VnbExchangeStoreError:
             vnb_exchange_available = False
             vnb_submissions = []
@@ -327,9 +337,21 @@ def leg_overview(
                     for building_id, share in battery["shares"].items()
                 },
             }
+    attention = (
+        leg_workspace_attention(
+            community_id,
+            building_id,
+            member,
+            require_dual_control=bool(status.get("require_dual_control")),
+            include_ledger=True,
+        )
+        if workspace_page == "overview" and operating
+        else None
+    )
     return {
         "error": None,
         "community": _with_german_labels(status),
+        "attention": attention,
         "minimum_community_size": formation_wizard.FORMATION_CONFIG[
             "min_community_size"
         ],
@@ -346,7 +368,7 @@ def leg_overview(
         "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
         "can_audit_billing": can_audit_billing,
         "access_role_labels": community_access.ROLE_LABELS,
-        "leg_documents": db.list_leg_documents(community_id),
+        "leg_documents": db.list_leg_documents(community_id) if show_formation else [],
         "correspondence": correspondence,
         "vnb_submissions": vnb_submissions,
         "can_retry_vnb_submission": can_retry_vnb_submission,
@@ -443,6 +465,282 @@ def _billing_period_stage(period, progress):
     if period["status"] == "draft" and _has_human_preparer(period):
         return "prepared"
     return period["status"]
+
+
+def _ledger_cells(row):
+    return [
+        f"{row['invoices']:,}".replace(",", "'") if row.get("invoices") else "",
+        *(
+            _("Unlesbar")
+            if row.get(field + "_unreadable")
+            else _display_statement_amount(row[field])
+            if row.get(field) is not None
+            else ""
+            for field in ("amount", "paid", "open")
+        ),
+    ]
+
+
+def _workspace_tasks(community_id, facts, today):
+    tasks = []
+
+    def add(key, section, title, action, path):
+        tasks.append(
+            {
+                "section": section,
+                "count": facts[key]["count"],
+                "title": title,
+                "action": action,
+                "href": leg_workspace_location(community_id, path),
+            }
+        )
+
+    if row := facts.get("overdue"):
+        count = row["count"]
+        if row["unreadable"]:
+            title = ngettext(
+                "Eine Rechnung ist überfällig und ihr Betrag ist unlesbar.",
+                "%(num)d Rechnungen sind überfällig und ihr Gesamtbetrag ist unlesbar.",
+                count,
+            )
+        else:
+            title = ngettext(
+                "Eine Rechnung über CHF %(amount)s ist überfällig.",
+                "%(num)d Rechnungen über insgesamt CHF %(amount)s sind überfällig.",
+                count,
+                amount=_display_statement_amount(row["amount"]),
+            )
+        add(
+            "overdue",
+            "payments",
+            title,
+            _("Überfällige Rechnungen prüfen"),
+            "payments#open-invoices",
+        )
+
+    if row := facts.get("approve"):
+        period = format_period_label(billing_workspace.period_label(row["at"]))
+        title = ngettext(
+            "%(period)s wartet auf Ihre Freigabe.",
+            "%(num)d Abrechnungsperioden warten auf Ihre Freigabe, zuerst %(period)s.",
+            row["count"],
+            period=period,
+        )
+        add(
+            "approve",
+            "billing",
+            title,
+            _("Rechnungen freigeben"),
+            f"billing/period/{row['target']}",
+        )
+
+    if row := facts.get("deliver"):
+        title = ngettext(
+            "Eine Rechnung wartet auf Zustellung.",
+            "%(num)d Rechnungen warten auf Zustellung.",
+            row["count"],
+        )
+        add(
+            "deliver",
+            "invoices",
+            title,
+            _("Zustellen"),
+            f"invoices/{row['target']}",
+        )
+
+    if row := facts.get("questions"):
+        if row["at"]:
+            title = ngettext(
+                "Eine Rechnungsfrage ist bis %(date)s zu beantworten.",
+                "Von %(num)d offenen Rechnungsfragen ist die nächste bis %(date)s zu beantworten.",
+                row["count"],
+                date=format_date_label(row["at"]),
+            )
+        else:
+            title = ngettext(
+                "Eine Rechnungsfrage ist offen.",
+                "%(num)d Rechnungsfragen sind offen.",
+                row["count"],
+            )
+
+        add(
+            "questions",
+            "invoices",
+            title,
+            _("Rechnungsfragen prüfen"),
+            f"invoices/{row['target']}#questions",
+        )
+        if (
+            row["at"]
+            and row["at"].astimezone(ZoneInfo(billing_workspace.PERIOD_TIMEZONE)).date()
+            <= today
+        ):
+            tasks.insert(0, tasks.pop())
+
+    if row := facts.get("bank"):
+        title = ngettext(
+            "Eine Bankbuchung wartet auf Zuordnung.",
+            "%(num)d Bankbuchungen warten auf Zuordnung.",
+            row["count"],
+        )
+        add(
+            "bank",
+            "payments",
+            title,
+            _("Zahlungsabgleich prüfen"),
+            "payments#statement-assignments",
+        )
+
+    if row := facts.get("prepare"):
+        period = format_period_label(billing_workspace.period_label(row["at"]))
+        title = ngettext(
+            "%(period)s wartet auf Ihre Vorbereitung.",
+            "%(num)d Abrechnungsperioden warten auf Ihre Vorbereitung, zuerst %(period)s.",
+            row["count"],
+            period=period,
+        )
+        add(
+            "prepare",
+            "billing",
+            title,
+            _("Zur Freigabe vorbereiten"),
+            f"billing/period/{row['target']}",
+        )
+
+    if row := facts.get("submission"):
+        title = ngettext(
+            "Eine Anmeldung beim Netzbetreiber ist fehlgeschlagen.",
+            "%(num)d Anmeldungen beim Netzbetreiber sind fehlgeschlagen.",
+            row["count"],
+        )
+        add(
+            "submission",
+            "formation",
+            title,
+            _("Anmeldung beim Netzbetreiber prüfen"),
+            "formation#vnb-submissions-title",
+        )
+
+    if row := facts.get("mutation"):
+        title = ngettext(
+            "Eine Mitgliedermutation beim Netzbetreiber ist fehlgeschlagen.",
+            "%(num)d Mitgliedermutationen beim Netzbetreiber sind fehlgeschlagen.",
+            row["count"],
+        )
+        add(
+            "mutation",
+            "members",
+            title,
+            _("Mitgliedermutationen prüfen"),
+            "members#vnb-mutations-title",
+        )
+
+    return tasks
+
+
+def leg_workspace_attention(
+    community_id, building_id, member, *, require_dual_control, include_ledger=False
+):
+    """Use the same role-scoped tasks for overview content and navigation."""
+    today = datetime.now(ZoneInfo(billing_workspace.PERIOD_TIMEZONE)).date()
+    capabilities = community_access.capabilities_for(member)
+    task_capabilities = {
+        "can_prepare": community_access.PREPARE_BILLING in capabilities,
+        "can_approve": community_access.APPROVE_BILLING in capabilities,
+        "can_manage_documents": community_access.MANAGE_DOCUMENTS in capabilities,
+        "can_manage_members": community_access.MANAGE_MEMBERS in capabilities,
+    }
+    facts = {}
+    unavailable = False
+    if any(task_capabilities.values()):
+        if not db.is_db_available():
+            unavailable = True
+        else:
+            try:
+                facts = db.get_workspace_attention(
+                    community_id,
+                    building_id,
+                    today,
+                    require_dual_control=require_dual_control,
+                    **task_capabilities,
+                )
+            except db.BillingStoreError:
+                logger.exception("Could not load workspace tasks")
+                unavailable = True
+    tasks = _workspace_tasks(community_id, facts, today)
+    counts: dict[str, int] = {}
+    for task in tasks:
+        section = task["section"]
+        counts[section] = counts.get(section, 0) + task["count"]
+
+    result: dict = {"counts": counts}
+    if not include_ledger:
+        return result
+
+    next_month = (
+        date(today.year, today.month + 1, 1)
+        if today.month < 12
+        else date(today.year + 1, 1, 1)
+    )
+    if tasks:
+        title = tasks[0]["title"]
+    elif unavailable:
+        title = _("Offene Aufgaben sind derzeit nicht verfügbar.")
+    elif (payment := facts.get("next_payment")) and payment["at"].astimezone(
+        ZoneInfo(billing_workspace.PERIOD_TIMEZONE)
+    ).date() <= next_month:
+        title = _(
+            "Derzeit ist nichts offen, die nächste Zahlung ist am %(date)s fällig.",
+            date=format_date_label(payment["at"]),
+        )
+    else:
+        title = _(
+            "Derzeit ist nichts offen, die nächste Abrechnungsperiode beginnt am %(date)s.",
+            date=format_date_label(next_month),
+        )
+
+    result.update(
+        title=title,
+        tasks=tasks,
+        tasks_unavailable=unavailable,
+        year=today.year,
+        ledger=None,
+        ledger_unavailable=False,
+    )
+    if community_access.AUDIT_BILLING in capabilities:
+        if not db.is_db_available():
+            result["ledger_unavailable"] = True
+        else:
+            try:
+                result["ledger"] = _workspace_ledger(community_id, today.year)
+            except db.BillingStoreError:
+                result["ledger_unavailable"] = True
+    return result
+
+
+def _workspace_ledger(community_id, year):
+    summaries = db.get_community_billing_ledger(
+        community_id, date(year, 1, 1), date(year + 1, 1, 1)
+    )
+    by_month = {row["month"]: row for row in summaries}
+    rows = []
+    for month in range(1, 13):
+        period = date(year, month, 1)
+        row = by_month.get(period, {})
+        stage = _billing_period_stage(row, row) if row.get("status") else None
+        rows.append(
+            {
+                "period": period.isoformat()[:7],
+                "label": format_date_label(period, pattern="LLLL"),
+                "cells": _ledger_cells(row),
+                "state": _(_BILLING_STATUS_LABELS.get(stage, "")) if stage else "",
+            }
+        )
+    return {
+        "rows": rows,
+        "total": _ledger_cells(by_month.get(None, {})),
+        "empty": not any(row["state"] or row["cells"][0] for row in rows),
+    }
 
 
 def _has_human_preparer(period):

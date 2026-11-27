@@ -20778,3 +20778,163 @@ msgstr "Sélectionnez une facture. Dans la rubrique Paiements, importez d’abor
 #: templates/sandbox/payments.html:28
 msgid "Auszug unter Zahlungen importieren"
 msgstr "Importer le relevé dans la rubrique Paiements"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:489
+#, python-format
+msgid "Eine Rechnungsfrage ist bis %(date)s zu beantworten."
+msgid_plural "Von %(num)d offenen Rechnungsfragen ist die nächste bis %(date)s zu beantworten."
+msgstr[0] "Une question sur une facture attend une réponse d’ici au %(date)s."
+msgstr[1] "Sur les %(num)d questions ouvertes concernant des factures, la prochaine appelle une réponse d’ici au %(date)s."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:496
+#, python-format
+msgid "Eine Rechnungsfrage ist offen."
+msgid_plural "%(num)d Rechnungsfragen sind offen."
+msgstr[0] "Une question sur une facture est en suspens."
+msgstr[1] "%(num)d questions sur des factures sont en suspens."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:504
+msgid "Rechnungsfragen prüfen"
+msgstr "Examiner les questions sur les factures"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:512
+#, python-format
+msgid "Eine Rechnung ist überfällig und ihr Betrag ist unlesbar."
+msgid_plural "%(num)d Rechnungen sind überfällig und ihr Gesamtbetrag ist unlesbar."
+msgstr[0] "Une facture est échue et son montant est illisible."
+msgstr[1] "%(num)d factures sont échues et leur montant total est illisible."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:518
+#, python-format
+msgid "Eine Rechnung über CHF %(amount)s ist überfällig."
+msgid_plural "%(num)d Rechnungen über insgesamt CHF %(amount)s sind überfällig."
+msgstr[0] "Une facture de %(amount)s CHF est échue."
+msgstr[1] "%(num)d factures sont échues, pour un total de %(amount)s CHF."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:527
+msgid "Überfällige Rechnungen prüfen"
+msgstr "Examiner les factures échues"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:534
+#, python-format
+msgid "%(period)s wartet auf Ihre Freigabe."
+msgid_plural "%(num)d Abrechnungsperioden warten auf Ihre Freigabe, zuerst %(period)s."
+msgstr[0] "La période de %(period)s attend votre validation."
+msgstr[1] "%(num)d périodes de facturation attendent votre validation, à commencer par %(period)s."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:549
+#, python-format
+msgid "Eine Rechnung wartet auf Zustellung."
+msgid_plural "%(num)d Rechnungen warten auf Zustellung."
+msgstr[0] "Une facture attend d’être envoyée."
+msgstr[1] "%(num)d factures attendent d’être envoyées."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:563
+#, python-format
+msgid "Eine Bankbuchung wartet auf Zuordnung."
+msgid_plural "%(num)d Bankbuchungen warten auf Zuordnung."
+msgstr[0] "Une écriture bancaire attend d’être rapprochée."
+msgstr[1] "%(num)d écritures bancaires attendent d’être rapprochées."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:578
+#, python-format
+msgid "%(period)s wartet auf Ihre Vorbereitung."
+msgid_plural "%(num)d Abrechnungsperioden warten auf Ihre Vorbereitung, zuerst %(period)s."
+msgstr[0] "La période de %(period)s est à préparer."
+msgstr[1] "%(num)d périodes de facturation sont à préparer, à commencer par %(period)s."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:593
+#, python-format
+msgid "Eine Anmeldung beim Netzbetreiber ist fehlgeschlagen."
+msgid_plural "%(num)d Anmeldungen beim Netzbetreiber sind fehlgeschlagen."
+msgstr[0] "Une demande d’enregistrement auprès du gestionnaire de réseau a échoué."
+msgstr[1] "%(num)d demandes d’enregistrement auprès du gestionnaire de réseau ont échoué."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:601
+msgid "Anmeldung beim Netzbetreiber prüfen"
+msgstr "Vérifier la demande d’enregistrement"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:607
+#, python-format
+msgid "Eine Mitgliedermutation beim Netzbetreiber ist fehlgeschlagen."
+msgid_plural "%(num)d Mitgliedermutationen beim Netzbetreiber sind fehlgeschlagen."
+msgstr[0] "Une modification de la liste des membres a échoué auprès du gestionnaire de réseau."
+msgstr[1] "%(num)d modifications de la liste des membres ont échoué auprès du gestionnaire de réseau."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:615
+msgid "Mitgliedermutationen prüfen"
+msgstr "Vérifier les changements de membres"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:669 templates/leg_workspace/attention.html:4
+msgid "Offene Aufgaben sind derzeit nicht verfügbar."
+msgstr "Les tâches en cours sont temporairement indisponibles."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:674
+#, python-format
+msgid "Derzeit ist nichts offen, die nächste Zahlung ist am %(date)s fällig."
+msgstr "Aucune tâche en cours et le prochain paiement est dû le %(date)s."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:679
+#, python-format
+msgid "Derzeit ist nichts offen, die nächste Abrechnungsperiode beginnt am %(date)s."
+msgstr "Aucune tâche en cours et la prochaine période de facturation commence le %(date)s."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_dashboard.html:6
+#, python-format
+msgid "%(title)s | OpenLEG"
+msgstr "%(title)s | OpenLEG"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/attention.html:2
+msgid "Ausserdem offen"
+msgstr "Autres tâches ouvertes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/attention.html:15
+msgid "Es gibt keine weiteren offenen Aufgaben."
+msgstr "Il n’y a pas d’autre tâche en cours."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/attention.html:21
+#, python-format
+msgid "Abrechnungen %(year)s"
+msgstr "Décomptes %(year)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/attention.html:26
+#, python-format
+msgid "Für %(year)s liegen noch keine Abrechnungen vor."
+msgstr "Aucun décompte pour %(year)s pour le moment."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/attention.html:32
+msgid "Monat"
+msgstr "Mois"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/attention.html:35
+msgid "Bezahlt (CHF)"
+msgstr "Payé (CHF)"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/attention.html:36
+msgid "Offen (CHF)"
+msgstr "À payer (CHF)"

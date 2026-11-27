@@ -59,14 +59,24 @@ def workspace(interest_database, app_module):
     return client
 
 
-def _invoice(number, *, community=COMMUNITY, participant=PARTICIPANT, amount="12.30"):
+def _invoice(
+    number,
+    *,
+    community=COMMUNITY,
+    participant=PARTICIPANT,
+    amount="12.30",
+    period=None,
+    period_start="2020-01-01",
+    due_date="2020-03-01",
+):
     registration = db.get_building(participant)["referral_code"]
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """INSERT INTO invoices (
                    community_id, participant_id, invoice_number, status,
-                   policy_snapshot, provenance_snapshot, gross_chf, issue_date, due_date
-               ) VALUES (%s, %s, %s, 'issued', %s, %s, %s, '2020-02-01', '2020-03-01')
+                   policy_snapshot, provenance_snapshot, gross_chf, issue_date, due_date,
+                   billing_period_id
+               ) VALUES (%s, %s, %s, 'issued', %s, %s, %s, '2020-02-01', %s, %s)
                RETURNING id""",
             (
                 community,
@@ -81,10 +91,12 @@ def _invoice(number, *, community=COMMUNITY, participant=PARTICIPANT, amount="12
                 Json(
                     {
                         "participant_registration_id": registration,
-                        "period_start": "2020-01-01",
+                        "period_start": period_start,
                     }
                 ),
                 amount,
+                due_date,
+                period,
             ),
         )
         return cur.fetchone()["id"]

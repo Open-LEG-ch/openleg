@@ -575,6 +575,23 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 for member in memberships
                 if member["member_status"] == "confirmed"
             ]
+            if attention := view.get("attention"):
+                view["workspace_counts"] = attention["counts"]
+            elif current := next(
+                (
+                    member
+                    for member in view["workspace_communities"]
+                    if member["community_id"] == community_id
+                    and member.get("status") == "active"
+                ),
+                None,
+            ):
+                view["workspace_counts"] = dashboard_module.leg_workspace_attention(
+                    community_id,
+                    building_id,
+                    {**current, "status": current["member_status"]},
+                    require_dual_control=bool(current.get("require_dual_control")),
+                )["counts"]
             profile = db.get_building(building_id) or {}
             view["workspace_account"] = profile.get("email")
         return render_city_template(template, **view)

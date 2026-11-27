@@ -19667,3 +19667,138 @@ msgstr ""
 #: templates/sandbox/payments.html:28
 msgid "Auszug unter Zahlungen importieren"
 msgstr "Auszug unter Zahlungen importieren"
+
+#: dashboard.py:489
+#, python-format
+msgid "Eine Rechnungsfrage ist bis %(date)s zu beantworten."
+msgid_plural "Von %(num)d offenen Rechnungsfragen ist die nächste bis %(date)s zu beantworten."
+msgstr[0] "Eine Rechnungsfrage ist bis %(date)s zu beantworten."
+msgstr[1] "Von %(num)d offenen Rechnungsfragen ist die nächste bis %(date)s zu beantworten."
+
+#: dashboard.py:496
+#, python-format
+msgid "Eine Rechnungsfrage ist offen."
+msgid_plural "%(num)d Rechnungsfragen sind offen."
+msgstr[0] "Eine Rechnungsfrage ist offen."
+msgstr[1] "%(num)d Rechnungsfragen sind offen."
+
+#: dashboard.py:504
+msgid "Rechnungsfragen prüfen"
+msgstr "Rechnungsfragen prüfen"
+
+#: dashboard.py:512
+#, python-format
+msgid "Eine Rechnung ist überfällig und ihr Betrag ist unlesbar."
+msgid_plural "%(num)d Rechnungen sind überfällig und ihr Gesamtbetrag ist unlesbar."
+msgstr[0] "Eine Rechnung ist überfällig und ihr Betrag ist unlesbar."
+msgstr[1] "%(num)d Rechnungen sind überfällig und ihr Gesamtbetrag ist unlesbar."
+
+#: dashboard.py:518
+#, python-format
+msgid "Eine Rechnung über CHF %(amount)s ist überfällig."
+msgid_plural "%(num)d Rechnungen über insgesamt CHF %(amount)s sind überfällig."
+msgstr[0] "Eine Rechnung über CHF %(amount)s ist überfällig."
+msgstr[1] "%(num)d Rechnungen über insgesamt CHF %(amount)s sind überfällig."
+
+#: dashboard.py:527
+msgid "Überfällige Rechnungen prüfen"
+msgstr "Überfällige Rechnungen prüfen"
+
+#: dashboard.py:534
+#, python-format
+msgid "%(period)s wartet auf Ihre Freigabe."
+msgid_plural "%(num)d Abrechnungsperioden warten auf Ihre Freigabe, zuerst %(period)s."
+msgstr[0] "%(period)s wartet auf Ihre Freigabe."
+msgstr[1] "%(num)d Abrechnungsperioden warten auf Ihre Freigabe, zuerst %(period)s."
+
+#: dashboard.py:549
+#, python-format
+msgid "Eine Rechnung wartet auf Zustellung."
+msgid_plural "%(num)d Rechnungen warten auf Zustellung."
+msgstr[0] "Eine Rechnung wartet auf Zustellung."
+msgstr[1] "%(num)d Rechnungen warten auf Zustellung."
+
+#: dashboard.py:563
+#, python-format
+msgid "Eine Bankbuchung wartet auf Zuordnung."
+msgid_plural "%(num)d Bankbuchungen warten auf Zuordnung."
+msgstr[0] "Eine Bankbuchung wartet auf Zuordnung."
+msgstr[1] "%(num)d Bankbuchungen warten auf Zuordnung."
+
+#: dashboard.py:578
+#, python-format
+msgid "%(period)s wartet auf Ihre Vorbereitung."
+msgid_plural "%(num)d Abrechnungsperioden warten auf Ihre Vorbereitung, zuerst %(period)s."
+msgstr[0] "%(period)s wartet auf Ihre Vorbereitung."
+msgstr[1] "%(num)d Abrechnungsperioden warten auf Ihre Vorbereitung, zuerst %(period)s."
+
+#: dashboard.py:593
+#, python-format
+msgid "Eine Anmeldung beim Netzbetreiber ist fehlgeschlagen."
+msgid_plural "%(num)d Anmeldungen beim Netzbetreiber sind fehlgeschlagen."
+msgstr[0] "Eine Anmeldung beim Netzbetreiber ist fehlgeschlagen."
+msgstr[1] "%(num)d Anmeldungen beim Netzbetreiber sind fehlgeschlagen."
+
+#: dashboard.py:601
+msgid "Anmeldung beim Netzbetreiber prüfen"
+msgstr "Anmeldung beim Netzbetreiber prüfen"
+
+#: dashboard.py:607
+#, python-format
+msgid "Eine Mitgliedermutation beim Netzbetreiber ist fehlgeschlagen."
+msgid_plural "%(num)d Mitgliedermutationen beim Netzbetreiber sind fehlgeschlagen."
+msgstr[0] "Eine Mitgliedermutation beim Netzbetreiber ist fehlgeschlagen."
+msgstr[1] "%(num)d Mitgliedermutationen beim Netzbetreiber sind fehlgeschlagen."
+
+#: dashboard.py:615
+msgid "Mitgliedermutationen prüfen"
+msgstr "Mitgliedermutationen prüfen"
+
+#: dashboard.py:669 templates/leg_workspace/attention.html:4
+msgid "Offene Aufgaben sind derzeit nicht verfügbar."
+msgstr "Offene Aufgaben sind derzeit nicht verfügbar."
+
+#: dashboard.py:674
+#, python-format
+msgid "Derzeit ist nichts offen, die nächste Zahlung ist am %(date)s fällig."
+msgstr "Derzeit ist nichts offen, die nächste Zahlung ist am %(date)s fällig."
+
+#: dashboard.py:679
+#, python-format
+msgid "Derzeit ist nichts offen, die nächste Abrechnungsperiode beginnt am %(date)s."
+msgstr "Derzeit ist nichts offen, die nächste Abrechnungsperiode beginnt am %(date)s."
+
+#: templates/leg_dashboard.html:6
+#, python-format
+msgid "%(title)s | OpenLEG"
+msgstr "%(title)s | OpenLEG"
+
+#: templates/leg_workspace/attention.html:2
+msgid "Ausserdem offen"
+msgstr "Ausserdem offen"
+
+#: templates/leg_workspace/attention.html:15
+msgid "Es gibt keine weiteren offenen Aufgaben."
+msgstr "Es gibt keine weiteren offenen Aufgaben."
+
+#: templates/leg_workspace/attention.html:21
+#, python-format
+msgid "Abrechnungen %(year)s"
+msgstr "Abrechnungen %(year)s"
+
+#: templates/leg_workspace/attention.html:26
+#, python-format
+msgid "Für %(year)s liegen noch keine Abrechnungen vor."
+msgstr "Für %(year)s liegen noch keine Abrechnungen vor."
+
+#: templates/leg_workspace/attention.html:32
+msgid "Monat"
+msgstr "Monat"
+
+#: templates/leg_workspace/attention.html:35
+msgid "Bezahlt (CHF)"
+msgstr "Bezahlt (CHF)"
+
+#: templates/leg_workspace/attention.html:36
+msgid "Offen (CHF)"
+msgstr "Offen (CHF)"

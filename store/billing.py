@@ -1205,6 +1205,77 @@ def page_open_payment_invoices(
     )
 
 
+_UNREADABLE_GROSS = "gross_chf IS NULL OR gross_chf IN ('NaN', 'Infinity', '-Infinity')"
+
+
+def get_community_billing_ledger(
+    community_id: str, start: date, end: date
+) -> list[dict]:
+    """Aggregate one Zurich calendar year, with a separate total over the same rows."""
+    return _read_community_invoice_rows(
+        f"""
+        WITH scope AS (
+            SELECT %s AS community_id, %s::date AS start_on, %s::date AS end_on
+        ), periods AS (
+            SELECT id, status, prepared_by,
+                   date_trunc('month', period_start AT TIME ZONE 'Europe/Zurich')::date AS month
+            FROM billing_periods JOIN scope USING (community_id)
+            WHERE period_start >= start_on::timestamp AT TIME ZONE 'Europe/Zurich'
+              AND period_start < end_on::timestamp AT TIME ZONE 'Europe/Zurich'
+        ), invoice_months AS (
+            SELECT p.month, i.gross_chf, {_INVOICE_LIFECYCLE_STATE} AS state
+            FROM periods p
+            JOIN invoices i ON i.billing_period_id = p.id
+            JOIN scope s ON s.community_id = i.community_id
+            WHERE i.status = 'issued'
+            UNION ALL
+            SELECT date_trunc('month', legacy.start_on::timestamp)::date,
+                   i.gross_chf, {_INVOICE_LIFECYCLE_STATE}
+            FROM invoices i JOIN scope s USING (community_id)
+            CROSS JOIN LATERAL (VALUES (i.provenance_snapshot->>'period_start')) raw(start_at)
+            CROSS JOIN LATERAL (
+                SELECT CASE
+                    WHEN raw.start_at ~ '^[0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}$'
+                         AND pg_input_is_valid(raw.start_at, 'date')
+                    THEN raw.start_at::date
+                    WHEN raw.start_at ~ '^[0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}[T ]'
+                         AND pg_input_is_valid(raw.start_at, 'timestamp with time zone')
+                    THEN (raw.start_at::timestamptz AT TIME ZONE 'Europe/Zurich')::date
+                END AS start_on
+            ) legacy
+            WHERE i.status = 'issued' AND i.billing_period_id IS NULL
+              AND legacy.start_on >= s.start_on AND legacy.start_on < s.end_on
+        ), active_invoices AS (
+            SELECT month, state, {_UNREADABLE_GROSS} AS unreadable,
+                   CASE WHEN NOT ({_UNREADABLE_GROSS}) THEN gross_chf END AS amount
+            FROM invoice_months
+            WHERE state NOT IN ('cancelled', 'corrected')
+        ), invoice_totals AS (
+            SELECT month, count(*) AS invoices,
+                   bool_or(unreadable) AS amount_unreadable,
+                   bool_or(unreadable) FILTER (WHERE state = 'paid') AS paid_unreadable,
+                   bool_or(unreadable) FILTER (WHERE state <> 'paid') AS open_unreadable,
+                   sum(amount) AS amount,
+                   sum(amount) FILTER (WHERE state = 'paid') AS paid,
+                   sum(amount) FILTER (WHERE state <> 'paid') AS open,
+                   bool_and(state = 'paid') AS all_paid,
+                   bool_and(state IN ('delivered', 'paid')) AS all_delivered
+            FROM active_invoices
+            GROUP BY GROUPING SETS ((month), ())
+        ), period_months AS (
+            SELECT DISTINCT ON (month) month, status, prepared_by
+            FROM periods
+            ORDER BY month, CASE WHEN status = 'issued' THEN 1 ELSE 0 END, id DESC
+        )
+        SELECT month, t.invoices, t.amount, t.amount_unreadable, t.paid, t.paid_unreadable,
+               t.open, t.open_unreadable, t.all_paid, t.all_delivered, p.prepared_by,
+               COALESCE(p.status, CASE WHEN t.month IS NOT NULL THEN 'issued' END) AS status
+        FROM invoice_totals t FULL JOIN period_months p USING (month)
+        """,
+        (community_id, start, end),
+    )
+
+
 def _read_community_invoice_rows(query: str, params: tuple) -> list[dict]:
     try:
         with _get_connection() as conn, conn.cursor() as cur:
@@ -1993,6 +2064,36 @@ def reconcile_bank_statement(
         raise BillingStoreError("Could not reconcile bank statement") from error
 
 
+def count_assignable_statement_entries(
+    conn, community_id: str, import_id: int | None = None
+) -> int:
+    """Count reviewable entries with the same eligibility check as the assignment card."""
+    # Stream only the fields needed by the shared refusal check.
+    with conn.cursor(name="statement_assignment_count") as entries:
+        entries.execute(
+            """
+            SELECT e.is_reversal, e.booking_status, e.amount_basis,
+                   e.credit_debit_indicator, e.currency, e.payment_reference,
+                    e.servicer_reference
+            FROM bank_statement_entries e
+            JOIN bank_statement_imports s ON s.id = e.statement_import_id
+              AND s.community_id = e.community_id
+            WHERE e.community_id = %s AND (%s IS NULL OR s.id = %s)
+              AND e.match_decision = ANY(%s)
+            """,
+            (
+                community_id,
+                import_id,
+                import_id,
+                sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
+            ),
+        )
+        return sum(
+            payment_reconciliation.payment_entry_refusal(entry) is None
+            for entry in entries
+        )
+
+
 def get_bank_statement_summary(community_id, upload_id, building_id):
     """Summarize one import and apply the workspace's entry eligibility rules."""
     try:
@@ -2036,31 +2137,12 @@ def get_bank_statement_summary(community_id, upload_id, building_id):
             summary = cur.fetchone()
             if not summary:
                 return None
-            # Stream only the eligibility fields of reviewable entries in
-            # this import. Use the same predicate as the assignment card.
-            with conn.cursor(name="statement_assignment_summary") as entries:
-                entries.execute(
-                    """
-                    SELECT is_reversal, booking_status, amount_basis,
-                           credit_debit_indicator, currency, payment_reference,
-                           servicer_reference
-                    FROM bank_statement_entries
-                    WHERE community_id = %s AND statement_import_id = %s
-                      AND match_decision = ANY(%s)
-                    """,
-                    (
-                        community_id,
-                        summary["id"],
-                        sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
-                    ),
-                )
-                return {
-                    **summary,
-                    "unassigned": sum(
-                        payment_reconciliation.payment_entry_refusal(entry) is None
-                        for entry in entries
-                    ),
-                }
+            return {
+                **summary,
+                "unassigned": count_assignable_statement_entries(
+                    conn, community_id, summary["id"]
+                ),
+            }
     except Exception as error:
         logger.error("[DB] Error summarizing statement import: %s", error)
         raise BillingStoreError("Could not summarize statement import") from error
