@@ -14,3 +14,4 @@ venv
 data/
 .claude
 openclaw/
+scripts/capture_product_media.py
