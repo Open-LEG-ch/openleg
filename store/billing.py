@@ -1404,7 +1404,7 @@ def confirm_payment(
 def _statement_import_result(cur, import_id, *, duplicate):
     cur.execute(
         """
-                SELECT entry_reference, booking_date, amount, currency,
+                SELECT bank_account, entry_reference, booking_date, amount, currency,
                payment_reference, is_reversal, credit_debit_indicator,
                match_decision, invoice_id,
                decided_at, amount_basis, booking_status, duplicate_reason
@@ -1500,8 +1500,8 @@ def reconcile_bank_statement(
                         payment_reference, is_reversal, credit_debit_indicator,
                         match_decision, amount_basis, booking_status,
                         debtor_name, remittance_information, bank_references,
-                        source_statement_reference, creditor_references
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unmatched', %s, %s, %s, %s, %s, %s, %s)
+                        source_statement_reference, creditor_references, bank_account
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unmatched', %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                     """,
                     (
@@ -1521,6 +1521,7 @@ def reconcile_bank_statement(
                         list(entry.get("bank_references", ())),
                         entry.get("source_statement_reference"),
                         list(entry.get("creditor_references", ())),
+                        entry.get("bank_account", ""),
                     ),
                 )
                 imported_entries.append(

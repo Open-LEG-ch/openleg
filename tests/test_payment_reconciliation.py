@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Public contract for ISO 20022 payment reconciliation."""
 
+import json
 from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import date
 from decimal import Decimal
+from hashlib import sha256
 
 import pytest
 
@@ -697,3 +699,118 @@ def test_statement_amount_must_fit_bank_entry_storage(amount, accepted):
     else:
         with pytest.raises(payment_reconciliation.StatementError):
             payment_reconciliation.parse_statement(xml)
+
+
+def _statement_for_accounts(*accounts, message="camt.053"):
+    """One upload whose statements or notifications reuse one bank-local reference."""
+    start = CAMT_053.index(b"<Stmt>")
+    end = CAMT_053.index(b"</Stmt>") + len(b"</Stmt>")
+    statements = b"".join(
+        CAMT_053[start:end].replace(
+            b"statement-1</Id>",
+            f"statement-{number}</Id><Acct>{account}</Acct>".encode(),
+        )
+        for number, account in enumerate(accounts, start=1)
+    )
+    xml = CAMT_053[:start] + statements + CAMT_053[end:]
+    if message == "camt.054":
+        xml = (
+            xml.replace(b"camt.053.001.08", b"camt.054.001.08")
+            .replace(b"BkToCstmrStmt", b"BkToCstmrDbtCdtNtfctn")
+            .replace(b"<Stmt>", b"<Ntfctn>")
+            .replace(b"</Stmt>", b"</Ntfctn>")
+        )
+    return xml
+
+
+_IBAN_1 = "<Id><IBAN>CH0000000000000000001</IBAN></Id>"
+_OTHR_1000 = "<Id><Othr><Id>1000</Id>{}</Othr></Id>"
+_SERVICER = "<Svcr><FinInstnId>{}</FinInstnId></Svcr>"
+_CLEARING = (
+    "<ClrSysMmbId><ClrSysId><Cd>CHBCC</Cd></ClrSysId><MmbId>{}</MmbId></ClrSysMmbId>"
+)
+
+
+@pytest.mark.parametrize("message", ["camt.053", "camt.054"])
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (_IBAN_1, "<Id><IBAN>CH0000000000000000002</IBAN></Id>"),
+        (_IBAN_1, "<Id><Othr><Id>local-2</Id></Othr></Id>"),
+        (
+            _OTHR_1000.format("<Issr>Bank A</Issr>"),
+            _OTHR_1000.format("<SchmeNm><Cd>BBAN</Cd></SchmeNm><Issr>Bank B</Issr>"),
+        ),
+        (
+            _OTHR_1000.format("") + _SERVICER.format("<BICFI>TSTACHZZ</BICFI>"),
+            _OTHR_1000.format("") + _SERVICER.format("<BIC>TSTBCHZZ</BIC>"),
+        ),
+        (
+            _OTHR_1000.format("") + _SERVICER.format(_CLEARING.format("9000")),
+            _OTHR_1000.format("") + _SERVICER.format(_CLEARING.format("9001")),
+        ),
+    ],
+)
+def test_accounts_sharing_a_local_reference_keep_the_bank_value(first, second, message):
+    entries = payment_reconciliation.parse_statement(
+        _statement_for_accounts(first, second, message=message)
+    ).entries
+
+    assert [entry.entry_reference for entry in entries] == ["bank-entry-1"] * 2
+    assert len({entry.bank_account for entry in entries}) == 2
+
+
+@pytest.mark.parametrize(
+    ("account", "key"),
+    [
+        (_IBAN_1, "CH0000000000000000001"),
+        (
+            _OTHR_1000.format("<Issr>Bank A</Issr>")
+            + _SERVICER.format("<BICFI>TSTACHZZXXX</BICFI>"),
+            "sha256:"
+            + sha256(
+                json.dumps(
+                    [
+                        ["Othr/Id", "1000"],
+                        ["Othr/Issr", "Bank A"],
+                        ["Svcr/FinInstnId/BICFI", "TSTACHZZ"],
+                    ],
+                    separators=(",", ":"),
+                ).encode()
+            ).hexdigest(),
+        ),
+        ("<Id><Othr><SchmeNm><Cd>BBAN</Cd></SchmeNm></Othr></Id>", ""),
+    ],
+)
+def test_bank_account_key_is_the_iban_or_the_typed_proprietary_id(account, key):
+    (entry,) = payment_reconciliation.parse_statement(
+        _statement_for_accounts(account)
+    ).entries
+
+    assert entry.bank_account == key
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (_IBAN_1, _IBAN_1),
+        (
+            _OTHR_1000.format("") + _SERVICER.format("<BICFI>POFICHBE</BICFI>"),
+            _OTHR_1000.format("") + _SERVICER.format("<BICFI>POFICHBEXXX</BICFI>"),
+        ),
+        (
+            _OTHR_1000.format("") + _SERVICER.format("<BICFI>POFICHBE</BICFI>"),
+            _OTHR_1000.format("") + _SERVICER.format("<BIC>POFICHBE</BIC>"),
+        ),
+    ],
+)
+def test_one_account_reusing_a_local_reference_still_gets_distinct_rows(first, second):
+    entries = payment_reconciliation.parse_statement(
+        _statement_for_accounts(first, second)
+    ).entries
+
+    assert [entry.entry_reference for entry in entries] == [
+        "bank-entry-1",
+        "bank-entry-1:2:1",
+    ]
+    assert [entry.bank_references for entry in entries] == [("bank-entry-1",)] * 2
