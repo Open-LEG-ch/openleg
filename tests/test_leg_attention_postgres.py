@@ -534,7 +534,7 @@ def test_bank_aggregate_matches_python_eligibility(operating):
             ("CHF", "ref", "CRDT", False, None, "entry"),
         ]
     ):
-        statement_id = _extra_statement(
+        _extra_statement(
             [(currency, reference, direction, reversal, booking, basis)],
             fingerprint=f"{i:x}",
         )
@@ -551,11 +551,43 @@ def test_bank_aggregate_matches_python_eligibility(operating):
             )
             is None
         )
-        assert db.get_bank_statement_summary(COMMUNITY, statement_id)[
+        assert db.get_bank_statement_summary(COMMUNITY, None, ADMIN)[
             "unassigned"
         ] == int(allowed), (currency, reference, direction, reversal, booking, basis)
     html = operating.get(OVERVIEW).text
     _nav_count(html, "payments", 3)
+
+
+def test_bank_aggregate_counts_servicer_references_on_distinct_accounts(operating):
+    invoice = _invoice("open", amount="15.00", due_date="2026-12-04")
+    _event(invoice, "delivered")
+    statement = _extra_statement(
+        [("CHF", "", "CRDT", False, "BOOK", "entry")] * 3,
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.executemany(
+            """UPDATE bank_statement_entries
+               SET entry_reference='shared', bank_account=%s, servicer_reference=%s
+               WHERE statement_import_id=%s AND entry_reference=%s""",
+            [
+                ("CH0000000000000000001", "own-reference", statement, "0"),
+                ("CH0000000000000000002", "own-reference", statement, "1"),
+                ("CH0000000000000000003", "\u00a0", statement, "2"),
+            ],
+        )
+    summary = db.get_bank_statement_summary(COMMUNITY, None, ADMIN)
+    assert summary["unassigned"] == 2
+    _nav_count(operating.get(OVERVIEW).text, "payments", 2)
+    response = operating.get(ROOT + "/payments?assignable=1")
+    assert response.status_code == 200
+    assert (
+        len(
+            re.findall(
+                r'action="[^"]*/statements/\d+/assign(?:\?[^"]*)?"', response.text
+            )
+        )
+        == 2
+    )
 
 
 def test_navigation_counts_bank_assignments_in_one_sql_aggregate(

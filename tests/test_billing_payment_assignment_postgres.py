@@ -1697,7 +1697,9 @@ def test_statement_summary_counts_only_credits_that_can_be_assigned(workspace):
     page = workspace.get(PAYMENTS).text
     assert f"/statements/{eligible_entry['id']}/assign" in page
     assert f"/statements/{refused_entry['id']}/assign" not in page
-    assert "<dt>Warten auf Zuordnung</dt> <dd>1</dd>" in " ".join(page.split())
+    assert "<dt>In diesem Import zur Zuordnung bereit</dt> <dd>1</dd>" in " ".join(
+        page.split()
+    )
 
 
 def test_repeated_credit_without_reference_needs_duplicate_review(workspace):
@@ -2312,9 +2314,7 @@ def test_unknown_upload_does_not_consume_assignment_feedback_after_role_revocati
 
 
 @pytest.mark.parametrize("mode", ["assignable", "overdue"])
-def test_statement_upload_preserves_payments_mode_and_scoped_outcome(
-    workspace, mode
-):
+def test_statement_upload_preserves_payments_mode_and_scoped_outcome(workspace, mode):
     import re
     from io import BytesIO
 

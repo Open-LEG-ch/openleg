@@ -2079,7 +2079,10 @@ def bank_assignable_sql(alias: str) -> str:
     AND {alias}.amount_basis IN ('entry', 'reconciled_batch')
     AND {alias}.credit_debit_indicator = 'CRDT'
     AND {alias}.currency = 'CHF'
-    AND btrim({alias}.payment_reference, %(bank_reference_whitespace)s) <> ''
+    AND (
+        btrim({alias}.payment_reference, %(bank_reference_whitespace)s) <> ''
+        OR btrim({alias}.servicer_reference, %(bank_reference_whitespace)s) <> ''
+    )
 """
 
 
