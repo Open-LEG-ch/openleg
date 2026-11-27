@@ -1841,7 +1841,7 @@ def reconcile_bank_statement(
                     """
                     SELECT id FROM community_members
                     WHERE community_id = %s AND building_id = %s AND status = 'confirmed'
-                    FOR KEY SHARE
+                    FOR SHARE
                     """,
                     (community_id, actor_id),
                 )

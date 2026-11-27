@@ -2216,30 +2216,51 @@ def test_recreated_profile_and_membership_cannot_read_old_upload(workspace):
     )
 
 
-def test_membership_migration_discards_legacy_upload_outcomes_once(workspace):
+def test_schema_adds_upload_outcomes_to_an_existing_database(workspace):
     _, result = _import()
-    legacy_id = "a" * 32
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("DROP TABLE bank_statement_uploads")
-        cur.execute("""
-            CREATE TABLE bank_statement_uploads (
-                id CHAR(32) PRIMARY KEY,
-                statement_import_id BIGINT NOT NULL
-                    REFERENCES bank_statement_imports(id) ON DELETE CASCADE,
-                actor_id VARCHAR(64) NOT NULL,
-                duplicate BOOLEAN NOT NULL
-            )
-        """)
-        cur.execute(
-            "INSERT INTO bank_statement_uploads VALUES (%s, %s, %s, false)",
-            (legacy_id, result["statement_import_id"], ADMIN),
-        )
     db.create_tables()
     _set_session(workspace, ADMIN)
-    assert workspace.get(f"{PAYMENTS}?upload={legacy_id}").status_code == 404
-    current = _upload_statement(workspace, _statement_xml(reference="unknown"))
+    location = _upload_statement(workspace, _statement_xml(reference="unknown"))
     db.create_tables()
-    _assert_upload_result(workspace.get(current), imported=True)
+    _assert_upload_result(workspace.get(location), imported=True)
+    assert any(
+        row["statement_import_id"] == result["statement_import_id"]
+        for row in db.list_bank_statement_entries(COMMUNITY)
+    )
+
+
+def test_upload_holds_a_membership_lock_that_blocks_status_updates(
+    workspace, monkeypatch
+):
+    from psycopg2.errors import LockNotAvailable
+
+    from store import billing
+
+    import_result = billing._statement_import_result
+
+    def check_lock(*args, **kwargs):
+        # Probe the lock an UPDATE of a non-key column such as status needs.
+        with (
+            pytest.raises(LockNotAvailable),
+            db.get_connection() as conn,
+            conn.cursor() as cur,
+        ):
+            cur.execute(
+                """
+                SELECT id FROM community_members
+                WHERE community_id=%s AND building_id=%s
+                FOR NO KEY UPDATE NOWAIT
+                """,
+                (COMMUNITY, ADMIN),
+            )
+        return import_result(*args, **kwargs)
+
+    monkeypatch.setattr(billing, "_statement_import_result", check_lock)
+    _set_session(workspace, ADMIN)
+    location = _upload_statement(workspace, _statement_xml(reference="unknown"))
+    _assert_upload_result(workspace.get(location), imported=True)
 
 
 def test_unknown_upload_does_not_consume_assignment_feedback_after_role_revocation(

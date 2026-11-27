@@ -20722,22 +20722,6 @@ msgid "2. Kontoauszüge herunterladen und importieren"
 msgstr "2. Download and import bank statements"
 
 #. Draft translation; native language and domain review pending.
-#: templates/sandbox/payments.html:15
-msgid ""
-"Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, "
-"Belastung und Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge "
-"bleiben unverbucht. Laden Sie danach die unbekannte Referenz mit passendem Betrag und"
-" bestätigen Sie die geprüfte Zuordnung unten. Verwenden Sie für die automatische "
-"Verbuchung eine andere zugestellte Rechnung und deren exakte CHF-Gutschrift. "
-"Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen."
-msgstr ""
-"Select an invoice. First import the wrong amount, wrong currency, debit and reversal "
-"in the ordinary billing overview. These entries remain unposted. Then download the "
-"unknown reference with a matching amount and confirm the checked match below. Use a "
-"different delivered invoice and its exact CHF credit for automatic posting. Repeat "
-"the same import: it must not create a second payment."
-
-#. Draft translation; native language and domain review pending.
 #: templates/sandbox/payments.html:18
 msgid "Rechnung für die Übungsdateien"
 msgstr "Invoice for the practice files"
@@ -20758,11 +20742,6 @@ msgid ""
 "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen"
 " aus."
 msgstr "No invoice with a positive amount yet. Issue September invoices first."
-
-#. Draft translation; native language and domain review pending.
-#: templates/sandbox/payments.html:27
-msgid "Auszug in der Abrechnungsübersicht importieren"
-msgstr "Import statement in billing overview"
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/payments.html:30
@@ -21414,11 +21393,6 @@ msgid "Gründungsstand auf der Übersicht öffnen"
 msgstr "View formation progress on the overview"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:60
-msgid "Bankzahlungen in der Abrechnung öffnen"
-msgstr "Open bank payments in Billing"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_workspace_base.html:9
 msgid "Übersicht"
 msgstr "Overview"
@@ -21506,16 +21480,6 @@ msgstr "You can create draft agreements only before operations begin."
 #: templates/leg_workspace/formation.html:55
 msgid "Für diese LEG liegen keine Vertragsdokumente vor."
 msgstr "There are no agreement documents for this LEG."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:55
-msgid "Noch keine Bankzahlungen abgeglichen."
-msgstr "No bank payments have been reconciled yet."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:57
-msgid "Diese Ansicht lädt keine Zahlungsdaten."
-msgstr "This view does not load payment data."
 
 #. Draft translation; native language and domain review pending.
 #: dashboard.py:1119
@@ -23078,3 +23042,109 @@ msgstr "No payment due"
 #: templates/leg_billing_period.html:36
 msgid "Entfällt"
 msgstr "Skipped"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:8
+msgid "Neueste offene Rechnungen"
+msgstr "Newest outstanding invoices"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:9
+msgid "Ältere offene Rechnungen"
+msgstr "Older outstanding invoices"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:74
+msgid "Letzter Import"
+msgstr "Latest import"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:74
+msgid "Importierter Kontoauszug"
+msgstr "Imported bank statement"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:79
+msgid "Importierte Einträge"
+msgstr "Imported entries"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:81
+msgid "Manuell zugeordnet"
+msgstr "Manually assigned"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:82
+msgid "Warten auf Zuordnung"
+msgstr "Waiting for assignment"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:84
+msgid "Doppelte Einträge übersprungen"
+msgstr "Duplicate entries skipped"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:89
+msgid "Noch kein Kontoauszug importiert."
+msgstr "No bank statement has been imported yet."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:101
+msgid "Die Rechnungsauswahl zeigt die offenen Rechnungen dieser Seite."
+msgstr "You can select from the outstanding invoices shown on this page."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:108
+msgid "Keine Einträge warten auf eine Zuordnung."
+msgstr "No entries are waiting for assignment."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:114
+msgid "Offene Rechnungen"
+msgstr "Outstanding invoices"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:127
+msgid "Überfällig"
+msgstr "Overdue"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:127
+msgid "Fällig heute"
+msgstr "Due today"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:136
+msgid "Keine weiteren offenen Rechnungen."
+msgstr "There are no more outstanding invoices."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:136
+msgid "Keine offenen Rechnungen."
+msgstr "No outstanding invoices."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:143
+msgid "Weitere importierte Einträge"
+msgstr "Other imported entries"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/payment_entry.html:52
+msgid "Auf dieser Seite steht keine Rechnung zur Auswahl."
+msgstr "There are no invoices to select on this page."
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/payments.html:15
+msgid ""
+"Wählen Sie eine Rechnung. Importieren Sie unter Zahlungen zuerst die Auszüge mit falschem Betrag,"
+" falscher Währung, Belastung und Rückbuchung. Diese Einträge bleiben unverbucht. Importieren Sie "
+"danach den Auszug mit unbekannter Referenz und passendem Betrag. Kehren Sie hierher zurück und "
+"bestätigen Sie unten die geprüfte Zuordnung. Verwenden Sie für die automatische Verbuchung eine "
+"andere zugestellte Rechnung und deren exakte CHF-Gutschrift. Wiederholen Sie denselben Import, um"
+" zu prüfen, dass nur eine Zahlung verbucht wird."
+msgstr "Choose an invoice. Under Payments, first import the statements with the wrong amount, the wrong currency, the debit and the reversal. These entries stay unbooked. Then import the statement with an unknown reference and the correct amount. Return here and confirm the assignment below after reviewing it. To try automatic booking, use a different delivered invoice and the CHF credit that matches it exactly. Import the same statement again to check that only one payment is booked."
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/payments.html:28
+msgid "Auszug unter Zahlungen importieren"
+msgstr "Import the statement under Payments"

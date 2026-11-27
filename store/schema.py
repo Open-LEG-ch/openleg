@@ -1263,25 +1263,7 @@ def create_tables():
                     duplicate BOOLEAN NOT NULL
                 )
             """)
-            # Legacy upload notices are transient. They have no verified
-            # membership identity and must not be reassigned to a new member.
             cur.execute("""
-                DO $$
-                BEGIN
-                    IF EXISTS (
-                        SELECT 1 FROM pg_attribute
-                        WHERE attrelid = 'bank_statement_uploads'::regclass
-                          AND attname = 'actor_id' AND NOT attisdropped
-                    ) THEN
-                        ALTER TABLE bank_statement_uploads
-                            ADD COLUMN IF NOT EXISTS membership_id INTEGER
-                                REFERENCES community_members(id) ON DELETE CASCADE;
-                        DELETE FROM bank_statement_uploads WHERE membership_id IS NULL;
-                        ALTER TABLE bank_statement_uploads
-                            DROP COLUMN IF EXISTS actor_id,
-                            ALTER COLUMN membership_id SET NOT NULL;
-                    END IF;
-                END $$;
                 CREATE INDEX IF NOT EXISTS ix_bank_statement_uploads_membership
                     ON bank_statement_uploads (membership_id)
             """)
