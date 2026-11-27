@@ -2,10 +2,14 @@
 """Bill accepted rounded VNB allocations through the real E66 evidence path."""
 
 import json
+import re
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from datetime import datetime
 from decimal import Decimal
+from html import unescape
+from unittest.mock import Mock
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -22,6 +26,9 @@ calculated_client = e66.calculated_client
 assignment_request = e66.assignment_request
 configured_e66 = e66.configured_e66
 pytestmark = pytest.mark.integration
+DUAL_CONTROL_MESSAGE = (
+    "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
+)
 
 
 @pytest.fixture
@@ -55,7 +62,7 @@ def rounded_delivery(configured_e66, monkeypatch, request):
     ):
         assert db.save_building(
             participant,
-            participant + "@example.invalid",
+            participant + "@example.org",
             {"address": "Synthetic " + participant, "lat": 47.2, "lon": 8.2},
             {},
             verified=True,
@@ -100,6 +107,9 @@ def rounded_delivery(configured_e66, monkeypatch, request):
             ]
             root.append(block)
     with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE buildings SET email = 'member@example.org' WHERE building_id = 'member'"
+        )
         cur.execute(
             "UPDATE communities SET status = 'active' WHERE community_id = %s", (cid,)
         )
@@ -340,6 +350,7 @@ def test_dual_control_rejects_ineligible_preparer(rounded_delivery, preparer):
         approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}
     )
     assert response.status_code == 403
+    assert DUAL_CONTROL_MESSAGE in response.text
     assert db.get_billing_period(period_id, cid)["status"] == "draft"
     assert db.list_community_invoices(cid) == []
 
@@ -387,6 +398,182 @@ def test_automated_draft_can_be_submitted_for_separate_approval(
     assert client.post(approve, data=approval_form).status_code == 302
     assert db.get_billing_period(period_id, cid)["status"] == "issued"
     assert len(db.list_community_invoices(cid)) == 3
+
+
+def _enable_dual_control_with_second_admin(rounded_delivery):
+    _, db, payload, _ = rounded_delivery
+    cid = payload["community_id"]
+    assert db.set_community_dual_control(cid, True, "member")
+    assert db.set_member_access_roles(
+        cid, "producer", [community_access.ADMIN], "member"
+    )
+    return cid
+
+
+def _give_admins_one_mailbox(db):
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE buildings SET email = 'MEMBER@Example.ORG' WHERE building_id = 'producer'"
+        )
+
+
+def test_dual_control_operation_rejects_shared_sign_in_address(rounded_delivery):
+    _, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+    _give_admins_one_mailbox(db)
+
+    with pytest.raises(billing_approval.DualControlApprovalError, match="Dual-control"):
+        billing_approval.approve_billing_period(period_id, cid, approver_id="member")
+
+    assert db.get_billing_period(period_id, cid)["status"] == "draft"
+    assert db.list_community_invoices(cid) == []
+
+
+def test_dual_control_rejects_sessions_from_one_mailbox(rounded_delivery, monkeypatch):
+    import app
+
+    client, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by=None)
+    _give_admins_one_mailbox(db)
+    send = Mock()
+    monkeypatch.setattr(app, "send_email", send)
+    assert (
+        client.post(
+            "/dashboard/access/request", data={"email": " Member@Example.ORG "}
+        ).status_code
+        == 200
+    )
+    assert send.call_count == 2
+    sessions = {}
+    for call in send.call_args_list:
+        recipient, _, body = call.args
+        assert recipient == "member@example.org"
+        link = re.search(r"/dashboard/access/[A-Za-z0-9_-]+", body).group()
+        session_client = client.application.test_client()
+        assert session_client.get(link).status_code == 302
+        with session_client.session_transaction() as state:
+            sessions[state["dashboard_building_id"]] = (
+                session_client,
+                state["dashboard_csrf_token"],
+            )
+    assert set(sessions) == {"member", "producer"}
+    preparer, prepare_csrf = sessions["producer"]
+    approver, approve_csrf = sessions["member"]
+    workspace = f"/leg/community/{cid}/billing"
+    approve = f"{workspace}/period/{period_id}/approve"
+    assert (
+        preparer.post(
+            f"{workspace}/period/{period_id}/prepare",
+            data={"csrf_token": prepare_csrf, "confirm_prepare": "yes"},
+        ).status_code
+        == 302
+    )
+    assert db.get_billing_period(period_id, cid)["prepared_by"] == "producer"
+
+    response = approver.post(
+        approve, data={"csrf_token": approve_csrf, "confirm_approval": "yes"}
+    )
+    assert response.status_code == 403
+    assert DUAL_CONTROL_MESSAGE in response.text
+    assert approve not in approver.get(workspace).text
+    assert db.list_community_invoices(cid) == []
+
+
+def test_dual_control_retries_contended_preparer_and_refuses_deleted_preparer(
+    rounded_delivery,
+):
+    _, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM community_members "
+                "WHERE community_id = %s AND building_id = 'producer'",
+                (cid,),
+            )
+            attempt = executor.submit(
+                billing_approval.approve_billing_period,
+                period_id,
+                cid,
+                approver_id="member",
+            )
+            with pytest.raises(billing_approval.BillingApprovalConflict, match="retry"):
+                attempt.result(timeout=5)
+
+    with pytest.raises(billing_approval.DualControlApprovalError, match="Dual-control"):
+        billing_approval.approve_billing_period(period_id, cid, approver_id="member")
+    assert db.get_billing_period(period_id, cid)["status"] == "draft"
+    assert db.list_community_invoices(cid) == []
+
+
+def test_dual_control_explains_membership_change_during_approval(
+    rounded_delivery, monkeypatch
+):
+    client, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+    _set_session(client, "member")
+    workspace = f"/leg/community/{cid}/billing"
+    approve = f"{workspace}/period/{period_id}/approve"
+    assert approve in client.get(workspace).text
+    operation = billing_approval.approve_billing_period
+
+    def revoke_before_issuing(*args, **kwargs):
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM community_members "
+                "WHERE community_id = %s AND building_id = 'producer'",
+                (cid,),
+            )
+        return operation(*args, **kwargs)
+
+    monkeypatch.setattr(
+        billing_approval, "approve_billing_period", revoke_before_issuing
+    )
+    response = client.post(
+        approve + "?lang=fr-CH",
+        data={"csrf_token": "csrf-secret", "confirm_approval": "yes"},
+    )
+    assert response.status_code == 409
+    assert (
+        "La préparation et l'approbation doivent être effectuées par différentes personnes."
+        in unescape(response.text)
+    )
+    assert f'action="{approve}"' not in response.text
+    assert db.list_community_invoices(cid) == []
+
+
+def test_repreparing_replaces_the_eligible_preparer_and_refuses_self_approval(
+    rounded_delivery,
+):
+    client, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+    _set_session(client, "member")
+    workspace = f"/leg/community/{cid}/billing"
+    approve = f"{workspace}/period/{period_id}/approve"
+    assert approve in client.get(workspace).text
+    assert (
+        client.post(
+            f"{workspace}/period/{period_id}/prepare",
+            data={"csrf_token": "csrf-secret", "confirm_prepare": "yes"},
+        ).status_code
+        == 302
+    )
+    assert db.get_billing_period(period_id, cid)["prepared_by"] == "member"
+    with pytest.raises(billing_approval.DualControlApprovalError, match="Dual-control"):
+        billing_approval.approve_billing_period(period_id, cid, approver_id="member")
+    assert approve not in client.get(workspace).text
+    response = client.post(
+        approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+    )
+    assert response.status_code == 403
+    assert DUAL_CONTROL_MESSAGE in response.text
+    assert db.list_community_invoices(cid) == []
 
 
 def test_automated_draft_can_be_approved_without_dual_control(rounded_delivery):

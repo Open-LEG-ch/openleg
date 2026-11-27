@@ -23,6 +23,7 @@ from zoneinfo import ZoneInfo
 import billing_policy
 import community_access
 import quartierakku
+import security_utils
 from billing_types import (
     BatteryConfig,
     BatterySnapshot,
@@ -54,6 +55,14 @@ _ENERGY_ITEM_TYPES = ("consumer_charge", "producer_credit")
 
 class BillingApprovalError(RuntimeError):
     """A billing draft is incomplete, unreconciled, malformed, or not approvable."""
+
+
+class DualControlApprovalError(BillingApprovalError):
+    """Preparation and approval do not have separate, eligible identities."""
+
+
+class BillingApprovalConflict(BillingApprovalError):
+    """A concurrent change prevented approval. The caller can retry."""
 
 
 def today() -> date:
@@ -1054,16 +1063,36 @@ def dual_control_allows_approval(
     require_dual_control: bool,
     cursor: BillingCursor | None = None,
 ) -> bool:
-    """Require a different, confirmed preparer with preparation rights."""
+    """Require a confirmed preparer with separate sign-in access.
+
+    The issuance cursor holds the checked membership and addresses until commit.
+    """
     if not require_dual_control:
         return True
-    if not prepared_by or prepared_by == "system" or not approver_id:
+    if (
+        not prepared_by
+        or prepared_by == "system"
+        or not approver_id
+        or prepared_by == approver_id
+    ):
         return False
-    return prepared_by != approver_id and community_access.allows(
-        billing_store.get_billing_preparer_membership(
-            community_id, prepared_by, cursor=cursor
-        ),
-        community_access.PREPARE_BILLING,
+    membership = billing_store.get_billing_preparer_membership(
+        community_id, prepared_by, approver_id, cursor=cursor, lock=cursor is not None
+    )
+    if not membership or not community_access.allows(
+        membership, community_access.PREPARE_BILLING
+    ):
+        return False
+    preparer_email = security_utils.normalize_dashboard_sign_in_email(
+        membership["preparer_email"]
+    )
+    approver_email = security_utils.normalize_dashboard_sign_in_email(
+        membership["approver_email"]
+    )
+    return (
+        preparer_email is not None
+        and approver_email is not None
+        and preparer_email != approver_email
     )
 
 
@@ -1133,6 +1162,11 @@ def approve_billing_period(
                 raise BillingApprovalError(
                     "Only a draft billing period can be approved"
                 )
+            period["line_items"] = billing_store.list_billing_line_items(cur, period_id)
+            reconciliation = period.get("reconciliation")
+            if not isinstance(reconciliation, dict):
+                raise BillingApprovalError("Billing reconciliation must be an object")
+            _require_original_registrations(cur, period)
             if not dual_control_allows_approval(
                 community_id,
                 period.get("prepared_by"),
@@ -1140,14 +1174,9 @@ def approve_billing_period(
                 require_dual_control=bool(community_row.get("require_dual_control")),
                 cursor=cur,
             ):
-                raise BillingApprovalError(
+                raise DualControlApprovalError(
                     "Dual-control approval requires a different recorded preparer"
                 )
-            period["line_items"] = billing_store.list_billing_line_items(cur, period_id)
-            reconciliation = period.get("reconciliation")
-            if not isinstance(reconciliation, dict):
-                raise BillingApprovalError("Billing reconciliation must be an object")
-            _require_original_registrations(cur, period)
             snapshots = prepare_invoice_snapshots(
                 period, issue_date=issue_date, calculated_values=calculated_values
             )
@@ -1176,6 +1205,10 @@ def approve_billing_period(
                 )
             billing_store.mark_billing_period_issued(cur, period_id)
             return billing_store.list_period_invoices(cur, period_id)
+    except billing_store.BillingPreparerBusy as e:
+        raise BillingApprovalConflict(
+            "Billing preparer is being updated; retry approval"
+        ) from e
     except BillingApprovalError:
         raise
     except billing_store.BillingStoreError:

@@ -952,6 +952,11 @@ def leg_correct_invoice(
     return {"error": None}
 
 
+DUAL_CONTROL_APPROVAL_MESSAGE = _N(
+    "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
+)
+
+
 def leg_approve_billing_period(
     community_id: str, building_id: str, period_id: int
 ) -> dict:
@@ -970,12 +975,8 @@ def leg_approve_billing_period(
             require_dual_control=True,
         ):
             return {
-                "error": (
-                    _N(
-                        "Vorbereitung und Freigabe müssen durch verschiedene "
-                        "Personen erfolgen."
-                    )
-                ),
+                "error": DUAL_CONTROL_APPROVAL_MESSAGE,
+                "dual_control_denied": True,
                 "invoices": [],
             }
     invoices = billing_approval.approve_billing_period(

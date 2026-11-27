@@ -87,6 +87,14 @@ def validate_email_address(email):
         return False, None, gettext_noop("Ungültige E-Mail-Adresse.")
 
 
+def normalize_dashboard_sign_in_email(email: object) -> str | None:
+    """Return the normalized address used for dashboard access links."""
+    if not isinstance(email, str):
+        return None
+    valid, normalized, _ = validate_email_address(email.strip().lower())
+    return normalized if valid and isinstance(normalized, str) else None
+
+
 def validate_address(address):
     """
     Validate address string

@@ -18,6 +18,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import cast
 
+from psycopg2.errors import LockNotAvailable
 from psycopg2.extras import Json
 
 import billing_lifecycle
@@ -45,6 +46,10 @@ class BillingStoreError(RuntimeError):
 
 class BillingPolicyConflict(BillingStoreError):
     """A billing policy version already exists for this effective date."""
+
+
+class BillingPreparerBusy(BillingStoreError):
+    """The approval identities are locked by a concurrent change."""
 
 
 def _is_unique_violation(error) -> bool:
@@ -264,24 +269,44 @@ def record_billing_period_preparer(
 
 
 def get_billing_preparer_membership(
-    community_id: str, building_id: str, *, cursor: BillingCursor | None = None
+    community_id: str,
+    preparer_id: str,
+    approver_id: str,
+    *,
+    cursor: BillingCursor | None = None,
+    lock: bool = False,
 ) -> dict[str, object] | None:
-    """Read the recorded preparer's membership without neighbour discovery data."""
+    """Read preparer permissions and both sign-in addresses."""
     if cursor is None:
         try:
             with _get_connection() as conn, conn.cursor() as cur:
                 return get_billing_preparer_membership(
-                    community_id, building_id, cursor=cur
+                    community_id, preparer_id, approver_id, cursor=cur, lock=lock
                 )
+        except BillingPreparerBusy:
+            raise
         except Exception as e:
             raise BillingStoreError("Could not load billing preparer") from e
-    cursor.execute(
-        """
-        SELECT role, access_roles, status FROM community_members
-        WHERE community_id = %s AND building_id = %s
-        """,
-        (community_id, building_id),
-    )
+    # Role changes can hold the membership while their audit insert waits for
+    # the community row already locked by approval.
+    lock_clause = "FOR SHARE OF membership, preparer, approver NOWAIT" if lock else ""
+    try:
+        cursor.execute(
+            f"""
+            SELECT membership.role, membership.access_roles, membership.status,
+                   preparer.email AS preparer_email, approver.email AS approver_email
+            FROM community_members membership
+            JOIN buildings preparer ON preparer.building_id = membership.building_id
+            JOIN buildings approver ON approver.building_id = %s
+            WHERE membership.community_id = %s AND membership.building_id = %s
+            {lock_clause}
+            """,
+            (approver_id, community_id, preparer_id),
+        )
+    except LockNotAvailable as e:
+        raise BillingPreparerBusy(
+            "Billing approval identities are being updated"
+        ) from e
     row = cursor.fetchone()
     return dict(row) if row else None
 
