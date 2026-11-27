@@ -68,7 +68,7 @@ def approval_form(client, row):
 
 def test_unique_match_requires_confirmation_and_publishes_to_municipality(registry):
     client, db = registry
-    entry = submit(client, db, ort="Baden", plz="5400", kanton="AG")
+    entry = submit(client, db, ort="Dättwil", plz="5405", kanton="AG")
     path = approval_path(entry)
 
     assert client.post(path, headers=ADMIN_HEADERS).status_code == 422
@@ -91,10 +91,11 @@ def test_unique_match_requires_confirmation_and_publishes_to_municipality(regist
     published = db.get_registry_entry(entry["id"])
     assert published["moderation_status"] == "published"
     assert published["bfs_number"] == 4021
-    for url in ["/gemeinde/profil/4021", "/leg-check?q=Baden&bfs=4021"]:
+    assert published["ort"] == "Dättwil"
+    for url in ["/leg-check?q=Baden&bfs=4021", "/gemeinde/profil/4021"]:
         public = client.get(url)
         assert public.status_code == 200
-        assert NAME in public.text
+        assert NAME in public.text, url
 
 
 def test_shared_postcode_and_locality_require_a_choice(registry):
