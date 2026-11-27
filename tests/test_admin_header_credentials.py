@@ -30,9 +30,13 @@ def test_admin_header_authorizes_a_clean_redirect(app_module, monkeypatch, actio
     monkeypatch.setattr(
         app_module.db, "update_registry_entry_moderation", lambda *args: True
     )
+    monkeypatch.setattr(
+        app_module.db, "publish_registry_entry", lambda *args, **kwargs: True
+    )
     response = app_module.web.test_client().post(
         f"/admin/registry/7/{action}",
         headers={"X-Admin-Token": "private-admin-credential"},
+        data={"municipality": "4021"},
     )
     assert response.status_code == 302
     assert response.headers["Location"] == "/admin/ops"

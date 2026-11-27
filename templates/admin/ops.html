@@ -112,7 +112,7 @@
   <div class="mb-8">
     <section class="min-w-0 bg-gray-900 rounded-lg overflow-hidden">
       <div class="px-4 py-3 border-b border-gray-800">
-        <h2 id="pending-registry-heading" class="font-semibold">{{ _('Ausstehende LEG-Einträge') }}</h2>
+        <h2 id="pending-registry-heading" class="font-semibold">{{ _('LEG-Einträge moderieren') }}</h2>
       </div>
       <div class="overflow-x-auto focus-visible:outline-2 focus-visible:outline-white focus-visible:-outline-offset-2" role="region" tabindex="0" aria-labelledby="pending-registry-heading">
         <table class="w-full text-sm">
@@ -126,10 +126,15 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-800">
-            {% for entry in pending_registry %}
+            {% for entry in pending_registry + registry_needing_municipality %}
             <tr class="hover:bg-gray-800/40">
-              <td class="px-4 py-3">{{ entry.name }}</td>
-              <td class="px-4 py-3 text-gray-400">{{ entry.ort }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}</td>
+              <td class="px-4 py-3">
+                {{ entry.name }}
+                {% if entry.moderation_status == 'published' %}
+                <p class="text-xs text-yellow-400">{{ _('Veröffentlicht, Gemeinde fehlt') }}</p>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-gray-400">{{ entry.plz or '' }} {{ entry.ort }}{% if entry.kanton %} ({{ entry.kanton }}){% endif %}</td>
               <td class="px-4 py-3 text-gray-400">{{ entry.contact_email }}</td>
               <td class="px-4 py-3">
                 {% if entry.vnb_plausible is none %}
@@ -143,18 +148,41 @@
               <td class="px-4 py-3 text-right">
                 <form method="post" action="/admin/registry/{{ entry.id }}/approve" class="inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                  <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Freischalten') }}</button>
+                  {% if entry.bfs_number %}
+                  <span>{{ _('BFS-Nummer') }} {{ entry.bfs_number }}</span>
+                  {% else %}
+                  {% if not entry.municipality_candidates %}
+                  <p class="text-sm text-gray-400">{{ _('Keine passende Gemeinde gefunden.') }}</p>
+                  <label class="block mb-2">
+                    {{ _('BFS-Nummer') }}
+                    <input name="manual_bfs_number" inputmode="numeric" pattern="[1-9][0-9]{0,3}" maxlength="4" class="w-16 rounded-sm bg-gray-800 p-1">
+                  </label>
+                  {% endif %}
+                  <label class="block mb-2">
+                    {{ _('Gemeinde') }}
+                    <select name="municipality" {% if entry.municipality_candidates %}required{% endif %} class="rounded-sm bg-gray-800 p-1">
+                      <option value="">{{ _('Bitte wählen') }}</option>
+                      {% for municipality in entry.municipality_candidates %}
+                      <option value="{{ municipality.bfs_number }}">{{ municipality.name }} ({{ municipality.kanton }}, {{ municipality.bfs_number }})</option>
+                      {% endfor %}
+                      <option value="none">{{ _('Keine Gemeinde') }}</option>
+                    </select>
+                  </label>
+                  {% endif %}
+                  <button type="submit" class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Gemeindezuordnung speichern') if entry.moderation_status == 'published' else _('Freischalten') }}</button>
                 </form>
+                {% if entry.moderation_status != 'published' %}
                 <form method="post" action="/admin/registry/{{ entry.id }}/reject" class="inline ml-2">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                   <input type="hidden" name="reason" value="">
                   <button type="submit" class="bg-red-800 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-sm">{{ _('Ablehnen') }}</button>
                 </form>
+                {% endif %}
               </td>
             </tr>
             {% endfor %}
-            {% if not pending_registry %}
-            <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ _('Keine ausstehenden Einträge') }}</td></tr>
+            {% if not (pending_registry or registry_needing_municipality) %}
+            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">{{ _('Keine ausstehenden Einträge') }}</td></tr>
             {% endif %}
           </tbody>
         </table>
