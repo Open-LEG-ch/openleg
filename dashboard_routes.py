@@ -1290,7 +1290,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 community_id,
                 building_id,
                 period_id,
-                dashboard_module.DUAL_CONTROL_APPROVAL_MESSAGE,
+                _(dashboard_module.DUAL_CONTROL_APPROVAL_MESSAGE),
                 409,
             )
         except billing_approval.BillingApprovalError:
@@ -1309,8 +1309,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         except db.BillingStoreError:
             abort(503)
         if result.get("dual_control_denied"):
+            message = result["error"]
             return _billing_approval_error_response(
-                community_id, building_id, period_id, result["error"], 403
+                community_id, building_id, period_id, _(message), 403
             )
         if result["error"]:
             abort(result.get("error_status", 403))
