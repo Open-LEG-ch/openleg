@@ -239,7 +239,7 @@ def _failed_mutation(community=COMMUNITY):
 
 def _nav_count(html, section, count):
     assert re.search(
-        rf'<a href="{ROOT}/{section}"[^>]*>[^<]*<span[^>]*>\s*{count}\s*</span>',
+        rf'<a href="{ROOT}/{section}(?:\?assignable=1#statement-assignments)?"[^>]*>[^<]*<span[^>]*>\s*{count}\s*</span>',
         html,
     )
 
@@ -312,7 +312,7 @@ def test_invoice_payment_and_vnb_tasks_match_navigation(operating):
     assert f'href="{ROOT}/invoices/{overdue}#questions"' in html
     assert f'href="{ROOT}/invoices/{delivery}"' in html
     assert f'href="{ROOT}/payments?overdue=1#open-invoices"' in html
-    assert f'href="{ROOT}/payments#statement-assignments"' in html
+    assert f'href="{ROOT}/payments?assignable=1#statement-assignments"' in html
     assert f'href="{ROOT}/formation#vnb-submissions-title"' in html
     assert f'href="{ROOT}/members#vnb-mutations-title"' in html
     for section, count in (
@@ -657,3 +657,105 @@ def test_delivery_task_matches_invoice_detail_actions(operating, job_status):
     assert (
         "Zustellung als erfolgt bestätigen" if job_status else ">Zustellen</button>"
     ) in detail
+
+
+def test_overdue_payments_links_to_unfiltered_assignment(operating):
+    invoice = _invoice("UNPAID-NOT-DUE", amount="15.00", due_date="2026-12-04")
+    _event(invoice, "delivered")
+    _bank_entry()
+
+    payments_url = ROOT + "/payments"
+    overdue = operating.get(payments_url + "?overdue=1")
+    assert overdue.status_code == 200
+    assert 'name="invoice_id"' not in overdue.text
+    assert f'id="open-invoice-{invoice}"' not in overdue.text
+    assert 'id="statement-assignments"' not in overdue.text
+    assert "Stellen Sie die passende Rechnung zuerst zu." not in overdue.text
+    assert f'href="{payments_url}#statement-assignments"' in overdue.text
+
+    regular = operating.get(payments_url)
+    assert regular.status_code == 200
+    assert f'<option value="{invoice}">UNPAID-NOT-DUE' in regular.text
+    assert f'id="open-invoice-{invoice}"' in regular.text
+    assert len(re.findall(r'action="[^"]*/statements/\d+/assign"', regular.text)) == 1
+
+
+def test_bank_task_finds_older_assignable_entry_behind_pending_entries(operating):
+    _event(_invoice("AVAILABLE", amount="15.00", due_date="2026-12-04"), "delivered")
+    _bank_entry()
+    _extra_statement([("CHF", "ref", "CRDT", False, "PDNG", "entry")] * 200)
+
+    _bank_entry(OTHER)
+
+    regular = operating.get(ROOT + "/payments")
+    assert not re.search(r'action="[^"]*/statements/\d+/assign"', regular.text)
+
+    url = ROOT + "/payments?assignable=1#statement-assignments"
+    html = operating.get(OVERVIEW).text
+    assert re.search(rf'href="{re.escape(url)}"[^>]*>Zahlungsabgleich prüfen</a>', html)
+    assert re.search(
+        rf'href="{re.escape(url)}"[^>]*>Zahlungen\s*<span[^>]*>1</span>', html
+    )
+    page = operating.get(url)
+    assert page.status_code == 200
+    assert (
+        len(
+            re.findall(r'action="[^"]*/statements/\d+/assign\?assignable=1"', page.text)
+        )
+        == 1
+    )
+    assert "Der Auszug weist keine definitive Buchung aus." not in page.text
+
+
+def test_assignable_statement_filter_survives_pagination(operating, monkeypatch):
+    monkeypatch.setattr(dashboard, "_STATEMENT_REVIEW_PAGE_SIZE", 1)
+    invoice = _invoice("AVAILABLE", amount="15.00", due_date="2026-12-04")
+    _event(invoice, "delivered")
+    _bank_entry()
+    _extra_statement([("CHF", "ref", "CRDT", False, "PDNG", "entry")])
+    _extra_statement(
+        [("CHF", "newer", "CRDT", False, "BOOK", "entry")], fingerprint="c"
+    )
+
+    url = ROOT + "/payments?assignable=1#statement-assignments"
+    first = operating.get(url)
+    older = re.search(
+        r'href="([^"]*assignable=1[^"]*statement_before=[^"]*#payments)"', first.text
+    )
+    assert older
+    second = operating.get(unescape(older[1]))
+    assert second.status_code == 200
+    assert re.search(
+        r'action="[^"]*/statements/\d+/assign\?assignable=1(?:&amp;|")', second.text
+    )
+    assert f'href="{ROOT}/payments?assignable=1#payments"' in second.text
+    assert "Der Auszug weist keine definitive Buchung aus." not in second.text
+
+    action = re.search(
+        r'action="([^"]*/statements/\d+/assign\?assignable=1[^"]*)"', second.text
+    )
+    assert action
+    response = operating.post(
+        unescape(action[1]),
+        data={"csrf_token": "csrf-secret", "invoice_id": invoice, "confirm": "yes"},
+    )
+    assert response.status_code == 303
+    assert "assignable=1" in response.location
+    review = operating.get(response.location).text
+    assert "Mögliche Doppelzahlung." in review
+    assert f'action="{action[1]}"' in review
+    signed = re.search(r'name="duplicate_review" value="([^"]+)"', review)
+    assert signed
+    confirmed = operating.post(
+        unescape(action[1]),
+        data={
+            "csrf_token": "csrf-secret",
+            "invoice_id": invoice,
+            "confirm": "yes",
+            "confirm_distinct": "yes",
+            "duplicate_review": unescape(signed[1]),
+        },
+    )
+    assert confirmed.status_code == 303
+    assert "assignable=1" in confirmed.location
+    assert "Zahlung zugeordnet" in operating.get(confirmed.location).text

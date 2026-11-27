@@ -19825,3 +19825,7 @@ msgstr "Alle offenen Rechnungen"
 #: templates/leg_payments.html:143
 msgid "Keine überfälligen Rechnungen auf dieser Seite."
 msgstr "Keine überfälligen Rechnungen auf dieser Seite."
+
+#: templates/leg_payments.html:100
+msgid "Alle offenen Buchungen"
+msgstr "Alle offenen Buchungen"

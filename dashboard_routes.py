@@ -1060,6 +1060,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 else None,
                 statement_upload=statement_upload,
                 overdue_only=request.args.get("overdue") == "1",
+                assignable_only=request.args.get("assignable") == "1",
                 review_invoice_id=(
                     feedback["invoice_id"]
                     if feedback and feedback.get("duplicate_review_required")
@@ -1088,6 +1089,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             feedback
             and feedback.get("duplicate_review_required")
             and view.get("can_prepare_billing")
+            and not view["overdue_only"]
         ):
             entry_id, invoice_id = feedback["entry_id"], feedback["invoice_id"]
             try:
@@ -1270,7 +1272,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 ".leg_payments",
                 community_id=community_id,
                 assignment=receipt,
-                overdue=1 if request.args.get("overdue") == "1" else None,
+                assignable=1 if request.args.get("assignable") == "1" else None,
                 statement_before=statement_before,
                 invoice_before=request.args.get("invoice_before", type=int)
                 if error_status

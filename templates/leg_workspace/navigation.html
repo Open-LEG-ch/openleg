@@ -5,7 +5,11 @@
             and (key != "settings" or workspace_billing or (is_admin and viewer_has_session)) %}
       <li class="shrink-0{% if key == 'members' and workspace_billing %} lg:mt-2 lg:border-t lg:border-line lg:pt-2{% endif %}">
         {% set count = (workspace_counts|default({})).get(key) %}
-        <a href="{{ workspace_overview if key == 'overview' else workspace_overview ~ '?page=' ~ key if demo else workspace_root ~ '/' ~ key }}"
+        {% set destination = workspace_overview if key == 'overview' else workspace_overview ~ '?page=' ~ key if demo else workspace_root ~ '/' ~ key %}
+        {% if key == 'payments' and not demo and bank_assignment_count|default(0) %}
+          {% set destination = destination ~ '?assignable=1#statement-assignments' %}
+        {% endif %}
+        <a href="{{ destination }}"
            {% if key == page %}aria-current="page"{% elif key == section %}aria-current="true"{% endif %}
            class="flex min-h-12 items-center whitespace-nowrap rounded-lg px-3 py-2 lg:px-4 {% if key == section %}bg-brand text-white font-semibold underline underline-offset-4{% else %}text-ink hover:bg-paper-deep{% endif %}">{{ label }}{% if count %} <span class="ml-auto pl-3 tabular-nums">{{ count }}</span>{% endif %}</a>
       </li>

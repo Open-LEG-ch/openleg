@@ -23336,3 +23336,8 @@ msgstr "All outstanding invoices"
 #: templates/leg_payments.html:143
 msgid "Keine überfälligen Rechnungen auf dieser Seite."
 msgstr "There are no overdue invoices on this page."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:100
+msgid "Alle offenen Buchungen"
+msgstr "All open bank entries"

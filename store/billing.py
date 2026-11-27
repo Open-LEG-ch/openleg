@@ -2071,14 +2071,15 @@ def reconcile_bank_statement(
 
 
 # Keep the aggregate in parity with payment_reconciliation.payment_entry_refusal.
-_BANK_ASSIGNABLE_SQL = """
-    e.match_decision = ANY(%(reviewable_decisions)s)
-    AND e.is_reversal IS FALSE
-    AND e.booking_status = 'BOOK'
-    AND e.amount_basis IN ('entry', 'reconciled_batch')
-    AND e.credit_debit_indicator = 'CRDT'
-    AND e.currency = 'CHF'
-    AND btrim(e.payment_reference, %(bank_reference_whitespace)s) <> ''
+def bank_assignable_sql(alias: str) -> str:
+    return f"""
+    {alias}.match_decision = ANY(%(reviewable_decisions)s)
+    AND {alias}.is_reversal IS FALSE
+    AND {alias}.booking_status = 'BOOK'
+    AND {alias}.amount_basis IN ('entry', 'reconciled_batch')
+    AND {alias}.credit_debit_indicator = 'CRDT'
+    AND {alias}.currency = 'CHF'
+    AND btrim({alias}.payment_reference, %(bank_reference_whitespace)s) <> ''
 """
 
 
@@ -2119,7 +2120,7 @@ def get_bank_statement_summary(community_id, upload_id, building_id):
                                  AND starts_with(event.idempotency_key, 'bank:' || s.id::text || ':')
                            )
                        ) AS automatic,
-                       count(*) FILTER (WHERE {_BANK_ASSIGNABLE_SQL}) AS unassigned
+                       count(*) FILTER (WHERE {bank_assignable_sql("e")}) AS unassigned
                 FROM statement s
                 LEFT JOIN bank_statement_entries e
                     ON e.statement_import_id = s.id AND e.community_id = s.community_id
@@ -2145,6 +2146,7 @@ def list_bank_statement_entries(
     *,
     confirmation_key_prefix=None,
     reviewable=None,
+    assignable_only: bool = False,
     before=None,
 ):
     """Return scoped decisions with replay availability for the caller's key namespace."""
@@ -2163,37 +2165,36 @@ def list_bank_statement_entries(
                           AND EXISTS (
                               SELECT 1 FROM unnest(e.bank_references) AS booked(reference)
                               JOIN unnest(c.bank_references) AS reported(reference)
-                                ON btrim(booked.reference, %s) = btrim(reported.reference, %s)
+                                ON btrim(booked.reference, %(bank_reference_whitespace)s)
+                                 = btrim(reported.reference, %(bank_reference_whitespace)s)
                           )
                         ORDER BY e.id LIMIT 1) AS likely_duplicate_invoice_number,
                        EXISTS (
                            SELECT 1 FROM operator_action_idempotency a
                            WHERE a.community_id=c.community_id
                              AND a.action='payment.confirm:' || c.id::text
-                             AND a.idempotency_key=%s || c.id::text
+                             AND a.idempotency_key=%(confirmation_key_prefix)s || c.id::text
                              AND jsonb_typeof(a.response)='object'
                        ) AS confirmation_replay_available
                 FROM bank_statement_entries c
                 JOIN bank_statement_imports s ON s.id = c.statement_import_id
-                WHERE c.community_id = %s AND s.community_id = %s
-                  AND (%s IS NULL OR (c.match_decision = ANY(%s)) = %s)
-                  AND (%s IS NULL OR c.id < %s)
+                WHERE c.community_id = %(community)s AND s.community_id = %(community)s
+                  AND (%(reviewable)s IS NULL OR
+                       (c.match_decision = ANY(%(reviewable_decisions)s)) = %(reviewable)s)
+                  AND (NOT %(assignable_only)s OR ({bank_assignable_sql("c")}))
+                  AND (%(before)s IS NULL OR c.id < %(before)s)
                 ORDER BY c.id DESC
-                LIMIT %s
+                LIMIT %(limit)s
                 """,
-                (
-                    payment_reconciliation.BANK_REFERENCE_WHITESPACE,
-                    payment_reconciliation.BANK_REFERENCE_WHITESPACE,
-                    confirmation_key_prefix,
-                    community_id,
-                    community_id,
-                    reviewable,
-                    sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
-                    reviewable,
-                    before,
-                    before,
-                    bounded_limit,
-                ),
+                {
+                    "confirmation_key_prefix": confirmation_key_prefix,
+                    "community": community_id,
+                    "reviewable": reviewable,
+                    "assignable_only": assignable_only,
+                    "before": before,
+                    "limit": bounded_limit,
+                    **bank_assignment_query_parameters(),
+                },
             )
             return [dict(row) for row in cur.fetchall()]
     except Exception as error:

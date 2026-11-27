@@ -602,7 +602,7 @@ def _workspace_tasks(community_id, facts, today):
             "payments",
             title,
             _("Zahlungsabgleich prüfen"),
-            "payments#statement-assignments",
+            "payments?assignable=1#statement-assignments",
         )
 
     if row := facts.get("prepare"):
@@ -1193,6 +1193,7 @@ def leg_payments_view(
     statement_upload: str | None = None,
     review_invoice_id: int | None = None,
     overdue_only: bool = False,
+    assignable_only: bool = False,
 ) -> dict:
     """Read a bounded payment workspace for a member with billing audit access."""
     member = _require_capability(
@@ -1202,11 +1203,17 @@ def leg_payments_view(
         return {"error": _N("Kein Zugriff.")}
 
     can_prepare = community_access.allows(member, community_access.PREPARE_BILLING)
-    statement_entries = db.list_bank_statement_entries(
-        community_id,
-        limit=_STATEMENT_REVIEW_PAGE_SIZE + 1,
-        reviewable=True,
-        before=statement_before,
+    assignable_only = assignable_only and not overdue_only
+    statement_entries = (
+        db.list_bank_statement_entries(
+            community_id,
+            limit=_STATEMENT_REVIEW_PAGE_SIZE + 1,
+            reviewable=True,
+            assignable_only=assignable_only,
+            before=statement_before,
+        )
+        if not overdue_only
+        else []
     )
     next_statement_before = (
         statement_entries[_STATEMENT_REVIEW_PAGE_SIZE - 1]["id"]
@@ -1220,7 +1227,7 @@ def leg_payments_view(
             reviewable=False,
             confirmation_key_prefix=_DASHBOARD_PAYMENT_KEY_PREFIX,
         )
-        if statement_before is None
+        if statement_before is None and not (overdue_only or assignable_only)
         else []
     )
     invoice_ids = {
@@ -1228,7 +1235,7 @@ def leg_payments_view(
         for entry in statement_entries + statement_history
         if entry["invoice_id"] is not None
     }
-    if can_prepare and review_invoice_id is not None:
+    if can_prepare and not overdue_only and review_invoice_id is not None:
         invoice_ids.add(review_invoice_id)
     related_invoices = {
         row["id"]: _describe_payment_invoice(row)
@@ -1272,7 +1279,7 @@ def leg_payments_view(
         "statement_invoice_candidates": [
             invoice for invoice in open_invoices if not invoice["gross_unreadable"]
         ]
-        if can_prepare
+        if can_prepare and not overdue_only
         else [],
         "review_invoice": review_invoice,
         "statement_before": statement_before,
@@ -1283,6 +1290,7 @@ def leg_payments_view(
         ),
         "open_invoices": open_invoices,
         "overdue_only": overdue_only,
+        "assignable_only": assignable_only,
         "invoice_before": invoice_before,
         "next_invoice_before": (
             open_invoices[-1]["id"]

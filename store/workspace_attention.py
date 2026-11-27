@@ -6,10 +6,10 @@ from datetime import date
 import psycopg2
 
 from store.billing import (
-    _BANK_ASSIGNABLE_SQL,
     _INVOICE_LIFECYCLE_STATE,
     _UNREADABLE_GROSS,
     BillingStoreError,
+    bank_assignable_sql,
     bank_assignment_query_parameters,
 )
 
@@ -146,7 +146,7 @@ def get_workspace_attention(
                 FROM bank_statement_entries e JOIN scope s USING (community_id)
                 JOIN bank_statement_imports b ON b.id = e.statement_import_id
                   AND b.community_id = e.community_id
-                WHERE %(prepare)s AND {_BANK_ASSIGNABLE_SQL}
+                WHERE %(prepare)s AND {bank_assignable_sql("e")}
                 UNION ALL
                 SELECT 'submission', count(*), NULL, NULL, NULL, FALSE
                 FROM vnb_submission_cases JOIN scope USING (community_id)

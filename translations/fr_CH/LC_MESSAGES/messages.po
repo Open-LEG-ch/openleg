@@ -20966,3 +20966,8 @@ msgstr "Toutes les factures ouvertes"
 #: templates/leg_payments.html:143
 msgid "Keine überfälligen Rechnungen auf dieser Seite."
 msgstr "Cette page ne contient aucune facture échue."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:100
+msgid "Alle offenen Buchungen"
+msgstr "Toutes les écritures ouvertes"
