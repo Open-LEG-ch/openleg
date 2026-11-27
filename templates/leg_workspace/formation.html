@@ -74,7 +74,14 @@
       <p><strong>{{ _('Status:') }}</strong> {{ {"prepared": _("Paket bereit"), "delivered": _("Zugestellt"), "acknowledged": _("Bestätigt"), "rejected": _("Abgelehnt"), "failed": _("Fehlgeschlagen"), "claimed": _("Wird vorbereitet")}.get(submission.state, submission.state) }}</p>
       {% with actor=submission.actor, actor_multiline=true %}{% include "partials/operator_actor.html" %}{% endwith %}
       {% if submission.response_status %}<p class="mt-1 text-ink-muted">{{ _('Antwort:') }} {{ submission.response_status }}</p>{% endif %}
-      {% if submission.state in ["failed", "rejected"] and submission.next_action %}<p class="mt-1 text-ink-muted">{{ _('Nächster Schritt:') }} {{ {"retry": _("Einleitung erneut möglich"), "review_rejection": _("Ablehnung prüfen"), "contact_vnb": _("Netzbetreiber kontaktieren"), "escalate": _("An den Netzbetreiber eskalieren")}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
+      {% set can_retry = loop.first and can_retry_vnb_submission and viewer_has_session %}
+      {% if submission.state in ["failed", "rejected"] and submission.next_action and (submission.next_action != "retry" or can_retry) %}<p class="mt-1 text-ink-muted">{{ _('Nächster Schritt:') }} {{ {"retry": _("Einleitung erneut möglich"), "review_rejection": _("Ablehnung prüfen"), "contact_vnb": _("Netzbetreiber kontaktieren"), "escalate": _("An den Netzbetreiber eskalieren")}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
+      {% if can_retry %}
+      <form method="post" action="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/retry" class="mt-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="min-h-12 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark">{{ _('Erneut einleiten') }}</button>
+      </form>
+      {% endif %}
       {% if submission.state == "prepared" and is_admin and viewer_has_session %}
       <div class="mt-3 flex flex-wrap gap-3">
         <a class="inline-flex items-center font-semibold text-brand hover:underline" href="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/handover">{{ _('Anmeldepaket herunterladen') }}</a>

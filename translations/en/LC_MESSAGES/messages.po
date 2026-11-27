@@ -22829,3 +22829,8 @@ msgstr "The level in the progress view counts only installations commissioned si
 #: templates/leg_billing.html:112 templates/leg_billing.html:272
 msgid "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
 msgstr "Bank reference (AcctSvcrRef) in place of the payment reference"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/formation.html:82
+msgid "Erneut einleiten"
+msgstr "Submit again"

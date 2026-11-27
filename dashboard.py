@@ -288,6 +288,14 @@ def leg_overview(
     else:
         vnb_submissions = []
         vnb_mutations = []
+    newest_submission = vnb_submissions[0] if vnb_submissions else {}
+    # Offer a retry only where the submission itself would accept the viewer.
+    can_retry_vnb_submission = (
+        newest_submission.get("state") == "failed"
+        and bool(newest_submission.get("retryable"))
+        and newest_submission.get("next_action") == "retry"
+        and vnb_exchange.may_submit_formation(community_id, building_id)
+    )
     battery_unavailable = False
     try:
         battery = db.get_battery(community_id)
@@ -341,6 +349,7 @@ def leg_overview(
         "leg_documents": db.list_leg_documents(community_id),
         "correspondence": correspondence,
         "vnb_submissions": vnb_submissions,
+        "can_retry_vnb_submission": can_retry_vnb_submission,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
         "battery": battery_view,
@@ -1358,11 +1367,17 @@ def leg_generate_documents(community_id: str, building_id: str) -> dict:
     return formation_documents.generate(community_id, building_id)
 
 
-def leg_submit_vnb_formation(community_id: str, building_id: str) -> dict:
-    """Prepare or deliver the signed formation package through the VNB seam."""
+def leg_submit_vnb_formation(
+    community_id: str, building_id: str, retry_of: str | None = None
+) -> dict:
+    """Prepare or deliver the signed formation package through the VNB seam.
+
+    ``retry_of`` names the failed case the administrator retries.
+    """
     try:
         outcome = vnb_exchange.submit_formation(
             vnb_exchange.FormationSubmission(community_id, building_id),
+            **({"retry_of": retry_of} if retry_of else {}),
         )
     except vnb_exchange.FormationSubmissionForbidden:
         return {

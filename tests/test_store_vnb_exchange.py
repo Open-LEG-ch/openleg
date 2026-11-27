@@ -70,7 +70,7 @@ def test_claim_uses_the_stable_submission_identity(monkeypatch):
         "contract_version": "vnb-formation/1",
         "payload_fingerprint": "f" * 64,
     }
-    cursor = Cursor([row])
+    cursor = Cursor([None, row])
     monkeypatch.setattr(database, "get_connection", connection(cursor))
     claim = vnb_exchange.SubmissionClaim(
         community_id="community-1",
@@ -85,7 +85,11 @@ def test_claim_uses_the_stable_submission_identity(monkeypatch):
 
     assert cursor.executed[0][1] == ("community-1",)
     query, params = cursor.executed[1]
-    assert "ON CONFLICT (community_id, contract_version, payload_fingerprint)" in query
+    assert "contract_version = %s" in query
+    assert "payload_fingerprint = %s" in query
+    assert params == ("community-1", "vnb-formation/1", "f" * 64)
+    query, params = cursor.executed[2]
+    assert "INSERT INTO vnb_submission_cases" in query
     assert params[1] == "community-1"
     assert params[2] == "actor-1"
     assert params[3:6] == ("manual", "vnb-formation/1", "f" * 64)

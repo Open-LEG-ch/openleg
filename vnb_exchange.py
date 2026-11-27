@@ -6,14 +6,19 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import logging
 import zipfile
 from dataclasses import dataclass
 from datetime import date
 from typing import Protocol
 
+import psycopg2
+
 import community_access
 import database as db
 from operator_errors import ErrorCode
+
+logger = logging.getLogger(__name__)
 
 FORMATION_SUBMISSION = "formation_submission"
 SUPPORTED_CONTRACT_VERSION = "vnb-formation/1"
@@ -107,6 +112,7 @@ class SubmissionClaim:
     capability_snapshot: tuple[str, ...]
     payload_fingerprint: str
     document_ids: tuple[int, ...] = ()
+    retry_of: str | None = None
 
 
 @dataclass(frozen=True)
@@ -595,8 +601,13 @@ def submit_package(
     cases: SubmissionCases,
     *,
     dry_run: bool = False,
+    retry_of: str | None = None,
 ) -> SubmissionOutcome | SubmissionPreview:
-    """Claim and deliver one immutable formation package idempotently."""
+    """Claim and deliver one immutable formation package idempotently.
+
+    ``retry_of`` names the failed case a person chose to retry. Only the latest
+    retryable failure starts a new attempt; a repeated retry delivers nothing.
+    """
     contract = adapter.contract()
     if contract.contract_version != SUPPORTED_CONTRACT_VERSION:
         raise ValueError("Unsupported VNB exchange contract version")
@@ -615,6 +626,7 @@ def submit_package(
         document_ids=tuple(
             sorted(document.document_id for document in package.documents)
         ),
+        retry_of=retry_of,
     )
     if dry_run:
         cases.check_submission(submission)
@@ -676,12 +688,33 @@ def submit_package(
     return _outcome_from_row(cases.record_outcome(row["case_id"], outcome))
 
 
+def may_submit_formation(community_id: str, actor_building_id: str) -> bool:
+    """Run the submission's read-only preview and report whether it would pass."""
+    try:
+        submit_formation(
+            FormationSubmission(community_id, actor_building_id), dry_run=True
+        )
+    except (
+        FormationSubmissionForbidden,
+        FormationSubmissionInvalid,
+        ValueError,
+        db.VnbExchangeStoreError,
+    ):
+        return False
+    except psycopg2.Error:
+        # The page still renders; it only leaves out the retry offer.
+        logger.exception("VNB submission preview failed")
+        return False
+    return True
+
+
 def submit_formation(
     command: FormationSubmission,
     adapter: VnbAdapter | None = None,
     *,
     cases: SubmissionCases | None = None,
     dry_run: bool = False,
+    retry_of: str | None = None,
 ) -> SubmissionOutcome | SubmissionPreview:
     """Authorize, assemble and submit one community's signed formation bundle."""
     community = db.fetch_community_with_members(command.community_id)
@@ -749,6 +782,7 @@ def submit_formation(
         adapter,
         cases,
         **({"dry_run": True} if dry_run else {}),
+        **({"retry_of": retry_of} if retry_of else {}),
     )
 
 

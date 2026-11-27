@@ -19404,3 +19404,7 @@ msgstr ""
 #: templates/leg_billing.html:112 templates/leg_billing.html:272
 msgid "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
 msgstr "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
+
+#: templates/leg_workspace/formation.html:82
+msgid "Erneut einleiten"
+msgstr "Erneut einleiten"
