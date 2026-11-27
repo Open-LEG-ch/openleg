@@ -506,7 +506,7 @@ def test_dual_control_rejects_sessions_from_one_mailbox(
     )
     assert response.status_code == 403
     assert DUAL_CONTROL_MESSAGE in response.text
-    assert approve not in approver.get(workspace).text
+    assert approve not in approver.get(f"{workspace}/period/{period_id}").text
     assert db.list_community_invoices(cid) == []
 
 
