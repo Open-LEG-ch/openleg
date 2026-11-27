@@ -3522,6 +3522,14 @@ msgid ""
 "%(url)s"
 msgstr ""
 
+#: templates/gemeinde/methodik.html:87
+msgid ""
+"Der Stand in der Fortschritts-Ansicht zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt "
+"deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten "
+"vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
+"nie mit dem Snapshot vermischt."
+msgstr ""
+
 #: templates/release/how_it_works.html:44
 msgid "Der Strom fliesst durch das bestehende Netz."
 msgstr ""
@@ -3630,7 +3638,7 @@ msgid ""
 "Netzbetreiber genehmigt sie (20 Prozentpunkte)."
 msgstr ""
 
-#: templates/gemeinde/methodik.html:87 templates/gemeinde/rangliste_fortschritte.html:109
+#: templates/gemeinde/rangliste_fortschritte.html:109
 msgid ""
 "Der Wert zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt deshalb unter dem Wert in der "
 "Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten vom Ende des Vorjahres bis zum"

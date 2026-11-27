@@ -23084,3 +23084,12 @@ msgstr "Questo valore considera solo gli impianti entrati in servizio dal 2016 e
 #, python-format
 msgid "%(kanton)s · %(score)s%% Ende %(year)s"
 msgstr "%(kanton)s · %(score)s%% a fine %(year)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/gemeinde/methodik.html:87
+msgid ""
+"Der Stand in der Fortschritts-Ansicht zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt "
+"deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten "
+"vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
+"nie mit dem Snapshot vermischt."
+msgstr "Il valore nella vista dei progressi considera solo gli impianti entrati in servizio dal 2016 ed è quindi inferiore al valore in classifica. Il progresso indica la variazione in punti percentuali tra la fine dell’anno precedente e la fine dell’anno indicato. Proviene solo dal panel e non viene mai mescolato con lo snapshot."

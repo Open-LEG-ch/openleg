@@ -19388,3 +19388,15 @@ msgstr ""
 #, python-format
 msgid "%(kanton)s · %(score)s%% Ende %(year)s"
 msgstr "%(kanton)s · %(score)s%% Ende %(year)s"
+
+#: templates/gemeinde/methodik.html:87
+msgid ""
+"Der Stand in der Fortschritts-Ansicht zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt "
+"deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten "
+"vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
+"nie mit dem Snapshot vermischt."
+msgstr ""
+"Der Stand in der Fortschritts-Ansicht zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt "
+"deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten "
+"vom Ende des Vorjahres bis zum Ende des angegebenen Jahres. Er stammt nur aus dem Panel und wird "
+"nie mit dem Snapshot vermischt."
