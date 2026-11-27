@@ -427,6 +427,7 @@ _BILLING_STATUS_LABELS = {
     "approved": _N("Freigegeben"),
     "delivered": _N("Zugestellt"),
     "paid": _N("Bezahlt"),
+    "cancelled": _N("Storniert"),
     "invalidated": _N("Entwurf ungültig"),
 }
 InvoiceLifecycleError = billing_lifecycle.InvoiceLifecycleError
@@ -437,6 +438,8 @@ _BILLING_PAGE_SIZE = 50
 
 def _billing_period_stage(period, progress):
     if period["status"] == "issued":
+        if progress.get("all_cancelled"):
+            return "cancelled"
         if progress.get("all_paid"):
             return "paid"
         if progress.get("all_delivered"):
@@ -449,6 +452,13 @@ def _billing_period_stage(period, progress):
 
 def _has_human_preparer(period):
     return period.get("prepared_by") not in (None, "", "system")
+
+
+def _dual_control_allows_approval(require_dual_control, period, building_id):
+    # TODO(#1018): replace with billing_approval.dual_control_allows_approval
+    return not require_dual_control or (
+        _has_human_preparer(period) and period["prepared_by"] != building_id
+    )
 
 
 def _billing_workspace_period(period: dict, progress: dict) -> dict:
@@ -464,10 +474,9 @@ def _billing_workspace_period(period: dict, progress: dict) -> dict:
 
 
 def leg_billing_period_detail(community_id, building_id, period_id, *, after=None):
-    member = _require_capability(
-        community_id, building_id, community_access.AUDIT_BILLING
-    )
-    if not member:
+    member = db.fetch_community_viewer_membership(community_id, building_id)
+    capabilities = community_access.capabilities_for(member)
+    if community_access.AUDIT_BILLING not in capabilities:
         return {"error": _N("Kein Zugriff.")}
     period = db.get_billing_period(period_id, community_id, include_line_items=False)
     if not period:
@@ -507,7 +516,10 @@ def leg_billing_period_detail(community_id, building_id, period_id, *, after=Non
     drafted_at = period.get("created_at")
     if drafted_at is not None and drafted_at.tzinfo is None:
         drafted_at = drafted_at.replace(tzinfo=UTC)
-    capabilities = community_access.capabilities_for(member)
+    can_approve = community_access.APPROVE_BILLING in capabilities
+    preparer_allows_approval = _dual_control_allows_approval(
+        member["require_dual_control"], period, building_id
+    )
     return {
         "error": None,
         "community_id": community_id,
@@ -534,20 +546,18 @@ def leg_billing_period_detail(community_id, building_id, period_id, *, after=Non
                 ("approved", period["status"] == "issued", progress.get("approved_at")),
                 (
                     "delivered",
-                    stage in ("delivered", "paid"),
+                    stage in ("delivered", "paid")
+                    or progress.get("all_previously_delivered"),
                     progress.get("delivered_at"),
                 ),
                 ("paid", stage == "paid", progress.get("paid_at")),
+                ("cancelled", stage == "cancelled", progress.get("cancelled_at")),
             )
+            if key != "cancelled" or complete
         ],
-        "viewer_building_id": building_id,
-        "require_dual_control": bool(
-            (
-                formation_wizard.get_community_status(community_id, building_id) or {}
-            ).get("require_dual_control")
-        ),
         "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
-        "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
+        "can_approve_billing": can_approve and preparer_allows_approval,
+        "awaiting_billing_preparation": can_approve and not preparer_allows_approval,
     }
 
 

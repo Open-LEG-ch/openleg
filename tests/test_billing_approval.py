@@ -260,6 +260,15 @@ def _patch_workspace(monkeypatch, app_module, *, members=None):  # noqa: F811
     monkeypatch.setattr(
         app_module.db, "list_billing_draft_items", lambda *args, **kwargs: []
     )
+    monkeypatch.setattr(
+        app_module.db,
+        "fetch_community_viewer_membership",
+        lambda *_: {
+            "role": "admin",
+            "status": "confirmed",
+            "require_dual_control": False,
+        },
+    )
     approve = MagicMock(return_value=[{"invoice_number": "MUSTER-2026-000001"}])
     monkeypatch.setattr(billing_approval, "approve_billing_period", approve)
     return approve

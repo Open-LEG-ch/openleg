@@ -232,6 +232,27 @@ def submit_community_to_dso(community_id: str) -> bool:
         return False
 
 
+def fetch_community_viewer_membership(
+    community_id: str, building_id: str
+) -> dict | None:
+    """Read the viewer's permissions and the LEG's dual-control setting."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT cm.role, cm.status, cm.access_roles, c.require_dual_control
+                FROM community_members cm
+                JOIN communities c ON c.community_id = cm.community_id
+                WHERE cm.community_id = %s AND cm.building_id = %s
+                """,
+                (community_id, building_id),
+            )
+            return cur.fetchone()
+    except Exception:
+        logger.exception("[FORMATION] Error getting viewer membership")
+        return None
+
+
 def fetch_community_with_members(
     community_id: str, viewer_building_id: str | None = None
 ) -> dict | None:

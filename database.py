@@ -254,6 +254,7 @@ from store.formation import (  # noqa: F401
     confirm_invited_member,
     count_confirmed_members,
     create_community_record,
+    fetch_community_viewer_membership,
     fetch_community_with_members,
     fetch_nearby_consenting_neighbours,
     fetch_user_communities,

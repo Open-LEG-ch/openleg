@@ -27,6 +27,8 @@
       <p class="text-sm text-ink-muted">
         {% if step.key == 'measurements' %}
           {{ _('Messdaten vorhanden') if step.complete else _('Keine Messquellen dokumentiert') }}
+        {% elif step.key == 'paid' and period.stage == 'cancelled' %}
+          {{ _('Keine Zahlung fällig') }}
         {% elif step.complete %}
           {{ _('Abgeschlossen') }}
           {% if step.at %}<time id="{{ step.key }}-at" datetime="{{ step.at.isoformat() }}">{{ step.at|timestamplabel }}</time>{% endif %}
@@ -128,7 +130,7 @@
 
 <section class="mb-6">
   {% if period.approvable %}
-  {% if can_approve_billing and (not require_dual_control or (period.prepared_by and period.prepared_by != viewer_building_id)) %}
+  {% if can_approve_billing %}
   <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label for="confirm-approval-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">
@@ -146,7 +148,7 @@
     </label>
     <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Zur Freigabe vorbereiten') }}</button>
   </form>
-  {% elif can_approve_billing %}
+  {% elif awaiting_billing_preparation %}
   <p class="text-sm text-ink-muted">{{ _('Warten auf die Vorbereitung durch eine andere Person.') }}</p>
   {% endif %}
   {% elif period.status == 'draft' %}

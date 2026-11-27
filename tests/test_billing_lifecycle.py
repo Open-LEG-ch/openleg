@@ -1149,6 +1149,15 @@ def test_period_flags_do_not_change_approvability(monkeypatch, flag_count):
     import dashboard
 
     _confirmed_admin(monkeypatch, dashboard)
+    monkeypatch.setattr(
+        dashboard.db,
+        "fetch_community_viewer_membership",
+        lambda *_: {
+            "role": "admin",
+            "status": "confirmed",
+            "require_dual_control": False,
+        },
+    )
     period = {
         "id": 7,
         "status": "draft",

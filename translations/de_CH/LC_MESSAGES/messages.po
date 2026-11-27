@@ -19599,3 +19599,7 @@ msgstr "Erste Rechnungsentwürfe"
 #: templates/leg_billing_period.html:123
 msgid "Weitere Rechnungsentwürfe"
 msgstr "Weitere Rechnungsentwürfe"
+
+#: templates/leg_billing_period.html:31
+msgid "Keine Zahlung fällig"
+msgstr "Keine Zahlung fällig"

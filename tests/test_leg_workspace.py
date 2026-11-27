@@ -419,6 +419,16 @@ def test_billing_approval_error_keeps_the_period_context(workspace, monkeypatch)
         ),
     )
 
+    monkeypatch.setattr(
+        dashboard.db,
+        "fetch_community_viewer_membership",
+        lambda *_: {
+            "role": "admin",
+            "status": "confirmed",
+            "require_dual_control": False,
+        },
+    )
+
     def reject_approval(*_args):
         raise billing_approval.BillingApprovalError("synthetic refusal")
 

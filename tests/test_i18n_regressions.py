@@ -177,9 +177,13 @@ def test_approval_conflict_is_localized_through_real_route(web, monkeypatch, lan
         },
     )
     monkeypatch.setattr(
-        dashboard,
-        "_require_capability",
-        lambda *args: {"role": "admin", "status": "confirmed"},
+        dashboard.db,
+        "fetch_community_viewer_membership",
+        lambda *_: {
+            "role": "admin",
+            "status": "confirmed",
+            "require_dual_control": False,
+        },
     )
     monkeypatch.setattr(db, "list_billing_draft_items", lambda *args, **kwargs: [])
     client = web.test_client()

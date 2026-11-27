@@ -440,3 +440,101 @@ def test_period_marks_unknown_legacy_preparation_time(workspace):  # noqa: F811
     assert "Zeitpunkt nicht erfasst" in html
     assert 'id="prepared-at"' not in html
     assert "Keine auffälligen Messfenster" in html
+
+
+def test_period_authorization_does_not_load_the_community_roster(
+    workspace,  # noqa: F811
+    monkeypatch,
+):
+    period = _period()
+    _valid_draft(period)
+    roster_reads = []
+    fetch_roster = db.fetch_community_with_members
+
+    def record_roster_read(*args, **kwargs):
+        roster_reads.append(args)
+        return fetch_roster(*args, **kwargs)
+
+    monkeypatch.setattr(db, "fetch_community_with_members", record_roster_read)
+    assert workspace.get(f"{BILLING}/period/{period}").status_code == 200
+    assert roster_reads == []
+
+
+@pytest.mark.parametrize(
+    ("dual_control", "preparer", "may_approve"),
+    [
+        (True, "system", False),
+        (True, None, False),
+        (True, ADMIN, False),
+        (True, AUDITOR, True),
+        (False, "system", True),
+    ],
+)
+def test_period_approval_action_requires_another_human_under_dual_control(
+    workspace,  # noqa: F811
+    dual_control,
+    preparer,
+    may_approve,
+):
+    period = _period()
+    _valid_draft(period)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE billing_periods SET prepared_by=%s WHERE id=%s", (preparer, period)
+        )
+        cur.execute(
+            "UPDATE communities SET require_dual_control=%s WHERE community_id=%s",
+            (dual_control, COMMUNITY),
+        )
+    response = workspace.get(f"{BILLING}/period/{period}")
+    assert response.status_code == 200
+    assert ('name="confirm_approval"' in response.text) is may_approve
+    assert ('name="confirm_prepare"' in response.text) is not may_approve
+
+
+@pytest.mark.parametrize("deliver_all", [True, False])
+def test_cancelled_period_keeps_its_recorded_delivery_milestone(workspace, deliver_all):  # noqa: F811
+    period = _period()
+    _valid_draft(period)
+    url = f"{BILLING}/period/{period}"
+    assert (
+        workspace.post(
+            url + "/prepare",
+            data={"confirm_prepare": "yes", "csrf_token": "csrf-secret"},
+        ).status_code
+        == 302
+    )
+    _set_session(workspace, AUDITOR)
+    assert (
+        workspace.post(
+            url + "/approve",
+            data={"confirm_approval": "yes", "csrf_token": "csrf-secret"},
+        ).status_code
+        == 302
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT id FROM invoices WHERE billing_period_id=%s ORDER BY id", (period,)
+        )
+        invoices = [row["id"] for row in cur.fetchall()]
+    for invoice in invoices if deliver_all else invoices[:-1]:
+        db.prepare_invoice_delivery(invoice, COMMUNITY, AUDITOR)
+        db.complete_invoice_delivery(invoice, COMMUNITY, AUDITOR)
+    for invoice in invoices:
+        db.cancel_invoice(invoice, COMMUNITY, AUDITOR, "Teststorno")
+    html = _assert_stage(workspace, url, "cancelled", "Storniert")
+    assert ('id="delivered-at"' in html) is deliver_all
+    assert 'id="cancelled-at"' in html
+    assert "Keine Zahlung fällig" in html
+
+
+def test_period_capability_from_another_leg_does_not_grant_access(workspace):  # noqa: F811
+    period = _period()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """UPDATE community_members SET community_id=%s, role='admin'
+               WHERE community_id=%s AND building_id=%s""",
+            (OTHER, COMMUNITY, AUDITOR),
+        )
+    _set_session(workspace, AUDITOR)
+    assert workspace.get(f"{BILLING}/period/{period}").status_code == 403
