@@ -12,7 +12,7 @@
   </section>
   <section class="mt-8 rounded-lg border border-line p-6">
     <h2 class="text-xl font-semibold">{{ _('2. Kontoauszüge herunterladen und importieren') }}</h2>
-    <p class="mt-3">{{ _('Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, Belastung und Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge bleiben unverbucht. Laden Sie danach die unbekannte Referenz mit passendem Betrag und bestätigen Sie die geprüfte Zuordnung unten. Verwenden Sie für die automatische Verbuchung eine andere zugestellte Rechnung und deren exakte CHF-Gutschrift. Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen.') }}</p>
+    <p class="mt-3">{{ _('Wählen Sie eine Rechnung. Importieren Sie unter Zahlungen zuerst die Auszüge mit falschem Betrag, falscher Währung, Belastung und Rückbuchung. Diese Einträge bleiben unverbucht. Importieren Sie danach den Auszug mit unbekannter Referenz und passendem Betrag. Kehren Sie hierher zurück und bestätigen Sie unten die geprüfte Zuordnung. Verwenden Sie für die automatische Verbuchung eine andere zugestellte Rechnung und deren exakte CHF-Gutschrift. Wiederholen Sie denselben Import, um zu prüfen, dass nur eine Zahlung verbucht wird.') }}</p>
     <p class="mt-3">{{ _('Wenn Sie dieselbe Zahlung in beiden Formaten importieren, bleibt der zweite Eintrag als mögliche Doppelzahlung offen.') }} <a class="font-semibold underline" href="/leg/community/{{ community_id }}/payments#payments">{{ _('Doppelzahlungen unter Zahlungen prüfen') }}</a></p>
     {% if invoices %}
     <form method="get" action="/sandbox/payments" class="mt-4">
@@ -25,7 +25,7 @@
     <ul class="mt-4 space-y-3">{% for kind, label in labels.items() %}<li><span class="font-semibold">{{ _(label) }}</span><div class="mt-1 flex flex-wrap gap-4">{% for message in ('053','054') %}<a class="underline" href="/sandbox/payments/fixtures/{{ invoice.id }}/{{ kind }}/{{ message }}.xml">camt.{{ message }}</a>{% endfor %}</div></li>{% endfor %}</ul>
     {% endif %}
     {% else %}<p class="mt-4">{{ _('Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen aus.') }}</p>{% endif %}
-    <a href="/leg/community/{{ community_id }}/billing" class="mt-4 inline-block font-semibold underline">{{ _('Auszug in der Abrechnungsübersicht importieren') }}</a>
+    <a href="/leg/community/{{ community_id }}/payments" class="mt-4 inline-block font-semibold underline">{{ _('Auszug unter Zahlungen importieren') }}</a>
     <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community_id }}/billing/statements" class="mt-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label for="simulation-statement" class="block font-semibold">{{ _('Kontoauszug (camt.053 oder camt.054)') }}</label>

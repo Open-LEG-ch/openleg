@@ -1961,9 +1961,12 @@ def reconcile_bank_statement(
 
 
 def get_bank_statement_summary(community_id, import_id=None):
-    """Summarize one statement import without materializing its entries."""
+    """Summarize one import and apply the workspace's entry eligibility rules."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
+            # Keep the booking counts and the assignment eligibility scan in
+            # the same snapshot while another request assigns an entry.
+            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
             cur.execute(
                 """
                 WITH statement AS (
@@ -1972,7 +1975,7 @@ def get_bank_statement_summary(community_id, import_id=None):
                     WHERE community_id = %s AND (%s IS NULL OR id = %s)
                     ORDER BY id DESC LIMIT 1
                 )
-                SELECT s.source_name, s.imported_at,
+                SELECT s.id, s.source_name, s.imported_at,
                        count(e.id) AS entries,
                        count(*) FILTER (WHERE e.match_decision = 'matched') AS booked,
                        count(*) FILTER (
@@ -1983,22 +1986,41 @@ def get_bank_statement_summary(community_id, import_id=None):
                                  AND event.event_type = 'paid'
                                  AND starts_with(event.idempotency_key, 'bank:' || s.id::text || ':')
                            )
-                       ) AS automatic,
-                       count(*) FILTER (WHERE e.match_decision = ANY(%s)) AS unassigned
+                       ) AS automatic
                 FROM statement s
                 LEFT JOIN bank_statement_entries e
                     ON e.statement_import_id = s.id AND e.community_id = s.community_id
                 GROUP BY s.id, s.source_name, s.imported_at
                 """,
-                (
-                    community_id,
-                    import_id,
-                    import_id,
-                    sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
-                ),
+                (community_id, import_id, import_id),
             )
-            result = cur.fetchone()
-            return dict(result) if result else None
+            summary = cur.fetchone()
+            if not summary:
+                return None
+            # Stream only the eligibility fields of reviewable entries in
+            # this import. Use the same predicate as the assignment card.
+            with conn.cursor(name="statement_assignment_summary") as entries:
+                entries.execute(
+                    """
+                    SELECT is_reversal, booking_status, amount_basis,
+                           credit_debit_indicator, currency, payment_reference
+                    FROM bank_statement_entries
+                    WHERE community_id = %s AND statement_import_id = %s
+                      AND match_decision = ANY(%s)
+                    """,
+                    (
+                        community_id,
+                        summary["id"],
+                        sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
+                    ),
+                )
+                return {
+                    **summary,
+                    "unassigned": sum(
+                        payment_reconciliation.payment_entry_refusal(entry) is None
+                        for entry in entries
+                    ),
+                }
     except Exception as error:
         logger.error("[DB] Error summarizing statement import: %s", error)
         raise BillingStoreError("Could not summarize statement import") from error

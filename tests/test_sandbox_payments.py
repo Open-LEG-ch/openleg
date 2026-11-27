@@ -82,6 +82,12 @@ def test_exact_import_and_reviewed_unknown_reference_share_payment_guards(villag
     path = prefix + "/sandbox/payments"
     page = client.get(path)
     assert page.status_code == 200
+    shortcut = prefix + COMMUNITY + "/payments"
+    assert f'href="{shortcut}"' in page.text
+    assert "Auszug unter Zahlungen importieren" in page.text
+    target = client.get(shortcut)
+    assert target.status_code == 200
+    assert 'name="statement"' in target.text
     resident, neighbour = invoices["sonnwil-resident"], invoices["sonnwil-neighbour"]
     for kind in ("wrong-amount", "wrong-currency", "debit", "reversal"):
         fixture = client.get(path + f"/fixtures/{resident}/{kind}/053.xml")

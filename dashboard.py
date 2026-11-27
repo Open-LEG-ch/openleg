@@ -812,7 +812,7 @@ def _billing_statement_entry(entry, invoices_by_id):
         "display_amount": display_amount,
         "related_invoice": related_invoice,
         "shortfall": shortfall,
-        "can_assign": reviewable and not recovery,
+        "can_assign": reviewable and refusal is None,
     }
 
 

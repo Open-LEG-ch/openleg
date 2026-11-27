@@ -2049,3 +2049,96 @@ def test_payment_title_and_empty_state_are_localized(
     assert response.status_code == 200
     assert f"<title>{title} | OpenLEG</title>" in response.text
     assert empty in response.text
+
+
+@pytest.mark.parametrize(
+    ("facts", "refusal"),
+    [
+        ({"currency": "EUR"}, "Die Währung ist nicht CHF."),
+        ({"direction": "DBIT"}, "Das ist eine Belastung, keine Gutschrift."),
+        ({"booking_status": "PDNG"}, "Der Auszug weist keine definitive Buchung aus."),
+        (
+            {"amount_basis": None},
+            "Der Auszug belegt den Betrag für diesen Eintrag nicht eindeutig.",
+        ),
+        ({"reference": "\u2003\t"}, "Die Zahlung hat keine Referenz."),
+        ({"is_reversal": True}, "Die Bank hat die Zahlung zurückgebucht."),
+    ],
+    ids=["currency", "debit", "pending", "amount-basis", "reference", "reversal"],
+)
+def test_payment_summary_excludes_entry_level_refusals(workspace, facts, refusal):
+    _invoice("AVAILABLE-TARGET")
+    entry, _ = _import(**facts)
+    page = workspace.get(PAYMENTS)
+    assert page.status_code == 200
+    assert refusal in page.text
+    assert f"/statements/{entry}/assign" not in page.text
+    assert "<dt>Warten auf Zuordnung</dt> <dd>0</dd>" in " ".join(page.text.split())
+
+
+def test_upload_outcomes_are_one_use_and_scoped_to_their_tab(workspace):
+    from io import BytesIO
+
+    def upload(statement, name):
+        response = workspace.post(
+            f"{BILLING}/statements",
+            data={"csrf_token": "csrf-secret", "statement": (BytesIO(statement), name)},
+        )
+        assert response.status_code == 302
+        return response.location
+
+    def check(page, *, imported=False, duplicate=False):
+        assert page.status_code == 200
+        assert (
+            "Der Kontoauszug wurde importiert und abgeglichen." in page.text
+        ) is imported
+        assert (
+            "Dieser Kontoauszug wurde bereits importiert." in page.text
+        ) is duplicate
+        skipped = 1 if duplicate else 0
+        assert (
+            f"<dt>Doppelte Einträge übersprungen</dt> <dd>{skipped}</dd>"
+            in " ".join(page.text.split())
+        )
+
+    _set_session(workspace, ADMIN)
+    body = _statement_xml(reference="unknown")
+    first = upload(body, "first.xml")
+    replay = upload(body, "first.xml")
+    second = upload(_statement_xml(statement="second", servicer="second"), "second.xml")
+    assert len({first, replay, second}) == 3
+
+    first_import = parse_qs(urlsplit(first).query)["statement_import"][0]
+    second_import = parse_qs(urlsplit(second).query)["statement_import"][0]
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO communities (community_id, name) VALUES ('other-leg', 'Other LEG')"
+        )
+        cur.execute(
+            """INSERT INTO community_members (community_id, building_id, role, status, access_roles)
+               VALUES ('other-leg', %s, 'admin', 'confirmed', %s)""",
+            (ADMIN, Json(["admin"])),
+        )
+
+    # A visit to a different LEG or a different import must leave the receipt pending.
+    wrong_leg = workspace.get(replay.replace(f"/{COMMUNITY}/", "/other-leg/"))
+    assert wrong_leg.status_code == 404
+    assert "Dieser Kontoauszug wurde bereits importiert." not in wrong_leg.text
+    wrong_import = replay.replace(
+        f"statement_import={first_import}", f"statement_import={second_import}"
+    )
+    check(workspace.get(wrong_import))
+
+    _set_session(workspace, AUDITOR)
+    check(workspace.get(first + "&statement=duplicate"))
+    check(
+        workspace.get(f"{PAYMENTS}?statement_import={first_import}&statement=duplicate")
+    )
+    _set_session(workspace, ADMIN)
+
+    # The newer tab can be read first without overwriting the earlier outcomes.
+    check(workspace.get(second), imported=True)
+    check(workspace.get(first + "&statement=duplicate"), imported=True)
+    check(workspace.get(replay + "&statement=imported"), duplicate=True)
+    for url in (first, replay, second):
+        check(workspace.get(url))
