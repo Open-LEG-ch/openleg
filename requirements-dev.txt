@@ -3,7 +3,7 @@
 pytest>=9.2.0
 pyyaml>=6.0.3
 # tests/test_i18n_assets.py reads PNG pixels with Image.get_flattened_data().
-pillow>=12.1.0
+pillow>=13.0.0
 mypy==2.4.1
 ruff==0.17.6
 coverage==7.17.2
