@@ -690,8 +690,9 @@ def get_sdat_import_index():
     Archiv aus einem Jahr Lieferungen sind das hunderte Abfragen pro Lauf, für
     eine Tabelle, die komplett in den Speicher passt.
 
-    Bei einem Fehler kommen leere Mengen zurück. Der Import macht dann die volle
-    Arbeit; er darf nie eine Datei überspringen, weil das Ledger unlesbar war.
+    Ein Lesefehler wird geloggt und weitergereicht, nie als leeres Ledger
+    gemeldet: ein bereits importiertes älteres Dokument würde sonst erneut
+    geschrieben und könnte eine spätere Korrektur überschreiben (#941).
     """
     try:
         with _get_connection() as conn:
@@ -708,4 +709,4 @@ def get_sdat_import_index():
                 }
     except Exception as e:
         logger.error(f"[DB] Error getting SDAT import index: {e}")
-        return {"document_ids": frozenset(), "file_names": frozenset()}
+        raise

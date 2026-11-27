@@ -284,6 +284,75 @@ def test_unavailable_storage_stops_before_any_file(
     assert path.exists()
 
 
+# ==== Unreadable ledger (#941) ====
+
+
+def _unreadable(*_args):
+    raise RuntimeError("ledger read failed")
+
+
+def test_an_unreadable_ledger_stops_a_live_import_in_every_adapter(
+    ledger, monkeypatch, tmp_path, command, capsys
+):
+    delivery(tmp_path)
+    sdat_import.import_paths([str(tmp_path)], compress=False)
+    readings, documents = dict(ledger.readings), dict(ledger.documents)
+    monkeypatch.setattr("database.get_sdat_import_index", _unreadable)
+
+    report = sdat_import.import_paths([str(tmp_path)])
+    assert report.files == ()
+    assert report.diagnostics == (
+        sdat_import.Diagnostic(sdat_import.LEDGER_UNREADABLE),
+    )
+    assert not report.succeeded
+
+    assert command.main([str(tmp_path)]) == 1
+    output = capsys.readouterr().out
+    assert output == "Fehler: Import-Ledger nicht lesbar, keine Datei importiert.\n"
+
+    with pytest.raises(sdat_ingestion.IngestionError) as failure:
+        sdat_ingestion._default_import(str(tmp_path))
+    assert failure.value.code == "import_failed"
+    assert failure.value.counts == {
+        "files_imported": 0,
+        "files_existing": 0,
+        "readings_imported": 0,
+    }
+
+    assert ledger.saved == [DOCUMENT_ID], "no adapter wrote readings again"
+    assert (ledger.readings, ledger.documents) == (readings, documents)
+    assert (tmp_path / "sample.xml").exists(), "a stopped run packs nothing"
+
+
+def test_a_successfully_read_empty_ledger_imports_every_delivery(ledger, tmp_path):
+    delivery(tmp_path, "20260807_120000_a.xml", document_id="DOC-A")
+    delivery(tmp_path, "20260807_130000_b.xml", document_id="DOC-B")
+
+    report = sdat_import.import_paths([str(tmp_path)])
+
+    assert report.succeeded
+    assert report.diagnostics == ()
+    assert report.count(sdat_import.IMPORTED) == 2
+    assert ledger.saved == ["DOC-A", "DOC-B"]
+
+
+def test_force_imports_without_reading_the_ledger(
+    ledger, monkeypatch, tmp_path, command, capsys
+):
+    delivery(tmp_path)
+    sdat_import.import_paths([str(tmp_path)])
+    monkeypatch.setattr("database.get_sdat_import_index", _unreadable)
+
+    report = sdat_import.import_paths([str(tmp_path)], force=True)
+    assert report.succeeded
+    assert report.diagnostics == ()
+    assert report.count(sdat_import.IMPORTED) == 1
+
+    assert command.main([str(tmp_path), "--force"]) == 0
+    assert "Ledger" not in capsys.readouterr().out
+    assert ledger.saved == [DOCUMENT_ID] * 3
+
+
 # ==== Reporter ====
 
 

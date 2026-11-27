@@ -11,6 +11,7 @@ from shutil import copyfile
 
 import pytest
 
+import sdat_import
 import sdat_ingestion
 from tests.sdat_import_helpers import (
     FIXTURE_READINGS,
@@ -376,3 +377,51 @@ def test_retries_keep_counts_from_every_attempt_of_the_shared_import(
     assert result["imported_readings"] == FIXTURE_READINGS + 1
     assert storage.saved == ["TESTDOC-1", "TESTDOC-2"]
     assert "20260807" not in str(result), "file names stay out of scheduler reports"
+
+
+@pytest.mark.parametrize("readable_from_attempt", [None, 2], ids=["down", "recovers"])
+def test_an_unreadable_ledger_is_a_retried_error_that_writes_nothing(
+    monkeypatch, tmp_path, readable_from_attempt
+):
+    """#941: the run stops, records ``import_failed`` and tries again."""
+    monkeypatch.setenv("SWISSELDEX_SDAT_DIR", str(tmp_path))
+    storage = use_storage(monkeypatch, MemoryLedger())
+    directory = tmp_path / "dietikon"
+    directory.mkdir()
+    settled = delivery(directory, "20260807_120000_settled.xml")
+    sdat_import.import_paths([str(directory)], compress=False)
+    readings = dict(storage.readings)
+    index_reads = []
+
+    def index():
+        index_reads.append(True)
+        if readable_from_attempt is None or len(index_reads) < readable_from_attempt:
+            raise RuntimeError("ledger read failed")
+        return MemoryLedger.get_sdat_import_index(storage)
+
+    monkeypatch.setattr("database.get_sdat_import_index", index)
+    store = MemoryStore()
+    sleeps = []
+
+    result = sdat_ingestion.run(
+        "dietikon",
+        {"max_attempts": 3, "retry_seconds": 1},
+        store=store,
+        fetcher=lambda _directory: {"downloaded": [], "skipped": [], "failed": []},
+        sleeper=sleeps.append,
+    )
+
+    assert store.runs == [("dietikon", result)], "every run is recorded"
+    assert storage.saved == ["TESTDOC-1"], "the settled delivery is never rewritten"
+    assert storage.readings == readings
+    if readable_from_attempt is None:
+        assert result["status"] == "failure"
+        assert result["error"] == "import_failed"
+        assert result["attempts"] == 3
+        assert sleeps == [1, 2]
+        assert settled.exists(), "a stopped run packs nothing"
+    else:
+        assert result["status"] == "success"
+        assert result["attempts"] == 2
+        assert result["existing_files"] == 1
+        assert sleeps == [1]
