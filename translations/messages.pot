@@ -4608,7 +4608,7 @@ msgid ""
 "starten Sie dieselbe App danach lokal."
 msgstr ""
 
-#: sandbox_payments.py:153
+#: sandbox_payments.py:159
 msgid ""
 "Diese Auswahl ist nicht zulässig. Nur eine passende CHF-Gutschrift für eine zugestellte Rechnung "
 "kann verbucht werden."
@@ -4731,7 +4731,7 @@ msgid ""
 "versuchen Sie es erneut."
 msgstr ""
 
-#: sandbox_payments.py:162
+#: sandbox_payments.py:169
 msgid "Dieser Eintrag fehlt oder kann nicht bestätigt werden. Prüfen Sie Rechnung, Status und Auszug."
 msgstr ""
 
@@ -10548,7 +10548,7 @@ msgstr ""
 msgid "MwSt-Satz (%)"
 msgstr ""
 
-#: dashboard.py:582 dashboard.py:761 dashboard.py:810 sandbox_payments.py:149
+#: dashboard.py:582 dashboard.py:761 dashboard.py:810 sandbox_payments.py:151
 msgid "Mögliche Doppelzahlung."
 msgstr ""
 

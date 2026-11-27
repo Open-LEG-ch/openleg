@@ -63,15 +63,16 @@ def _positive_invoices():
     ]
 
 
-def _present(error=None, status=200, *, duplicate_hold=False):
+def _present(error=None, status=200, *, duplicate_hold=False, invoice_id=None):
     """Render scoped invoices, imported entries and payment audit events."""
     try:
         invoices = _positive_invoices()
-        selected = request.args.get("invoice", type=int)
-        if "invoice" in request.args and not any(
-            row["id"] == selected for row in invoices
-        ):
-            abort(404)
+        if "invoice" in request.args:
+            selected = request.args.get("invoice", type=int)
+            if not any(row["id"] == selected for row in invoices):
+                abort(404)
+        else:
+            selected = invoice_id
         invoice = next(
             (row for row in invoices if row["id"] == selected),
             invoices[0] if invoices else None,
@@ -146,13 +147,19 @@ def install(web):
                 f"{CONFIRMATION_KEY_PREFIX}{entry_id}",
             )
         except payment_reconciliation.BankPaymentDuplicate:
-            return _present(_N("Mögliche Doppelzahlung."), 409, duplicate_hold=True)
+            return _present(
+                _N("Mögliche Doppelzahlung."),
+                409,
+                duplicate_hold=True,
+                invoice_id=invoice_id,
+            )
         except (TypeError, ValueError):
             return _present(
                 _N(
                     "Diese Auswahl ist nicht zulässig. Nur eine passende CHF-Gutschrift für eine zugestellte Rechnung kann verbucht werden."
                 ),
                 409,
+                invoice_id=invoice_id,
             )
         except (db.BillingStoreError, DatabaseError):
             abort(503)
@@ -162,5 +169,6 @@ def install(web):
                     "Dieser Eintrag fehlt oder kann nicht bestätigt werden. Prüfen Sie Rechnung, Status und Auszug."
                 ),
                 409,
+                invoice_id=invoice_id,
             )
         return redirect("/sandbox/payments", code=303)
