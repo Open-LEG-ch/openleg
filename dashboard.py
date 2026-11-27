@@ -454,13 +454,6 @@ def _has_human_preparer(period):
     return period.get("prepared_by") not in (None, "", "system")
 
 
-def _dual_control_allows_approval(require_dual_control, period, building_id):
-    # TODO(#1018): replace with billing_approval.dual_control_allows_approval
-    return not require_dual_control or (
-        _has_human_preparer(period) and period["prepared_by"] != building_id
-    )
-
-
 def _billing_workspace_period(period: dict, progress: dict) -> dict:
     """Compact display row for one billing period in the workspace."""
     stage = _billing_period_stage(period, progress)
@@ -518,8 +511,15 @@ def leg_billing_period_detail(community_id, building_id, period_id, *, after=Non
     if drafted_at is not None and drafted_at.tzinfo is None:
         drafted_at = drafted_at.replace(tzinfo=UTC)
     can_approve = community_access.APPROVE_BILLING in capabilities
-    preparer_allows_approval = _dual_control_allows_approval(
-        member["require_dual_control"], period, building_id
+    preparer_allows_approval = (
+        can_approve
+        and summary["approvable"]
+        and billing_approval.dual_control_allows_approval(
+            community_id,
+            period.get("prepared_by"),
+            building_id,
+            require_dual_control=member["require_dual_control"],
+        )
     )
     return {
         "error": None,

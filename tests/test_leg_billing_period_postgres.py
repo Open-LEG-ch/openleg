@@ -492,6 +492,38 @@ def test_period_approval_action_requires_another_human_under_dual_control(
     assert ('name="confirm_prepare"' in response.text) is not may_approve
 
 
+@pytest.mark.parametrize("preparer_issue", ["unconfirmed", "same-mailbox"])
+def test_period_page_and_post_agree_when_preparer_is_ineligible(
+    workspace,  # noqa: F811
+    preparer_issue,
+):
+    period = _period()
+    _valid_draft(period)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE billing_periods SET prepared_by=%s WHERE id=%s", (AUDITOR, period)
+        )
+        if preparer_issue == "unconfirmed":
+            cur.execute(
+                "UPDATE community_members SET status='invited' WHERE community_id=%s AND building_id=%s",
+                (COMMUNITY, AUDITOR),
+            )
+        else:
+            cur.execute(
+                "UPDATE buildings SET email=%s WHERE building_id=%s",
+                (ADMIN.upper() + "@example.invalid", AUDITOR),
+            )
+
+    url = f"{BILLING}/period/{period}"
+    response = workspace.get(url)
+    assert response.status_code == 200
+    denied = workspace.post(
+        url + "/approve", data={"confirm_approval": "yes", "csrf_token": "csrf-secret"}
+    )
+    assert denied.status_code == 403
+    assert 'name="confirm_approval"' not in response.text
+
+
 @pytest.mark.parametrize(
     ("deliveries", "cancel_undelivered_first"),
     [("all", False), ("none", False), ("one", True), ("one", False)],
