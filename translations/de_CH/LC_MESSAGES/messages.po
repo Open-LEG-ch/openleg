@@ -13578,10 +13578,6 @@ msgstr "Teilnehmer und Messpunkte"
 msgid "Teilnehmer-ID"
 msgstr "Teilnehmer-ID"
 
-#: templates/leg_billing.html:109
-msgid "Teilnehmer:"
-msgstr "Teilnehmer:"
-
 #: templates/documents/participant_contract.html:10
 msgid "Teilnehmervertrag"
 msgstr "Teilnehmervertrag"
@@ -16066,10 +16062,6 @@ msgstr "· Firmware"
 msgid "· Firmware:"
 msgstr "· Firmware:"
 
-#: templates/leg_billing.html:109
-msgid "· Interner Preis:"
-msgstr "· Interner Preis:"
-
 #: templates/advisories.html:38 templates/advisories.html:77 templates/advisories.html:84
 msgid "· Katalogversion"
 msgstr "· Katalogversion"
@@ -16095,10 +16087,6 @@ msgstr "· Rang %(p_pv_rank)s CH"
 #: templates/advisories.html:38
 msgid "· Zurückgezogen"
 msgstr "· Zurückgezogen"
-
-#: templates/leg_billing.html:109
-msgid "· Zustellart:"
-msgstr "· Zustellart:"
 
 #: templates/registry_verify.html:11
 msgid "» weiterhin aktuell ist."
@@ -18230,10 +18218,6 @@ msgstr "Gründungsstand auf der Übersicht öffnen"
 msgid "Bankzahlungen in der Abrechnung öffnen"
 msgstr "Bankzahlungen in der Abrechnung öffnen"
 
-#: templates/leg_dashboard.html:60
-msgid "Rechnungen in der Abrechnung öffnen"
-msgstr "Rechnungen in der Abrechnung öffnen"
-
 #: templates/leg_workspace_base.html:9
 msgid "Übersicht"
 msgstr "Übersicht"
@@ -19444,3 +19428,60 @@ msgstr "Oder BFS-Nummer eingeben"
 #: templates/admin/registry_error.html:6
 msgid "Moderationsseite neu laden"
 msgstr "Moderationsseite neu laden"
+
+#: dashboard.py:488
+msgid "Alle"
+msgstr "Alle"
+
+#: dashboard.py:492
+msgid "Mit Frage"
+msgstr "Mit Frage"
+
+#: templates/leg_billing.html:208
+msgid "Rechnungen öffnen"
+msgstr "Rechnungen öffnen"
+
+#: templates/leg_invoice_detail.html:5
+#, python-format
+msgid "Rechnung %(number)s"
+msgstr "Rechnung %(number)s"
+
+#: templates/leg_invoice_detail.html:9
+msgid "Zurück zu den Rechnungen"
+msgstr "Zurück zu den Rechnungen"
+
+#: templates/leg_invoice_detail.html:52
+msgid "Zahlungsdatum"
+msgstr "Zahlungsdatum"
+
+#: templates/leg_invoice_detail.html:76
+msgid "Ersatzrechnung"
+msgstr "Ersatzrechnung"
+
+#: templates/leg_invoice_detail.html:136
+msgid "Noch keine Rechnungsfragen vorhanden."
+msgstr "Noch keine Rechnungsfragen vorhanden."
+
+#: templates/leg_invoices.html:10
+msgid "Rechnungen suchen"
+msgstr "Rechnungen suchen"
+
+#: templates/leg_invoices.html:14
+msgid "Nummer, Adresse oder Zahlungsreferenz"
+msgstr "Nummer, Adresse oder Zahlungsreferenz"
+
+#: templates/leg_invoices.html:19
+msgid "Rechnungsstatus filtern"
+msgstr "Rechnungsstatus filtern"
+
+#: templates/leg_invoices.html:32
+msgid "Rechnungsnummer"
+msgstr "Rechnungsnummer"
+
+#: templates/leg_invoices.html:59
+msgid "Keine Rechnungen gefunden."
+msgstr "Keine Rechnungen gefunden."
+
+#: dashboard.py:967
+msgid "Die Rechnung konnte nicht per E-Mail zugestellt werden."
+msgstr "Die Rechnung konnte nicht per E-Mail zugestellt werden."

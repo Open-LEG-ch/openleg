@@ -16170,11 +16170,6 @@ msgid "Teilnehmer-ID"
 msgstr "ID del partecipante"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:109
-msgid "Teilnehmer:"
-msgstr "Partecipanti:"
-
-#. Draft translation; native language and domain review pending.
 #: templates/documents/participant_contract.html:10
 msgid "Teilnehmervertrag"
 msgstr "Contratto di partecipazione"
@@ -19168,11 +19163,6 @@ msgid "· Firmware:"
 msgstr "· Firmware:"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:109
-msgid "· Interner Preis:"
-msgstr "· Prezzo interno:"
-
-#. Draft translation; native language and domain review pending.
 #: templates/advisories.html:38 templates/advisories.html:77 templates/advisories.html:84
 msgid "· Katalogversion"
 msgstr "· Versione catalogo"
@@ -19203,11 +19193,6 @@ msgstr "· Grado %(p_pv_rank)s CH"
 #: templates/advisories.html:38
 msgid "· Zurückgezogen"
 msgstr "· Ritirato"
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:109
-msgid "· Zustellart:"
-msgstr "· Tipo di consegna:"
 
 #. Draft checked against source; native language and domain review pending.
 #: templates/registry_verify.html:11
@@ -21707,11 +21692,6 @@ msgid "Bankzahlungen in der Abrechnung öffnen"
 msgstr "Apri i pagamenti bancari nella fatturazione"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:60
-msgid "Rechnungen in der Abrechnung öffnen"
-msgstr "Apri le fatture nella fatturazione"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_workspace_base.html:9
 msgid "Übersicht"
 msgstr "Panoramica"
@@ -23144,3 +23124,74 @@ msgstr "Oppure inserisci un numero UST"
 #: templates/admin/registry_error.html:6
 msgid "Moderationsseite neu laden"
 msgstr "Ricarica la pagina di moderazione"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:488
+msgid "Alle"
+msgstr "Tutte"
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:492
+msgid "Mit Frage"
+msgstr "Con domande"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:208
+msgid "Rechnungen öffnen"
+msgstr "Apri le fatture"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoice_detail.html:5
+#, python-format
+msgid "Rechnung %(number)s"
+msgstr "Fattura %(number)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoice_detail.html:9
+msgid "Zurück zu den Rechnungen"
+msgstr "Torna alle fatture"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoice_detail.html:52
+msgid "Zahlungsdatum"
+msgstr "Data di pagamento"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoice_detail.html:76
+msgid "Ersatzrechnung"
+msgstr "Fattura sostitutiva"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoice_detail.html:136
+msgid "Noch keine Rechnungsfragen vorhanden."
+msgstr "Nessuna domanda su questa fattura."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoices.html:10
+msgid "Rechnungen suchen"
+msgstr "Cerca fatture"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoices.html:14
+msgid "Nummer, Adresse oder Zahlungsreferenz"
+msgstr "Numero, indirizzo o riferimento di pagamento"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoices.html:19
+msgid "Rechnungsstatus filtern"
+msgstr "Filtra per stato"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoices.html:32
+msgid "Rechnungsnummer"
+msgstr "Numero di fattura"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_invoices.html:59
+msgid "Keine Rechnungen gefunden."
+msgstr "Nessuna fattura trovata."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:967
+msgid "Die Rechnung konnte nicht per E-Mail zugestellt werden."
+msgstr "Non è stato possibile inviare la fattura via e-mail."

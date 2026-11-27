@@ -574,3 +574,15 @@ def test_correction_form_excludes_replacement_linked_to_unnumbered_invoice(works
     assert response.status_code == 200
     assert f'<option value="{available}">INV-AVAILABLE</option>' in response.text
     assert f'<option value="{linked}">INV-LINKED</option>' not in response.text
+
+
+@pytest.mark.parametrize(
+    ("number", "query"),
+    [("INV-ΟΣ", "inv-οσ"), ("INV-ΟΣΤ", "ΟΣ")],
+)
+def test_invoice_search_folds_greek_final_sigma(workspace, number, query):
+    invoice = _invoice(number)
+
+    response = workspace.get(LIST, query_string={"q": query})
+    assert response.status_code == 200
+    assert _invoice_links(response.text) == {str(invoice)}

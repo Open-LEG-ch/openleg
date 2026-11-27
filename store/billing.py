@@ -974,10 +974,12 @@ def page_community_invoices(
     if with_question:
         conditions.append("has_question")
     if search:
-        # ICU handles accented capitals and ẞ. Expand ß for Swiss ss spellings.
+        # Fold sharp S and both Greek sigma forms after ICU lowercasing.
         literal = search.replace("!", "!!").replace("%", "!%").replace("_", "!_")
         pattern = f"%{literal}%"
-        fold_sql = """replace(lower({} COLLATE "und-x-icu"), 'ß', 'ss')"""
+        fold_sql = (
+            """translate(replace(lower({} COLLATE "und-x-icu"), 'ß', 'ss'), 'ς', 'σ')"""
+        )
         fields = ("invoice_number", "participant_address", "payment_reference")
         matches = [
             f"{fold_sql.format(field)} LIKE {fold_sql.format('%s')} ESCAPE '!'"
