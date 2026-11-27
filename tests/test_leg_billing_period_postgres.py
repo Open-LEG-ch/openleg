@@ -526,6 +526,9 @@ def test_cancelled_period_keeps_its_recorded_delivery_milestone(workspace, deliv
     assert ('id="delivered-at"' in html) is deliver_all
     assert 'id="cancelled-at"' in html
     assert "Keine Zahlung fällig" in html
+    delivery_step = html.split('id="step-delivered"', 1)[1].split("</li>", 1)[0]
+    assert ("Entfällt" in delivery_step) is not deliver_all
+    assert "Ausstehend" not in delivery_step
 
 
 def test_period_capability_from_another_leg_does_not_grant_access(workspace):  # noqa: F811
@@ -538,3 +541,35 @@ def test_period_capability_from_another_leg_does_not_grant_access(workspace):  #
         )
     _set_session(workspace, AUDITOR)
     assert workspace.get(f"{BILLING}/period/{period}").status_code == 403
+
+
+def test_corrected_original_period_stays_closed_with_its_cancellation_time(workspace):  # noqa: F811
+    period = _period(status="issued")
+    replacement_period = _period(month="09", status="issued")
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO invoices
+                   (billing_period_id, community_id, participant_id, invoice_number, status)
+               VALUES (%s,%s,%s,'ORIGINAL','issued'), (%s,%s,%s,'REPLACEMENT','issued')
+               RETURNING id""",
+            (
+                period,
+                COMMUNITY,
+                PARTICIPANT,
+                replacement_period,
+                COMMUNITY,
+                PARTICIPANT,
+            ),
+        )
+        original, replacement = [row["id"] for row in cur.fetchall()]
+    db.cancel_invoice(original, COMMUNITY, ADMIN, "Teststorno")
+    url = f"{BILLING}/period/{period}"
+    before = _assert_stage(workspace, url, "cancelled", "Storniert")
+    db.correct_invoice(original, replacement, COMMUNITY, ADMIN, "Ersatzrechnung")
+    after = _assert_stage(workspace, url, "cancelled", "Storniert")
+    cancellation_time = before.split('id="cancelled-at"', 1)[1].split("</time>", 1)[0]
+    assert f'id="cancelled-at"{cancellation_time}</time>' in after
+    assert "Keine Zahlung fällig" in after
+    _assert_stage(
+        workspace, f"{BILLING}/period/{replacement_period}", "approved", "Freigegeben"
+    )

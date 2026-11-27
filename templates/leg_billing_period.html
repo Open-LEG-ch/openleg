@@ -32,6 +32,8 @@
         {% elif step.complete %}
           {{ _('Abgeschlossen') }}
           {% if step.at %}<time id="{{ step.key }}-at" datetime="{{ step.at.isoformat() }}">{{ step.at|timestamplabel }}</time>{% endif %}
+        {% elif step.key == 'delivered' and period.stage == 'cancelled' %}
+          {{ _('Entfällt') }}
         {% else %}
           {{ _('Ausstehend') }}
         {% endif %}

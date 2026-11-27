@@ -23073,3 +23073,8 @@ msgstr "More draft invoices"
 #: templates/leg_billing_period.html:31
 msgid "Keine Zahlung fällig"
 msgstr "No payment due"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:36
+msgid "Entfällt"
+msgstr "Skipped"

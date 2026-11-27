@@ -518,7 +518,7 @@ def get_community_billing_progress(
                        bool_and(COALESCE(state.new_state, 'issued') = 'paid')
                            FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
                            AS all_paid,
-                       bool_and(COALESCE(state.new_state, 'issued') = 'cancelled')
+                       bool_and(COALESCE(state.new_state, 'issued') IN ('cancelled', 'corrected'))
                            AS all_cancelled,
                        bool_and(history.delivered_at IS NOT NULL)
                            AS all_previously_delivered,
@@ -527,8 +527,7 @@ def get_community_billing_progress(
                            ELSE max(history.delivered_at)
                                FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
                        END AS delivered_at,
-                       max(state.created_at) FILTER (WHERE state.new_state = 'cancelled')
-                           AS cancelled_at,
+                       max(history.cancelled_at) AS cancelled_at,
                        max(history.paid_at)
                            FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
                            AS paid_at
@@ -536,7 +535,7 @@ def get_community_billing_progress(
                 JOIN billing_periods p ON p.id = i.billing_period_id
                   AND p.community_id = i.community_id
                 LEFT JOIN LATERAL (
-                    SELECT e.new_state, e.created_at
+                    SELECT e.new_state
                     FROM invoice_lifecycle_events e
                     WHERE e.invoice_id = i.id AND e.community_id = i.community_id
                     ORDER BY e.id DESC LIMIT 1
@@ -545,11 +544,13 @@ def get_community_billing_progress(
                     SELECT max(e.created_at) FILTER (WHERE e.new_state = 'delivered')
                                AS delivered_at,
                            max(e.created_at) FILTER (WHERE e.new_state = 'paid')
-                               AS paid_at
+                               AS paid_at,
+                           max(e.created_at) FILTER (WHERE e.new_state = 'cancelled')
+                               AS cancelled_at
                     FROM invoice_lifecycle_events e
                     WHERE %s AND e.invoice_id = i.id AND e.community_id = i.community_id
                       AND e.new_state <> e.previous_state
-                      AND e.new_state IN ('delivered', 'paid')
+                      AND e.new_state IN ('delivered', 'paid', 'cancelled')
                 ) history ON TRUE
                 WHERE i.community_id = %s AND i.billing_period_id = ANY(%s)
                   AND p.status = 'issued' AND i.status = 'issued'
