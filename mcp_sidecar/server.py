@@ -316,6 +316,24 @@ def create_app():
         }:
             raise ValueError("Introspection requires HTTPS or loopback HTTP")
     resource_url = urlsplit(resource)
+    # Flask redirects plain HTTP to HTTPS unless the TLS edge marks the request
+    # as HTTPS. Behind that edge the sidecar reaches Flask on loopback, so it
+    # marks its own calls the same way.
+    upstream_headers = (
+        {"X-Forwarded-Proto": "https"}
+        if parsed.scheme == "http" and urlsplit(issuer).scheme == "https"
+        else {}
+    )
+
+    def upstream():
+        # A fresh client per call keeps upstream cookies from crossing callers.
+        return httpx.AsyncClient(
+            follow_redirects=False,
+            trust_env=False,
+            timeout=10,
+            headers=upstream_headers,
+        )
+
     spec = yaml.safe_load(
         (Path(__file__).parents[1] / "docs/openapi/operator-v1.yaml").read_text()
     )
@@ -447,9 +465,7 @@ def create_app():
             # Only integer BFS path parameters are selected by this contract.
             # Query values are encoded by httpx, never interpolated into URLs.
             try:
-                async with httpx.AsyncClient(
-                    follow_redirects=False, trust_env=False, timeout=10
-                ) as client:
+                async with upstream() as client:
                     response = await client.get(
                         origin + public_path.format(**arguments),
                         params={
@@ -531,9 +547,7 @@ def create_app():
             return error("authentication_required")
         # A fresh client also prevents upstream cookies from crossing callers.
         try:
-            async with httpx.AsyncClient(
-                follow_redirects=False, trust_env=False, timeout=10
-            ) as client:
+            async with upstream() as client:
                 if respond:
                     response = await client.post(
                         origin
@@ -907,9 +921,7 @@ def create_app():
                 unavailable = False
                 if re.fullmatch(r"Bearer ola_[A-Za-z0-9_-]+", authorization):
                     try:
-                        async with httpx.AsyncClient(
-                            follow_redirects=False, trust_env=False, timeout=10
-                        ) as client:
+                        async with upstream() as client:
                             result = await client.post(
                                 origin + "/oauth/introspect",
                                 data={"token": authorization[7:]},
