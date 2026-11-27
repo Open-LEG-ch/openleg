@@ -980,7 +980,10 @@ def leg_approve_billing_period(
                 "invoices": [],
             }
     invoices = billing_approval.approve_billing_period(
-        period_id, community_id, approver_id=building_id
+        period_id,
+        community_id,
+        approver_id=building_id,
+        require_approver_capability=True,
     )
     return {"error": None, "invoices": invoices}
 

@@ -410,38 +410,66 @@ def _enable_dual_control_with_second_admin(rounded_delivery):
     return cid
 
 
-def _give_admins_one_mailbox(db):
+def _give_admins_one_mailbox(db, *, stored_address, login_address):
     with db.get_connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            "UPDATE buildings SET email = 'MEMBER@Example.ORG' WHERE building_id = 'producer'"
+        cur.executemany(
+            "UPDATE buildings SET email = %s WHERE building_id = %s",
+            [(stored_address, "producer"), (login_address, "member")],
         )
 
 
-def test_dual_control_operation_rejects_shared_sign_in_address(rounded_delivery):
-    _, db, _, _ = rounded_delivery
+@pytest.mark.parametrize("interest_database", ["C.utf8"], indirect=True)
+@pytest.mark.parametrize(
+    ("stored_address", "login_address"),
+    [
+        ("İ@example.org", "i@example.org"),
+        (" MEMBER@Example.ORG ", "member@example.org"),
+    ],
+)
+def test_dual_control_operation_rejects_shared_sign_in_address(
+    rounded_delivery, stored_address, login_address
+):
+    client, db, _, _ = rounded_delivery
     cid = _enable_dual_control_with_second_admin(rounded_delivery)
     period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
-    _give_admins_one_mailbox(db)
+    _give_admins_one_mailbox(
+        db, stored_address=stored_address, login_address=login_address
+    )
+
+    _set_session(client, "member")
+    workspace = f"/leg/community/{cid}/billing"
+    page = client.get(workspace)
+    assert page.status_code == 200
 
     with pytest.raises(billing_approval.DualControlApprovalError, match="Dual-control"):
         billing_approval.approve_billing_period(period_id, cid, approver_id="member")
 
+    assert f'action="{workspace}/period/{period_id}/approve"' not in page.text
     assert db.get_billing_period(period_id, cid)["status"] == "draft"
     assert db.list_community_invoices(cid) == []
 
 
-def test_dual_control_rejects_sessions_from_one_mailbox(rounded_delivery, monkeypatch):
+@pytest.mark.parametrize("interest_database", ["C.utf8"], indirect=True)
+@pytest.mark.parametrize(
+    ("stored_address", "login_address"),
+    [("İ@example.org", "i@example.org"), ("MEMBER@Example.ORG", "member@example.org")],
+)
+def test_dual_control_rejects_sessions_from_one_mailbox(
+    rounded_delivery, monkeypatch, stored_address, login_address
+):
     import app
 
     client, db, _, _ = rounded_delivery
     cid = _enable_dual_control_with_second_admin(rounded_delivery)
     period_id, _ = prepare_rounded(rounded_delivery, prepared_by=None)
-    _give_admins_one_mailbox(db)
+    _give_admins_one_mailbox(
+        db, stored_address=stored_address, login_address=login_address
+    )
     send = Mock()
     monkeypatch.setattr(app, "send_email", send)
     assert (
         client.post(
-            "/dashboard/access/request", data={"email": " Member@Example.ORG "}
+            "/dashboard/access/request", data={"email": f" {login_address.upper()} "}
         ).status_code
         == 200
     )
@@ -449,7 +477,7 @@ def test_dual_control_rejects_sessions_from_one_mailbox(rounded_delivery, monkey
     sessions = {}
     for call in send.call_args_list:
         recipient, _, body = call.args
-        assert recipient == "member@example.org"
+        assert recipient == login_address
         link = re.search(r"/dashboard/access/[A-Za-z0-9_-]+", body).group()
         session_client = client.application.test_client()
         assert session_client.get(link).status_code == 302
@@ -508,6 +536,69 @@ def test_dual_control_retries_contended_preparer_and_refuses_deleted_preparer(
         billing_approval.approve_billing_period(period_id, cid, approver_id="member")
     assert db.get_billing_period(period_id, cid)["status"] == "draft"
     assert db.list_community_invoices(cid) == []
+
+
+@pytest.mark.parametrize("dual_control", [True, False])
+def test_billing_approval_rechecks_committed_approver_revocation(
+    rounded_delivery, monkeypatch, dual_control
+):
+    client, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    assert db.set_community_dual_control(cid, dual_control, "member")
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+    _set_session(client, "member")
+    workspace = f"/leg/community/{cid}/billing"
+    approve = f"{workspace}/period/{period_id}/approve"
+    assert approve in client.get(workspace).text
+    operation = billing_approval.approve_billing_period
+
+    def revoke_after_dashboard_check(*args, **kwargs):
+        # Hold a separate connection open across issuance after committing.
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """UPDATE community_members SET role = 'member', access_roles = '["auditor"]'
+                   WHERE community_id = %s AND building_id = 'member'""",
+                (cid,),
+            )
+            conn.commit()
+            return operation(*args, **kwargs)
+
+    monkeypatch.setattr(
+        billing_approval, "approve_billing_period", revoke_after_dashboard_check
+    )
+    response = client.post(
+        approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+    )
+    assert response.status_code in (403, 409)
+    assert db.get_billing_period(period_id, cid)["status"] == "draft"
+    assert db.list_community_invoices(cid) == []
+
+
+@pytest.mark.parametrize("dual_control", [True, False])
+def test_billing_approval_retries_contended_approver(rounded_delivery, dual_control):
+    client, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    assert db.set_community_dual_control(cid, dual_control, "member")
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+    _set_session(client, "member")
+    approve = f"/leg/community/{cid}/billing/period/{period_id}/approve"
+    approval = {"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """SELECT 1 FROM community_members
+                   WHERE community_id = %s AND building_id = 'member' FOR UPDATE""",
+                (cid,),
+            )
+            response = executor.submit(client.post, approve, data=approval).result(
+                timeout=5
+            )
+            assert response.status_code == 409
+    assert db.get_billing_period(period_id, cid)["status"] == "draft"
+    assert db.list_community_invoices(cid) == []
+    assert client.post(approve, data=approval).status_code == 302
+    assert len(db.list_community_invoices(cid)) == 3
 
 
 def test_dual_control_explains_membership_change_during_approval(

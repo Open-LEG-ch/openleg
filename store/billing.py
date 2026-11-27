@@ -48,7 +48,7 @@ class BillingPolicyConflict(BillingStoreError):
     """A billing policy version already exists for this effective date."""
 
 
-class BillingPreparerBusy(BillingStoreError):
+class BillingApprovalIdentitiesBusy(BillingStoreError):
     """The approval identities are locked by a concurrent change."""
 
 
@@ -268,43 +268,59 @@ def record_billing_period_preparer(
         raise BillingStoreError("Could not record billing preparer") from e
 
 
-def get_billing_preparer_membership(
+def get_billing_approval_memberships(
     community_id: str,
-    preparer_id: str,
     approver_id: str,
+    preparer_id: str | None = None,
     *,
     cursor: BillingCursor | None = None,
     lock: bool = False,
 ) -> dict[str, object] | None:
-    """Read preparer permissions and both sign-in addresses."""
+    """Read the approver and optional preparer, using dashboard email matching."""
     if cursor is None:
         try:
             with _get_connection() as conn, conn.cursor() as cur:
-                return get_billing_preparer_membership(
-                    community_id, preparer_id, approver_id, cursor=cur, lock=lock
+                return get_billing_approval_memberships(
+                    community_id, approver_id, preparer_id, cursor=cur, lock=lock
                 )
-        except BillingPreparerBusy:
+        except BillingApprovalIdentitiesBusy:
             raise
         except Exception as e:
-            raise BillingStoreError("Could not load billing preparer") from e
+            raise BillingStoreError(
+                "Could not load billing approval memberships"
+            ) from e
     # Role changes can hold the membership while their audit insert waits for
     # the community row already locked by approval.
-    lock_clause = "FOR SHARE OF membership, preparer, approver NOWAIT" if lock else ""
+    lock_clause = "FOR SHARE OF membership, building NOWAIT" if lock else ""
     try:
         cursor.execute(
             f"""
-            SELECT membership.role, membership.access_roles, membership.status,
-                   preparer.email AS preparer_email, approver.email AS approver_email
-            FROM community_members membership
-            JOIN buildings preparer ON preparer.building_id = membership.building_id
-            JOIN buildings approver ON approver.building_id = %s
-            WHERE membership.community_id = %s AND membership.building_id = %s
-            {lock_clause}
+            WITH identities AS MATERIALIZED (
+                SELECT membership.building_id, membership.role, membership.access_roles,
+                       membership.status, building.email
+                FROM community_members membership
+                JOIN buildings building ON building.building_id = membership.building_id
+                WHERE membership.community_id = %s
+                  AND membership.building_id IN (%s, %s)
+                ORDER BY membership.building_id
+                {lock_clause}
+            )
+            SELECT preparer.role, preparer.access_roles, preparer.status,
+                   jsonb_build_object(
+                       'role', approver.role,
+                       'access_roles', approver.access_roles,
+                       'status', approver.status
+                   ) AS approver_membership,
+                   preparer.email AS preparer_email, approver.email AS approver_email,
+                   LOWER(preparer.email) = LOWER(approver.email) AS same_sign_in_email
+            FROM identities approver
+            LEFT JOIN identities preparer ON preparer.building_id = %s
+            WHERE approver.building_id = %s
             """,
-            (approver_id, community_id, preparer_id),
+            (community_id, approver_id, preparer_id, preparer_id, approver_id),
         )
     except LockNotAvailable as e:
-        raise BillingPreparerBusy(
+        raise BillingApprovalIdentitiesBusy(
             "Billing approval identities are being updated"
         ) from e
     row = cursor.fetchone()

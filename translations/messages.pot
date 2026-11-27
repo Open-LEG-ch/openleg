@@ -844,7 +844,7 @@ msgstr ""
 msgid "Abrechnung vorbereiten"
 msgstr ""
 
-#: dashboard.py:1002
+#: dashboard.py:1005
 msgid "Abrechnung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -890,7 +890,7 @@ msgstr ""
 msgid "Abrechnungsentwurf"
 msgstr ""
 
-#: dashboard.py:1008
+#: dashboard.py:1011
 msgid "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
 msgstr ""
 
@@ -1374,7 +1374,7 @@ msgstr ""
 msgid "Angenommen"
 msgstr ""
 
-#: dashboard.py:1561
+#: dashboard.py:1564
 msgid "Anhänge müssen PDF-Dateien sein."
 msgstr ""
 
@@ -1511,7 +1511,7 @@ msgstr ""
 msgid "Antwort auf Beitritt simulieren"
 msgstr ""
 
-#: dashboard.py:1211
+#: dashboard.py:1214
 msgid "Antwort oder Status ist erforderlich."
 msgstr ""
 
@@ -2638,7 +2638,7 @@ msgstr ""
 msgid "Bitte geben Sie eine E-Mail an."
 msgstr ""
 
-#: dashboard.py:1287 templates/partials/form_validation.html:3
+#: dashboard.py:1290 templates/partials/form_validation.html:3
 msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgstr ""
 
@@ -2646,7 +2646,7 @@ msgstr ""
 msgid "Bitte geben Sie eine gültige Schweizer PLZ an."
 msgstr ""
 
-#: dashboard.py:1723 dashboard.py:1726
+#: dashboard.py:1726 dashboard.py:1729
 msgid "Bitte geben Sie eine gültige Solarleistung ein."
 msgstr ""
 
@@ -2662,7 +2662,7 @@ msgstr ""
 msgid "Bitte geben Sie einen Wert im zulässigen Schrittintervall ein."
 msgstr ""
 
-#: dashboard.py:1710 dashboard.py:1718
+#: dashboard.py:1713 dashboard.py:1721
 msgid "Bitte geben Sie einen gültigen Jahresverbrauch ein."
 msgstr ""
 
@@ -3001,7 +3001,7 @@ msgid ""
 "später."
 msgstr ""
 
-#: dashboard.py:1738
+#: dashboard.py:1741
 msgid "Das Energieprofil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
 msgstr ""
 
@@ -3055,7 +3055,7 @@ msgid ""
 "über die Eignung einer Adresse aus."
 msgstr ""
 
-#: dashboard.py:1335
+#: dashboard.py:1338
 msgid "Das Vier-Augen-Prinzip konnte nicht geändert werden."
 msgstr ""
 
@@ -3330,7 +3330,7 @@ msgstr ""
 msgid "Der Abrechnungsentwurf hat keine Richtlinien-Kopie."
 msgstr ""
 
-#: dashboard.py:1563
+#: dashboard.py:1566
 msgid "Der Anhang ist keine gültige PDF-Datei."
 msgstr ""
 
@@ -3470,7 +3470,7 @@ msgid ""
 "gewählten Dienstleister betreiben können."
 msgstr ""
 
-#: dashboard.py:1565
+#: dashboard.py:1568
 msgid "Der PDF-Anhang darf höchstens 2 MB gross sein."
 msgstr ""
 
@@ -3964,7 +3964,7 @@ msgstr ""
 msgid "Die Gruppenbildung ist fehlgeschlagen."
 msgstr ""
 
-#: dashboard.py:1378
+#: dashboard.py:1381
 msgid ""
 "Die Gründung lässt sich nur einmal, vor dem Betriebsstart und mit genügend bestätigten "
 "Mitgliedern starten."
@@ -4286,7 +4286,7 @@ msgstr ""
 msgid "Die Richtlinien-Kopie ist unvollständig: "
 msgstr ""
 
-#: dashboard.py:1317
+#: dashboard.py:1320
 msgid "Die Rollen konnten nicht geändert werden. Mindestens eine Administration muss bestehen bleiben."
 msgstr ""
 
@@ -4954,7 +4954,7 @@ msgstr ""
 msgid "E-Mail"
 msgstr ""
 
-#: dashboard.py:132 dashboard.py:134 dashboard.py:1678 verein_routes.py:296
+#: dashboard.py:132 dashboard.py:134 dashboard.py:1681 verein_routes.py:296
 msgid "E-Mail bestätigt"
 msgstr ""
 
@@ -5041,7 +5041,7 @@ msgstr ""
 msgid "EVU Registrierung"
 msgstr ""
 
-#: dashboard.py:142 dashboard.py:144 dashboard.py:1680
+#: dashboard.py:142 dashboard.py:144 dashboard.py:1683
 msgid "EVU-Einwilligung erteilt"
 msgstr ""
 
@@ -5461,7 +5461,7 @@ msgid_plural "Einladungen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dashboard.py:1270
+#: dashboard.py:1273
 msgid "Einladung nicht möglich (bereits Mitglied?)."
 msgstr ""
 
@@ -5561,7 +5561,7 @@ msgstr ""
 msgid "Eintrag und Checkliste öffnen"
 msgstr ""
 
-#: dashboard.py:1580
+#: dashboard.py:1583
 msgid "Eintrag ungültig (Richtung oder Kanal unbekannt)."
 msgstr ""
 
@@ -6643,7 +6643,7 @@ msgstr ""
 msgid "Für dieses Gebäude besteht bereits eine bestätigte Anmeldung mit einer anderen E-Mail-Adresse."
 msgstr ""
 
-#: dashboard.py:1136
+#: dashboard.py:1139
 msgid "Für dieses Gültig-ab-Datum existiert bereits eine Version."
 msgstr ""
 
@@ -8732,7 +8732,7 @@ msgstr ""
 msgid "Kein Profil angegeben."
 msgstr ""
 
-#: dashboard.py:1267
+#: dashboard.py:1270
 msgid "Kein Profil zum Einladen angegeben."
 msgstr ""
 
@@ -8754,8 +8754,8 @@ msgstr ""
 
 #: dashboard.py:242 dashboard.py:253 dashboard.py:262 dashboard.py:267 dashboard.py:616
 #: dashboard.py:762 dashboard.py:905 dashboard.py:916 dashboard.py:933 dashboard.py:944
-#: dashboard.py:967 dashboard.py:995 dashboard.py:1075 dashboard.py:1104 dashboard.py:1125
-#: dashboard.py:1194 dashboard.py:1209 dashboard.py:1220 dashboard.py:1361 dashboard.py:1557
+#: dashboard.py:967 dashboard.py:998 dashboard.py:1078 dashboard.py:1107 dashboard.py:1128
+#: dashboard.py:1197 dashboard.py:1212 dashboard.py:1223 dashboard.py:1364 dashboard.py:1560
 msgid "Kein Zugriff."
 msgstr ""
 
@@ -8801,15 +8801,15 @@ msgstr ""
 msgid "Keine Anmeldung"
 msgstr ""
 
-#: dashboard.py:1449
+#: dashboard.py:1452
 msgid "Keine Berechtigung für Mitgliedermutationen."
 msgstr ""
 
-#: dashboard.py:1403 store/vnb_exchange.py:440
+#: dashboard.py:1406 store/vnb_exchange.py:440
 msgid "Keine Berechtigung für die Netzbetreiber-Anmeldung."
 msgstr ""
 
-#: dashboard.py:1485
+#: dashboard.py:1488
 msgid "Keine Berechtigung."
 msgstr ""
 
@@ -8992,7 +8992,7 @@ msgstr ""
 msgid "Keine neue Kollektor-Lieferung"
 msgstr ""
 
-#: dashboard.py:1364
+#: dashboard.py:1367
 msgid "Keine offene Einladung gefunden."
 msgstr ""
 
@@ -9397,11 +9397,11 @@ msgstr ""
 msgid "LEG gründen: so geht es"
 msgstr ""
 
-#: dashboard.py:1254
+#: dashboard.py:1257
 msgid "LEG konnte nicht erstellt werden."
 msgstr ""
 
-#: dashboard.py:246 dashboard.py:1107
+#: dashboard.py:246 dashboard.py:1110
 msgid "LEG nicht gefunden."
 msgstr ""
 
@@ -9952,7 +9952,7 @@ msgstr ""
 msgid "Manuell geprüft"
 msgstr ""
 
-#: dashboard.py:1515
+#: dashboard.py:1518
 msgid "Manuelle Zustellung fehlgeschlagen."
 msgstr ""
 
@@ -10602,7 +10602,7 @@ msgid ""
 "liefert sie Messdaten als CSV oder S-DAT."
 msgstr ""
 
-#: dashboard.py:147 dashboard.py:149 dashboard.py:1681
+#: dashboard.py:147 dashboard.py:149 dashboard.py:1684
 msgid "Nachbar-Einwilligung erteilt"
 msgstr ""
 
@@ -10670,7 +10670,7 @@ msgstr ""
 msgid "Name und Kontakt-E-Mail sind erforderlich."
 msgstr ""
 
-#: dashboard.py:1248
+#: dashboard.py:1251
 msgid "Name und Profil sind erforderlich."
 msgstr ""
 
@@ -10766,7 +10766,7 @@ msgstr ""
 msgid "Netzbetreiber und Stromlieferant stellen ihre eigenen Rechnungen."
 msgstr ""
 
-#: dashboard.py:1412
+#: dashboard.py:1415
 msgid "Netzbetreiber-Anmeldung vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -11229,19 +11229,19 @@ msgid ""
 "Adressen."
 msgstr ""
 
-#: dashboard.py:1306
+#: dashboard.py:1309
 msgid "Nur die Administration kann Rollen ändern."
 msgstr ""
 
-#: dashboard.py:1332
+#: dashboard.py:1335
 msgid "Nur die Administration kann das Vier-Augen-Prinzip ändern."
 msgstr ""
 
-#: dashboard.py:1373
+#: dashboard.py:1376
 msgid "Nur die Administration kann die Gründung starten."
 msgstr ""
 
-#: dashboard.py:1265 dashboard.py:1283
+#: dashboard.py:1268 dashboard.py:1286
 msgid "Nur die Administration kann einladen."
 msgstr ""
 
@@ -12330,7 +12330,7 @@ msgstr ""
 msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
 msgstr ""
 
-#: dashboard.py:781 store/billing.py:1417
+#: dashboard.py:781 store/billing.py:1433
 msgid "Prüfen Sie die Buchung erneut."
 msgstr ""
 
@@ -12696,7 +12696,7 @@ msgstr ""
 msgid "Rechnung für die Übungsdateien"
 msgstr ""
 
-#: dashboard.py:1182 store/billing.py:780
+#: dashboard.py:1185 store/billing.py:796
 msgid "Rechnung nicht gefunden."
 msgstr ""
 
@@ -14618,7 +14618,7 @@ msgstr ""
 msgid "VNB-Abgleich"
 msgstr ""
 
-#: dashboard.py:1460
+#: dashboard.py:1463
 msgid "VNB-Mutation vorübergehend nicht verfügbar."
 msgstr ""
 
@@ -14707,7 +14707,7 @@ msgstr ""
 msgid "Verbrauchsdaten ergänzen"
 msgstr ""
 
-#: dashboard.py:137 dashboard.py:139 dashboard.py:1679
+#: dashboard.py:137 dashboard.py:139 dashboard.py:1682
 msgid "Verbrauchsdaten hinterlegt"
 msgstr ""
 
@@ -16510,15 +16510,15 @@ msgstr ""
 msgid "geschätztes Dachpotenzial minus installierte Leistung."
 msgstr ""
 
-#: store/billing.py:1208
+#: store/billing.py:1224
 msgid "gleiche Bankreferenz"
 msgstr ""
 
-#: store/billing.py:1210
+#: store/billing.py:1226
 msgid "gleiche Zahlungsreferenz"
 msgstr ""
 
-#: store/billing.py:1206
+#: store/billing.py:1222
 msgid "gleicher Betrag innerhalb von 3 Tagen"
 msgstr ""
 

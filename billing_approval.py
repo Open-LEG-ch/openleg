@@ -1055,6 +1055,13 @@ def prepare_invoice_snapshots(
     return snapshots
 
 
+def _approver_has_billing_permission(memberships: dict[str, object] | None) -> bool:
+    approver = memberships.get("approver_membership") if memberships else None
+    return isinstance(approver, dict) and community_access.allows(
+        approver, community_access.APPROVE_BILLING
+    )
+
+
 def dual_control_allows_approval(
     community_id: str,
     prepared_by: str | None,
@@ -1065,7 +1072,7 @@ def dual_control_allows_approval(
 ) -> bool:
     """Require a confirmed preparer with separate sign-in access.
 
-    The issuance cursor holds the checked membership and addresses until commit.
+    The issuance cursor holds the checked memberships and addresses until commit.
     """
     if not require_dual_control:
         return True
@@ -1076,18 +1083,21 @@ def dual_control_allows_approval(
         or prepared_by == approver_id
     ):
         return False
-    membership = billing_store.get_billing_preparer_membership(
-        community_id, prepared_by, approver_id, cursor=cursor, lock=cursor is not None
+    memberships = billing_store.get_billing_approval_memberships(
+        community_id, approver_id, prepared_by, cursor=cursor, lock=cursor is not None
     )
-    if not membership or not community_access.allows(
-        membership, community_access.PREPARE_BILLING
+    if (
+        not memberships
+        or not _approver_has_billing_permission(memberships)
+        or not community_access.allows(memberships, community_access.PREPARE_BILLING)
+        or memberships["same_sign_in_email"] is not False
     ):
         return False
     preparer_email = security_utils.normalize_dashboard_sign_in_email(
-        membership["preparer_email"]
+        memberships["preparer_email"]
     )
     approver_email = security_utils.normalize_dashboard_sign_in_email(
-        membership["approver_email"]
+        memberships["approver_email"]
     )
     return (
         preparer_email is not None
@@ -1102,6 +1112,7 @@ def approve_billing_period(
     issue_date: date | None = None,
     *,
     approver_id: str | None = None,
+    require_approver_capability: bool = False,
 ) -> list[dict[str, object]]:
     """Issue immutable invoices for one reconciled draft period, atomically.
 
@@ -1111,6 +1122,9 @@ def approve_billing_period(
     its frozen policy/provenance/line snapshots in one transaction, and only
     then does the period flip to ``issued``. Retrying an already issued
     period is a no-op that returns the stored invoices.
+
+    Dashboard callers require the approval capability to be rechecked under
+    lock even when dual control is disabled.
 
     Domain conflicts (unknown/inactive community, unknown, stale, or
     unreconciled draft) raise ``BillingApprovalError``;
@@ -1167,11 +1181,27 @@ def approve_billing_period(
             if not isinstance(reconciliation, dict):
                 raise BillingApprovalError("Billing reconciliation must be an object")
             _require_original_registrations(cur, period)
+            require_dual_control = bool(community_row.get("require_dual_control"))
+            if (
+                require_approver_capability
+                and not require_dual_control
+                and (
+                    not approver_id
+                    or not _approver_has_billing_permission(
+                        billing_store.get_billing_approval_memberships(
+                            community_id, approver_id, cursor=cur, lock=True
+                        )
+                    )
+                )
+            ):
+                raise BillingApprovalError(
+                    "Approver no longer has billing approval rights"
+                )
             if not dual_control_allows_approval(
                 community_id,
                 period.get("prepared_by"),
                 approver_id,
-                require_dual_control=bool(community_row.get("require_dual_control")),
+                require_dual_control=require_dual_control,
                 cursor=cur,
             ):
                 raise DualControlApprovalError(
@@ -1205,9 +1235,9 @@ def approve_billing_period(
                 )
             billing_store.mark_billing_period_issued(cur, period_id)
             return billing_store.list_period_invoices(cur, period_id)
-    except billing_store.BillingPreparerBusy as e:
+    except billing_store.BillingApprovalIdentitiesBusy as e:
         raise BillingApprovalConflict(
-            "Billing preparer is being updated; retry approval"
+            "Billing approval identities are being updated; retry approval"
         ) from e
     except BillingApprovalError:
         raise
