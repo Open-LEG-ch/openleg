@@ -13,6 +13,7 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
 import logging
+from typing import Literal
 
 import action_token
 from locale_policy import require_recipient_locale
@@ -240,39 +241,51 @@ def list_registry_entries_needing_municipality() -> list[dict]:
 
 def publish_registry_entry(
     entry_id: int, bfs_number: int | None, *, without_municipality: bool = False
-) -> bool:
-    """Apply the municipality decision and publish in a single update."""
+) -> Literal["published", "stale", "invalid"]:
+    """Apply the decision or classify the failure against the locked entry."""
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                WITH decision AS (
-                    SELECT %s::integer AS bfs_number, %s::boolean AS without_municipality
-                )
-                UPDATE leg_registry AS entry
-                SET moderation_status = 'published',
-                    bfs_number = CASE WHEN decision.without_municipality THEN NULL
-                                      ELSE COALESCE(decision.bfs_number, entry.bfs_number) END,
-                    without_municipality = decision.without_municipality,
-                    updated_at = CURRENT_TIMESTAMP
-                FROM decision
-                WHERE entry.id = %s
-                    AND (
-                        entry.moderation_status = 'pending'
-                        OR (entry.moderation_status = 'published' AND entry.bfs_number IS NULL
-                            AND NOT entry.without_municipality)
-                    )
-                    AND CASE
-                        WHEN decision.without_municipality THEN decision.bfs_number IS NULL
-                        WHEN decision.bfs_number IS NULL THEN entry.bfs_number IS NOT NULL
-                        ELSE EXISTS (
-                            SELECT 1 FROM municipality_profiles
-                            WHERE bfs_number = decision.bfs_number
+                WITH target AS (
+                    SELECT id, bfs_number
+                    FROM leg_registry
+                    WHERE id = %s
+                        AND (
+                            moderation_status = 'pending'
+                            OR (moderation_status = 'published' AND bfs_number IS NULL
+                                AND NOT without_municipality)
                         )
-                    END
+                    FOR UPDATE
+                ), decision AS (
+                    SELECT %s::integer AS bfs_number, %s::boolean AS without_municipality
+                ), publication AS (
+                    UPDATE leg_registry AS entry
+                    SET moderation_status = 'published',
+                        bfs_number = CASE WHEN decision.without_municipality THEN NULL
+                                          ELSE COALESCE(decision.bfs_number, target.bfs_number) END,
+                        without_municipality = decision.without_municipality,
+                        updated_at = CURRENT_TIMESTAMP
+                    FROM target, decision
+                    WHERE entry.id = target.id
+                        AND CASE
+                            WHEN decision.without_municipality THEN decision.bfs_number IS NULL
+                            WHEN decision.bfs_number IS NULL THEN target.bfs_number IS NOT NULL
+                            ELSE EXISTS (
+                                SELECT 1 FROM municipality_profiles
+                                WHERE bfs_number = decision.bfs_number
+                            )
+                        END
+                    RETURNING entry.id
+                )
+                SELECT CASE
+                    WHEN EXISTS (SELECT 1 FROM publication) THEN 'published'
+                    WHEN EXISTS (SELECT 1 FROM target) THEN 'invalid'
+                    ELSE 'stale'
+                END AS outcome
             """,
-            (bfs_number, without_municipality, entry_id),
+            (entry_id, bfs_number, without_municipality),
         )
-        return cur.rowcount > 0
+        return cur.fetchone()["outcome"]
 
 
 def update_registry_entry_moderation(

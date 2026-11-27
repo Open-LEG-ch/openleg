@@ -310,7 +310,9 @@ class TestAdminRegistryModeration:
             patch("database.init_db", return_value=True),
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
-            patch("database.publish_registry_entry", return_value=True) as publish,
+            patch(
+                "database.publish_registry_entry", return_value="published"
+            ) as publish,
         ):
             from app import create_app
 
@@ -334,7 +336,9 @@ class TestAdminRegistryModeration:
             patch("database.init_db", return_value=True),
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
-            patch("database.publish_registry_entry", return_value=True) as publish,
+            patch(
+                "database.publish_registry_entry", return_value="published"
+            ) as publish,
         ):
             from app import create_app
 

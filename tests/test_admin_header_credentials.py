@@ -31,7 +31,7 @@ def test_admin_header_authorizes_a_clean_redirect(app_module, monkeypatch, actio
         app_module.db, "update_registry_entry_moderation", lambda *args: True
     )
     monkeypatch.setattr(
-        app_module.db, "publish_registry_entry", lambda *args, **kwargs: True
+        app_module.db, "publish_registry_entry", lambda *args, **kwargs: "published"
     )
     response = app_module.web.test_client().post(
         f"/admin/registry/7/{action}",

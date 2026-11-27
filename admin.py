@@ -576,6 +576,18 @@ def admin_billing_workspace():
     )
 
 
+def _registry_moderation_error(status):
+    if status == 409:
+        message = _(
+            "Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."
+        )
+    else:
+        message = _(
+            "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde»."
+        )
+    return render_template("admin/registry_error.html", message=message), status
+
+
 @admin_bp.route("/admin/registry/<int:entry_id>/approve", methods=["POST"])
 def admin_registry_approve(entry_id):
     require_admin()
@@ -583,25 +595,22 @@ def admin_registry_approve(entry_id):
     manual_choices = request.form.getlist("manual_bfs_number")
     choice = choices[0].strip() if choices else ""
     manual_bfs = manual_choices[0].strip() if manual_choices else ""
-    invalid = _(
-        "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde»."
-    )
     if len(choices) > 1 or len(manual_choices) > 1 or (choice and manual_bfs):
-        abort(422, invalid)
+        return _registry_moderation_error(422)
 
     without_municipality = choice == "none"
     bfs_value = "" if without_municipality else (choice or manual_bfs)
     if bfs_value and not re.fullmatch(r"[1-9][0-9]{0,3}", bfs_value):
-        abort(422, invalid)
+        return _registry_moderation_error(422)
     bfs_number = int(bfs_value) if bfs_value else None
     try:
-        published = db.publish_registry_entry(
+        outcome = db.publish_registry_entry(
             entry_id, bfs_number, without_municipality=without_municipality
         )
     except psycopg2.Error:
         abort(503)
-    if not published:
-        abort(422, invalid)
+    if outcome != "published":
+        return _registry_moderation_error(409 if outcome == "stale" else 422)
     return redirect("/admin/ops")
 
 
@@ -614,10 +623,7 @@ def admin_registry_reject(entry_id):
     except psycopg2.Error:
         abort(503)
     if not rejected:
-        abort(
-            409,
-            _("Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."),
-        )
+        return _registry_moderation_error(409)
     return redirect("/admin/ops")
 
 

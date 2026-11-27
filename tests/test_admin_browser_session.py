@@ -25,7 +25,7 @@ def browser(app_module, monkeypatch):
         monkeypatch.setattr(app_module.db, name, lambda **kwargs: [])
     monkeypatch.setattr(app_module.db, "get_registry_pending_count", lambda: 0)
     monkeypatch.setattr(app_module.db, "get_operator_interest_counts", dict)
-    moderation = Mock(return_value=True)
+    moderation = Mock(return_value="published")
     monkeypatch.setattr(app_module.db, "update_registry_entry_moderation", moderation)
     monkeypatch.setattr(app_module.db, "publish_registry_entry", moderation)
     return app_module.web.test_client(), moderation

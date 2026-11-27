@@ -155,7 +155,7 @@ def test_unmatched_entry_can_be_published_with_an_explicit_no_municipality(regis
         client.post(
             path, headers=ADMIN_HEADERS, data={"municipality": "4021"}
         ).status_code
-        == 422
+        == 409
     )
     assert client.get("/leg-verzeichnis/" + entry["slug"]).status_code == 200
     assert NAME not in client.get("/leg-check?q=Baden&bfs=4021").text
@@ -193,10 +193,77 @@ def test_stale_moderation_cannot_reverse_the_first_decision(registry, first):
     check = "/leg-check?q=Baden&bfs=4021"
     assert client.post(paths[first], data=decisions[first]).status_code == 302
     assert (NAME in client.get(check).text) == (first == "approve")
-    assert client.post(paths[second], data=decisions[second]).status_code == (
-        409 if second == "reject" else 422
-    )
+    assert client.post(paths[second], data=decisions[second]).status_code == 409
     assert (NAME in client.get(check).text) == (first == "approve")
+
+
+@pytest.mark.parametrize("error", ["invalid_bfs", "stale_rejection"])
+@pytest.mark.parametrize(
+    ("language", "invalid", "stale"),
+    [
+        (
+            "de-CH",
+            "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde».",
+            "Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu.",
+        ),
+        (
+            "fr-CH",
+            "Sélectionnez une commune valide ou confirmez « Aucune commune ».",
+            "Cette fiche a déjà été traitée. Rechargez la page de modération.",
+        ),
+        (
+            "en",
+            "Select a valid municipality or confirm “No municipality”.",
+            "This entry has already been moderated. Reload the moderation page.",
+        ),
+        (
+            "it-CH",
+            "Seleziona un comune valido o conferma «Nessun comune».",
+            "Questa scheda è già stata moderata. Ricarica la pagina di moderazione.",
+        ),
+    ],
+    ids=["de-CH", "fr-CH", "en", "it-CH"],
+)
+def test_moderation_errors_show_localized_guidance(
+    registry, error, language, invalid, stale
+):
+    client, db = registry
+    entry = submit(client, db)
+    options = {"headers": ADMIN_HEADERS, "query_string": {"lang": language}}
+    if error == "invalid_bfs":
+        result = client.post(
+            approval_path(entry), data={"manual_bfs_number": "9876"}, **options
+        )
+        assert result.status_code == 422
+        assert invalid in result.text
+        malformed = client.post(
+            approval_path(entry), data={"manual_bfs_number": "invalid"}, **options
+        )
+        assert malformed.status_code == 422
+        assert invalid in malformed.text
+    else:
+        assert (
+            client.post(
+                approval_path(entry), data={"municipality": "4021"}, **options
+            ).status_code
+            == 302
+        )
+        result = client.post(
+            f"/admin/registry/{entry['id']}/reject",
+            data={"reason": "private-rejection-note"},
+            **options,
+        )
+        assert result.status_code == 409
+        assert stale in result.text
+        assert "private-rejection-note" not in result.text
+        replay = client.post(
+            approval_path(entry), data={"municipality": "4021"}, **options
+        )
+        assert replay.status_code == 409
+        assert stale in replay.text
+    assert result.headers["Content-Language"] == language
+    reload_url = "/admin/ops" if language == "de-CH" else f"/admin/ops?lang={language}"
+    assert f'href="{reload_url}"' in result.text
 
 
 @pytest.mark.parametrize("moderation_status", ["pending", "published"])
@@ -279,6 +346,11 @@ def test_legacy_publication_can_be_repaired_without_exposing_private_data(regist
     repaired = db.get_registry_entry(entry["id"])
     assert repaired["bfs_number"] == 4021
     assert repaired["moderation_note"] == "private-note"
+    replay = client.post(
+        approval_path(entry), headers=ADMIN_HEADERS, data={"municipality": "4021"}
+    )
+    assert replay.status_code == 409
+    assert "Dieser Eintrag wurde bereits moderiert." in replay.text
     urls = [
         "/leg-check?q=Baden&bfs=4021",
         "/leg-verzeichnis?bfs=4021",
