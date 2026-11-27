@@ -77,16 +77,16 @@
 
   {% if statement_summary %}
   <section class="mb-6 rounded-xl border border-line bg-white p-4" aria-labelledby="statement-summary-title">
-    <h2 id="statement-summary-title" class="font-bold">{{ _('Letzter Import') if not statement_import else _('Importierter Kontoauszug') }}</h2>
+    <h2 id="statement-summary-title" class="font-bold">{{ _('Letzter Import') if not statement_upload else _('Importierter Kontoauszug') }}</h2>
     <p class="mt-1 text-sm text-ink-muted wrap-anywhere">{{ statement_summary.source_name }} · {{ statement_summary.imported_at|datelabel }}</p>
-    {% if statement_status == 'imported' %}<p class="mt-3" role="status">{{ _('Der Kontoauszug wurde importiert und abgeglichen.') }}</p>{% endif %}
-    {% if statement_status == 'duplicate' %}<p class="mt-3" role="status">{{ _('Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht.') }}</p>{% endif %}
+    {% if statement_upload and not statement_summary.duplicate %}<p class="mt-3" role="status">{{ _('Der Kontoauszug wurde importiert und abgeglichen.') }}</p>{% endif %}
+    {% if statement_summary.duplicate %}<p class="mt-3" role="status">{{ _('Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht.') }}</p>{% endif %}
     <dl class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
       <div><dt>{{ _('Importierte Einträge') }}</dt> <dd>{{ statement_summary.entries }}</dd></div>
       <div><dt>{{ _('Automatisch verbucht') }}</dt> <dd>{{ statement_summary.automatic }}</dd></div>
       <div><dt>{{ _('Manuell zugeordnet') }}</dt> <dd>{{ statement_summary.booked - statement_summary.automatic }}</dd></div>
       <div><dt>{{ _('Warten auf Zuordnung') }}</dt> <dd>{{ statement_summary.unassigned }}</dd></div>
-      <div><dt>{{ _('Doppelte Einträge übersprungen') }}</dt> <dd>{{ statement_summary.entries if statement_status == 'duplicate' else 0 }}</dd></div>
+      <div><dt>{{ _('Doppelte Einträge übersprungen') }}</dt> <dd>{{ statement_summary.entries if statement_summary.duplicate else 0 }}</dd></div>
     </dl>
   </section>
   {% else %}

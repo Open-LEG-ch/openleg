@@ -1993,12 +1993,7 @@ def test_payment_summary_cannot_read_another_legs_import(workspace):
     assert "fictional.xml" in latest.text
     assert "FOREIGN-ENTRY" not in latest.text
     assert "foreign.xml" not in latest.text
-    for selection in (import_id, import_id + 1):
-        page = workspace.get(
-            f"{PAYMENTS}?statement=duplicate&statement_import={selection}"
-        )
-        assert page.status_code == 404
-        assert "foreign.xml" not in page.text
+    assert "Dieser Kontoauszug wurde bereits importiert." not in latest.text
 
 
 @pytest.mark.parametrize(
@@ -2076,40 +2071,62 @@ def test_payment_summary_excludes_entry_level_refusals(workspace, facts, refusal
     assert "<dt>Warten auf Zuordnung</dt> <dd>0</dd>" in " ".join(page.text.split())
 
 
-def test_upload_outcomes_are_one_use_and_scoped_to_their_tab(workspace):
+def _upload_statement(client, body):
     from io import BytesIO
 
-    def upload(statement, name):
-        response = workspace.post(
-            f"{BILLING}/statements",
-            data={"csrf_token": "csrf-secret", "statement": (BytesIO(statement), name)},
-        )
-        assert response.status_code == 302
-        return response.location
+    response = client.post(
+        f"{BILLING}/statements",
+        data={"csrf_token": "csrf-secret", "statement": (BytesIO(body), "upload.xml")},
+    )
+    assert response.status_code == 302
+    return response.location
 
-    def check(page, *, imported=False, duplicate=False):
-        assert page.status_code == 200
-        assert (
-            "Der Kontoauszug wurde importiert und abgeglichen." in page.text
-        ) is imported
-        assert (
-            "Dieser Kontoauszug wurde bereits importiert." in page.text
-        ) is duplicate
-        skipped = 1 if duplicate else 0
-        assert (
-            f"<dt>Doppelte Einträge übersprungen</dt> <dd>{skipped}</dd>"
-            in " ".join(page.text.split())
-        )
 
+def _assert_upload_result(page, *, imported=False, duplicate=False):
+    assert page.status_code == 200
+    assert (
+        "Der Kontoauszug wurde importiert und abgeglichen." in page.text
+    ) is imported
+    assert ("Dieser Kontoauszug wurde bereits importiert." in page.text) is duplicate
+    skipped = 1 if duplicate else 0
+    assert f"<dt>Doppelte Einträge übersprungen</dt> <dd>{skipped}</dd>" in " ".join(
+        page.text.split()
+    )
+
+
+def test_overlapping_upload_redirects_survive_cookie_response_order(
+    workspace, app_module
+):
+    _set_session(workspace, ADMIN)
+    cookie_name = app_module.web.config["SESSION_COOKIE_NAME"]
+    second_tab = app_module.web.test_client()
+    second_tab.set_cookie(cookie_name, workspace.get_cookie(cookie_name).value)
+
+    # Both requests carry the browser's original cookie. The first upload's
+    # response arrives last, so its cookie state is what the browser retains.
+    body = _statement_xml(reference="unknown")
+    first = _upload_statement(workspace, body)
+    duplicate = _upload_statement(second_tab, body)
+    _assert_upload_result(workspace.get(duplicate), duplicate=True)
+    _assert_upload_result(workspace.get(first), imported=True)
+    assert len(db.list_bank_statement_entries(COMMUNITY)) == 1
+
+    later = [_upload_statement(workspace, body) for _ in range(6)]
+    for location in (duplicate, *later):
+        _assert_upload_result(workspace.get(location), duplicate=True)
+    _assert_upload_result(workspace.get(first), imported=True)
+
+
+def test_upload_outcomes_are_scoped_and_survive_reload(workspace):
     _set_session(workspace, ADMIN)
     body = _statement_xml(reference="unknown")
-    first = upload(body, "first.xml")
-    replay = upload(body, "first.xml")
-    second = upload(_statement_xml(statement="second", servicer="second"), "second.xml")
-    assert len({first, replay, second}) == 3
+    first = _upload_statement(workspace, body)
+    duplicate = _upload_statement(workspace, body)
+    assert first != duplicate
+    for location in (first, duplicate):
+        assert urlsplit(location).path == PAYMENTS
+        assert parse_qs(urlsplit(location).query).keys() == {"upload"}
 
-    first_import = parse_qs(urlsplit(first).query)["statement_import"][0]
-    second_import = parse_qs(urlsplit(second).query)["statement_import"][0]
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             "INSERT INTO communities (community_id, name) VALUES ('other-leg', 'Other LEG')"
@@ -2119,26 +2136,26 @@ def test_upload_outcomes_are_one_use_and_scoped_to_their_tab(workspace):
                VALUES ('other-leg', %s, 'admin', 'confirmed', %s)""",
             (ADMIN, Json(["admin"])),
         )
+    for _ in range(2):
+        _assert_upload_result(
+            workspace.get(first + "&statement=duplicate"), imported=True
+        )
+        _assert_upload_result(
+            workspace.get(duplicate + "&statement=imported"), duplicate=True
+        )
+    _assert_upload_result(workspace.get(f"{PAYMENTS}?statement=duplicate"))
 
-    # A visit to a different LEG or a different import must leave the receipt pending.
-    wrong_leg = workspace.get(replay.replace(f"/{COMMUNITY}/", "/other-leg/"))
-    assert wrong_leg.status_code == 404
-    assert "Dieser Kontoauszug wurde bereits importiert." not in wrong_leg.text
-    wrong_import = replay.replace(
-        f"statement_import={first_import}", f"statement_import={second_import}"
-    )
-    check(workspace.get(wrong_import))
+    unknown = f"{PAYMENTS}?upload={'0' * 32}&statement=duplicate"
+    wrong_leg = duplicate.replace(f"/{COMMUNITY}/", "/other-leg/")
+    for location in (unknown, wrong_leg, f"{PAYMENTS}?upload=invalid"):
+        page = workspace.get(location)
+        assert page.status_code == 404
+        assert "Dieser Kontoauszug wurde bereits importiert." not in page.text
+        assert "upload.xml" not in page.text
 
     _set_session(workspace, AUDITOR)
-    check(workspace.get(first + "&statement=duplicate"))
-    check(
-        workspace.get(f"{PAYMENTS}?statement_import={first_import}&statement=duplicate")
-    )
-    _set_session(workspace, ADMIN)
-
-    # The newer tab can be read first without overwriting the earlier outcomes.
-    check(workspace.get(second), imported=True)
-    check(workspace.get(first + "&statement=duplicate"), imported=True)
-    check(workspace.get(replay + "&statement=imported"), duplicate=True)
-    for url in (first, replay, second):
-        check(workspace.get(url))
+    for location in (first, duplicate):
+        page = workspace.get(location)
+        assert page.status_code == 404
+        assert "upload.xml" not in page.text
+    assert workspace.get(PAYMENTS).status_code == 200

@@ -43,9 +43,7 @@ def workspace(app_module, monkeypatch):  # noqa: F811
         monkeypatch.setattr(app_module.db, operation, lambda _cid, **kwargs: [])
     for operation in ("page_community_invoices", "page_open_payment_invoices"):
         monkeypatch.setattr(app_module.db, operation, lambda _cid, **_filters: [])
-    monkeypatch.setattr(
-        app_module.db, "get_bank_statement_summary", lambda _cid, _import: None
-    )
+    monkeypatch.setattr(app_module.db, "get_bank_statement_summary", lambda *_: None)
     monkeypatch.setattr(
         app_module.db, "list_bank_statement_entries", lambda _cid, **_filters: []
     )

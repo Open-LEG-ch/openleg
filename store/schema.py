@@ -1254,6 +1254,15 @@ def create_tables():
                 )
             """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS bank_statement_uploads (
+                    id CHAR(32) PRIMARY KEY,
+                    statement_import_id BIGINT NOT NULL
+                        REFERENCES bank_statement_imports(id) ON DELETE CASCADE,
+                    actor_id VARCHAR(64) NOT NULL,
+                    duplicate BOOLEAN NOT NULL
+                )
+            """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS bank_statement_entries (
                     id BIGSERIAL PRIMARY KEY,
                     statement_import_id BIGINT NOT NULL REFERENCES bank_statement_imports(id),

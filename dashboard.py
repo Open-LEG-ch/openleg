@@ -867,7 +867,7 @@ def leg_payments_view(
     *,
     statement_before: int | None = None,
     invoice_before: int | None = None,
-    statement_import: int | None = None,
+    statement_upload: str | None = None,
     review_invoice_id: int | None = None,
 ) -> dict:
     """Read a bounded payment workspace for a member with billing audit access."""
@@ -950,9 +950,9 @@ def leg_payments_view(
         "review_invoice": review_invoice,
         "statement_before": statement_before,
         "next_statement_before": next_statement_before,
-        "statement_import": statement_import,
+        "statement_upload": statement_upload,
         "statement_summary": db.get_bank_statement_summary(
-            community_id, statement_import
+            community_id, statement_upload, building_id
         ),
         "open_invoices": open_invoices,
         "invoice_before": invoice_before,
@@ -966,12 +966,14 @@ def leg_payments_view(
     }
 
 
-def leg_import_bank_statement(community_id, building_id, source_name, content):
+def leg_import_bank_statement(
+    community_id, building_id, source_name, content, *, upload_id
+):
     """Import a statement only for a confirmed administrator of the LEG."""
     if not _require_confirmed_admin(community_id, building_id):
         return {"error": _N("Kein Zugriff.")}
     result = payment_reconciliation.import_statement(
-        community_id, building_id, source_name, content, db
+        community_id, building_id, source_name, content, db, upload_id=upload_id
     )
     return {"error": None, **result}
 

@@ -479,7 +479,9 @@ def parse_statement(content: bytes) -> Statement:
     return Statement(message_type, statement_reference, tuple(entries))
 
 
-def import_statement(community_id, actor_id, source_name, content, store):
+def import_statement(
+    community_id, actor_id, source_name, content, store, *, upload_id=None
+):
     """Parse and atomically reconcile a statement through the billing store seam."""
     statement = parse_statement(content)
     return store.reconcile_bank_statement(
@@ -490,6 +492,7 @@ def import_statement(community_id, actor_id, source_name, content, store):
         statement_reference=statement.statement_reference,
         fingerprint=sha256(content).hexdigest(),
         entries=[asdict(entry) for entry in statement.entries],
+        upload_id=upload_id,
     )
 
 

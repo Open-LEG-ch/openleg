@@ -45,7 +45,6 @@ from store import contact_request
 from telemetry import TelemetryError
 
 _PAYMENT_ASSIGNMENT_FEEDBACK = "leg-payment-assignment"
-_PAYMENT_IMPORT_FEEDBACK = "leg-payment-import"
 
 
 def _dashboard_session_building_id():
@@ -1013,8 +1012,11 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         building_id = _require_dashboard_session()
         statement_before = request.args.get("statement_before", type=int)
         invoice_before = request.args.get("invoice_before", type=int)
-        statement_import = request.args.get("statement_import", type=int)
-        import_receipt = request.args.get("import_receipt")
+        statement_upload = request.args.get("upload")
+        if statement_upload is not None and not re.fullmatch(
+            r"[a-f0-9]{32}", statement_upload
+        ):
+            abort(404)
         receipt = request.args.get("assignment")
         pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})
         submission = pending.get(receipt)
@@ -1034,7 +1036,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 invoice_before=invoice_before
                 if invoice_before and invoice_before > 0
                 else None,
-                statement_import=statement_import,
+                statement_upload=statement_upload,
                 review_invoice_id=(
                     feedback["invoice_id"]
                     if feedback and feedback.get("duplicate_review_required")
@@ -1055,7 +1057,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             feedback = {
                 "error": _("Sie dürfen in dieser LEG keine Zahlungen zuordnen."),
             }
-        elif statement_import is not None and view["statement_summary"] is None:
+        elif statement_upload is not None and view["statement_summary"] is None:
             abort(404)
         if (
             feedback
@@ -1082,29 +1084,15 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                         current_review["reviewed_duplicates"],
                     ]
                 )
-        pending_imports = session.get(_PAYMENT_IMPORT_FEEDBACK, {})
-        upload = pending_imports.get(import_receipt)
-        if (
-            view.get("statement_summary")
-            and upload
-            and upload["scope"] == [community_id, building_id, statement_import]
-        ):
-            statement_status = "duplicate" if upload["duplicate"] else "imported"
-        else:
-            statement_status = None
         page = render_leg_workspace(
             "leg_payments.html",
             csrf_token=_dashboard_csrf_token(),
             assignment_feedback=feedback,
-            statement_status=statement_status,
             **view,
         )
         if consume_receipt:
             del pending[receipt]
             session[_PAYMENT_ASSIGNMENT_FEEDBACK] = pending
-        if statement_status:
-            del pending_imports[import_receipt]
-            session[_PAYMENT_IMPORT_FEEDBACK] = pending_imports
         return page
 
     @bp.route("/leg/community/<community_id>/billing")
@@ -1178,9 +1166,10 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         content = upload.stream.read(5 * 1024 * 1024 + 1)
         if len(content) > 5 * 1024 * 1024:
             abort(413)
+        upload_id = secrets.token_hex(16)
         try:
             result = dashboard_module.leg_import_bank_statement(
-                community_id, building_id, upload.filename, content
+                community_id, building_id, upload.filename, content, upload_id=upload_id
             )
         except payment_reconciliation.StatementError:
             abort(400)
@@ -1188,20 +1177,11 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if result["error"]:
             abort(403)
-        import_id = result["statement_import_id"]
-        receipt = secrets.token_urlsafe(16)
-        pending = session.get(_PAYMENT_IMPORT_FEEDBACK, {})
-        pending[receipt] = {
-            "scope": [community_id, building_id, import_id],
-            "duplicate": result["duplicate"],
-        }
-        session[_PAYMENT_IMPORT_FEEDBACK] = dict(list(pending.items())[-5:])
         return redirect(
             url_for(
                 ".leg_payments",
                 community_id=community_id,
-                statement_import=import_id,
-                import_receipt=receipt,
+                upload=upload_id,
             )
         )
 

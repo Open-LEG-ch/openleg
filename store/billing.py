@@ -1788,7 +1788,15 @@ def confirm_payment(
         return response
 
 
-def _statement_import_result(cur, import_id, *, duplicate):
+def _statement_import_result(cur, import_id, *, duplicate, actor_id, upload_id):
+    if upload_id is not None:
+        cur.execute(
+            """
+            INSERT INTO bank_statement_uploads (id, statement_import_id, actor_id, duplicate)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (upload_id, import_id, actor_id, duplicate),
+        )
     cur.execute(
         """
                 SELECT bank_account, entry_reference, booking_date, amount, currency,
@@ -1816,6 +1824,7 @@ def reconcile_bank_statement(
     statement_reference,
     fingerprint,
     entries,
+    upload_id=None,
 ):
     """Persist one statement and append paid events for exact unique matches.
 
@@ -1854,7 +1863,11 @@ def reconcile_bank_statement(
                     (community_id, fingerprint),
                 )
                 return _statement_import_result(
-                    cur, cur.fetchone()["id"], duplicate=True
+                    cur,
+                    cur.fetchone()["id"],
+                    duplicate=True,
+                    actor_id=actor_id,
+                    upload_id=upload_id,
                 )
             import_id = imported["id"]
             cur.execute(
@@ -1954,13 +1967,15 @@ def reconcile_bank_statement(
                         entry["id"],
                     ),
                 )
-            return _statement_import_result(cur, import_id, duplicate=False)
+            return _statement_import_result(
+                cur, import_id, duplicate=False, actor_id=actor_id, upload_id=upload_id
+            )
     except Exception as error:
         logger.error("[DB] Error reconciling bank statement: %s", error)
         raise BillingStoreError("Could not reconcile bank statement") from error
 
 
-def get_bank_statement_summary(community_id, import_id=None):
+def get_bank_statement_summary(community_id, upload_id, actor_id):
     """Summarize one import and apply the workspace's entry eligibility rules."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
@@ -1970,12 +1985,14 @@ def get_bank_statement_summary(community_id, import_id=None):
             cur.execute(
                 """
                 WITH statement AS (
-                    SELECT id, source_name, imported_at, community_id
-                    FROM bank_statement_imports
-                    WHERE community_id = %s AND (%s IS NULL OR id = %s)
-                    ORDER BY id DESC LIMIT 1
+                    SELECT i.id, i.source_name, i.imported_at, i.community_id, u.duplicate
+                    FROM bank_statement_imports i
+                    LEFT JOIN bank_statement_uploads u
+                      ON u.id = %s AND u.statement_import_id = i.id AND u.actor_id = %s
+                    WHERE i.community_id = %s AND (%s IS NULL OR u.id IS NOT NULL)
+                    ORDER BY i.id DESC LIMIT 1
                 )
-                SELECT s.id, s.source_name, s.imported_at,
+                SELECT s.id, s.source_name, s.imported_at, s.duplicate,
                        count(e.id) AS entries,
                        count(*) FILTER (WHERE e.match_decision = 'matched') AS booked,
                        count(*) FILTER (
@@ -1990,9 +2007,9 @@ def get_bank_statement_summary(community_id, import_id=None):
                 FROM statement s
                 LEFT JOIN bank_statement_entries e
                     ON e.statement_import_id = s.id AND e.community_id = s.community_id
-                GROUP BY s.id, s.source_name, s.imported_at
+                GROUP BY s.id, s.source_name, s.imported_at, s.duplicate
                 """,
-                (community_id, import_id, import_id),
+                (upload_id, actor_id, community_id, upload_id),
             )
             summary = cur.fetchone()
             if not summary:
