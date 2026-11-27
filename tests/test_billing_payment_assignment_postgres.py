@@ -1063,10 +1063,14 @@ def test_accounts_sharing_a_local_reference_import_from_one_upload(workspace):
         cur.execute("ALTER TABLE invoices ENABLE TRIGGER USER")
     upload = _accounts_sharing_a_reference(second_amount="12.00")
 
-    for outcome in ("imported", "duplicate"):
-        response = _post_statement(workspace, upload)
-        assert response.status_code == 302
-        assert response.location.endswith(f"?statement={outcome}")
+    _set_session(workspace, ADMIN)
+    for notice in (
+        "Der Kontoauszug wurde importiert und abgeglichen.",
+        "Dieser Kontoauszug wurde bereits importiert.",
+    ):
+        page = workspace.get(_upload_statement(workspace, upload))
+        assert page.status_code == 200
+        assert notice in page.text
 
     rows = db.list_bank_statement_entries(COMMUNITY)
     assert sorted(
@@ -1148,9 +1152,10 @@ def test_long_servicer_details_cannot_break_the_account_index(workspace):
         statement("first-account", "1000", "FIRST-INVOICE"),
         statement("second-account", "1000", "SECOND-INVOICE"),
     )
-    response = _post_statement(workspace, upload)
-    assert response.status_code == 302
-    assert response.location.endswith("?statement=imported")
+    _set_session(workspace, ADMIN)
+    page = workspace.get(_upload_statement(workspace, upload))
+    assert page.status_code == 200
+    assert "Der Kontoauszug wurde importiert und abgeglichen." in page.text
     rows = db.list_bank_statement_entries(COMMUNITY)
     assert [row["entry_reference"] for row in rows] == ["shared-entry"] * 2
     assert len({row["bank_account"] for row in rows}) == 2
