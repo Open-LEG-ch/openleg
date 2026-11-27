@@ -569,19 +569,37 @@ def test_billing_approval_rechecks_committed_approver_revocation(
     response = client.post(
         approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}
     )
-    assert response.status_code in (403, 409)
+    assert response.status_code == 403
     assert db.get_billing_period(period_id, cid)["status"] == "draft"
     assert db.list_community_invoices(cid) == []
 
 
+@pytest.mark.parametrize(
+    ("lang", "retry_message"),
+    [
+        (
+            "de-CH",
+            "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen.",
+        ),
+        ("en", "Another operation is updating permissions. Please try again."),
+        (
+            "fr-CH",
+            "Une autre opération est en train de modifier les autorisations. Veuillez réessayer.",
+        ),
+        ("it-CH", "Un'altra operazione sta modificando le autorizzazioni. Riprova."),
+    ],
+)
 @pytest.mark.parametrize("dual_control", [True, False])
-def test_billing_approval_retries_contended_approver(rounded_delivery, dual_control):
+def test_billing_approval_retries_contended_approver(
+    rounded_delivery, monkeypatch, dual_control, lang, retry_message
+):
     client, db, _, _ = rounded_delivery
+    monkeypatch.setitem(client.application.config, "SITE_RELEASE_ENABLED", True)
     cid = _enable_dual_control_with_second_admin(rounded_delivery)
     assert db.set_community_dual_control(cid, dual_control, "member")
     period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
     _set_session(client, "member")
-    approve = f"/leg/community/{cid}/billing/period/{period_id}/approve"
+    approve = f"/leg/community/{cid}/billing/period/{period_id}/approve?lang={lang}"
     approval = {"csrf_token": "csrf-secret", "confirm_approval": "yes"}
 
     with ThreadPoolExecutor(max_workers=1) as executor:
@@ -595,10 +613,53 @@ def test_billing_approval_retries_contended_approver(rounded_delivery, dual_cont
                 timeout=5
             )
             assert response.status_code == 409
+            assert retry_message in unescape(response.text)
     assert db.get_billing_period(period_id, cid)["status"] == "draft"
     assert db.list_community_invoices(cid) == []
     assert client.post(approve, data=approval).status_code == 302
     assert len(db.list_community_invoices(cid)) == 3
+
+
+def test_approval_without_dual_control_ignores_nonparticipant_profile_lock(
+    rounded_delivery,
+):
+    client, db, payload, _ = rounded_delivery
+    cid = payload["community_id"]
+    approver = "billing-admin"
+    assert db.save_building(
+        approver,
+        "billing-admin@example.org",
+        {"address": "Synthetic Administrator", "lat": 47.2, "lon": 8.2},
+        {},
+        verified=True,
+        city_id="dietikon",
+    )
+    assert db.insert_invited_member(cid, approver, "member")
+    assert db.confirm_invited_member(cid, approver)
+    assert db.set_member_access_roles(cid, approver, [community_access.ADMIN], "member")
+    assert db.set_member_access_roles(cid, "member", [], approver)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by=None)
+    _set_session(client, approver)
+    approve = f"/leg/community/{cid}/billing/period/{period_id}/approve"
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE buildings SET phone = '+41445550123' WHERE building_id = %s",
+                (approver,),
+            )
+            response = executor.submit(
+                client.post,
+                approve,
+                data={"csrf_token": "csrf-secret", "confirm_approval": "yes"},
+            ).result(timeout=5)
+            assert response.status_code == 302
+    invoices = db.list_community_invoices(cid)
+    assert {invoice["participant_id"] for invoice in invoices} == {
+        "member",
+        "consumer-b",
+        "producer",
+    }
 
 
 def test_dual_control_explains_membership_change_during_approval(

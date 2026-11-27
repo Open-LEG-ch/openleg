@@ -20450,3 +20450,8 @@ msgstr "Soumettre à nouveau"
 #: templates/partials/registry_trust.html:16
 msgid ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
 msgstr ", mais pas par un exploitant ayant revendiqué l’entrée."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard_routes.py:1194
+msgid "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
+msgstr "Une autre opération est en train de modifier les autorisations. Veuillez réessayer."

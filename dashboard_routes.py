@@ -1198,6 +1198,17 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             result = dashboard_module.leg_approve_billing_period(
                 community_id, building_id, period_id
             )
+        except billing_approval.BillingApprovalAccessDenied:
+            abort(403)
+        except billing_approval.BillingApprovalConflict:
+            return _billing_approval_error_response(
+                community_id,
+                building_id,
+                _(
+                    "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
+                ),
+                409,
+            )
         except billing_approval.DualControlApprovalError:
             return _billing_approval_error_response(
                 community_id,

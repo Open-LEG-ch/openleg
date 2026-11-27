@@ -3752,7 +3752,7 @@ msgstr ""
 msgid "Die Akku-Konfiguration ist unvollständig oder passt nicht zu den abgerechneten Mitgliedern."
 msgstr ""
 
-#: dashboard_routes.py:1246
+#: dashboard_routes.py:1257
 msgid "Die Aktion ist für den aktuellen Rechnungsstatus nicht zulässig."
 msgstr ""
 
@@ -4726,7 +4726,7 @@ msgid ""
 "Quelldokumente."
 msgstr ""
 
-#: dashboard_routes.py:1213
+#: dashboard_routes.py:1224
 msgid ""
 "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. Er ist unvollständig, nicht "
 "vollständig abgeglichen oder wurde zwischenzeitlich verändert. Prüfen Sie die Periode und "
@@ -5207,6 +5207,10 @@ msgstr ""
 msgid ""
 "Ein Zusammenschluss zum Eigenverbrauch organisiert den gemeinsamen Eigenverbrauch hinter dem "
 "gemeinsamen Netzanschlusspunkt."
+msgstr ""
+
+#: dashboard_routes.py:1208
+msgid "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
 msgstr ""
 
 #: templates/leg_kalkulator.html:494
@@ -12330,7 +12334,7 @@ msgstr ""
 msgid "Prüfen Sie die Anzeige am Gerät und die Hinweise des Herstellers."
 msgstr ""
 
-#: dashboard.py:781 store/billing.py:1433
+#: dashboard.py:781 store/billing.py:1454
 msgid "Prüfen Sie die Buchung erneut."
 msgstr ""
 
@@ -12696,7 +12700,7 @@ msgstr ""
 msgid "Rechnung für die Übungsdateien"
 msgstr ""
 
-#: dashboard.py:1185 store/billing.py:796
+#: dashboard.py:1185 store/billing.py:817
 msgid "Rechnung nicht gefunden."
 msgstr ""
 
@@ -16510,15 +16514,15 @@ msgstr ""
 msgid "geschätztes Dachpotenzial minus installierte Leistung."
 msgstr ""
 
-#: store/billing.py:1224
+#: store/billing.py:1245
 msgid "gleiche Bankreferenz"
 msgstr ""
 
-#: store/billing.py:1226
+#: store/billing.py:1247
 msgid "gleiche Zahlungsreferenz"
 msgstr ""
 
-#: store/billing.py:1222
+#: store/billing.py:1243
 msgid "gleicher Betrag innerhalb von 3 Tagen"
 msgstr ""
 

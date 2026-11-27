@@ -22826,3 +22826,8 @@ msgstr "Submit again"
 #: templates/partials/registry_trust.html:16
 msgid ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
 msgstr ", but not by an operator who has claimed the entry."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard_routes.py:1194
+msgid "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
+msgstr "Another operation is updating permissions. Please try again."

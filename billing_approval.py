@@ -61,6 +61,10 @@ class DualControlApprovalError(BillingApprovalError):
     """Preparation and approval do not have separate, eligible identities."""
 
 
+class BillingApprovalAccessDenied(BillingApprovalError):
+    """The dashboard actor no longer has approval rights."""
+
+
 class BillingApprovalConflict(BillingApprovalError):
     """A concurrent change prevented approval. The caller can retry."""
 
@@ -1062,6 +1066,22 @@ def _approver_has_billing_permission(memberships: dict[str, object] | None) -> b
     )
 
 
+def _require_billing_approver(
+    cursor: BillingCursor, community_id: str, approver_id: str | None
+) -> None:
+    membership = (
+        billing_store.lock_billing_approver_membership(
+            cursor, community_id, approver_id
+        )
+        if approver_id
+        else None
+    )
+    if not community_access.allows(membership, community_access.APPROVE_BILLING):
+        raise BillingApprovalAccessDenied(
+            "Approver no longer has billing approval rights"
+        )
+
+
 def dual_control_allows_approval(
     community_id: str,
     prepared_by: str | None,
@@ -1069,10 +1089,12 @@ def dual_control_allows_approval(
     *,
     require_dual_control: bool,
     cursor: BillingCursor | None = None,
+    require_approver_capability: bool = False,
 ) -> bool:
     """Require a confirmed preparer with separate sign-in access.
 
     The issuance cursor holds the checked memberships and addresses until commit.
+    Dashboard issuance distinguishes lost approval rights from a dual-control failure.
     """
     if not require_dual_control:
         return True
@@ -1082,13 +1104,20 @@ def dual_control_allows_approval(
         or not approver_id
         or prepared_by == approver_id
     ):
+        if cursor is not None and require_approver_capability:
+            _require_billing_approver(cursor, community_id, approver_id)
         return False
     memberships = billing_store.get_billing_approval_memberships(
         community_id, approver_id, prepared_by, cursor=cursor, lock=cursor is not None
     )
+    if not _approver_has_billing_permission(memberships):
+        if cursor is not None and require_approver_capability:
+            raise BillingApprovalAccessDenied(
+                "Approver no longer has billing approval rights"
+            )
+        return False
     if (
         not memberships
-        or not _approver_has_billing_permission(memberships)
         or not community_access.allows(memberships, community_access.PREPARE_BILLING)
         or memberships["same_sign_in_email"] is not False
     ):
@@ -1182,27 +1211,15 @@ def approve_billing_period(
                 raise BillingApprovalError("Billing reconciliation must be an object")
             _require_original_registrations(cur, period)
             require_dual_control = bool(community_row.get("require_dual_control"))
-            if (
-                require_approver_capability
-                and not require_dual_control
-                and (
-                    not approver_id
-                    or not _approver_has_billing_permission(
-                        billing_store.get_billing_approval_memberships(
-                            community_id, approver_id, cursor=cur, lock=True
-                        )
-                    )
-                )
-            ):
-                raise BillingApprovalError(
-                    "Approver no longer has billing approval rights"
-                )
+            if require_approver_capability and not require_dual_control:
+                _require_billing_approver(cur, community_id, approver_id)
             if not dual_control_allows_approval(
                 community_id,
                 period.get("prepared_by"),
                 approver_id,
                 require_dual_control=require_dual_control,
                 cursor=cur,
+                require_approver_capability=require_approver_capability,
             ):
                 raise DualControlApprovalError(
                     "Dual-control approval requires a different recorded preparer"

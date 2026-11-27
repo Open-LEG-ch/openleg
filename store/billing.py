@@ -268,15 +268,36 @@ def record_billing_period_preparer(
         raise BillingStoreError("Could not record billing preparer") from e
 
 
+def lock_billing_approver_membership(
+    cursor: BillingCursor, community_id: str, approver_id: str
+) -> dict[str, object] | None:
+    """Lock approval rights without locking the approver's profile."""
+    try:
+        cursor.execute(
+            """
+            SELECT role, access_roles, status FROM community_members
+            WHERE community_id = %s AND building_id = %s
+            FOR SHARE NOWAIT
+            """,
+            (community_id, approver_id),
+        )
+    except LockNotAvailable as e:
+        raise BillingApprovalIdentitiesBusy(
+            "Billing approval membership is being updated"
+        ) from e
+    row = cursor.fetchone()
+    return dict(row) if row else None
+
+
 def get_billing_approval_memberships(
     community_id: str,
     approver_id: str,
-    preparer_id: str | None = None,
+    preparer_id: str,
     *,
     cursor: BillingCursor | None = None,
     lock: bool = False,
 ) -> dict[str, object] | None:
-    """Read the approver and optional preparer, using dashboard email matching."""
+    """Read the approver and preparer, using dashboard email matching."""
     if cursor is None:
         try:
             with _get_connection() as conn, conn.cursor() as cur:
