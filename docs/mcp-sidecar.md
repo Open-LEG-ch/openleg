@@ -209,6 +209,10 @@ Konfiguration des Sidecars:
 - `OPENLEG_MCP_RESOURCE` entspricht `OPENLEG_OAUTH_RESOURCE` der App.
 - `OPENLEG_OAUTH_INTROSPECTION_SECRET` wie oben.
 - `OPENLEG_OPERATOR_ORIGIN`: HTTPS-Origin der App; HTTP nur auf Loopback.
+  Ist der Aussteller HTTPS und der Origin Loopback-HTTP, sendet der Sidecar
+  `X-Forwarded-Proto: https` mit, wie es der TLS-Proxy für die App tut. Sonst
+  leitet die App jede Anfrage auf HTTPS um, und der Sidecar folgt keinen
+  Weiterleitungen.
 - Host- und Origin-Allowlisten wie oben. Keine Datenbankzugangsdaten.
 
 Der Host fordert Betreiber-Capabilities an, beispielsweise `billing.read`.
