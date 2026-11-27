@@ -43,6 +43,7 @@ import private_http
 import registration
 import release_identity
 import release_mode
+import robots_policy
 import security_utils
 import site_release
 import tenant as tenant_module
@@ -404,41 +405,8 @@ def datenschutz():
 
 @main_bp.route("/robots.txt")
 def robots_txt():
-    lines = [
-        "User-agent: *",
-        "Allow: /",
-        "Allow: /api/v1/docs",
-        "Disallow: /api/",
-        "Disallow: /admin/",
-        "Disallow: /confirm/",
-        "Disallow: /unsubscribe/",
-        "",
-        "# LLM and AI crawlers are welcome.",
-        "User-agent: GPTBot",
-        "Allow: /",
-        "",
-        "User-agent: OAI-SearchBot",
-        "Allow: /",
-        "",
-        "User-agent: ChatGPT-User",
-        "Allow: /",
-        "",
-        "User-agent: ClaudeBot",
-        "Allow: /",
-        "",
-        "User-agent: PerplexityBot",
-        "Allow: /",
-        "",
-        "User-agent: Google-Extended",
-        "Allow: /",
-        "",
-        "User-agent: Applebot-Extended",
-        "Allow: /",
-        "",
-        f"Sitemap: {current_app.config['SITE_URL']}/sitemap.xml",
-        f"# LLM summary: {current_app.config['SITE_URL']}/llms.txt",
-    ]
-    return Response("\n".join(lines) + "\n", mimetype="text/plain")
+    body = robots_policy.robots_txt(current_app.config["SITE_URL"])
+    return Response(body, mimetype="text/plain")
 
 
 @main_bp.route("/llms.txt")

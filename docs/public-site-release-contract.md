@@ -37,6 +37,38 @@ The executable HTTP contract is `tests/test_root_role_access.py`. Municipality
 profile links are covered by `tests/test_municipality_organic.py`. Release-image
 contents are covered by `tests/test_ci_contract.py`.
 
+## Crawl Rules
+
+`GET /robots.txt` gives every user-agent group the same rules, which
+`robots_policy.py` owns. A crawler that
+matches a named group ignores `User-agent: *`, so a named group without the
+shared exclusions would open the API, administration, private Verein,
+confirmation, unsubscribe and credential paths to that crawler.
+`tests/test_robots_policy.py` parses the served file with Protego, which follows
+Google's group selection and longest-match precedence, and checks each crawler
+against public and excluded URLs.
+
+robots.txt is a request to crawlers, not access control. Private routes keep
+their own checks, and user-initiated fetchers may ignore robots.txt. Draft
+pages stay crawlable so that crawlers can read their `noindex`. A local request
+with a crawler user agent does not show what the production CDN allows.
+
+Vendor documentation checked on 2026-11-23:
+
+| Crawler | Kind | Group | Source |
+| --- | --- | --- | --- |
+| Googlebot | Search | `*` | [robots.txt rules](https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt), [crawlers](https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers) |
+| Bingbot | Search | `*` | [Bing, 2012-05-03](https://blogs.bing.com/webmaster/2012/05/03/to-crawl-or-not-to-crawl-that-is-bingbots-question/) |
+| OAI-SearchBot | AI search | named | [OpenAI](https://developers.openai.com/api/docs/bots) |
+| Claude-SearchBot | AI search | `*` | [Anthropic](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler) |
+| PerplexityBot | AI search | named | [Perplexity](https://docs.perplexity.ai/guides/bots) |
+| ChatGPT-User, Claude-User, Perplexity-User | User-initiated | named, `*`, `*` | Vendor pages above |
+| GPTBot, ClaudeBot | Training | named | Vendor pages above |
+| Google-Extended, Applebot-Extended | Training control token | named | [Google](https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers), [Apple](https://support.apple.com/en-us/119829) |
+
+Training crawlers keep their existing allow groups. Change that preference
+only through an explicit maintainer decision.
+
 ## Required Checks
 
 Before merging a change to routing, templates, assets, `PUBLIC_SITE_URL`, Caddy,
