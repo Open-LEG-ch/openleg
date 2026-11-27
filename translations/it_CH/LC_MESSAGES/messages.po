@@ -1953,11 +1953,6 @@ msgid "Ausserhalb dieses Firmwarebereichs"
 msgstr "Al di fuori di questo settore del firmware"
 
 #. Draft translation; native language and domain review pending.
-#: templates/admin/ops.html:114
-msgid "Ausstehende LEG-Einträge"
-msgstr "LEG voci in sospeso"
-
-#. Draft translation; native language and domain review pending.
 #: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:44
 msgid "Aussteller:"
 msgstr "Espositore:"
@@ -23099,3 +23094,53 @@ msgstr ", ma non da un operatore che ha rivendicato la voce."
 #: dashboard_routes.py:1194
 msgid "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
 msgstr "Un'altra operazione sta modificando le autorizzazioni. Riprova."
+
+#. Draft translation; native language and domain review pending.
+#: admin.py:599
+msgid "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde»."
+msgstr "Seleziona un comune valido o conferma «Nessun comune»."
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:115
+msgid "LEG-Einträge moderieren"
+msgstr "Modera le schede CEL"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:134
+msgid "Veröffentlicht, Gemeinde fehlt"
+msgstr "Pubblicata, comune mancante"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:152 templates/admin/ops.html:157
+msgid "BFS-Nummer"
+msgstr "Numero UST"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:155
+msgid "Keine passende Gemeinde gefunden."
+msgstr "Nessun comune corrispondente trovato."
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:168
+msgid "Keine Gemeinde"
+msgstr "Nessun comune"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:172
+msgid "Gemeindezuordnung speichern"
+msgstr "Salva l’associazione al comune"
+
+#. Draft translation; native language and domain review pending.
+#: admin.py:619
+msgid "Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."
+msgstr "Questa scheda è già stata moderata. Ricarica la pagina di moderazione."
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:168
+msgid "Oder BFS-Nummer eingeben"
+msgstr "Oppure inserisci un numero UST"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/registry_error.html:6
+msgid "Moderationsseite neu laden"
+msgstr "Ricarica la pagina di moderazione"

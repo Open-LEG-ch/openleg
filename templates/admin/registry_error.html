@@ -1,4 +1,7 @@
 {% extends "product_base.html" %}
+{% macro language_switch_url(locale) -%}
+  {{ '/admin/ops'|localized_url(locale) }}
+{%- endmacro %}
 {% block content %}
 <div class="max-w-xl mx-auto px-4 py-12">
   <h1 class="text-2xl font-bold mb-6">{{ _('LEG-Einträge moderieren') }}</h1>

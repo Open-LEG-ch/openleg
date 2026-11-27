@@ -266,6 +266,48 @@ def test_moderation_errors_show_localized_guidance(
     assert f'href="{reload_url}"' in result.text
 
 
+@pytest.mark.parametrize("status", [422, 409])
+def test_moderation_error_language_links_open_the_queue_without_request_query(
+    registry, status
+):
+    client, db = registry
+    entry = submit(client, db)
+    path = approval_path(entry)
+    if status == 409:
+        assert (
+            client.post(
+                path, headers=ADMIN_HEADERS, data={"municipality": "4021"}
+            ).status_code
+            == 302
+        )
+    response = client.post(
+        path,
+        headers=ADMIN_HEADERS,
+        data={"municipality": "4021" if status == 409 else "9876"},
+        query_string={
+            "lang": "en",
+            "verification_token": "synthetic-private-token",
+            "other": "unrelated-value",
+        },
+    )
+    assert response.status_code == status
+    links = re.findall(
+        r'<a href="([^"]+)" data-language-choice lang="([^"]+)"', response.text
+    )
+    assert sorted(links) == [
+        (f"/admin/ops?lang={locale}", locale)
+        for locale in ("de-CH", "en", "fr-CH", "it-CH")
+    ]
+    assert "synthetic-private-token" not in response.text
+    assert "unrelated-value" not in response.text
+    french = client.get(
+        {locale: link for link, locale in links}["fr-CH"],
+        headers={"Accept": "text/html"},
+    )
+    assert french.status_code == 200
+    assert french.headers["Content-Language"] == "fr-CH"
+
+
 @pytest.mark.parametrize("moderation_status", ["pending", "published"])
 def test_moderator_can_override_a_suggestion(registry, moderation_status):
     client, db = registry

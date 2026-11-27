@@ -1619,10 +1619,6 @@ msgstr "Auskunft, Berichtigung, Löschung"
 msgid "Ausserhalb dieses Firmwarebereichs"
 msgstr "Ausserhalb dieses Firmwarebereichs"
 
-#: templates/admin/ops.html:114
-msgid "Ausstehende LEG-Einträge"
-msgstr "Ausstehende LEG-Einträge"
-
 #: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:44
 msgid "Aussteller:"
 msgstr "Aussteller:"
@@ -19408,3 +19404,43 @@ msgstr ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
 #: dashboard_routes.py:1194
 msgid "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
 msgstr "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
+
+#: admin.py:599
+msgid "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde»."
+msgstr "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde»."
+
+#: templates/admin/ops.html:115
+msgid "LEG-Einträge moderieren"
+msgstr "LEG-Einträge moderieren"
+
+#: templates/admin/ops.html:134
+msgid "Veröffentlicht, Gemeinde fehlt"
+msgstr "Veröffentlicht, Gemeinde fehlt"
+
+#: templates/admin/ops.html:152 templates/admin/ops.html:157
+msgid "BFS-Nummer"
+msgstr "BFS-Nummer"
+
+#: templates/admin/ops.html:155
+msgid "Keine passende Gemeinde gefunden."
+msgstr "Keine passende Gemeinde gefunden."
+
+#: templates/admin/ops.html:168
+msgid "Keine Gemeinde"
+msgstr "Keine Gemeinde"
+
+#: templates/admin/ops.html:172
+msgid "Gemeindezuordnung speichern"
+msgstr "Gemeindezuordnung speichern"
+
+#: admin.py:619
+msgid "Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."
+msgstr "Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."
+
+#: templates/admin/ops.html:168
+msgid "Oder BFS-Nummer eingeben"
+msgstr "Oder BFS-Nummer eingeben"
+
+#: templates/admin/registry_error.html:6
+msgid "Moderationsseite neu laden"
+msgstr "Moderationsseite neu laden"

@@ -797,7 +797,7 @@ msgstr ""
 msgid "Ablauf der Abrechnung"
 msgstr ""
 
-#: templates/admin/ops.html:151 templates/contact_requests.html:52 templates/oauth_consent.html:20
+#: templates/admin/ops.html:178 templates/contact_requests.html:52 templates/oauth_consent.html:20
 #: templates/verein/application.html:17
 msgid "Ablehnen"
 msgstr ""
@@ -919,7 +919,7 @@ msgstr ""
 msgid "Abweichung prüfen"
 msgstr ""
 
-#: templates/admin/ops.html:140
+#: templates/admin/ops.html:145
 msgid "Abweichung von ElCom"
 msgstr ""
 
@@ -1047,7 +1047,7 @@ msgstr ""
 msgid "Agent"
 msgstr ""
 
-#: templates/admin/ops.html:167
+#: templates/admin/ops.html:195
 msgid "Agent Health"
 msgstr ""
 
@@ -1783,10 +1783,6 @@ msgstr ""
 msgid "Ausserhalb dieses Firmwarebereichs"
 msgstr ""
 
-#: templates/admin/ops.html:115
-msgid "Ausstehende LEG-Einträge"
-msgstr ""
-
 #: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:45
 msgid "Aussteller:"
 msgstr ""
@@ -1887,6 +1883,10 @@ msgstr ""
 
 #: templates/api_docs.html:70
 msgid "BFS municipality number"
+msgstr ""
+
+#: templates/admin/ops.html:152
+msgid "BFS-Nummer"
 msgstr ""
 
 #: municipality.py:60
@@ -2605,7 +2605,7 @@ msgstr ""
 msgid "Bitte bestätigen Sie Ihre E-Mail-Adresse."
 msgstr ""
 
-#: leg_registry.py:59
+#: leg_registry.py:61
 #, python-format
 msgid ""
 "Bitte bestätigen Sie, dass der Eintrag \"%(name)s\" im OpenLEG-Verzeichnis noch aktuell ist (Link"
@@ -2735,7 +2735,7 @@ msgstr ""
 msgid "Bitte verwenden Sie das verlangte Format."
 msgstr ""
 
-#: templates/dashboard.html:166 templates/gemeinde/vergleich.html:38
+#: templates/admin/ops.html:160 templates/dashboard.html:166 templates/gemeinde/vergleich.html:38
 #: templates/gemeinde/vergleich.html:47 templates/sandbox/operator.html:15
 msgid "Bitte wählen"
 msgstr ""
@@ -2851,7 +2851,7 @@ msgstr ""
 msgid "Canton code (e.g. ZH) or all"
 msgstr ""
 
-#: templates/admin/ops.html:204
+#: templates/admin/ops.html:232
 msgid "Category"
 msgstr ""
 
@@ -2913,7 +2913,7 @@ msgstr ""
 msgid "Copy-paste Beispiele"
 msgstr ""
 
-#: templates/admin/ops.html:206 templates/admin/ops.html:237
+#: templates/admin/ops.html:234 templates/admin/ops.html:265
 msgid "Created"
 msgstr ""
 
@@ -4743,6 +4743,10 @@ msgid ""
 "unten."
 msgstr ""
 
+#: admin.py:582
+msgid "Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."
+msgstr ""
+
 #: templates/leg_billing.html:201
 msgid ""
 "Dieser Entwurf ist nicht freigabebereit: Der Abgleich weicht ab oder Quelldokumente fehlen. Die "
@@ -6426,7 +6430,7 @@ msgid ""
 "Quelldokumente vor der Freigabe."
 msgstr ""
 
-#: templates/admin/ops.html:146
+#: templates/admin/ops.html:172
 msgid "Freischalten"
 msgstr ""
 
@@ -6868,9 +6872,10 @@ msgstr ""
 msgid "Gelöscht nach %(idle)s ohne Aktivität"
 msgstr ""
 
-#: site_search_routes.py:86 templates/admin/ops.html:88 templates/fuer_gemeinden.html:54
-#: templates/gemeinde/rangliste.html:83 templates/index.html:62 templates/index.html:172
-#: templates/leg_verzeichnis/leg_check.html:23 templates/partials/address_intake.html:77
+#: site_search_routes.py:86 templates/admin/ops.html:88 templates/admin/ops.html:158
+#: templates/fuer_gemeinden.html:54 templates/gemeinde/rangliste.html:83 templates/index.html:62
+#: templates/index.html:172 templates/leg_verzeichnis/leg_check.html:23
+#: templates/partials/address_intake.html:77
 msgid "Gemeinde"
 msgstr ""
 
@@ -7018,6 +7023,10 @@ msgstr ""
 
 #: templates/gemeinde/verzeichnis.html:7
 msgid "Gemeindeverzeichnis | Energieprofile Schweizer Gemeinden | OpenLEG"
+msgstr ""
+
+#: templates/admin/ops.html:172
+msgid "Gemeindezuordnung speichern"
 msgstr ""
 
 #: templates/emails/day_0_welcome.html:46
@@ -7349,7 +7358,7 @@ msgstr ""
 msgid "Git und Docker"
 msgstr ""
 
-#: templates/admin/ops.html:24 templates/admin/ops.html:169
+#: templates/admin/ops.html:24 templates/admin/ops.html:197
 msgid "GitHub Monitor"
 msgstr ""
 
@@ -8504,7 +8513,7 @@ msgstr ""
 msgid "Intervallenergie"
 msgstr ""
 
-#: leg_registry.py:57
+#: leg_registry.py:59
 msgid "Ist Ihr LEG-Eintrag bei OpenLEG noch aktuell?"
 msgstr ""
 
@@ -8626,7 +8635,7 @@ msgstr ""
 msgid "Jetzt hinterlegen"
 msgstr ""
 
-#: templates/admin/ops.html:234
+#: templates/admin/ops.html:262
 msgid "Job"
 msgstr ""
 
@@ -8817,7 +8826,7 @@ msgstr ""
 msgid "Keine Berechtigung."
 msgstr ""
 
-#: templates/admin/ops.html:250
+#: templates/admin/ops.html:278
 msgid "Keine Berichte"
 msgstr ""
 
@@ -8860,6 +8869,10 @@ msgstr ""
 msgid ""
 "Keine Freigabe. Eine andere aktive berechtigte Person muss den neuesten Empfängerstand anhand der"
 " tatsächlichen Bank- und Adressbestätigung sowie der QR-Prüfung bestätigen."
+msgstr ""
+
+#: templates/admin/ops.html:164
+msgid "Keine Gemeinde"
 msgstr ""
 
 #: templates/leg_verzeichnis/leg_check.html:91
@@ -8923,7 +8936,7 @@ msgstr ""
 msgid "Keine Prognose verfügbar"
 msgstr ""
 
-#: templates/admin/ops.html:219
+#: templates/admin/ops.html:247
 msgid "Keine Snapshots"
 msgstr ""
 
@@ -8968,7 +8981,7 @@ msgstr ""
 msgid "Keine angegeben"
 msgstr ""
 
-#: templates/admin/ops.html:157
+#: templates/admin/ops.html:185
 msgid "Keine ausstehenden Einträge"
 msgstr ""
 
@@ -9016,6 +9029,10 @@ msgstr ""
 msgid ""
 "Keine passende Adresse gefunden. Sie können die Eingabe prüfen oder Ihr Interesse für die "
 "Gemeinde anmelden."
+msgstr ""
+
+#: templates/admin/ops.html:155
+msgid "Keine passende Gemeinde gefunden."
 msgstr ""
 
 #: payment_reconciliation.py:51
@@ -9291,7 +9308,7 @@ msgstr ""
 msgid "Kündigung"
 msgstr ""
 
-#: templates/admin/ops.html:20 templates/admin/ops.html:168
+#: templates/admin/ops.html:20 templates/admin/ops.html:196
 msgid "LEA Inbox"
 msgstr ""
 
@@ -9492,6 +9509,10 @@ msgstr ""
 
 #: templates/registry_verify.html:4
 msgid "LEG-Eintrag bestätigen | OpenLEG"
+msgstr ""
+
+#: templates/admin/ops.html:115 templates/admin/registry_error.html:7
+msgid "LEG-Einträge moderieren"
 msgstr ""
 
 #: templates/gemeinde/verzeichnis.html:48 templates/gemeinde/verzeichnis.html:102
@@ -10514,6 +10535,10 @@ msgstr ""
 msgid "Modellierter Sparanteil"
 msgstr ""
 
+#: templates/admin/registry_error.html:9
+msgid "Moderationsseite neu laden"
+msgstr ""
+
 #: templates/partials/registry_trust.html:13
 msgid "Moderierte Selbstauskunft"
 msgstr ""
@@ -11004,15 +11029,15 @@ msgstr ""
 msgid "No H4 tariff"
 msgstr ""
 
-#: templates/admin/ops.html:180 templates/api_docs.html:77
+#: templates/admin/ops.html:208 templates/api_docs.html:77
 msgid "No data"
 msgstr ""
 
-#: templates/admin/ops.html:188
+#: templates/admin/ops.html:216
 msgid "No snapshot recorded yet."
 msgstr ""
 
-#: templates/admin/ops.html:184
+#: templates/admin/ops.html:212
 msgid "No summary"
 msgstr ""
 
@@ -11332,6 +11357,10 @@ msgstr ""
 
 #: templates/utility/register.html:68
 msgid "Obwalden"
+msgstr ""
+
+#: templates/admin/ops.html:168
+msgid "Oder BFS-Nummer eingeben"
 msgstr ""
 
 #: templates/open_source.html:161
@@ -12677,11 +12706,11 @@ msgstr ""
 msgid "Realisierte Ersparnis"
 msgstr ""
 
-#: templates/admin/ops.html:228
+#: templates/admin/ops.html:256
 msgid "Recent LEA Reports"
 msgstr ""
 
-#: templates/admin/ops.html:197
+#: templates/admin/ops.html:225
 msgid "Recent Ops Snapshots"
 msgstr ""
 
@@ -13779,7 +13808,7 @@ msgstr ""
 msgid "Sortieren nach"
 msgstr ""
 
-#: templates/admin/ops.html:203
+#: templates/admin/ops.html:231
 msgid "Source"
 msgstr ""
 
@@ -13895,7 +13924,7 @@ msgstr ""
 msgid "Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert."
 msgstr ""
 
-#: templates/admin/ops.html:91 templates/admin/ops.html:235 templates/leg_verzeichnis/detail.html:32
+#: templates/admin/ops.html:91 templates/admin/ops.html:263 templates/leg_verzeichnis/detail.html:32
 #: templates/leg_verzeichnis/eintragen.html:66 templates/leg_workspace/formation.html:45
 #: templates/leg_workspace/members.html:10 templates/sandbox/questions.html:28
 #: templates/utility/dashboard.html:55 templates/verein/application.html:8
@@ -14051,7 +14080,7 @@ msgstr ""
 msgid "Stromtarife, Solarpotenzial und mögliche LEG-Ersparnis für Schweizer Gemeinden."
 msgstr ""
 
-#: templates/admin/ops.html:32 templates/admin/ops.html:171
+#: templates/admin/ops.html:32 templates/admin/ops.html:199
 msgid "Stuck Formations"
 msgstr ""
 
@@ -14114,7 +14143,7 @@ msgstr ""
 msgid "Suchvorschläge"
 msgstr ""
 
-#: templates/admin/ops.html:205 templates/admin/ops.html:236
+#: templates/admin/ops.html:233 templates/admin/ops.html:264
 msgid "Summary"
 msgstr ""
 
@@ -14614,7 +14643,7 @@ msgstr ""
 msgid "VNB"
 msgstr ""
 
-#: templates/admin/ops.html:28 templates/admin/ops.html:170
+#: templates/admin/ops.html:28 templates/admin/ops.html:198
 msgid "VNB Monitor"
 msgstr ""
 
@@ -15005,6 +15034,10 @@ msgstr ""
 
 #: templates/advisories.html:8
 msgid "Veröffentlicht am"
+msgstr ""
+
+#: templates/admin/ops.html:134
+msgid "Veröffentlicht, Gemeinde fehlt"
 msgstr ""
 
 #: templates/advisories.html:5
@@ -15932,6 +15965,10 @@ msgstr ""
 msgid "Wählen Sie eine andere Oberflächensprache und laden Sie das Dashboard neu."
 msgstr ""
 
+#: admin.py:586
+msgid "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde»."
+msgstr ""
+
 #: site_release.py:90
 msgid "Wählen Sie einen Kanton aus der Liste."
 msgstr ""
@@ -16698,7 +16735,7 @@ msgstr ""
 msgid "planung"
 msgstr ""
 
-#: templates/admin/ops.html:138
+#: templates/admin/ops.html:143
 msgid "plausibel"
 msgstr ""
 
@@ -16736,7 +16773,7 @@ msgstr ""
 msgid "und bleiben über"
 msgstr ""
 
-#: templates/admin/ops.html:136
+#: templates/admin/ops.html:141
 msgid "ungeprüft"
 msgstr ""
 
