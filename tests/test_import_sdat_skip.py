@@ -7,7 +7,9 @@ the document id from a bounded head read, backed by one bulk ledger query.
 
 Anything whose identity cannot be established falls through to the full work.
 Skipping a file the ledger does not know about would silently lose a delivery,
-so every uncertain case costs time instead.
+so every uncertain case costs time instead. An unreadable ledger is different:
+it stops a live run that is not forced, because re-importing a settled delivery
+could overwrite its later correction (#941).
 """
 
 import gzip
@@ -256,8 +258,8 @@ def test_a_document_without_an_extractable_id_is_not_skipped(
 
 
 def test_an_empty_ledger_processes_everything(importer, tmp_path, monkeypatch):
-    # A failed ledger read returns empty sets, which must mean "import", not
-    # "skip everything".
+    # An empty ledger that was read successfully means "import", not "skip
+    # everything".
     fake = _FakeDb()
     use_storage(monkeypatch, fake)
     _staged(tmp_path)
@@ -281,20 +283,24 @@ def test_duplicate_document_ids_in_one_run_are_written_once(
     assert fake.saved == [DOCUMENT_ID]
 
 
-def test_failed_bulk_ledger_read_falls_through_to_full_processing(
-    importer, tmp_path, monkeypatch
+def test_failed_bulk_ledger_read_stops_before_any_file(
+    importer, tmp_path, monkeypatch, counted_reads
 ):
+    # #941: an unreadable ledger is not an empty one. Re-importing a settled
+    # delivery could overwrite its later correction, so the run stops.
     fake = _FakeDb()
     fake.get_sdat_import_index = lambda: (_ for _ in ()).throw(
         RuntimeError("database read failed")
     )
     use_storage(monkeypatch, fake)
-    _staged(tmp_path)
+    path = _staged(tmp_path)
 
     exit_code = importer.main([str(tmp_path)])
 
-    assert exit_code == 0
-    assert fake.saved == [DOCUMENT_ID]
+    assert exit_code == 1
+    assert fake.saved == []
+    assert counted_reads == {"head": 0, "full": 0}
+    assert list(tmp_path.iterdir()) == [path], "a stopped run packs nothing"
 
 
 def test_force_bypasses_both_layers(importer, tmp_path, monkeypatch, counted_reads):

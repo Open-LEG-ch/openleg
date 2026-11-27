@@ -135,10 +135,14 @@ class ImportReport:
         return any(item.code == STORAGE_UNAVAILABLE for item in self.diagnostics)
 
     @property
+    def ledger_unreadable(self) -> bool:
+        return any(item.code == LEDGER_UNREADABLE for item in self.diagnostics)
+
+    @property
     def succeeded(self) -> bool:
-        """No missing path, no unavailable storage and no failed file."""
+        """No missing path, no unavailable storage or ledger, no failed file."""
         return self.count(FAILED) == 0 and not any(
-            item.code in (MISSING_PATH, STORAGE_UNAVAILABLE)
+            item.code in (MISSING_PATH, STORAGE_UNAVAILABLE, LEDGER_UNREADABLE)
             for item in self.diagnostics
         )
 
@@ -167,7 +171,8 @@ def import_paths(
     Files run oldest first so the last write wins. Each file persists on its
     own, so one bad file never undoes the rest of the batch. A dry run and a
     run without files never touch storage. ``initialize`` runs once, only when
-    a live import with files needs storage; a false result stops the run.
+    a live import with files needs storage; a false result stops the run, and
+    so does an unreadable ledger unless ``force`` is set.
     ``reporter`` receives each run diagnostic and file outcome as it settles;
     the returned report never depends on it.
     """
@@ -190,11 +195,16 @@ def import_paths(
             note(Diagnostic(STORAGE_UNAVAILABLE))
             return ImportReport(diagnostics=tuple(run_diagnostics))
         storage = _storage()
-        # One ledger query per run instead of one per file.
-        try:
-            known = set(storage.get_sdat_import_index()["document_ids"])
-        except Exception:
-            note(Diagnostic(LEDGER_UNREADABLE))
+        # One ledger query per run instead of one per file. ``force`` ignores
+        # the ledger, so it never reads it.
+        if not force:
+            try:
+                known = set(storage.get_sdat_import_index()["document_ids"])
+            except Exception:
+                # An unreadable ledger is not an empty one. Replaying a settled
+                # delivery could overwrite its later correction (#941).
+                note(Diagnostic(LEDGER_UNREADABLE))
+                return ImportReport(diagnostics=tuple(run_diagnostics))
 
     outcomes = []
     for path in sorted(files, key=_sort_key):
