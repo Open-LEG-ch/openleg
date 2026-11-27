@@ -25,6 +25,7 @@ import billing_policy
 import operator_actor
 import payment_reconciliation
 from billing_types import BillingCursor, InvoiceSnapshot, LineItem, Period
+from operator_errors import IdempotencyConflict
 from store import invoice_query as invoice_query_store
 from store import operator_operations
 from store.invoice_identity import (
@@ -1197,7 +1198,8 @@ def _bank_payment_duplicate(cur, community_id, entry, *, hold_only=False):
     cur.execute(
         f"""
         SELECT e.id, e.booking_date, e.amount, e.currency, e.payment_reference,
-               e.bank_references, e.legacy_bank_references, e.creditor_references,
+               e.servicer_reference, e.bank_references, e.legacy_bank_references,
+               e.creditor_references,
                e.match_decision, e.booking_status, e.is_reversal, e.amount_basis,
                e.credit_debit_indicator, i.id AS booked_invoice_id, i.invoice_number, s.source_name,
                COALESCE(e.source_statement_reference, s.statement_reference) AS statement_reference
@@ -1257,10 +1259,13 @@ def read_payment_duplicate_review(community_id, entry_id):
 def _finalize_bank_payment(
     cur, invoice, entry, community_id, actor_id, key, *, payment_match=None
 ):
+    reference, stand_in = payment_reconciliation.audit_reference(entry)
+    if stand_in:
+        payment_match = {**(payment_match or {}), "reference_stand_in": stand_in}
     new_state = billing_lifecycle.next_state(
         invoice["lifecycle_state"],
         "pay",
-        reference=entry["payment_reference"],
+        reference=reference,
         effective_date=entry["booking_date"],
     )
     _append_invoice_event(
@@ -1271,7 +1276,7 @@ def _finalize_bank_payment(
         event_type="paid",
         previous_state=invoice["lifecycle_state"],
         new_state=new_state,
-        reference=entry["payment_reference"],
+        reference=reference,
         effective_date=entry["booking_date"],
         idempotency_key=key,
         payment_match=payment_match,
@@ -1288,8 +1293,13 @@ def confirm_payment(
     *,
     dry_run=False,
     reviewed_duplicates=None,
+    person_review=False,
 ):
-    """Review an entry using the same acceptance and audit funnel as import."""
+    """Review an entry using the same acceptance and audit funnel as import.
+
+    Only a person reviewing in the billing workspace may book a credit without a
+    payment reference; its bank servicer reference then stands in for it.
+    """
     action = f"payment.confirm:{entry_id}"
     payload = {"invoice_id": invoice_id}
     if reviewed_duplicates is not None:
@@ -1300,28 +1310,39 @@ def confirm_payment(
             cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
         else:
             _lock_payment_booking(cur, community_id)
-        replay = (
-            None
-            if dry_run
-            else operator_operations._replay(
-                cur, community_id, action, key, fingerprint
-            )
-        )
-        if replay:
-            return replay
+        replay = conflict = None
+        try:
+            if not dry_run:
+                replay = operator_operations._replay(
+                    cur, community_id, action, key, fingerprint
+                )
+        except IdempotencyConflict as error:
+            conflict = error
         cur.execute(
             "SELECT * FROM bank_statement_entries WHERE id=%s AND community_id=%s"
             + (" FOR UPDATE" if not dry_run else ""),
             (entry_id, community_id),
         )
         entry = cur.fetchone()
+        refusal = entry and payment_reconciliation.payment_entry_refusal(entry)
+        if (
+            entry
+            and not refusal
+            and not person_review
+            and payment_reconciliation.audit_reference(entry)[1]
+        ):
+            # Checked before replay: another channel must not claim a person's booking.
+            raise payment_reconciliation.PaymentMatchRefused("missing_reference")
+        if conflict:
+            raise conflict
+        if replay:
+            return replay
         if (
             not entry
             or entry["match_decision"]
             not in payment_reconciliation.REVIEWABLE_DECISIONS
         ):
             return None
-        refusal = payment_reconciliation.payment_entry_refusal(entry)
         if refusal:
             raise payment_reconciliation.PaymentMatchRefused(refusal)
         duplicate = _bank_payment_duplicate(cur, community_id, entry)
@@ -1355,7 +1376,7 @@ def confirm_payment(
                 "lifecycle_state": billing_lifecycle.next_state(
                     invoice["lifecycle_state"],
                     "pay",
-                    reference=entry["payment_reference"],
+                    reference=payment_reconciliation.audit_reference(entry)[0],
                     effective_date=entry["booking_date"],
                 ),
             }
@@ -1500,8 +1521,9 @@ def reconcile_bank_statement(
                         payment_reference, is_reversal, credit_debit_indicator,
                         match_decision, amount_basis, booking_status,
                         debtor_name, remittance_information, bank_references,
-                        source_statement_reference, creditor_references, bank_account
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unmatched', %s, %s, %s, %s, %s, %s, %s, %s)
+                        source_statement_reference, creditor_references,
+                        bank_account, servicer_reference
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unmatched', %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                     """,
                     (
@@ -1522,6 +1544,7 @@ def reconcile_bank_statement(
                         entry.get("source_statement_reference"),
                         list(entry.get("creditor_references", ())),
                         entry.get("bank_account", ""),
+                        entry.get("servicer_reference"),
                     ),
                 )
                 imported_entries.append(

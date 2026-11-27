@@ -75,6 +75,7 @@ class PaymentEntry:
     creditor_references: tuple[str, ...] = ()
     source_statement_reference: str | None = None
     bank_account: str = ""
+    servicer_reference: str | None = None
 
 
 @dataclass(frozen=True)
@@ -206,6 +207,20 @@ def _creditor_references(transaction):
             if (raw := (node.text or "").strip()) and raw.upper() != "NOTPROVIDED"
         )
     )
+
+
+def _servicer_reference(transaction, entry, transaction_count):
+    """Return the bank's AcctSvcrRef for this credit, never a shared batch value."""
+    paths = (
+        [(transaction, "./{*}Refs/{*}AcctSvcrRef")] if transaction is not entry else []
+    )
+    if transaction_count == 1:
+        paths.append((entry, "./{*}AcctSvcrRef"))
+    for element, path in paths:
+        values = {value.strip() for value in _bank_references(element, path)}
+        if values:
+            return values.pop() if len(values) == 1 else None
+    return None
 
 
 def _debtor_name(transaction):
@@ -454,6 +469,9 @@ def parse_statement(content: bytes) -> Statement:
                     creditor_references=_creditor_references(transaction),
                     source_statement_reference=source_statement or None,
                     bank_account=bank_account,
+                    servicer_reference=_servicer_reference(
+                        transaction, entry, len(transactions)
+                    ),
                 )
             )
     if not entries:
@@ -527,10 +545,25 @@ def payment_entry_refusal(entry):
         return "debit"
     if entry["currency"] != "CHF":
         return "currency"
-    reference = entry.get("payment_reference")
-    if not isinstance(reference, str) or not reference.strip():
+    if not _has_text(entry.get("payment_reference")) and not _has_text(
+        entry.get("servicer_reference")
+    ):
         return "missing_reference"
     return None
+
+
+def _has_text(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def audit_reference(entry):
+    """Return the invoice audit reference and the CAMT element standing in for it.
+
+    Only a person in the billing workspace may book a credit through the stand-in.
+    """
+    if _has_text(entry.get("payment_reference")):
+        return entry["payment_reference"], None
+    return entry.get("servicer_reference"), "AcctSvcrRef"
 
 
 def is_duplicate_payment_evidence(entry):

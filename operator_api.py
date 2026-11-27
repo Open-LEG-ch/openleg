@@ -611,6 +611,13 @@ def respond_invoice_case(community_id, case_id):
     )
 
 
+# Credits without a payment reference are booked only by a person in the workspace.
+MISSING_REFERENCE_MESSAGE = (
+    "Payment reference required. Only a person can assign a credit without one, "
+    "in the billing workspace."
+)
+
+
 @operator_api_bp.post(
     "/api/operator/v1/communities/<community_id>/payments/matches/<int:entry_id>/confirm"
 )
@@ -658,10 +665,13 @@ def confirm_payment_match(community_id, entry_id):
         )
     except (TypeError, ValueError) as exc:
         # Store validation messages stay internal; the API answer is fixed.
+        reason = getattr(exc, "reason", ErrorCode.INVALID_PAYMENT)
         return _error(
-            "Invalid payment confirmation",
+            MISSING_REFERENCE_MESSAGE
+            if reason == ErrorCode.MISSING_REFERENCE
+            else "Invalid payment confirmation",
             409,
-            getattr(exc, "reason", ErrorCode.INVALID_PAYMENT),
+            reason,
         )
     return (
         jsonify(schema_version=API_SCHEMA_VERSION, **result)

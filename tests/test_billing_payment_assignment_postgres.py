@@ -1624,3 +1624,155 @@ def test_untyped_bank_reference_links_a_repeat_outside_the_date_window(workspace
     latest = db.list_bank_statement_entries(COMMUNITY)[0]
     assert latest["duplicate_reason"] == "possible_duplicate_payment"
     assert len(_paid_events()) == 1
+
+
+STAND_IN = "Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz"
+
+
+def test_preparer_assigns_credit_without_reference_by_servicer_reference(workspace):
+    from datetime import date
+
+    invoice = _invoice()
+    _upload_xml(workspace, _statement_xml(reference="", servicer="bank-entry-1"))
+    (entry,) = db.list_bank_statement_entries(COMMUNITY)
+    assert entry["payment_reference"] == ""
+    card = workspace.get(PAYMENTS).text.split(f'id="statement-{entry["id"]}"', 1)[1]
+    card = card.split("</article>", 1)[0]
+    assert f"/statements/{entry['id']}/assign" in card
+    assert STAND_IN in card and "bank-entry-1" in card
+
+    for _ in range(2):
+        response = _assign(workspace, entry["id"], invoice)
+        assert _assignment_outcome(workspace, response) == "assigned"
+
+    assert _entry_booking(entry["id"]) == ("matched", invoice)
+    (paid,) = [
+        event
+        for event in db.list_community_invoice_events(COMMUNITY)
+        if event["event_type"] == "paid"
+    ]
+    assert (paid["actor_id"], paid["actor"]["actor_kind"]) == (ACTOR, "human")
+    assert (paid["reference"], paid["effective_date"]) == (
+        "bank-entry-1",
+        date(2026, 9, 14),
+    )
+    assert paid["payment_match"] == {
+        "entry_id": entry["id"],
+        "decision": "matched",
+        "reference_stand_in": "AcctSvcrRef",
+    }
+    assert sorted(
+        event["event_type"]
+        for event in db.list_community_operator_events(
+            COMMUNITY, event_types=("invoice.paid", "payment.match.confirmed")
+        )
+    ) == ["invoice.paid", "payment.match.confirmed"]
+    audit = workspace.get(BILLING).text.split("Audit-Verlauf", 1)[1]
+    assert f"{STAND_IN}: bank-entry-1" in audit
+
+
+def test_repeated_credit_without_reference_needs_duplicate_review(workspace):
+    first, second = _invoice("FIRST-INVOICE"), _invoice("SECOND-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(reference=""),
+        _statement_xml(statement="repeat", reference=""),
+    )
+    repeat, original = db.list_bank_statement_entries(COMMUNITY)
+    assert repeat["duplicate_reason"] == "possible_duplicate_payment"
+    for row, invoice in ((original, first), (repeat, second)):
+        page = _follow_assignment(workspace, _assign(workspace, row["id"], invoice))
+        assert "Mögliche Doppelzahlung." in page.text
+        assert len(_paid_events()) == int(row is repeat)
+        response = _override(workspace, row["id"], invoice, _review_token(page))
+        assert _assignment_outcome(workspace, response) == "assigned"
+
+    audit = {
+        event["invoice_id"]: event
+        for event in db.list_community_invoice_events(COMMUNITY)
+        if event["event_type"] == "paid"
+    }
+    for row, invoice, other in ((original, first, repeat), (repeat, second, original)):
+        assert audit[invoice]["reference"] == "bank-entry-1"
+        assert audit[invoice]["payment_match"]["reference_stand_in"] == "AcctSvcrRef"
+        assert audit[invoice]["payment_match"]["duplicate_override"][
+            "reviewed_entry_ids"
+        ] == [other["id"]]
+
+
+def test_credit_without_reference_holds_a_matching_automatic_booking(workspace):
+    _invoice("FIRST-INVOICE")
+    _upload_xml(
+        workspace,
+        _statement_xml(reference="", servicer="bank-a"),
+        _statement_xml(
+            statement="referenced", reference="FIRST-INVOICE", servicer="bank-b"
+        ),
+    )
+
+    referenced, unreferenced = db.list_bank_statement_entries(COMMUNITY)
+
+    assert referenced["duplicate_reason"] == "possible_duplicate_payment"
+    assert unreferenced["servicer_reference"] == "bank-a"
+    assert not _paid_events()
+
+
+def test_credit_without_any_bank_reference_stays_refused(workspace):
+    invoice = _invoice()
+    _upload_xml(workspace, _statement_xml(reference="", servicer=""))
+    (entry,) = db.list_bank_statement_entries(COMMUNITY)
+    assert entry["servicer_reference"] is None
+
+    page = _follow_assignment(workspace, _assign(workspace, entry["id"], invoice))
+
+    feedback = page.text.split('id="assignment-feedback" role="alert"', 1)[1]
+    assert "Die Zahlung hat keine Referenz." in feedback.split("</p>", 1)[0]
+    assert _entry_booking(entry["id"]) == ("unmatched", None)
+    assert not _paid_events()
+
+
+@pytest.mark.parametrize("case", ["replay", "dry_run", "other_invoice"])
+def test_operator_cannot_replay_a_workspace_assignment_without_reference(
+    workspace, case
+):
+    from unittest.mock import patch
+
+    invoice = _invoice()
+    other = _invoice("LEG-PAYMENT-2")
+    _upload_xml(workspace, _statement_xml(reference=""))
+    (entry,) = db.list_bank_statement_entries(COMMUNITY)
+    response = _assign(workspace, entry["id"], invoice)
+    assert _assignment_outcome(workspace, response) == "assigned"
+    db.create_operator_api_client(
+        COMMUNITY,
+        ADMIN,
+        "payments.mutate",
+        ["payments.mutate"],
+        hashlib.sha256(b"fictional-mutate").hexdigest(),
+        None,
+    )
+    before = (
+        db.list_bank_statement_entries(COMMUNITY),
+        db.list_community_invoice_events(COMMUNITY),
+    )
+
+    with patch(
+        "operator_api.db.operator_creator_is_confirmed_admin", return_value=True
+    ):
+        response = workspace.post(
+            f"/api/operator/v1/communities/{COMMUNITY}/payments/matches/"
+            f"{entry['id']}/confirm" + ("?dry_run=true" if case == "dry_run" else ""),
+            headers={
+                "Authorization": "Bearer fictional-mutate",
+                # The workspace's own key must not let an operator claim its booking.
+                "Idempotency-Key": f"dashboard-payment-{entry['id']}",
+            },
+            json={"invoice_id": other if case == "other_invoice" else invoice},
+        )
+
+    assert (response.status_code, response.json["code"]) == (409, "missing_reference")
+    assert "event_id" not in response.json
+    assert (
+        db.list_bank_statement_entries(COMMUNITY),
+        db.list_community_invoice_events(COMMUNITY),
+    ) == before

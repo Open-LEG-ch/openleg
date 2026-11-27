@@ -803,6 +803,7 @@ def leg_assign_bank_payment(
                 building_id,
                 f"{_DASHBOARD_PAYMENT_KEY_PREFIX}{entry_id}",
                 reviewed_duplicates=reviewed_duplicates,
+                person_review=True,
             )
     except payment_reconciliation.BankPaymentDuplicate:
         return {

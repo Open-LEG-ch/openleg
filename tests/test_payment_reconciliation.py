@@ -814,3 +814,42 @@ def test_one_account_reusing_a_local_reference_still_gets_distinct_rows(first, s
         "bank-entry-1:2:1",
     ]
     assert [entry.bank_references for entry in entries] == [("bank-entry-1",)] * 2
+
+
+@pytest.mark.parametrize(
+    "case,expected",
+    [
+        ("transaction", ("bank-entry-1",)),
+        ("entry", ("parent-booking",)),
+        ("entry-reference-only", (None,)),
+        ("not-provided", (None,)),
+        ("two-transaction-batch", ("child-booking", None)),
+    ],
+)
+def test_statement_records_the_servicer_reference_of_each_credit(case, expected):
+    import re
+
+    parent = b"</BookgDt><AcctSvcrRef>parent-booking</AcctSvcrRef>"
+    own = b"<AcctSvcrRef>bank-entry-1</AcctSvcrRef>"
+    xml = {
+        "transaction": CAMT_053,
+        "entry": CAMT_053.replace(own, b"").replace(b"</BookgDt>", parent),
+        "entry-reference-only": CAMT_053.replace(own, b"").replace(
+            b"</BookgDt>", b"</BookgDt><NtryRef>entry-reference</NtryRef>"
+        ),
+        "not-provided": CAMT_053.replace(
+            own, b"<AcctSvcrRef>NOTPROVIDED</AcctSvcrRef>"
+        ),
+        # A parent booking reference is shared by every credit in the batch.
+        "two-transaction-batch": re.sub(
+            b"<TxDtls>.*?</TxDtls>",
+            b'<TxDtls><Refs><AcctSvcrRef>child-booking</AcctSvcrRef></Refs><Amt Ccy="CHF">60.00</Amt></TxDtls>'
+            b'<TxDtls><Amt Ccy="CHF">60.50</Amt></TxDtls>',
+            CAMT_053.replace(b"</BookgDt>", parent),
+            flags=re.DOTALL,
+        ),
+    }[case]
+
+    entries = payment_reconciliation.parse_statement(xml).entries
+
+    assert tuple(entry.servicer_reference for entry in entries) == expected
