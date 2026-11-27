@@ -3,7 +3,7 @@
 
 {% block meta %}
 {{ page_meta(
-  title=_("LEG-Dashboard | OpenLEG"),
+  title=workspace_document_title if community and page != "overview" else _("LEG-Dashboard | OpenLEG"),
   description=_("Gründung und Betrieb Ihrer Lokalen Elektrizitätsgemeinschaft: Status, Mitglieder und nächste Schritte auf einen Blick."),
   path="/leg/dashboard",
   site_url=site_url|default(""),

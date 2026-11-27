@@ -163,7 +163,7 @@ msgid_plural "%(num)s Nachbarn sind über Ihren Link beigetreten."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/leg_billing_policy.html:129 templates/member_invoice_detail.html:52
+#: templates/leg_billing_policy.html:130 templates/member_invoice_detail.html:52
 #, python-format
 msgid "%(num)s Tag"
 msgid_plural "%(num)s Tage"
@@ -271,7 +271,7 @@ msgid_plural "(rund %(num)s weitere Dächer), um bei vergleichbar grossen Gemein
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/leg_billing_policy.html:32
+#: templates/leg_billing_policy.html:33
 msgid ") minus Abrechnungsgebühr."
 msgstr ""
 
@@ -864,16 +864,17 @@ msgstr ""
 msgid "Abrechnungen öffnen"
 msgstr ""
 
-#: templates/leg_billing_policy.html:8 templates/leg_workspace/settings.html:20
+#: templates/leg_billing_policy.html:4 templates/leg_billing_policy.html:9
+#: templates/leg_workspace/settings.html:20
 msgid "Abrechnungs-Richtlinie"
 msgstr ""
 
 #: member_invoices.py:40 member_invoices.py:703 templates/admin/abrechnungen.html:121
-#: templates/leg_billing_policy.html:110 templates/member_invoice_detail.html:88
+#: templates/leg_billing_policy.html:111 templates/member_invoice_detail.html:88
 msgid "Abrechnungsentgelt"
 msgstr ""
 
-#: templates/leg_billing_policy.html:42
+#: templates/leg_billing_policy.html:43
 msgid "Abrechnungsentgelt (Rp./kWh)"
 msgstr ""
 
@@ -2588,7 +2589,7 @@ msgstr ""
 msgid "Bis zu 40% Rabatt"
 msgstr ""
 
-#: templates/leg_billing_policy.html:102
+#: templates/leg_billing_policy.html:103
 msgid "Bisherige Versionen"
 msgstr ""
 
@@ -7577,7 +7578,7 @@ msgstr ""
 msgid "Gutschriften und Rundungsausgleich dieser Rechnung"
 msgstr ""
 
-#: templates/leg_billing_policy.html:24 templates/leg_billing_policy.html:107
+#: templates/leg_billing_policy.html:25 templates/leg_billing_policy.html:108
 msgid "Gültig ab"
 msgstr ""
 
@@ -8461,11 +8462,11 @@ msgstr ""
 msgid "Interner Fehler"
 msgstr ""
 
-#: templates/leg_billing_policy.html:108
+#: templates/leg_billing_policy.html:109
 msgid "Interner Preis"
 msgstr ""
 
-#: templates/leg_billing_policy.html:29
+#: templates/leg_billing_policy.html:30
 msgid "Interner Preis (Rp./kWh)"
 msgstr ""
 
@@ -8581,7 +8582,7 @@ msgid ""
 "Selbstauskunft."
 msgstr ""
 
-#: templates/leg_billing_policy.html:9
+#: templates/leg_billing_policy.html:10
 msgid ""
 "Jede Version gilt ab dem gewählten Datum. Gespeicherte Versionen bleiben unverändert und "
 "nachvollziehbar."
@@ -9285,7 +9286,7 @@ msgstr ""
 msgid "LEA Inbox"
 msgstr ""
 
-#: templates/admin/abrechnungen.html:49 templates/leg_workspace/header.html:3
+#: templates/admin/abrechnungen.html:49 templates/leg_workspace_base.html:21
 #: templates/operator_credentials.html:6 templates/operator_credentials.html:13
 #: templates/release/knowledge.html:10
 msgid "LEG"
@@ -9408,7 +9409,7 @@ msgstr ""
 msgid "LEG und Dienstleister"
 msgstr ""
 
-#: templates/leg_workspace/header.html:14
+#: templates/leg_workspace/header.html:12
 msgid "LEG und Sprache wechseln"
 msgstr ""
 
@@ -9979,7 +9980,7 @@ msgid "Mehrfaktor-Anmeldung"
 msgstr ""
 
 #: templates/documents/member_invoice.html:36 templates/documents/member_invoice.html:42
-#: templates/leg_billing_policy.html:65 templates/member_invoice_detail.html:173
+#: templates/leg_billing_policy.html:66 templates/member_invoice_detail.html:173
 #: templates/sandbox/billing.html:13
 msgid "Mehrwertsteuer"
 msgstr ""
@@ -10540,11 +10541,11 @@ msgstr ""
 msgid "Mutationstyp"
 msgstr ""
 
-#: templates/leg_billing_policy.html:113
+#: templates/leg_billing_policy.html:114
 msgid "MwSt"
 msgstr ""
 
-#: templates/leg_billing_policy.html:74
+#: templates/leg_billing_policy.html:75
 msgid "MwSt-Satz (%)"
 msgstr ""
 
@@ -10793,8 +10794,8 @@ msgstr ""
 msgid "Netzbezugspreis"
 msgstr ""
 
-#: templates/admin/abrechnungen.html:77 templates/leg_billing_policy.html:47
-#: templates/leg_billing_policy.html:111
+#: templates/admin/abrechnungen.html:77 templates/leg_billing_policy.html:48
+#: templates/leg_billing_policy.html:112
 msgid "Netzebene"
 msgstr ""
 
@@ -10806,11 +10807,11 @@ msgstr ""
 msgid "Netzeinspeisung"
 msgstr ""
 
-#: templates/admin/abrechnungen.html:75 templates/leg_billing_policy.html:109
+#: templates/admin/abrechnungen.html:75 templates/leg_billing_policy.html:110
 msgid "Netzentgelt"
 msgstr ""
 
-#: templates/leg_billing_policy.html:37
+#: templates/leg_billing_policy.html:38
 msgid "Netzentgelt (Rp./kWh)"
 msgstr ""
 
@@ -10892,11 +10893,11 @@ msgid ""
 "Der Austritt ist mit einer Frist von 3 Monaten auf Quartalsende möglich."
 msgstr ""
 
-#: templates/leg_billing_policy.html:20
+#: templates/leg_billing_policy.html:21
 msgid "Neue Version erfassen"
 msgstr ""
 
-#: templates/leg_billing_policy.html:16
+#: templates/leg_billing_policy.html:17
 msgid "Neue Version gespeichert."
 msgstr ""
 
@@ -11088,7 +11089,7 @@ msgstr ""
 msgid "Noch keine Treffen erfasst."
 msgstr ""
 
-#: templates/leg_billing_policy.html:137
+#: templates/leg_billing_policy.html:138
 msgid "Noch keine Version erfasst. Der Abrechnungslauf startet erst mit einer gespeicherten Richtlinie."
 msgstr ""
 
@@ -12203,7 +12204,7 @@ msgstr ""
 msgid "Proportionale Verteilung nach Verbrauchsanteil"
 msgstr ""
 
-#: templates/leg_billing_policy.html:115
+#: templates/leg_billing_policy.html:116
 msgid "Präfix"
 msgstr ""
 
@@ -12739,7 +12740,7 @@ msgstr ""
 msgid "Rechnungsfragen ausprobieren"
 msgstr ""
 
-#: templates/leg_billing_policy.html:84
+#: templates/leg_billing_policy.html:85
 msgid "Rechnungspräfix"
 msgstr ""
 
@@ -12949,7 +12950,7 @@ msgstr ""
 msgid "Rp./kWh,"
 msgstr ""
 
-#: templates/leg_billing_policy.html:32
+#: templates/leg_billing_policy.html:33
 msgid ""
 "Rp./kWh. Untergrenze: Richtwert für die Einspeisevergütung aus dem LEG-Kalkulator. Obergrenze: "
 "der Gesamtstrompreis Ihrer Gemeinde (ElCom"
@@ -14839,7 +14840,7 @@ msgstr ""
 msgid "Version %(tag)s"
 msgstr ""
 
-#: templates/leg_billing_policy.html:97
+#: templates/leg_billing_policy.html:98
 msgid "Version speichern"
 msgstr ""
 
@@ -14853,7 +14854,7 @@ msgid ""
 "Quellen hinter den Aussagen."
 msgstr ""
 
-#: templates/leg_billing_policy.html:56 templates/leg_billing_policy.html:112
+#: templates/leg_billing_policy.html:57 templates/leg_billing_policy.html:113
 #: templates/leg_community_create.html:20 templates/sandbox/billing.html:13
 msgid "Verteilmodell"
 msgstr ""
@@ -16016,11 +16017,11 @@ msgstr ""
 msgid "Zahlungserinnerung vorbereiten"
 msgstr ""
 
-#: templates/leg_billing_policy.html:114
+#: templates/leg_billing_policy.html:115
 msgid "Zahlungsfrist"
 msgstr ""
 
-#: templates/leg_billing_policy.html:79
+#: templates/leg_billing_policy.html:80
 msgid "Zahlungsfrist (Tage)"
 msgstr ""
 
@@ -16310,7 +16311,7 @@ msgstr ""
 msgid "Zurück zum LEG-Check"
 msgstr ""
 
-#: templates/leg_billing.html:11 templates/leg_billing_policy.html:7
+#: templates/leg_billing.html:11 templates/leg_billing_policy.html:8
 msgid "Zurück zum LEG-Dashboard"
 msgstr ""
 
@@ -16338,7 +16339,7 @@ msgstr ""
 msgid "Zustellen"
 msgstr ""
 
-#: templates/leg_billing_policy.html:89 templates/leg_billing_policy.html:116
+#: templates/leg_billing_policy.html:90 templates/leg_billing_policy.html:117
 msgid "Zustellung"
 msgstr ""
 
@@ -16620,7 +16621,7 @@ msgstr ""
 msgid "nicht angegeben"
 msgstr ""
 
-#: templates/leg_billing_policy.html:74
+#: templates/leg_billing_policy.html:75
 msgid "nur bei Mehrwertsteuer"
 msgstr ""
 
@@ -16717,7 +16718,7 @@ msgstr ""
 msgid "tier muss 1, 2 oder 3 sein."
 msgstr ""
 
-#: templates/leg_billing_policy.html:32 templates/self_host.html:34
+#: templates/leg_billing_policy.html:33 templates/self_host.html:34
 msgid "und"
 msgstr ""
 
@@ -16751,15 +16752,15 @@ msgstr ""
 msgid "vs"
 msgstr ""
 
-#: templates/leg_billing_policy.html:30
+#: templates/leg_billing_policy.html:31
 msgid "z. B. 15.00"
 msgstr ""
 
-#: templates/leg_billing_policy.html:43
+#: templates/leg_billing_policy.html:44
 msgid "z. B. 2.00"
 msgstr ""
 
-#: templates/leg_billing_policy.html:80
+#: templates/leg_billing_policy.html:81
 msgid "z. B. 30"
 msgstr ""
 
@@ -16771,11 +16772,11 @@ msgstr ""
 msgid "z. B. 4500"
 msgstr ""
 
-#: templates/leg_billing_policy.html:38
+#: templates/leg_billing_policy.html:39
 msgid "z. B. 8.00"
 msgstr ""
 
-#: templates/leg_billing_policy.html:75
+#: templates/leg_billing_policy.html:76
 msgid "z. B. 8.1"
 msgstr ""
 
@@ -16795,7 +16796,7 @@ msgstr ""
 msgid "z. B. Dietikon"
 msgstr ""
 
-#: templates/leg_billing_policy.html:85
+#: templates/leg_billing_policy.html:86
 msgid "z. B. LEG-2026"
 msgstr ""
 
@@ -17146,7 +17147,7 @@ msgstr ""
 msgid "Überzahlungen bleiben unverbucht. Klären Sie den überschüssigen Betrag mit der zahlenden Person."
 msgstr ""
 
-#: templates/leg_billing_policy.html:32
+#: templates/leg_billing_policy.html:33
 msgid "Üblicher Bereich: zwischen"
 msgstr ""
 

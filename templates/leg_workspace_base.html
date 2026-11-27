@@ -16,7 +16,13 @@
   ("formation", _("Gründung")),
   ("settings", _("Einstellungen")),
 ]) %}
+{% set workspace_memberships = workspace_communities|default([]) %}
+{% set workspace_selected = workspace_memberships|selectattr("community_id", "equalto", workspace_id)|first %}
+{% set workspace_name = community.name if community else workspace_selected.name if workspace_selected else _("LEG") %}
+{% set workspace_title = workspace_title|default(workspace_labels[page]) %}
+{% set workspace_document_title = workspace_title ~ " · " ~ workspace_name ~ " | OpenLEG" %}
 {% set workspace_focus = "[&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-solid! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-3! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-offset-3! [&_:is(a,button,input,select,textarea,summary):focus-visible]:outline-brand!" %}
+{% block meta %}<title>{{ workspace_document_title }}</title>{% endblock %}
 {% block product_header %}
   {% if workspace_id %}
     {% include "leg_workspace/header.html" %}

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """HTTP contracts for the LEG administration workspace."""
 
+import re
 from datetime import UTC, date, datetime
 
 import pytest
@@ -56,6 +57,55 @@ def test_member_list_has_its_own_page(workspace):
     assert b"Mitglieder dieser Stromgemeinschaft" in response.data
     assert b'aria-current="page"' in response.data
     assert b"Mitglieder dieser Stromgemeinschaft" not in client.get(OVERVIEW).data
+
+
+def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
+    from dashboard import formation_wizard
+
+    client, _ = workspace
+    monkeypatch.setattr(
+        formation_wizard,
+        "get_user_communities",
+        lambda _bid: [
+            {
+                "community_id": "c0ffee",
+                "name": "LEG Musterweg",
+                "member_status": "confirmed",
+            }
+        ],
+    )
+    expected = {
+        OVERVIEW: "LEG-Dashboard | OpenLEG",
+        ROOT + "/members": "Mitglieder · LEG Musterweg | OpenLEG",
+        ROOT + "/correspondence": "Korrespondenz · LEG Musterweg | OpenLEG",
+        ROOT + "/formation": "Gründung · LEG Musterweg | OpenLEG",
+        ROOT + "/settings": "Einstellungen · LEG Musterweg | OpenLEG",
+        ROOT + "/payments": "Zahlungen · LEG Musterweg | OpenLEG",
+        ROOT + "/invoices": "Rechnungen · LEG Musterweg | OpenLEG",
+        ROOT + "/billing": "Abrechnung · LEG Musterweg | OpenLEG",
+        ROOT + "/billing-policy": "Abrechnungs-Richtlinie · LEG Musterweg | OpenLEG",
+    }
+
+    _set_session(client, "b-admin")
+    titles = {}
+    for path in expected:
+        response = client.get(path)
+        assert response.status_code == 200
+        titles[path] = re.findall(r"<title>(.*?)</title>", response.text)
+    assert titles == {path: [title] for path, title in expected.items()}
+    assert len(set(expected.values())) == len(expected)
+
+    # Invitation and error views keep the generic dashboard title.
+    fallback = "<title>LEG-Dashboard | OpenLEG</title>"
+    for building_id in ("b-guest", "outsider"):
+        _set_session(client, building_id)
+        assert fallback in client.get(OVERVIEW).text
+    refused = client.post(
+        ROOT + "/invite",
+        data={"csrf_token": "csrf-secret", "invite_email": "new@example.org"},
+    )
+    assert refused.status_code == 400
+    assert fallback in refused.text
 
 
 @pytest.mark.parametrize(
