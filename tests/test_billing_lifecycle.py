@@ -1143,153 +1143,68 @@ def test_lifecycle_store_seams_are_reexported_from_database():
         assert getattr(database, name) is getattr(billing, name)
 
 
-def test_workspace_surfaces_flagged_windows_per_period(monkeypatch):
-    """Veracity flags from the import ledger appear on the period readiness
-    view before approval; they never change approvability (#517)."""
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-
+@pytest.mark.parametrize("flag_count", [0, 2])
+def test_period_flags_do_not_change_approvability(monkeypatch, flag_count):
+    """Flagged measurement windows inform the review without blocking it."""
     import dashboard
 
     _confirmed_admin(monkeypatch, dashboard)
-    start = datetime(2026, 1, 1, tzinfo=ZoneInfo("Europe/Zurich"))
-    end = datetime(2026, 1, 31, 23, 59, tzinfo=ZoneInfo("Europe/Zurich"))
-    periods = [
-        {
-            "id": 7,
-            "status": "draft",
-            "period_start": start,
-            "period_end": end,
-            "reconciliation": {"total_difference_kwh": 0},
-            "source_document_ids": [1],
-        }
-    ]
+    period = {
+        "id": 7,
+        "status": "draft",
+        "reconciliation": {"total_difference_kwh": 0},
+        "source_document_ids": ["DOC-1", "DOC-2"],
+    }
     monkeypatch.setattr(
-        dashboard.db, "list_community_billing_periods", MagicMock(return_value=periods)
+        dashboard.db, "get_billing_period", lambda *args, **kwargs: period
     )
     monkeypatch.setattr(
-        dashboard.db, "list_community_invoices", MagicMock(return_value=[])
+        dashboard.db, "list_billing_draft_items", lambda *args, **kwargs: []
     )
-    flags = [
-        {
-            "document_id": "DOC-1",
-            "kind": "flatline",
-            "metering_point_id": "CH1",
-            "direction": "consumption",
-            "window_start": datetime(2026, 1, 10, tzinfo=ZoneInfo("Europe/Zurich")),
-            "window_end": datetime(2026, 1, 10, 8, 0, tzinfo=ZoneInfo("Europe/Zurich")),
-            "detail": "32 Intervalle identisch.",
-        },
-        {
-            "document_id": "DOC-2",
-            "kind": "magnitude_jump",
-            "metering_point_id": "CH2",
-            "direction": "production",
-            "window_start": datetime(2026, 1, 20, tzinfo=ZoneInfo("Europe/Zurich")),
-            "window_end": None,
-            "detail": "50 kWh.",
-        },
-    ]
-    captured = {}
-
-    def _flags(period_start, period_end):
-        captured["window"] = (period_start, period_end)
-        return flags
-
-    monkeypatch.setattr(dashboard.db, "get_sdat_veracity_flags", _flags)
-
-    view = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
-
-    assert captured["window"] == (start, end)
-    period_row = view["periods"][0]
-    assert period_row["veracity_flag_count"] == 2
-    assert "approvable" in period_row
-    assert period_row["approvable"] is True, "a flag must not block approval"
-
-
-def test_workspace_periods_without_flags_show_none(monkeypatch):
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-
-    import dashboard
-
-    _confirmed_admin(monkeypatch, dashboard)
-    periods = [
-        {
-            "id": 8,
-            "status": "draft",
-            "period_start": datetime(2026, 2, 1, tzinfo=ZoneInfo("Europe/Zurich")),
-            "period_end": datetime(2026, 2, 28, tzinfo=ZoneInfo("Europe/Zurich")),
-            "reconciliation": {},
-            "source_document_ids": [],
-        }
-    ]
+    count_flags = MagicMock(return_value={7: flag_count})
     monkeypatch.setattr(
-        dashboard.db, "list_community_billing_periods", MagicMock(return_value=periods)
+        dashboard.db, "count_billing_period_veracity_flags", count_flags
     )
-    monkeypatch.setattr(
-        dashboard.db, "list_community_invoices", MagicMock(return_value=[])
-    )
-    monkeypatch.setattr(dashboard.db, "get_sdat_veracity_flags", lambda *_: [])
 
-    view = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
+    view = dashboard.leg_billing_period_detail(COMMUNITY, "admin-building", 7)
 
-    assert view["periods"][0]["veracity_flag_count"] == 0
+    count_flags.assert_called_once_with(COMMUNITY, [7])
+    assert view["period"]["veracity_flag_count"] == flag_count
+    assert view["period"]["approvable"] is True
 
 
-def test_workspace_renders_flagged_window_notice(
+def test_period_renders_flagged_window_notice(
     dashboard_app_module,  # noqa: F811
     monkeypatch,
 ):
-    invoice = {
-        "id": 42,
-        "participant_id": "member-building",
-        "invoice_number": "LEG-2026-000001",
-        "lifecycle_state": "issued",
-        "status_label": "Freigegeben",
-        "display_gross_chf": "12.00",
-        "gross_unreadable": False,
-        "delivery_method_label": "E-Mail",
-        "events": [],
-        "correction_candidates": [],
-        "corrects_invoice_number": None,
-        "corrected_by_invoice_number": None,
-        "delivery_job_status": None,
-    }
     monkeypatch.setattr(
         dashboard_app_module.dashboard_module,
-        "leg_billing_workspace_view",
+        "leg_billing_period_detail",
         MagicMock(
             return_value={
                 "error": None,
                 "community_id": COMMUNITY,
-                "periods": [
-                    {
-                        "id": 7,
-                        "status": "draft",
-                        "status_label": "Entwurf",
-                        "period_label": "Januar 2026",
-                        "reconciled": True,
-                        "source_count": 3,
-                        "approvable": True,
-                        "veracity_flag_count": 2,
-                    }
-                ],
-                "invoices": [invoice],
-                "billing_approved": False,
-                "approval_error": None,
+                "period": {
+                    "id": 7,
+                    "status": "draft",
+                    "status_label": "Entwurf",
+                    "period_label": "Januar 2026",
+                    "reconciled": True,
+                    "source_count": 3,
+                    "approvable": True,
+                    "veracity_flag_count": 2,
+                },
             }
         ),
     )
     client = dashboard_app_module.web.test_client()
     _set_session(client, building_id="admin-building")
 
-    response = client.get(f"/leg/community/{COMMUNITY}/billing")
-    html = response.get_data(as_text=True)
+    response = client.get(f"/leg/community/{COMMUNITY}/billing/period/7")
 
     assert response.status_code == 200
-    assert "Auffällige Messfenster" in html
-    assert "2" in html
+    assert "2 auffällige Messfenster" in response.text
+    assert "Import und Freigabe bleiben möglich" in response.text
 
 
 def test_store_records_the_human_preparer_of_a_draft_period(monkeypatch):

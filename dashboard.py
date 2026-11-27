@@ -4,7 +4,7 @@
 import json
 import logging
 import math
-from datetime import date
+from datetime import UTC, date
 from decimal import Decimal
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
@@ -421,61 +421,133 @@ def leg_billing_workspace_location(community_id: str) -> str:
 
 
 _BILLING_STATUS_LABELS = {
-    "draft": "Entwurf",
-    "issued": "Freigegeben",
+    "measurements": _N("Messdaten"),
+    "draft": _N("Entwurf"),
+    "prepared": _N("Vorbereitet"),
+    "approved": _N("Freigegeben"),
+    "delivered": _N("Zugestellt"),
+    "paid": _N("Bezahlt"),
     "invalidated": _N("Entwurf ungültig"),
 }
 InvoiceLifecycleError = billing_lifecycle.InvoiceLifecycleError
 
 
-def _veracity_flag_counts(periods) -> dict:
-    """Auffällige Messfenster pro Periode, gebündelt in einer Ledger-Lesung.
-
-    Ein Flag sperrt nichts: die Zahl macht Befunde sichtbar, die der
-    Operator vor der Freigabe sehen soll (#517).
-    """
-    if not periods:
-        return {}
-    starts = [
-        period.get("period_start") for period in periods if period.get("period_start")
-    ]
-    ends = [period.get("period_end") for period in periods if period.get("period_end")]
-    if not starts or not ends:
-        return {}
-    flags = db.get_sdat_veracity_flags(min(starts), max(ends))
-    counts: dict = {}
-    for flag in flags:
-        window_start = flag.get("window_start")
-        for period in periods:
-            period_start = period.get("period_start")
-            period_end = period.get("period_end")
-            if (
-                period_start
-                and period_end
-                and window_start
-                and period_start <= window_start <= period_end
-            ):
-                counts[period["id"]] = counts.get(period["id"], 0) + 1
-    return counts
+_BILLING_PAGE_SIZE = 50
 
 
-def _billing_workspace_period(period: dict, veracity_flag_count: int = 0) -> dict:
+def _billing_period_stage(period, progress):
+    if period["status"] == "issued":
+        if progress.get("all_paid"):
+            return "paid"
+        if progress.get("all_delivered"):
+            return "delivered"
+        return "approved"
+    if period["status"] == "draft" and _has_human_preparer(period):
+        return "prepared"
+    return period["status"]
+
+
+def _has_human_preparer(period):
+    return period.get("prepared_by") not in (None, "", "system")
+
+
+def _billing_workspace_period(period: dict, progress: dict) -> dict:
     """Compact display row for one billing period in the workspace."""
-    status = str(period.get("status") or "")
-    flags = billing_workspace.readiness_flags(period)
+    stage = _billing_period_stage(period, progress)
     return {
-        "id": period.get("id"),
-        "status": status,
-        "status_label": _BILLING_STATUS_LABELS.get(status, status),
+        "id": period["id"],
+        "status": period["status"],
+        "stage": stage,
+        "status_label": _BILLING_STATUS_LABELS.get(stage, _N("Nicht angegeben")),
         "period_label": billing_workspace.period_label(period.get("period_start")),
-        "reconciled": flags["reconciled"],
-        "exact_source": flags["exact_source"],
-        "source_count": flags["source_count"],
-        "veracity_flag_count": veracity_flag_count,
-        "prepared_by": period.get("prepared_by"),
-        "approvable": (
-            status == "draft" and flags["reconciled"] and flags["source_count"] > 0
+    }
+
+
+def leg_billing_period_detail(community_id, building_id, period_id, *, after=None):
+    member = _require_capability(
+        community_id, building_id, community_access.AUDIT_BILLING
+    )
+    if not member:
+        return {"error": _N("Kein Zugriff.")}
+    period = db.get_billing_period(period_id, community_id, include_line_items=False)
+    if not period:
+        return {"error": None, "period": None}
+
+    flag_count = db.count_billing_period_veracity_flags(community_id, [period_id]).get(
+        period_id
+    )
+    progress = (
+        db.get_community_billing_progress(
+            community_id, [period_id], include_timestamps=True
+        ).get(period_id, {})
+        if period["status"] == "issued"
+        else {}
+    )
+    summary = _billing_workspace_period(period, progress)
+    flags = billing_workspace.readiness_flags(period)
+    summary.update(
+        **flags,
+        veracity_flag_count=flag_count,
+        prepared_by=period.get("prepared_by"),
+        approvable=period["status"] == "draft"
+        and flags["reconciled"]
+        and flags["source_count"] > 0,
+    )
+    draft_items = (
+        db.list_billing_draft_items(
+            community_id, period_id, limit=_BILLING_PAGE_SIZE + 1, after=after
+        )
+        if period["status"] in ("draft", "invalidated")
+        else []
+    )
+    draft_invoices = billing_workspace.draft_invoice_rows(draft_items)
+    policy = period.get("billing_policy_snapshot")
+    version = policy.get("tariff_id") if isinstance(policy, dict) else None
+    stage = summary["stage"]
+    drafted_at = period.get("created_at")
+    if drafted_at is not None and drafted_at.tzinfo is None:
+        drafted_at = drafted_at.replace(tzinfo=UTC)
+    capabilities = community_access.capabilities_for(member)
+    return {
+        "error": None,
+        "community_id": community_id,
+        "period": summary,
+        "policy_version": version if type(version) is int and version > 0 else None,
+        "draft_invoices": draft_invoices[:_BILLING_PAGE_SIZE],
+        "draft_after": after,
+        "next_draft_after": (
+            draft_invoices[_BILLING_PAGE_SIZE - 1]["participant"]
+            if len(draft_invoices) > _BILLING_PAGE_SIZE
+            else None
         ),
+        "steps": [
+            {
+                "key": key,
+                "label": _BILLING_STATUS_LABELS[key],
+                "complete": complete,
+                "at": at,
+            }
+            for key, complete, at in (
+                ("measurements", summary["source_count"] > 0, None),
+                ("draft", stage != "measurements", drafted_at),
+                ("prepared", _has_human_preparer(period), period.get("prepared_at")),
+                ("approved", period["status"] == "issued", progress.get("approved_at")),
+                (
+                    "delivered",
+                    stage in ("delivered", "paid"),
+                    progress.get("delivered_at"),
+                ),
+                ("paid", stage == "paid", progress.get("paid_at")),
+            )
+        ],
+        "viewer_building_id": building_id,
+        "require_dual_control": bool(
+            (
+                formation_wizard.get_community_status(community_id, building_id) or {}
+            ).get("require_dual_control")
+        ),
+        "can_prepare_billing": community_access.PREPARE_BILLING in capabilities,
+        "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
     }
 
 
@@ -740,6 +812,7 @@ def leg_billing_workspace_view(
     *,
     include_statement_entries: bool = False,
     statement_before: int | None = None,
+    period_before: int | None = None,
     **extra,
 ) -> dict:
     """Capability-gated view model for the billing approval workspace."""
@@ -748,32 +821,17 @@ def leg_billing_workspace_view(
     )
     if not member:
         return {"error": _N("Kein Zugriff.")}
-    from functools import cache
-
     capabilities = community_access.capabilities_for(member)
     can_prepare = community_access.PREPARE_BILLING in capabilities
-    can_approve = community_access.APPROVE_BILLING in capabilities
-    community = None
-    if can_approve:
-        community = formation_wizard.get_community_status(community_id, building_id)
-    stored_periods = db.list_community_billing_periods(community_id)
-    flag_counts, periods = _veracity_flag_counts(stored_periods), []
-    allows_approval = cache(billing_approval.dual_control_allows_approval)
-    for stored_period in stored_periods:
-        period = _billing_workspace_period(
-            stored_period, flag_counts.get(stored_period.get("id"), 0)
-        )
-        period["can_approve"] = (
-            community is not None
-            and period["approvable"]
-            and allows_approval(
-                community_id,
-                period["prepared_by"],
-                building_id,
-                require_dual_control=bool(community.get("require_dual_control")),
-            )
-        )
-        periods.append(period)
+    periods = db.list_community_billing_periods(
+        community_id, limit=_BILLING_PAGE_SIZE + 1, before=period_before
+    )
+    has_older_periods = len(periods) > _BILLING_PAGE_SIZE
+    periods = periods[:_BILLING_PAGE_SIZE]
+    progress = db.get_community_billing_progress(
+        community_id,
+        [period["id"] for period in periods if period["status"] == "issued"],
+    )
     statement_invoices = {}
     statement_entries = []
     next_statement_before = None
@@ -800,7 +858,12 @@ def leg_billing_workspace_view(
     view = {
         "error": None,
         "community_id": community_id,
-        "periods": periods,
+        "periods": [
+            _billing_workspace_period(period, progress.get(period["id"], {}))
+            for period in periods
+        ],
+        "period_before": period_before,
+        "next_period_before": periods[-1]["id"] if has_older_periods else None,
         "statement_invoice_candidates": [
             invoice
             for invoice in statement_invoices.values()
@@ -816,10 +879,7 @@ def leg_billing_workspace_view(
         ],
         "statement_before": statement_before,
         "next_statement_before": next_statement_before,
-        "billing_approved": False,
-        "approval_error": None,
         "can_prepare_billing": can_prepare,
-        "can_approve_billing": can_approve,
         "can_import_bank_statement": _is_confirmed_admin(member),
     }
     view.update(extra)
@@ -1039,7 +1099,17 @@ def leg_approve_billing_period(
         return {"error": _N("Kein Zugriff."), "invoices": []}
     status = formation_wizard.get_community_status(community_id, building_id) or {}
     if status.get("require_dual_control"):
-        period = db.get_billing_period(period_id, community_id) or {}
+        period = db.get_billing_period(
+            period_id, community_id, include_line_items=False
+        )
+        if not period:
+            return {
+                "error": _N(
+                    "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
+                ),
+                "error_status": 404,
+                "invoices": [],
+            }
         if not billing_approval.dual_control_allows_approval(
             community_id,
             period.get("prepared_by"),
@@ -1072,6 +1142,15 @@ def leg_prepare_billing_period(
         recorded = db.record_billing_period_preparer(
             period_id, community_id, building_id
         )
+        if not recorded and not db.get_billing_period(
+            period_id, community_id, include_line_items=False
+        ):
+            return {
+                "error": _N(
+                    "Abrechnungsperiode nicht gefunden oder nicht mehr im Entwurf."
+                ),
+                "error_status": 404,
+            }
     except db.BillingStoreError:
         return {
             "error": _N("Abrechnung vorübergehend nicht verfügbar."),

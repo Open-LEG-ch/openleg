@@ -239,6 +239,27 @@ def _patch_workspace(monkeypatch, app_module, *, members=None):  # noqa: F811
         MagicMock(return_value=[]),
         raising=False,
     )
+    monkeypatch.setattr(
+        app_module.db,
+        "get_billing_period",
+        lambda period_id, community_id, **kwargs: next(
+            (
+                period
+                for period in app_module.db.list_community_billing_periods(community_id)
+                if period["id"] == period_id
+            ),
+            None,
+        ),
+    )
+    monkeypatch.setattr(
+        app_module.db, "count_billing_period_veracity_flags", lambda *_: {}
+    )
+    monkeypatch.setattr(
+        app_module.db, "get_community_billing_progress", lambda *args, **kwargs: {}
+    )
+    monkeypatch.setattr(
+        app_module.db, "list_billing_draft_items", lambda *args, **kwargs: []
+    )
     approve = MagicMock(return_value=[{"invoice_number": "MUSTER-2026-000001"}])
     monkeypatch.setattr(billing_approval, "approve_billing_period", approve)
     return approve
@@ -287,10 +308,13 @@ def test_billing_workspace_distinguishes_drafts_and_issued_invoices(
     html = response.get_data(as_text=True)
     assert "Entwurf" in html
     assert "Freigegeben" in html
-    assert html.count('name="confirm_approval"') == 1
-    assert html.count(WORKSPACE_URL + "/period/42/approve") == 1
-    assert WORKSPACE_URL + "/period/43/approve" not in html
-    assert 'name="csrf_token" value="csrf-secret"' in html
+    assert 'name="confirm_approval"' not in html
+    draft = client.get(WORKSPACE_URL + "/period/42").text
+    issued = client.get(WORKSPACE_URL + "/period/43").text
+    assert draft.count('name="confirm_approval"') == 1
+    assert draft.count(WORKSPACE_URL + "/period/42/approve") == 1
+    assert WORKSPACE_URL + "/period/43/approve" not in issued
+    assert 'name="csrf_token" value="csrf-secret"' in draft
 
 
 def test_billing_approval_requires_csrf_and_explicit_confirmation(
@@ -359,7 +383,7 @@ def test_confirmed_admin_can_approve_only_the_exact_community_period(
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/billing?approved=1")
+    assert response.headers["Location"].endswith("/billing/period/42?approved=1")
     approve.assert_called_once_with(
         42, COMMUNITY, approver_id="building-admin", require_approver_capability=True
     )
@@ -1099,7 +1123,7 @@ def test_workspace_omits_the_approval_action_for_visibly_unreconciled_drafts(
     client = app_module.web.test_client()
     _set_session(client, building_id="building-admin")
 
-    response = client.get(WORKSPACE_URL)
+    response = client.get(WORKSPACE_URL + "/period/42")
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
@@ -1119,7 +1143,7 @@ def test_workspace_omits_the_approval_action_without_source_documents(
     client = app_module.web.test_client()
     _set_session(client, building_id="building-admin")
 
-    response = client.get(WORKSPACE_URL)
+    response = client.get(WORKSPACE_URL + "/period/42")
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)

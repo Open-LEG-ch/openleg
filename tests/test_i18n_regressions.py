@@ -168,8 +168,20 @@ def test_approval_conflict_is_localized_through_real_route(web, monkeypatch, lan
         MagicMock(side_effect=billing_approval.BillingApprovalError()),
     )
     monkeypatch.setattr(
-        dashboard, "leg_billing_workspace_view", lambda *args: _workspace()
+        dashboard.db,
+        "get_billing_period",
+        lambda *args, **kwargs: {
+            "id": 1,
+            "status": "draft",
+            "period_start": "2026-08-01",
+        },
     )
+    monkeypatch.setattr(
+        dashboard,
+        "_require_capability",
+        lambda *args: {"role": "admin", "status": "confirmed"},
+    )
+    monkeypatch.setattr(db, "list_billing_draft_items", lambda *args, **kwargs: [])
     client = web.test_client()
     _set_session(client)
     response = client.post(

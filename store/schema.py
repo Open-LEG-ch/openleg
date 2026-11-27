@@ -909,6 +909,7 @@ def create_tables():
                     reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     billing_policy_snapshot JSONB,
                     prepared_by VARCHAR(64),
+                    prepared_at TIMESTAMPTZ,
                     calculated_values_fingerprint VARCHAR(64),
                     status VARCHAR(32) DEFAULT 'draft',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -935,6 +936,11 @@ def create_tables():
             """)
 
             cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_billing_line_items_period_participant
+                ON billing_line_items (billing_period_id, participant_id)
+            """)
+
+            cur.execute("""
                 ALTER TABLE billing_periods
                     ADD COLUMN IF NOT EXISTS internal_price_chf_per_kwh DECIMAL(12, 6),
                     ADD COLUMN IF NOT EXISTS grid_fee_chf_per_kwh DECIMAL(12, 6),
@@ -945,6 +951,7 @@ def create_tables():
                     ADD COLUMN IF NOT EXISTS reconciliation JSONB NOT NULL DEFAULT '{}'::jsonb,
                     ADD COLUMN IF NOT EXISTS billing_policy_snapshot JSONB,
                     ADD COLUMN IF NOT EXISTS prepared_by VARCHAR(64),
+                    ADD COLUMN IF NOT EXISTS prepared_at TIMESTAMPTZ,
                     ADD COLUMN IF NOT EXISTS calculated_values_fingerprint VARCHAR(64),
                     ADD COLUMN IF NOT EXISTS status VARCHAR(32) DEFAULT 'draft'
             """)

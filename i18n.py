@@ -2,13 +2,13 @@
 """Request-local presentation languages; domain values remain language-neutral."""
 
 import re
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from functools import wraps
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
-from babel.dates import format_date
+from babel.dates import format_date, format_time
 from babel.numbers import format_decimal
 from flask import (
     current_app,
@@ -144,14 +144,17 @@ def format_rate_label(value):
     return gettext(value) if isinstance(value, str) else value
 
 
-def format_number_label(value):
+def format_number_label(value, places=None):
     """Format display-only counts without rounding or altering stored values."""
     locale = (
         str(get_locale())
         if has_app_context() and "babel" in current_app.extensions
         else "de_CH"
     )
-    return format_decimal(value, locale=locale, decimal_quantization=False)
+    pattern = "#,##0." + "0" * places if places is not None else None
+    return format_decimal(
+        value, format=pattern, locale=locale, decimal_quantization=places is not None
+    )
 
 
 def format_date_label(value):
@@ -167,6 +170,14 @@ def format_date_label(value):
         else "de_CH"
     )
     return format_date(value, format="long", locale=locale)
+
+
+def format_timestamp_label(value):
+    """Show an audit timestamp in Swiss local time, including legacy UTC dates."""
+    if value.utcoffset() is None:
+        value = value.replace(tzinfo=UTC)
+    local = value.astimezone(ZoneInfo("Europe/Zurich"))
+    return f"{format_date_label(local)}, {format_time(local, format='short', locale=str(get_locale() or 'de_CH'))}"
 
 
 def gettext(message, **variables):
@@ -340,6 +351,7 @@ def init_app(app):
         "ratelabel": format_rate_label,
         "numberlabel": format_number_label,
         "datelabel": format_date_label,
+        "timestamplabel": format_timestamp_label,
         "localized_url": localized_url,
         "localized_asset": localized_asset,
     }.items():

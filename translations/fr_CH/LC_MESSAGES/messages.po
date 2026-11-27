@@ -684,20 +684,6 @@ msgstr "Annulé"
 msgid "Abgewiesen"
 msgstr "Rejeté"
 
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: Abweichung prüfen."
-msgstr "Rapprochement avec le GRD : vérifier l’écart."
-
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
-msgstr ""
-"Rapprochement avec le GRD : source exacte du GRD déterminante, écart par rapport au "
-"modèle indiqué."
-
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: vollständig abgeglichen."
-msgstr "Rapprochement avec le GRD : entièrement concordant."
-
 #: templates/advisories.html:47
 msgid "Abhilfe laut Quelle"
 msgstr "Mesures correctives selon la source"
@@ -1543,10 +1529,6 @@ msgstr ""
 #: templates/fuer_gemeinden.html:96 templates/self_host.html:57
 msgid "Auf eigener Infrastruktur"
 msgstr "Sur votre propre infrastructure"
-
-#: templates/leg_billing.html:62
-msgid "Auffällige Messfenster:"
-msgstr "Intervalles de mesure inhabituels :"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/software.html:13
@@ -12446,10 +12428,6 @@ msgstr "Code source et licence"
 msgid "Quelldokumente"
 msgstr "Documents sources"
 
-#: templates/leg_billing.html:60
-msgid "Quelldokumente:"
-msgstr "Documents sources :"
-
 #: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38
 #: templates/telemetry_dashboard.html:52 templates/telemetry_dashboard.html:126
 #: templates/telemetry_shared.html:50
@@ -20555,3 +20533,169 @@ msgstr "Aucune facture trouvée."
 #: dashboard.py:967
 msgid "Die Rechnung konnte nicht per E-Mail zugestellt werden."
 msgstr "L’envoi de la facture par e-mail a échoué."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:417
+msgid "Vorbereitet"
+msgstr "Préparé"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:4
+#, python-format
+msgid "Abrechnung %(period)s"
+msgstr "Décompte %(period)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:11
+msgid "Der Entwurf wurde zur Freigabe vorbereitet."
+msgstr "Le projet est prêt à être validé."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:20
+msgid "Abrechnungsschritte"
+msgstr "Étapes du décompte"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:29
+msgid "Messdaten vorhanden"
+msgstr "Données de mesure disponibles"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:29
+msgid "Keine Messquellen dokumentiert"
+msgstr "Aucune source de mesure documentée"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:31
+msgid "Abgeschlossen"
+msgstr "Terminé"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:34
+msgid "Ausstehend"
+msgstr "En attente"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:39
+msgid "Zeitpunkt nicht erfasst"
+msgstr "Date et heure non enregistrées"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:47
+msgid "Prüfungen vor der Freigabe"
+msgstr "Vérifications avant validation"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:50
+msgid "Richtlinienversion"
+msgstr "Version de la politique de facturation"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:51
+#, python-format
+msgid "Version %(version)s"
+msgstr "Version %(version)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:51
+msgid "Keine Richtlinienversion gespeichert"
+msgstr "Aucune version enregistrée"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:54
+msgid "Abgleich mit dem VNB"
+msgstr "Rapprochement avec le GRD"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:63
+#, python-format
+msgid "%(count)s vorhanden"
+msgstr "%(count)s au total"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:63
+msgid "Keine Quelldokumente vorhanden"
+msgstr "Aucun document source disponible"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:66
+msgid "Messfenster"
+msgstr "Plages de mesure"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:68
+msgid "Keine Messfenster prüfbar"
+msgstr "Vérification des plages de mesure indisponible"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:70
+#, python-format
+msgid "%(count)s auffälliges Messfenster"
+msgid_plural "%(count)s auffällige Messfenster"
+msgstr[0] "%(count)s plage de mesure signalée"
+msgstr[1] "%(count)s plages de mesure signalées"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:72
+msgid "Keine auffälligen Messfenster"
+msgstr "Aucune plage de mesure signalée"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:82
+msgid "Rechnungsentwürfe"
+msgstr "Projets de facture"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:90
+msgid "LEG-Verbrauch"
+msgstr "Consommation CEL"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:91
+msgid "Netzanteil"
+msgstr "Part du réseau"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:92
+msgid "Betrag vor MWST"
+msgstr "Montant hors TVA"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:106
+msgid "Betrag unlesbar"
+msgstr "Montant illisible"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:115
+msgid "Noch keine Rechnungsentwürfe vorhanden."
+msgstr "Aucun projet de facture pour le moment."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:172
+msgid "Keine weiteren Abrechnungsperioden vorhanden."
+msgstr "Aucune autre période de décompte."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:177
+msgid "Neueste Abrechnungsperioden"
+msgstr "Périodes les plus récentes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:178
+msgid "Ältere Abrechnungsperioden"
+msgstr "Périodes précédentes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:118
+msgid "Keine weiteren Rechnungsentwürfe vorhanden."
+msgstr "Aucun autre projet de facture."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:122
+msgid "Erste Rechnungsentwürfe"
+msgstr "Premiers projets de facture"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:123
+msgid "Weitere Rechnungsentwürfe"
+msgstr "Autres projets de facture"

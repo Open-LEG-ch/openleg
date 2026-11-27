@@ -1,6 +1,7 @@
 {% extends "leg_workspace_base.html" %}
 {% set workspace_page = "payments" if payment_section else "billing" %}
 {% set workspace_billing = not payment_notice_only %}
+{% block meta %}<title>{{ _('Zahlungen') if payment_section else _('Abrechnungen') }} | OpenLEG</title>{% endblock %}
 {% block workspace_content %}
 {% set can_prepare_billing = can_prepare_billing|default(false) %}
 {% set can_approve_billing = can_approve_billing|default(false) %}
@@ -14,12 +15,6 @@
     {{ _('Freigegebene Rechnungen bleiben unverändert und nachvollziehbar. Prüfen Sie Tarif, Abgleich und Quelldokumente vor der Freigabe.') }}
   </div>
 
-  {% if billing_approved %}
-  <p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">{{ _('Die Rechnungen wurden freigegeben.') }}</p>
-  {% endif %}
-  {% if approval_error %}
-  <p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ _(approval_error) }}</p>
-  {% endif %}
   {% if statement_status == 'imported' %}<p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">{{ _('Der Kontoauszug wurde importiert und abgeglichen.') }}</p>{% endif %}
   {% if statement_status == 'duplicate' %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht.') }}</p>{% endif %}
   {% endif %}
@@ -158,53 +153,28 @@
   </section>
 
   {% if not payment_notice_only %}
+  <div id="billing-periods">
   {% if periods %}
   <div class="space-y-6">
     {% for period in periods %}
     <section class="bg-white rounded-xl border p-6">
-      <h2 class="font-bold mb-2">{{ period.period_label|periodlabel }}</h2>
+      <h2 class="font-bold mb-2"><a href="{{ url_for('.leg_billing_period_detail', community_id=community_id, period_id=period.id) }}" class="inline-flex items-center text-brand underline">{{ period.period_label|periodlabel }}</a></h2>
       <p class="text-sm mb-2">{{ _('Status:') }} <span class="font-semibold">{{ _(period.status_label) }}</span></p>
-      <p class="text-sm text-ink-muted mb-4">
-        {% if period.reconciled and period.exact_source %}{{ _('Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen.') }}{% elif period.reconciled %}{{ _('Abgleich mit dem VNB: vollständig abgeglichen.') }}{% else %}{{ _('Abgleich mit dem VNB: Abweichung prüfen.') }}{% endif %}
-        {{ _('Quelldokumente:') }} {{ period.source_count }}.
-        {% if period.veracity_flag_count %}
-          <span class="font-semibold text-accent-dark">{{ _('Auffällige Messfenster:') }} {{ period.veracity_flag_count }}</span> {{ _('(Plausibilität, kein Fehler; Import und Freigabe bleiben möglich.)') }}
-        {% endif %}
-      </p>
-      {% if period.approvable %}
-      {% if period.prepared_by %}<p class="text-sm text-ink-muted mb-2">{{ _('Vorbereitet durch:') }} <span class="font-semibold">{{ period.prepared_by }}</span></p>{% endif %}
-      {% if can_approve_billing and period.can_approve %}
-      <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label for="confirm-approval-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">
-          <input id="confirm-approval-{{ period.id }}" type="checkbox" name="confirm_approval" value="yes" required class="mt-1">
-          <span>{{ _('Ich habe Tarif, Abgleich und Quelldokumente geprüft und gebe die Rechnungen dieser Periode verbindlich frei.') }}</span>
-        </label>
-        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Rechnungen freigeben') }}</button>
-      </form>
-      {% elif can_prepare_billing %}
-      <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/prepare">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label for="confirm-prepare-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">
-          <input id="confirm-prepare-{{ period.id }}" type="checkbox" name="confirm_prepare" value="yes" required class="mt-1">
-          <span>{{ _('Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor.') }}</span>
-        </label>
-        <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Zur Freigabe vorbereiten') }}</button>
-      </form>
-      {% elif can_approve_billing %}
-      <p class="text-sm text-ink-muted">{{ _('Warten auf die Vorbereitung durch eine andere Person.') }}</p>
-      {% endif %}
-      {% elif period.status == 'draft' %}
-      <p class="text-sm text-ink-muted">{{ _('Dieser Entwurf ist nicht freigabebereit: Der Abgleich weicht ab oder Quelldokumente fehlen. Die Freigabe ist erst nach einem vollständigen Abgleich möglich.') }}</p>
-      {% endif %}
     </section>
     {% endfor %}
   </div>
   {% else %}
   <section class="bg-white rounded-xl border p-6">
-    <p class="text-sm text-ink-muted">{{ _('Noch keine Abrechnungsperioden vorhanden. Der Abrechnungslauf erstellt Entwürfe, sobald eine Richtlinie gespeichert ist und Messdaten vorliegen.') }}</p>
+    <p class="text-sm text-ink-muted">{{ _('Keine weiteren Abrechnungsperioden vorhanden.') if period_before else _('Noch keine Abrechnungsperioden vorhanden. Der Abrechnungslauf erstellt Entwürfe, sobald eine Richtlinie gespeichert ist und Messdaten vorliegen.') }}</p>
   </section>
   {% endif %}
+  {% if period_before or next_period_before %}
+  <div class="mt-2 flex flex-wrap gap-4">
+    {% if period_before %}<a href="{{ url_for('.leg_billing_workspace', community_id=community_id, section='payments' if payment_section else none) }}#billing-periods" class="inline-flex items-center text-brand underline">{{ _('Neueste Abrechnungsperioden') }}</a>{% endif %}
+    {% if next_period_before %}<a href="{{ url_for('.leg_billing_workspace', community_id=community_id, section='payments' if payment_section else none, period_before=next_period_before) }}#billing-periods" class="inline-flex items-center text-brand underline">{{ _('Ältere Abrechnungsperioden') }}</a>{% endif %}
+  </div>
+  {% endif %}
+  </div>
 
   <section id="invoices" aria-labelledby="issued-invoices-title" class="mt-10">
     <h2 id="issued-invoices-title" class="mb-2 text-xl font-bold">{{ _('Freigegebene Rechnungen') }}</h2>

@@ -21,7 +21,6 @@ def _workspace(monkeypatch, app_module, *, blocked=True):  # noqa: F811
     _patch_workspace(monkeypatch, app_module)
     monkeypatch.setattr(app_module.db, "is_db_available", lambda: True)
     monkeypatch.setattr(app_module.db, "list_invoice_queries", lambda *_a, **_k: [])
-    monkeypatch.setattr(app_module.db, "get_sdat_veracity_flags", lambda *_: [])
     block = {
         "period_start": START,
         "period_end": END,

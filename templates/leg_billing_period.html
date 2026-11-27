@@ -1,0 +1,156 @@
+{% extends "leg_workspace_base.html" %}
+{% set workspace_page = "billing" %}
+{% set workspace_billing = true %}
+{% set heading = _('Abrechnung %(period)s', period=period.period_label|periodlabel) %}
+{% block meta %}<title>{{ heading }} | OpenLEG</title>{% endblock %}
+{% block workspace_content %}
+<p class="mb-2"><a href="{{ url_for('.leg_billing_workspace', community_id=community_id) }}" class="inline-flex items-center text-brand underline">{{ _('Abrechnungen') }}</a></p>
+<h1 class="mb-6 text-3xl">{{ heading }}</h1>
+
+{% if billing_prepared and period.stage == 'prepared' %}
+<p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">{{ _('Der Entwurf wurde zur Freigabe vorbereitet.') }}</p>
+{% elif billing_approved and period.status == 'issued' %}
+<p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">{{ _('Die Rechnungen wurden freigegeben.') }}</p>
+{% endif %}
+{% if approval_error %}
+<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="alert">{{ approval_error }}</p>
+{% endif %}
+
+<section class="mb-6" aria-labelledby="steps-heading">
+  <h2 id="steps-heading" class="mb-3 text-xl font-bold">{{ _('Abrechnungsschritte') }}</h2>
+  {% if period.stage == 'invalidated' %}<p class="mb-3 font-semibold">{{ _(period.status_label) }}</p>{% endif %}
+  <ol class="divide-y divide-line rounded-lg border border-line bg-white">
+    {% for step in steps %}
+    <li id="step-{{ step.key }}"{% if step.key == period.stage %} aria-current="step"{% endif %}
+        class="px-4 py-3{% if step.key == period.stage %} bg-paper-deep{% endif %}">
+      <p class="font-semibold">{{ _(step.label) }}</p>
+      <p class="text-sm text-ink-muted">
+        {% if step.key == 'measurements' %}
+          {{ _('Messdaten vorhanden') if step.complete else _('Keine Messquellen dokumentiert') }}
+        {% elif step.complete %}
+          {{ _('Abgeschlossen') }}
+          {% if step.at %}<time id="{{ step.key }}-at" datetime="{{ step.at.isoformat() }}">{{ step.at|timestamplabel }}</time>{% endif %}
+        {% else %}
+          {{ _('Ausstehend') }}
+        {% endif %}
+      </p>
+      {% if step.key == 'prepared' and step.complete %}
+      <p class="text-sm text-ink-muted wrap-anywhere">{{ _('Vorbereitet durch:') }} <span class="font-semibold">{{ period.prepared_by }}</span></p>
+      {% if not step.at %}<p class="text-sm text-ink-muted">{{ _('Zeitpunkt nicht erfasst') }}</p>{% endif %}
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+<section class="mb-6" aria-labelledby="checks-heading">
+  <h2 id="checks-heading" class="mb-3 text-xl font-bold">{{ _('Prüfungen vor der Freigabe') }}</h2>
+  <dl class="grid gap-4 rounded-lg border border-line bg-white p-4 sm:grid-cols-2">
+    <div>
+      <dt class="font-semibold">{{ _('Richtlinienversion') }}</dt>
+      <dd>{{ _('Version %(version)s', version=policy_version|numberlabel) if policy_version else _('Keine Richtlinienversion gespeichert') }}</dd>
+    </div>
+    <div>
+      <dt class="font-semibold">{{ _('Abgleich mit dem VNB') }}</dt>
+      <dd>
+        {% if not period.reconciled %}{{ _('Abweichung prüfen') }}
+        {% elif period.exact_source %}{{ _('Exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen') }}
+        {% else %}{{ _('Vollständig abgeglichen') }}{% endif %}
+      </dd>
+    </div>
+    <div>
+      <dt class="font-semibold">{{ _('Quelldokumente') }}</dt>
+      <dd>{{ _('%(count)s vorhanden', count=period.source_count|numberlabel) if period.source_count else _('Keine Quelldokumente vorhanden') }}</dd>
+    </div>
+    <div>
+      <dt class="font-semibold">{{ _('Messfenster') }}</dt>
+      <dd>
+        {% if period.veracity_flag_count is none %}{{ _('Keine Messfenster prüfbar') }}
+        {% elif period.veracity_flag_count %}
+        {{ ngettext('%(count)s auffälliges Messfenster', '%(count)s auffällige Messfenster', period.veracity_flag_count, count=period.veracity_flag_count|numberlabel) }}
+        <p class="text-sm text-ink-muted">{{ _('(Plausibilität, kein Fehler; Import und Freigabe bleiben möglich.)') }}</p>
+        {% else %}{{ _('Keine auffälligen Messfenster') }}{% endif %}
+      </dd>
+    </div>
+  </dl>
+</section>
+
+{% if period.status == 'issued' %}
+<p class="mb-6"><a href="{{ url_for('.leg_invoice_list', community_id=community_id) }}" class="inline-flex items-center text-brand underline">{{ _('Rechnungen öffnen') }}</a></p>
+{% else %}
+<section class="mb-6" aria-labelledby="draft-heading">
+  <h2 id="draft-heading" class="mb-3 text-xl font-bold">{{ _('Rechnungsentwürfe') }}</h2>
+  {% if draft_invoices %}
+  <div class="overflow-x-auto rounded-lg border border-line bg-white focus-visible:outline-solid focus-visible:outline-3 focus-visible:outline-brand"
+       role="region" aria-labelledby="draft-heading" tabindex="0">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-paper-deep">
+        <tr>
+          <th scope="col" class="px-3 py-2">{{ _('Teilnehmer') }}</th>
+          <th scope="col" class="px-3 py-2 text-right">{{ _('LEG-Verbrauch') }}</th>
+          <th scope="col" class="px-3 py-2 text-right">{{ _('Netzanteil') }}</th>
+          <th scope="col" class="px-3 py-2 text-right">{{ _('Betrag vor MWST') }}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {% for invoice in draft_invoices %}
+        <tr>
+          <th scope="row" class="px-3 py-2 wrap-anywhere">
+            {% if invoice.address %}{{ invoice.address }}<span class="block text-ink-muted">{{ invoice.participant }}</span>
+            {% else %}{{ invoice.participant }}{% endif %}
+          </th>
+          {% for value in (invoice.local_kwh, invoice.grid_kwh) %}
+          <td class="px-3 py-2 text-right">
+            {% if value is none %}{{ _('Nicht angegeben') }}
+            {% else %}<span class="whitespace-nowrap tabular-nums">{{ value|numberlabel(2) }} kWh</span>{% endif %}
+          </td>
+          {% endfor %}
+          <td class="px-3 py-2 text-right">
+            {% if invoice.net_chf is none %}<span class="font-semibold text-accent">{{ _('Betrag unlesbar') }}</span>
+            {% else %}<span class="whitespace-nowrap tabular-nums">{{ invoice.net_chf|numberlabel(2) }} CHF</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>{{ _('Keine weiteren Rechnungsentwürfe vorhanden.') if draft_after else _('Noch keine Rechnungsentwürfe vorhanden.') }}</p>
+  {% endif %}
+  {% if draft_after or next_draft_after %}
+  <div class="mt-2 flex flex-wrap gap-4">
+    {% if draft_after %}<a href="{{ url_for('.leg_billing_period_detail', community_id=community_id, period_id=period.id) }}#draft-heading" class="inline-flex items-center text-brand underline">{{ _('Erste Rechnungsentwürfe') }}</a>{% endif %}
+    {% if next_draft_after %}<a href="{{ url_for('.leg_billing_period_detail', community_id=community_id, period_id=period.id, after=next_draft_after) }}#draft-heading" class="inline-flex items-center text-brand underline">{{ _('Weitere Rechnungsentwürfe') }}</a>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="mb-6">
+  {% if period.approvable %}
+  {% if can_approve_billing and (not require_dual_control or (period.prepared_by and period.prepared_by != viewer_building_id)) %}
+  <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="confirm-approval-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">
+      <input id="confirm-approval-{{ period.id }}" type="checkbox" name="confirm_approval" value="yes" required class="mt-1">
+      <span>{{ _('Ich habe Tarif, Abgleich und Quelldokumente geprüft und gebe die Rechnungen dieser Periode verbindlich frei.') }}</span>
+    </label>
+    <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Rechnungen freigeben') }}</button>
+  </form>
+  {% elif can_prepare_billing %}
+  <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/prepare">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="confirm-prepare-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">
+      <input id="confirm-prepare-{{ period.id }}" type="checkbox" name="confirm_prepare" value="yes" required class="mt-1">
+      <span>{{ _('Ich habe Tarif, Abgleich und Quelldokumente geprüft und lege diesen Entwurf zur Freigabe vor.') }}</span>
+    </label>
+    <button type="submit" class="bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ _('Zur Freigabe vorbereiten') }}</button>
+  </form>
+  {% elif can_approve_billing %}
+  <p class="text-sm text-ink-muted">{{ _('Warten auf die Vorbereitung durch eine andere Person.') }}</p>
+  {% endif %}
+  {% elif period.status == 'draft' %}
+  <p class="text-sm text-ink-muted">{{ _('Dieser Entwurf ist nicht freigabebereit: Der Abgleich weicht ab oder Quelldokumente fehlen. Die Freigabe ist erst nach einem vollständigen Abgleich möglich.') }}</p>
+  {% endif %}
+</section>
+{% endblock %}
