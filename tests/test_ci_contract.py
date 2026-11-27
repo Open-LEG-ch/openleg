@@ -92,34 +92,98 @@ def test_ci_test_runs_six_shards_and_reports_their_joint_result():
     assert check["env"]["SHARDS"] == str(len(SHARDS))
     assert check["env"]["RESULT"] == "${{ needs.shard.result }}"
     assert check["env"]["RUN"] == "${{ github.run_id }}"
+    assert check["env"]["RUN_ATTEMPT"] == "${{ github.run_attempt }}"
     assert "${{" not in check["run"]
 
 
-def _shard_job(index, conclusion="success"):
-    return {"name": f"{SHARD_PREFIX}{index}", "conclusion": conclusion}
+RUN_ATTEMPT = 2
+GATE_POLLS = 7
+
+
+def _shard_job(index, conclusion="success", status="completed"):
+    return {
+        "name": f"{SHARD_PREFIX}{index}",
+        "run_attempt": RUN_ATTEMPT,
+        "status": status,
+        "conclusion": conclusion,
+    }
+
+
+ALL_PASSED = [[_shard_job(index) for index in SHARDS]]
+SHARD_4_RUNNING = [
+    [
+        *map(_shard_job, SHARDS[:3]),
+        _shard_job(4, None, "in_progress"),
+        *map(_shard_job, SHARDS[4:]),
+    ]
+]
+SHARD_3_NOT_COPIED_YET = [[_shard_job(index) for index in SHARDS if index != 3]]
 
 
 @pytest.mark.parametrize(
-    ("result", "pages", "status"),
+    ("result", "responses", "status", "polls"),
     [
-        ("success", [[_shard_job(index) for index in SHARDS]], 0),
+        ("success", [ALL_PASSED], 0, 1),
         (
             "success",
             [
-                [_shard_job(index) for index in SHARDS[:3]],
-                [_shard_job(index) for index in SHARDS[3:]],
+                [
+                    [_shard_job(index) for index in SHARDS[:3]],
+                    [_shard_job(index) for index in SHARDS[3:]],
+                ]
             ],
             0,
-        ),
-        ("success", [[_shard_job(index) for index in SHARDS[:-1]]], 1),
-        (
-            "success",
-            [[*map(_shard_job, SHARDS[:-1]), _shard_job(SHARDS[-1], "cancelled")]],
             1,
         ),
-        ("success", None, 1),
-        ("failure", [[_shard_job(index) for index in SHARDS]], 1),
-        ("cancelled", [[_shard_job(index) for index in SHARDS]], 1),
+        ("success", [[[_shard_job(index) for index in SHARDS[:-1]]]], 1, GATE_POLLS),
+        (
+            "success",
+            [[[*map(_shard_job, SHARDS[:-1]), _shard_job(SHARDS[-1], "cancelled")]]],
+            1,
+            1,
+        ),
+        ("success", [None], 1, 1),
+        ("success", ["invalid"], 1, 1),
+        # A failed matrix fails the gate, after one read that names the shards.
+        ("failure", [ALL_PASSED], 1, 1),
+        ("cancelled", [ALL_PASSED], 1, 1),
+        # Run 45491952156, attempt 1: the API still showed the last shard running.
+        ("success", [SHARD_4_RUNNING, ALL_PASSED], 0, 2),
+        # Attempt 2 of that run: a rerun had not yet copied shard 3's pass.
+        ("success", [SHARD_3_NOT_COPIED_YET, SHARD_3_NOT_COPIED_YET, ALL_PASSED], 0, 3),
+        (
+            "success",
+            [
+                SHARD_4_RUNNING,
+                [
+                    [
+                        *map(_shard_job, SHARDS[:3]),
+                        _shard_job(4, "failure"),
+                        *map(_shard_job, SHARDS[4:]),
+                    ]
+                ],
+            ],
+            1,
+            2,
+        ),
+        (
+            "success",
+            [[[*map(_shard_job, SHARDS[:-1]), _shard_job(SHARDS[-1], "failure")]]],
+            1,
+            1,
+        ),
+        (
+            "success",
+            [[[*map(_shard_job, SHARDS[:-1]), _shard_job(SHARDS[-1], "skipped")]]],
+            1,
+            1,
+        ),
+        (
+            "success",
+            [[[*map(_shard_job, SHARDS[:-1]), _shard_job(SHARDS[-1], None, "queued")]]],
+            1,
+            GATE_POLLS,
+        ),
     ],
     ids=[
         "all-passed",
@@ -127,34 +191,62 @@ def _shard_job(index, conclusion="success"):
         "missing-shard",
         "cancelled-shard",
         "api-error",
+        "invalid-response",
         "matrix-failed",
         "matrix-cancelled",
+        "shard-reported-late",
+        "rerun-copies-shard-late",
+        "running-shard-then-fails",
+        "failed-shard",
+        "skipped-shard",
+        "shard-never-got-a-runner",
     ],
 )
-def test_ci_test_gate_fails_closed(tmp_path, result, pages, status):
-    """Run the gate with recorded API pages; anything short of six passes fails."""
+def test_ci_test_gate_fails_closed(tmp_path, result, responses, status, polls):
+    """Run the gate with recorded API responses; anything short of six passes fails.
+
+    The jobs API can lag behind the shards, so the gate polls a bounded number
+    of times and stops early once a shard has failed.
+    """
     if shutil.which("jq") is None:
         pytest.skip("requires jq, as on GitHub-hosted runners")
     _, required = _ci_test_jobs()
     (check,) = required["steps"]
+    calls = tmp_path / "calls"
     gh = tmp_path / "gh"
     gh.write_text(
         "#!/usr/bin/env python3\n"
         "import json, os, sys\n"
-        "pages = json.loads(os.environ['PAGES'])\n"
+        "with open(os.environ['CALLS'], 'a') as log:\n"
+        "    log.write(json.dumps(sys.argv[1:]) + '\\n')\n"
+        "with open(os.environ['CALLS']) as log:\n"
+        "    call = sum(1 for _ in log) - 1\n"
+        "responses = json.loads(os.environ['RESPONSES'])\n"
+        "pages = responses[min(call, len(responses) - 1)]\n"
         "if pages is None:\n"
         "    print('gh: Forbidden (HTTP 403)', file=sys.stderr)\n"
         "    sys.exit(1)\n"
+        "if pages == 'invalid':\n"
+        "    print(json.dumps({'message': 'unexpected payload'}))\n"
+        "    sys.exit(0)\n"
         "for jobs in pages:\n"
         "    print(json.dumps({'jobs': jobs}))\n"
     )
-    gh.chmod(0o755)
+    sleep = tmp_path / "sleep"
+    sleep.write_text('#!/bin/sh\necho "$@" >> "$SLEEPS"\n')
+    for stub in (gh, sleep):
+        stub.chmod(0o755)
     env = {
         **os.environ,
         **{key: str(value) for key, value in check["env"].items()},
         "PATH": f"{tmp_path}:{os.environ['PATH']}",
-        "PAGES": json.dumps(pages),
+        "CALLS": str(calls),
+        "SLEEPS": str(tmp_path / "sleeps"),
+        "RESPONSES": json.dumps(responses),
         "RESULT": result,
+        "REPO": "owner/repo",
+        "RUN": "42",
+        "RUN_ATTEMPT": str(RUN_ATTEMPT),
     }
     completed = subprocess.run(
         ["bash", "-c", check["run"]],
@@ -164,7 +256,34 @@ def test_ci_test_gate_fails_closed(tmp_path, result, pages, status):
         text=True,
         timeout=10,
     )
-    assert completed.returncode == status, completed.stdout + completed.stderr
+    output = completed.stdout + completed.stderr
+    assert completed.returncode == status, output
+
+    made = calls.read_text().splitlines() if calls.exists() else []
+    assert len(made) == polls, output
+    for call in map(json.loads, made):
+        assert "repos/owner/repo/actions/runs/42/attempts/2/jobs?per_page=100" in call
+    sleeps = tmp_path / "sleeps"
+    slept = sleeps.read_text().split() if sleeps.exists() else []
+    assert len(slept) == max(polls - 1, 0), output
+    assert sum(map(int, slept)) <= 60
+
+    if status and polls:
+        # A failed gate lists every shard with its attempt, status and conclusion.
+        last = responses[min(polls, len(responses)) - 1]
+        readable = isinstance(last, list)
+        if not readable:
+            assert "::error::Could not read the jobs of attempt 2" in output
+        seen = {job["name"]: job for page in last for job in page} if readable else {}
+        for index in SHARDS:
+            name = f"{SHARD_PREFIX}{index}"
+            job = seen.get(name)
+            fields = (
+                [name, str(job["run_attempt"]), job["status"], job["conclusion"] or "-"]
+                if job
+                else [name, "-", "missing" if readable else "unknown", "-"]
+            )
+            assert "\t".join(fields) + "\n" in completed.stdout, output
 
 
 def test_no_mainline_workflow_pushes_directly():

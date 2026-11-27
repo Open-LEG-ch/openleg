@@ -86,6 +86,12 @@ jobs:
   # never leave ci/test skipped (GitHub treats a skipped check as passing).
   # The matrix result alone can read success when a leg never got a runner,
   # so it also requires every expected shard job to have succeeded.
+  # The jobs API lags: right after the last shard finishes it can still show
+  # that shard running, and on a rerun it lists the shards copied from the
+  # previous attempt only seconds after this job starts. The gate therefore
+  # polls this attempt's jobs for up to a minute, and stops at once when a
+  # shard has finished with anything but success or the matrix failed. Every
+  # failure lists each shard's attempt, status and conclusion.
   test:
     name: ci/test
     needs: shard
@@ -101,16 +107,41 @@ jobs:
           REPO: ${{ github.repository }}
           RESULT: ${{ needs.shard.result }}
           RUN: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
           SHARDS: "6"
         run: |
           set -euo pipefail
           echo "Matrix result: ${RESULT}"
-          test "${RESULT}" = success
-          jobs=$(gh api --paginate "repos/${REPO}/actions/runs/${RUN}/jobs?filter=latest&per_page=100")
-          passed=$(printf '%s' "${jobs}" | jq -r '.jobs[] | select(.name | startswith("ci/test shard ")) | select(.conclusion == "success") | .name' | sort -u)
           expected=$(seq 1 "${SHARDS}" | sed 's|^|ci/test shard |' | sort -u)
-          if [ "${passed}" != "${expected}" ]; then
-            echo "::error::Not every shard passed. Passed: $(printf '%s' "${passed}" | tr '\n' ',')"
-            exit 1
-          fi
-          echo "All ${SHARDS} shards passed."
+          for poll in 1 2 3 4 5 6 7; do
+            # One row per expected shard: name, run_attempt, status, conclusion.
+            if ! jobs=$(gh api --paginate "repos/${REPO}/actions/runs/${RUN}/attempts/${RUN_ATTEMPT}/jobs?per_page=100") \
+              || ! shards=$(printf '%s\n' "${jobs}" \
+                | jq -rs --argjson count "${SHARDS}" '
+                    [.[].jobs[]] as $jobs
+                    | range(1; $count + 1) | "ci/test shard \(.)" as $name
+                    | [$jobs[] | select(.name == $name) | [.name, .run_attempt, .status, .conclusion // "-"]]
+                    | (if . == [] then [[$name, "-", "missing", "-"]] else . end)[]
+                    | @tsv'); then
+              echo "::error::Could not read the jobs of attempt ${RUN_ATTEMPT}; no shard counts as passed."
+              shards=$(for index in $(seq 1 "${SHARDS}"); do printf 'ci/test shard %s\t-\tunknown\t-\n' "${index}"; done)
+              break
+            fi
+            passed=$(printf '%s\n' "${shards}" | awk -F '\t' '$4 == "success" { print $1 }' | sort -u)
+            if [ "${RESULT}" = success ] && [ "${passed}" = "${expected}" ]; then
+              echo "All ${SHARDS} shards passed."
+              exit 0
+            fi
+            if [ "${RESULT}" != success ] \
+              || printf '%s\n' "${shards}" | awk -F '\t' '$3 == "completed" && $4 != "success" { found = 1 } END { exit !found }'; then
+              break
+            fi
+            if [ "${poll}" -lt 7 ]; then
+              echo "Poll ${poll}: not every shard has passed yet; checking again in 10 s."
+              sleep 10
+            fi
+          done
+          echo "::error::Not every shard passed in attempt ${RUN_ATTEMPT} (matrix result: ${RESULT})."
+          echo "Shard jobs (name, run_attempt, status, conclusion):"
+          printf '%s\n' "${shards}"
+          exit 1
