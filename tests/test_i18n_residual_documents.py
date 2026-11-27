@@ -218,7 +218,14 @@ def test_formation_single_missing_neighbor_is_singular(localized_app):
         ),
         (
             "admin/ops.html",
-            {"counts": {}, "interest_registrations": [], "entries": [], "latest": {}},
+            {
+                "counts": {},
+                "interest_registrations": [],
+                "entries": [],
+                "latest": {},
+                "pending_registry": [],
+                "registry_needing_municipality": [],
+            },
             ["tableau de bord communal"],
             ["tableau de bord de la communauté"],
         ),
