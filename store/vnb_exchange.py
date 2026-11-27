@@ -233,7 +233,9 @@ def record_mutation_outcome(case_id: str, outcome: MutationOutcome) -> dict:
         return row
 
 
-def list_mutations(community_id: str, limit: int = 100) -> list[dict]:
+def list_mutations(
+    community_id: str, limit: int = 100, *, prioritize_attention: bool = False
+) -> list[dict]:
     """List the VNB projection with immutable LEG facts, scoped by community."""
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
@@ -242,8 +244,9 @@ def list_mutations(community_id: str, limit: int = 100) -> list[dict]:
                       before_facts, after_facts, state, next_action,
                       response_status, created_at, updated_at
                FROM vnb_mutation_cases WHERE community_id = %s
-               ORDER BY created_at DESC LIMIT %s""",
-            (community_id, max(1, min(int(limit), 100))),
+               ORDER BY (%s AND (state = 'failed' OR retryable)) DESC, created_at DESC
+               LIMIT %s""",
+            (community_id, prioritize_attention, max(1, min(int(limit), 100))),
         )
         return [dict(row) for row in cur.fetchall()]
 
@@ -795,8 +798,10 @@ def get_manual_package(community_id: str, case_id: str) -> dict | None:
         return dict(row) if row else None
 
 
-def list_cases(community_id: str, limit: int = 20) -> list[dict]:
-    """List private-safe submission case summaries, newest first."""
+def list_cases(
+    community_id: str, limit: int = 20, *, prioritize_attention: bool = False
+) -> list[dict]:
+    """List summaries newest first unless the workspace requests attention first."""
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
@@ -805,10 +810,10 @@ def list_cases(community_id: str, limit: int = 20) -> list[dict]:
                        failure_code, created_at, delivered_at, acknowledged_at
                 FROM vnb_submission_cases
                 WHERE community_id = %s
-                ORDER BY created_at DESC
+                ORDER BY (%s AND (state = 'failed' OR retryable)) DESC, created_at DESC
                 LIMIT %s
             """,
-            (community_id, max(1, min(int(limit), 100))),
+            (community_id, prioritize_attention, max(1, min(int(limit), 100))),
         )
         return [dict(row) for row in cur.fetchall()]
 

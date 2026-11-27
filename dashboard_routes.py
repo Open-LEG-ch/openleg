@@ -1204,11 +1204,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if result["error"]:
             abort(403)
+        overdue_only = request.args.get("overdue") == "1"
         return redirect(
             url_for(
                 ".leg_payments",
                 community_id=community_id,
                 upload=upload_id,
+                overdue=1 if overdue_only else None,
+                assignable=1
+                if not overdue_only and request.args.get("assignable") == "1"
+                else None,
             )
         )
 

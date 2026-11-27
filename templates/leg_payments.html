@@ -14,7 +14,7 @@
   <h1 id="payments-title" class="text-2xl font-bold mb-4">{{ _('Zahlungen') }}</h1>
   {% if not payment_notice_only %}
   <nav aria-labelledby="payments-title" class="mb-4 flex flex-wrap gap-x-4">
-    <a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, _anchor='statement-assignments') if overdue_only else '#statement-assignments' }}">{{ _('Zahlungsabgleich prüfen') }}</a>
+    <a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_payments', community_id=community_id, assignable=1 if bank_assignment_count|default(0) else none, _anchor='statement-assignments') if overdue_only else '#statement-assignments' }}">{{ _('Zahlungsabgleich prüfen') }}</a>
     <a class="inline-flex items-center text-brand underline" href="#open-invoices">{{ _('Überfällige Rechnungen') if overdue_only else _('Offene Rechnungen') }}</a>
   </nav>
   {% endif %}
@@ -66,7 +66,7 @@
     <section class="bg-white rounded-xl border p-6 mb-6">
       <h2 class="font-bold mb-2">{{ _('Bankzahlungen abgleichen') }}</h2>
       <p class="text-sm text-ink-muted mb-4">{{ _('Laden Sie einen ISO-20022-Kontoauszug im Format camt.053 oder camt.054 hoch. Nur eine eindeutige Zahlung mit passender Referenz, CHF-Betrag und LEG wird automatisch verbucht.') }}</p>
-      <form method="post" enctype="multipart/form-data" action="{{ url_for('.leg_billing_statement_import', community_id=community_id) }}">
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('.leg_billing_statement_import', community_id=community_id, assignable=1 if assignable_only else none, overdue=1 if overdue_only else none) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="file" name="statement" aria-label="{{ _('Kontoauszug') }}" accept=".xml,application/xml,text/xml" required class="block w-full border rounded-lg px-3 py-2 mb-3">
         <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">{{ _('Kontoauszug importieren') }}</button>

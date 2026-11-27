@@ -2309,3 +2309,42 @@ def test_unknown_upload_does_not_consume_assignment_feedback_after_role_revocati
     assert denial.status_code == 200
     assert "Sie dürfen in dieser LEG keine Zahlungen zuordnen." in denial.text
     assert workspace.get(response.location).status_code == 403
+
+
+@pytest.mark.parametrize("mode", ["assignable", "overdue"])
+def test_statement_upload_preserves_payments_mode_and_scoped_outcome(
+    workspace, mode
+):
+    import re
+    from io import BytesIO
+
+    _set_session(workspace, ADMIN)
+    page = workspace.get(f"{PAYMENTS}?{mode}=1")
+    action = re.search(r'enctype="multipart/form-data" action="([^"]+)"', page.text)
+    assert action
+    upload_url = unescape(action[1])
+    target = urlsplit(upload_url)
+    assert target.path == f"{BILLING}/statements"
+    assert parse_qs(target.query) == {mode: ["1"]}
+
+    other = "overdue" if mode == "assignable" else "assignable"
+    response = workspace.post(
+        upload_url + f"&{other}=true&next=https://example.invalid/",
+        data={
+            "csrf_token": "csrf-secret",
+            "statement": (
+                BytesIO(_statement_xml(reference="unknown")),
+                "statement.xml",
+            ),
+        },
+    )
+    assert response.status_code == 302
+    location = urlsplit(response.location)
+    assert not (location.scheme or location.netloc)
+    assert location.path == PAYMENTS
+    flags = parse_qs(location.query)
+    assert set(flags) == {mode, "upload"}
+    assert flags[mode] == ["1"]
+    notice = "Der Kontoauszug wurde importiert und abgeglichen."
+    assert notice in workspace.get(response.location).text
+    assert notice in workspace.get(response.location).text

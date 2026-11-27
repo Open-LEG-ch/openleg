@@ -284,10 +284,14 @@ def leg_overview(
     if vnb_exchange_available:
         try:
             vnb_submissions = (
-                db.list_vnb_submission_cases(community_id) if show_formation else []
+                db.list_vnb_submission_cases(
+                    community_id, prioritize_attention=operating
+                )
+                if show_formation
+                else []
             )
             vnb_mutations = (
-                db.list_vnb_mutations(community_id)
+                db.list_vnb_mutations(community_id, prioritize_attention=operating)
                 if workspace_page == "members"
                 else []
             )

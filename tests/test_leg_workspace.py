@@ -177,7 +177,7 @@ def test_formation_shows_unavailable_submission_data(
     )
     assert empty_state in client.get(page).text
 
-    def unavailable(_cid):
+    def unavailable(_cid, **_kwargs):
         raise dashboard.db.VnbExchangeStoreError("submission read unavailable")
 
     monkeypatch.setattr(dashboard.db, "list_vnb_submission_cases", unavailable)

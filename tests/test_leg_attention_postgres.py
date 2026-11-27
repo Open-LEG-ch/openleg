@@ -659,19 +659,21 @@ def test_delivery_task_matches_invoice_detail_actions(operating, job_status):
     ) in detail
 
 
-def test_overdue_payments_links_to_unfiltered_assignment(operating):
+def test_overdue_payments_keeps_bank_assignment_outside_the_invoice_filter(operating):
     invoice = _invoice("UNPAID-NOT-DUE", amount="15.00", due_date="2026-12-04")
     _event(invoice, "delivered")
+    payments_url = ROOT + "/payments"
+    without_bank_task = operating.get(payments_url + "?overdue=1").text
+    assert f'href="{payments_url}#statement-assignments"' in without_bank_task
     _bank_entry()
 
-    payments_url = ROOT + "/payments"
     overdue = operating.get(payments_url + "?overdue=1")
     assert overdue.status_code == 200
     assert 'name="invoice_id"' not in overdue.text
     assert f'id="open-invoice-{invoice}"' not in overdue.text
     assert 'id="statement-assignments"' not in overdue.text
     assert "Stellen Sie die passende Rechnung zuerst zu." not in overdue.text
-    assert f'href="{payments_url}#statement-assignments"' in overdue.text
+    assert f'href="{payments_url}?assignable=1#statement-assignments"' in overdue.text
 
     regular = operating.get(payments_url)
     assert regular.status_code == 200
@@ -759,3 +761,77 @@ def test_assignable_statement_filter_survives_pagination(operating, monkeypatch)
     assert confirmed.status_code == 303
     assert "assignable=1" in confirmed.location
     assert "Zahlung zugeordnet" in operating.get(confirmed.location).text
+
+
+def test_overdue_bank_link_finds_eligible_booking_behind_pending_entries(operating):
+    invoice = _invoice("AVAILABLE", amount="15.00", due_date="2026-12-04")
+    _event(invoice, "delivered")
+    _bank_entry()
+    _extra_statement([("CHF", "ref", "CRDT", False, "PDNG", "entry")] * 200)
+
+    overdue = operating.get(ROOT + "/payments?overdue=1")
+    link = re.search(r'href="([^"]+)"[^>]*>Zahlungsabgleich prüfen</a>', overdue.text)
+    assert link
+    assignment = operating.get(unescape(link[1]))
+    assert f'<option value="{invoice}">AVAILABLE' in assignment.text
+    assert link[1] == ROOT + "/payments?assignable=1#statement-assignments"
+
+
+@pytest.mark.parametrize("page", ["formation", "members"])
+def test_vnb_task_destination_keeps_older_failure_inside_page_limit(operating, page):
+    with db.get_connection() as conn, conn.cursor() as cur:
+        if page == "formation":
+            _failed_submission()
+            cur.execute(
+                """UPDATE vnb_submission_cases SET response_status='OLDER-FAILURE',
+                          created_at='2020-01-01' WHERE community_id=%s""",
+                (COMMUNITY,),
+            )
+            cur.execute(
+                """INSERT INTO vnb_submission_cases (
+                       case_id, community_id, created_by, adapter_key, contract_version,
+                       payload_fingerprint, state, next_action, response_status, created_at
+                   )
+                   SELECT 'submission-' || n, %s, %s, 'manual', '1', 'fingerprint-' || n,
+                          'rejected', 'review_rejection', 'RECENT-' || n,
+                          timestamptz '2026-01-01' + n * interval '1 day'
+                   FROM generate_series(1, 20) AS n""",
+                (COMMUNITY, ADMIN),
+            )
+        else:
+            _failed_mutation()
+            cur.execute(
+                """UPDATE vnb_mutation_cases SET response_status='OLDER-FAILURE',
+                          created_at='2020-01-01' WHERE community_id=%s""",
+                (COMMUNITY,),
+            )
+            cur.execute(
+                """INSERT INTO vnb_mutation_cases (
+                       case_id, mutation_id, community_id, participant_id, created_by,
+                       mutation_type, effective_date, source_agreement_id, before_facts,
+                       after_facts, adapter_key, contract_version, payload_fingerprint,
+                       state, next_action, response_status, created_at
+                   )
+                   SELECT 'case-' || n, 'mutation-' || n, %s, %s, %s, 'change',
+                          '2026-11-26', 'contract', '{}', '{}', 'manual', '1',
+                          'fingerprint-' || n, 'rejected', 'review_rejection',
+                          'RECENT-' || n, timestamptz '2026-01-01' + n * interval '1 day'
+                   FROM generate_series(1, 100) AS n""",
+                (COMMUNITY, PARTICIPANT, ADMIN),
+            )
+
+    anchor = "vnb-submissions-title" if page == "formation" else "vnb-mutations-title"
+    url = f"{ROOT}/{page}#{anchor}"
+    assert f'href="{url}"' in operating.get(OVERVIEW).text
+    detail = operating.get(url).text
+    newest = 20 if page == "formation" else 100
+    assert "OLDER-FAILURE" in detail
+    assert detail.index("OLDER-FAILURE") < detail.index(f"RECENT-{newest}")
+    assert detail.index(f"RECENT-{newest}") < detail.index(f"RECENT-{newest - 1}")
+    assert "RECENT-1<" not in detail
+
+    # Retry decisions and API callers still need the chronological store read.
+    list_cases = (
+        db.list_vnb_submission_cases if page == "formation" else db.list_vnb_mutations
+    )
+    assert list_cases(COMMUNITY)[0]["response_status"] == f"RECENT-{newest}"
