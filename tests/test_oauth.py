@@ -673,3 +673,66 @@ def test_refresh_secret_redacted(caplog):
     with caplog.at_level(logging.WARNING):
         logging.getLogger(__name__).warning("refresh token olr_refreshsecret")
     assert "olr_refreshsecret" not in caplog.text
+
+
+def test_upstream_calls_pass_the_https_redirect_behind_tls(monkeypatch):
+    """Production Flask redirects plain HTTP unless the edge marks it as HTTPS.
+
+    The sidecar reaches Flask on loopback behind the same TLS edge, so public
+    reads, introspection and operator calls must not be redirected.
+    """
+    import asyncio
+    import time
+
+    from flask import Flask, jsonify
+    from flask_talisman import Talisman
+
+    from mcp_sidecar.server import create_app
+    from tests.test_mcp_sidecar import session
+    from tests.test_mcp_sidecar_postgres import operator_server
+
+    upstream = Flask(__name__)
+    Talisman(upstream, force_https=True, content_security_policy=None)
+    identity = {
+        "active": True,
+        "iss": "https://auth.example",
+        "aud": "https://mcp.example/mcp",
+        "exp": time.time() + 300,
+        "community_id": "leg",
+        "scope": "community:leg billing.read",
+        "downstream_token": "olk_separate",
+    }
+
+    @upstream.post("/oauth/introspect")
+    def introspect():
+        return jsonify(identity)
+
+    @upstream.get("/api/v1/search")
+    def search():
+        return jsonify(query="Baden", count=0, limit=10, results=[])
+
+    @upstream.get("/api/operator/v1/communities/leg/billing/periods")
+    def periods():
+        return jsonify(items=[], next_cursor=None)
+
+    monkeypatch.setenv("OPENLEG_MCP_ENABLED", "true")
+    monkeypatch.setenv("OPENLEG_OAUTH_ISSUER", identity["iss"])
+    monkeypatch.setenv("OPENLEG_MCP_RESOURCE", identity["aud"])
+    monkeypatch.setenv("OPENLEG_OAUTH_INTROSPECTION_SECRET", "s" * 64)
+    with operator_server(upstream) as origin:
+        monkeypatch.setenv("OPENLEG_OPERATOR_ORIGIN", origin)
+        app = create_app()
+
+        async def check():
+            async with app.router.lifespan_context(app):
+                async with session(app) as sdk:
+                    result = await sdk.call_tool("get_search", {"q": "Baden"})
+                    assert not result.is_error, result
+                    assert result.structured_content["query"] == "Baden"
+                async with session(app, {"Authorization": "Bearer ola_access"}) as sdk:
+                    result = await sdk.call_tool(
+                        "list_billing_periods", {"community_id": "leg"}
+                    )
+                    assert not result.is_error, result
+
+        asyncio.run(check())
