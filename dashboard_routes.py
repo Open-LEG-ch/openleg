@@ -1012,11 +1012,12 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         building_id = _require_dashboard_session()
         statement_before = request.args.get("statement_before", type=int)
         invoice_before = request.args.get("invoice_before", type=int)
-        statement_upload = request.args.get("upload")
-        if statement_upload is not None and not re.fullmatch(
-            r"[a-f0-9]{32}", statement_upload
-        ):
-            abort(404)
+        upload_arg = request.args.get("upload")
+        statement_upload = (
+            upload_arg
+            if upload_arg and re.fullmatch(r"[a-f0-9]{32}", upload_arg)
+            else None
+        )
         receipt = request.args.get("assignment")
         pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})
         submission = pending.get(receipt)
@@ -1046,7 +1047,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         except db.BillingStoreError:
             abort(503)
         if view["error"]:
-            if not feedback:
+            if upload_arg is not None or not feedback:
                 abort(403)
             # The redirect can outlive a role change. Keep the feedback generic
             # and render no billing data if the viewer lacks audit access.
@@ -1057,7 +1058,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             feedback = {
                 "error": _("Sie dürfen in dieser LEG keine Zahlungen zuordnen."),
             }
-        elif statement_upload is not None and view["statement_summary"] is None:
+        elif upload_arg is not None and (
+            statement_upload is None or view["statement_summary"] is None
+        ):
             abort(404)
         if (
             feedback

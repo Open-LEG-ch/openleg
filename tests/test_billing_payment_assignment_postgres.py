@@ -2159,3 +2159,109 @@ def test_upload_outcomes_are_scoped_and_survive_reload(workspace):
         assert page.status_code == 404
         assert "upload.xml" not in page.text
     assert workspace.get(PAYMENTS).status_code == 200
+
+
+def _upload_exists(location):
+    upload_id = parse_qs(urlsplit(location).query)["upload"][0]
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM bank_statement_uploads WHERE id=%s", (upload_id,))
+        return cur.fetchone() is not None
+
+
+@pytest.mark.parametrize("delete", ["membership", "profile", "leg"])
+def test_upload_outcome_is_deleted_with_its_owner(workspace, delete):
+    _set_session(workspace, ADMIN)
+    location = _upload_statement(workspace, _statement_xml(reference="unknown"))
+    _assert_upload_result(workspace.get(location), imported=True)
+    assert _upload_exists(location)
+    if delete == "profile":
+        assert db.delete_building(ADMIN)
+    else:
+        with db.get_connection() as conn, conn.cursor() as cur:
+            if delete == "membership":
+                cur.execute(
+                    "DELETE FROM community_members WHERE community_id=%s AND building_id=%s",
+                    (COMMUNITY, ADMIN),
+                )
+            else:
+                cur.execute(
+                    "DELETE FROM communities WHERE community_id=%s", (COMMUNITY,)
+                )
+    assert not _upload_exists(location)
+    assert len(db.list_bank_statement_entries(COMMUNITY)) == 1
+
+
+def test_recreated_profile_and_membership_cannot_read_old_upload(workspace):
+    _set_session(workspace, ADMIN)
+    body = _statement_xml(reference="unknown")
+    location = _upload_statement(workspace, body)
+    assert db.delete_building(ADMIN)
+    assert db.save_building(
+        ADMIN,
+        ADMIN + "@example.invalid",
+        {"address": "Recreated profile", "lat": 47.2, "lon": 8.2},
+        {},
+        verified=True,
+    )
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO community_members (community_id, building_id, role, status)
+               VALUES (%s, %s, 'admin', 'confirmed')""",
+            (COMMUNITY, ADMIN),
+        )
+    _set_session(workspace, ADMIN)
+    assert workspace.get(location).status_code == 404
+    _assert_upload_result(
+        workspace.get(_upload_statement(workspace, body)), duplicate=True
+    )
+
+
+def test_membership_migration_discards_legacy_upload_outcomes_once(workspace):
+    _, result = _import()
+    legacy_id = "a" * 32
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("DROP TABLE bank_statement_uploads")
+        cur.execute("""
+            CREATE TABLE bank_statement_uploads (
+                id CHAR(32) PRIMARY KEY,
+                statement_import_id BIGINT NOT NULL
+                    REFERENCES bank_statement_imports(id) ON DELETE CASCADE,
+                actor_id VARCHAR(64) NOT NULL,
+                duplicate BOOLEAN NOT NULL
+            )
+        """)
+        cur.execute(
+            "INSERT INTO bank_statement_uploads VALUES (%s, %s, %s, false)",
+            (legacy_id, result["statement_import_id"], ADMIN),
+        )
+    db.create_tables()
+    _set_session(workspace, ADMIN)
+    assert workspace.get(f"{PAYMENTS}?upload={legacy_id}").status_code == 404
+    current = _upload_statement(workspace, _statement_xml(reference="unknown"))
+    db.create_tables()
+    _assert_upload_result(workspace.get(current), imported=True)
+
+
+def test_unknown_upload_does_not_consume_assignment_feedback_after_role_revocation(
+    workspace,
+):
+    invoice = _invoice()
+    entry, _ = _import()
+    response = _assign(workspace, entry, invoice, confirm="")
+    assert response.status_code == 303
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE community_members SET access_roles='[]' WHERE community_id=%s AND building_id=%s",
+            (COMMUNITY, ACTOR),
+        )
+
+    redirect = urlsplit(response.location)
+    unknown = redirect._replace(query=f"{redirect.query}&upload={'0' * 32}").geturl()
+    rejected = workspace.get(unknown)
+    assert rejected.status_code == 403
+    assert 'id="assignment-feedback"' not in rejected.text
+
+    denial = workspace.get(response.location)
+    assert denial.status_code == 200
+    assert "Sie dürfen in dieser LEG keine Zahlungen zuordnen." in denial.text
+    assert workspace.get(response.location).status_code == 403

@@ -1788,14 +1788,14 @@ def confirm_payment(
         return response
 
 
-def _statement_import_result(cur, import_id, *, duplicate, actor_id, upload_id):
+def _statement_import_result(cur, import_id, *, duplicate, membership_id, upload_id):
     if upload_id is not None:
         cur.execute(
             """
-            INSERT INTO bank_statement_uploads (id, statement_import_id, actor_id, duplicate)
+            INSERT INTO bank_statement_uploads (id, statement_import_id, membership_id, duplicate)
             VALUES (%s, %s, %s, %s)
             """,
-            (upload_id, import_id, actor_id, duplicate),
+            (upload_id, import_id, membership_id, duplicate),
         )
     cur.execute(
         """
@@ -1835,6 +1835,20 @@ def reconcile_bank_statement(
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             _lock_payment_booking(cur, community_id)
+            membership_id = None
+            if upload_id is not None:
+                cur.execute(
+                    """
+                    SELECT id FROM community_members
+                    WHERE community_id = %s AND building_id = %s AND status = 'confirmed'
+                    FOR KEY SHARE
+                    """,
+                    (community_id, actor_id),
+                )
+                membership = cur.fetchone()
+                if not membership:
+                    raise BillingStoreError("Upload membership no longer exists")
+                membership_id = membership["id"]
             cur.execute(
                 """
                 INSERT INTO bank_statement_imports (
@@ -1866,7 +1880,7 @@ def reconcile_bank_statement(
                     cur,
                     cur.fetchone()["id"],
                     duplicate=True,
-                    actor_id=actor_id,
+                    membership_id=membership_id,
                     upload_id=upload_id,
                 )
             import_id = imported["id"]
@@ -1968,14 +1982,18 @@ def reconcile_bank_statement(
                     ),
                 )
             return _statement_import_result(
-                cur, import_id, duplicate=False, actor_id=actor_id, upload_id=upload_id
+                cur,
+                import_id,
+                duplicate=False,
+                membership_id=membership_id,
+                upload_id=upload_id,
             )
     except Exception as error:
         logger.error("[DB] Error reconciling bank statement: %s", error)
         raise BillingStoreError("Could not reconcile bank statement") from error
 
 
-def get_bank_statement_summary(community_id, upload_id, actor_id):
+def get_bank_statement_summary(community_id, upload_id, building_id):
     """Summarize one import and apply the workspace's entry eligibility rules."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
@@ -1988,7 +2006,11 @@ def get_bank_statement_summary(community_id, upload_id, actor_id):
                     SELECT i.id, i.source_name, i.imported_at, i.community_id, u.duplicate
                     FROM bank_statement_imports i
                     LEFT JOIN bank_statement_uploads u
-                      ON u.id = %s AND u.statement_import_id = i.id AND u.actor_id = %s
+                      ON u.id = %s AND u.statement_import_id = i.id AND u.membership_id = (
+                          SELECT m.id FROM community_members m
+                          WHERE m.community_id = i.community_id AND m.building_id = %s
+                            AND m.status = 'confirmed'
+                      )
                     WHERE i.community_id = %s AND (%s IS NULL OR u.id IS NOT NULL)
                     ORDER BY i.id DESC LIMIT 1
                 )
@@ -2009,7 +2031,7 @@ def get_bank_statement_summary(community_id, upload_id, actor_id):
                     ON e.statement_import_id = s.id AND e.community_id = s.community_id
                 GROUP BY s.id, s.source_name, s.imported_at, s.duplicate
                 """,
-                (upload_id, actor_id, community_id, upload_id),
+                (upload_id, building_id, community_id, upload_id),
             )
             summary = cur.fetchone()
             if not summary:
