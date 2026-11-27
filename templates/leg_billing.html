@@ -176,7 +176,7 @@
       </p>
       {% if period.approvable %}
       {% if period.prepared_by %}<p class="text-sm text-ink-muted mb-2">{{ _('Vorbereitet durch:') }} <span class="font-semibold">{{ period.prepared_by }}</span></p>{% endif %}
-      {% if can_approve_billing and (not require_dual_control or (period.prepared_by and period.prepared_by != viewer_building_id)) %}
+      {% if can_approve_billing and period.can_approve %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="confirm-approval-{{ period.id }}" class="flex items-start gap-2 text-sm mb-4">

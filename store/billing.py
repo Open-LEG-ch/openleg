@@ -263,6 +263,29 @@ def record_billing_period_preparer(
         raise BillingStoreError("Could not record billing preparer") from e
 
 
+def get_billing_preparer_membership(
+    community_id: str, building_id: str, *, cursor: BillingCursor | None = None
+) -> dict[str, object] | None:
+    """Read the recorded preparer's membership without neighbour discovery data."""
+    if cursor is None:
+        try:
+            with _get_connection() as conn, conn.cursor() as cur:
+                return get_billing_preparer_membership(
+                    community_id, building_id, cursor=cur
+                )
+        except Exception as e:
+            raise BillingStoreError("Could not load billing preparer") from e
+    cursor.execute(
+        """
+        SELECT role, access_roles, status FROM community_members
+        WHERE community_id = %s AND building_id = %s
+        """,
+        (community_id, building_id),
+    )
+    row = cursor.fetchone()
+    return dict(row) if row else None
+
+
 def get_active_communities() -> list[dict]:
     """Get all communities with status='active'."""
     try:

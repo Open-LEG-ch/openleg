@@ -21,6 +21,7 @@ from typing import cast
 from zoneinfo import ZoneInfo
 
 import billing_policy
+import community_access
 import quartierakku
 from billing_types import (
     BatteryConfig,
@@ -1045,6 +1046,27 @@ def prepare_invoice_snapshots(
     return snapshots
 
 
+def dual_control_allows_approval(
+    community_id: str,
+    prepared_by: str | None,
+    approver_id: str | None,
+    *,
+    require_dual_control: bool,
+    cursor: BillingCursor | None = None,
+) -> bool:
+    """Require a different, confirmed preparer with preparation rights."""
+    if not require_dual_control:
+        return True
+    if not prepared_by or prepared_by == "system" or not approver_id:
+        return False
+    return prepared_by != approver_id and community_access.allows(
+        billing_store.get_billing_preparer_membership(
+            community_id, prepared_by, cursor=cursor
+        ),
+        community_access.PREPARE_BILLING,
+    )
+
+
 def approve_billing_period(
     period_id: int,
     community_id: str,
@@ -1111,10 +1133,12 @@ def approve_billing_period(
                 raise BillingApprovalError(
                     "Only a draft billing period can be approved"
                 )
-            if community_row.get("require_dual_control") and (
-                not period.get("prepared_by")
-                or period.get("prepared_by") == approver_id
-                or not approver_id
+            if not dual_control_allows_approval(
+                community_id,
+                period.get("prepared_by"),
+                approver_id,
+                require_dual_control=bool(community_row.get("require_dual_control")),
+                cursor=cur,
             ):
                 raise BillingApprovalError(
                     "Dual-control approval requires a different recorded preparer"

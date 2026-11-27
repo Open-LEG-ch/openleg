@@ -13,7 +13,9 @@ import pytest
 import billing_approval
 import billing_reconciliation
 import billing_runner
+import community_access
 from tests import test_e66_evidence_postgres as e66
+from tests.test_dashboard_access_routes import _set_session
 
 interest_database = e66.interest_database
 calculated_client = e66.calculated_client
@@ -249,7 +251,7 @@ def test_rounded_e66_quantities_reach_approved_invoice_without_a_second_document
     )
 
 
-def prepare_rounded(fixture):
+def prepare_rounded(fixture, *, prepared_by="member"):
     client, db, payload, source = fixture
     assert e66.post_e66(client, source).status_code == 201
     start, end = (
@@ -257,7 +259,7 @@ def prepare_rounded(fixture):
         for key in ("period_start", "period_end")
     )
     result = billing_runner.run_billing_period(
-        payload["community_id"], start, end, prepared_by="member"
+        payload["community_id"], start, end, prepared_by=prepared_by
     )
     return result["period_id"], db.get_billing_period(
         result["period_id"], payload["community_id"]
@@ -300,6 +302,109 @@ def test_forged_precision_drafts_do_not_create_invoices(rounded_delivery, forger
         assert cur.fetchone()["count"] == 0
         cur.execute("SELECT status FROM billing_periods WHERE id = %s", (period_id,))
         assert cur.fetchone()["status"] == "draft"
+
+
+@pytest.mark.parametrize("preparer", ["system", "unknown", "consumer-b", "producer"])
+def test_dual_control_rejects_ineligible_preparer(rounded_delivery, preparer):
+    client, db, payload, _ = rounded_delivery
+    cid = payload["community_id"]
+    assert db.set_community_dual_control(cid, True, "member")
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by=None)
+    if preparer == "producer":
+        # Even a role with preparation rights must belong to a confirmed member.
+        assert db.set_member_access_roles(
+            cid, "producer", [community_access.BILLING_PREPARER], "member"
+        )
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE community_members SET status = 'invited' "
+                "WHERE community_id = %s AND building_id = 'producer'",
+                (cid,),
+            )
+    elif preparer == "consumer-b":
+        assert db.create_community_record("Other LEG", preparer, "simple", "")
+    # Exercise existing rows with an invalid preparer recorded.
+    assert db.record_billing_period_preparer(period_id, cid, preparer)
+
+    with pytest.raises(billing_approval.BillingApprovalError, match="Dual-control"):
+        billing_approval.approve_billing_period(period_id, cid, approver_id="member")
+
+    _set_session(client, "member")
+    workspace = f"/leg/community/{cid}/billing"
+    approve = f"{workspace}/period/{period_id}/approve"
+    page = client.get(workspace)
+    assert page.status_code == 200
+    assert approve not in page.text
+    assert f"{workspace}/period/{period_id}/prepare" in page.text
+    response = client.post(
+        approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+    )
+    assert response.status_code == 403
+    assert db.get_billing_period(period_id, cid)["status"] == "draft"
+    assert db.list_community_invoices(cid) == []
+
+
+@pytest.mark.parametrize(
+    "preparer_role", [community_access.ADMIN, community_access.BILLING_PREPARER]
+)
+def test_automated_draft_can_be_submitted_for_separate_approval(
+    rounded_delivery, preparer_role
+):
+    client, db, payload, _ = rounded_delivery
+    cid = payload["community_id"]
+    assert db.set_community_dual_control(cid, True, "member")
+    assert db.set_member_access_roles(cid, "producer", [preparer_role], "member")
+    period_id, period = prepare_rounded(rounded_delivery, prepared_by=None)
+    assert period["prepared_by"] is None
+    if preparer_role == community_access.ADMIN:
+        assert db.record_billing_period_preparer(period_id, cid, "system")
+    workspace = f"/leg/community/{cid}/billing"
+    prepare = f"{workspace}/period/{period_id}/prepare"
+    approve = f"{workspace}/period/{period_id}/approve"
+    approval_form = {"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+
+    _set_session(client, "producer")
+    page = client.get(workspace)
+    assert page.status_code == 200
+    assert prepare in page.text
+    assert approve not in page.text
+    assert (
+        client.post(
+            prepare, data={"csrf_token": "csrf-secret", "confirm_prepare": "yes"}
+        ).status_code
+        == 302
+    )
+    assert db.get_billing_period(period_id, cid)["prepared_by"] == "producer"
+
+    with pytest.raises(billing_approval.BillingApprovalError, match="Dual-control"):
+        billing_approval.approve_billing_period(period_id, cid, approver_id="producer")
+    assert approve not in client.get(workspace).text
+    assert client.post(approve, data=approval_form).status_code == 403
+    assert db.list_community_invoices(cid) == []
+
+    _set_session(client, "member")
+    assert approve in client.get(workspace).text
+    assert client.post(approve, data=approval_form).status_code == 302
+    assert db.get_billing_period(period_id, cid)["status"] == "issued"
+    assert len(db.list_community_invoices(cid)) == 3
+
+
+def test_automated_draft_can_be_approved_without_dual_control(rounded_delivery):
+    client, db, payload, _ = rounded_delivery
+    cid = payload["community_id"]
+    period_id, period = prepare_rounded(rounded_delivery, prepared_by=None)
+    assert period["prepared_by"] is None
+    _set_session(client, "member")
+    workspace = f"/leg/community/{cid}/billing"
+    approve = f"{workspace}/period/{period_id}/approve"
+    assert approve in client.get(workspace).text
+    assert (
+        client.post(
+            approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+        ).status_code
+        == 302
+    )
+    assert len(db.list_community_invoices(cid)) == 3
 
 
 def test_rounding_policy_keeps_withdrawal_and_dual_control_gates(rounded_delivery):
