@@ -84,7 +84,7 @@ def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
         ROOT + "/formation": "Gründung · LEG Musterweg | OpenLEG",
         ROOT + "/settings": "Einstellungen · LEG Musterweg | OpenLEG",
         ROOT + "/payments": "Zahlungen · LEG Musterweg | OpenLEG",
-        ROOT + "/invoices": "Rechnungen · LEG Musterweg | OpenLEG",
+        ROOT + "/invoices": "Rechnungen | OpenLEG",
         ROOT + "/billing": "Abrechnung · LEG Musterweg | OpenLEG",
         ROOT + "/billing-policy": "Abrechnungs-Richtlinie · LEG Musterweg | OpenLEG",
     }
