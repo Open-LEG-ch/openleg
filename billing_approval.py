@@ -1089,11 +1089,12 @@ def dual_control_allows_approval(
     *,
     require_dual_control: bool,
     cursor: BillingCursor | None = None,
+    lock: bool = True,
     require_approver_capability: bool = False,
 ) -> bool:
     """Require a confirmed preparer with separate sign-in access.
 
-    The issuance cursor holds the checked memberships and addresses until commit.
+    Issuance locks the checked identities. Read-only snapshots pass lock=False.
     Dashboard issuance distinguishes lost approval rights from a dual-control failure.
     """
     if not require_dual_control:
@@ -1108,7 +1109,11 @@ def dual_control_allows_approval(
             _require_billing_approver(cursor, community_id, approver_id)
         return False
     memberships = billing_store.get_billing_approval_memberships(
-        community_id, approver_id, prepared_by, cursor=cursor, lock=cursor is not None
+        community_id,
+        approver_id,
+        prepared_by,
+        cursor=cursor,
+        lock=lock and cursor is not None,
     )
     if not _approver_has_billing_permission(memberships):
         if cursor is not None and require_approver_capability:

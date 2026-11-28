@@ -601,7 +601,7 @@ def test_issued_period_retry_does_not_requalify_historical_preparer(rounded_deli
     assert db.list_community_invoices(cid) == invoices
 
 
-def test_billing_pages_check_the_shared_preparer_once_per_request(
+def test_billing_pages_check_the_shared_preparer_once_per_snapshot(
     rounded_delivery, monkeypatch
 ):
     client, db, _, _ = rounded_delivery
@@ -628,7 +628,7 @@ def test_billing_pages_check_the_shared_preparer_once_per_request(
     )
 
     period_page = f"{workspace}/period/{period_id}"
-    for expected_queries in (2, 3):
+    for expected_queries in (3, 5):
         page = client.get(period_page)
         assert page.status_code == 200
         assert f'action="{period_page}/approve"' in page.text
@@ -636,6 +636,7 @@ def test_billing_pages_check_the_shared_preparer_once_per_request(
             sum(call.kwargs.get("cursor") is not None for call in lookup.call_args_list)
             == expected_queries
         )
+    assert all(call.kwargs.get("lock") is False for call in lookup.call_args_list)
 
 
 def test_approval_returns_retry_conflict_for_contended_participant_registration(

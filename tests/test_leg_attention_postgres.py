@@ -1133,8 +1133,9 @@ def test_delivery_task_skips_invoice_when_original_registration_is_gone(
     _nav_count(html, "invoices", 1)
 
 
-def test_concurrent_preparation_does_not_mix_attention_snapshots(
-    operating, monkeypatch
+@pytest.mark.parametrize("concurrent_change", ["prepare", "revoke"])
+def test_concurrent_change_does_not_mix_attention_snapshots(
+    operating, monkeypatch, concurrent_change
 ):
     from contextlib import contextmanager
 
@@ -1165,11 +1166,19 @@ def test_concurrent_preparation_does_not_mix_attention_snapshots(
                 not changed
                 and "SELECT m.building_id, m.role, m.status, m.access_roles" in sql
             ):
-                with connect() as conn, conn.cursor() as other:
-                    other.execute(
-                        "UPDATE billing_periods SET prepared_by=%s WHERE id=%s",
-                        (ADMIN, draft),
-                    )
+                if concurrent_change == "revoke":
+                    with connect() as conn, conn.cursor() as other:
+                        other.execute(
+                            """UPDATE community_members SET access_roles = '[]'
+                               WHERE community_id=%s AND building_id=%s""",
+                            (COMMUNITY, AUDITOR),
+                        )
+                else:
+                    with connect() as conn, conn.cursor() as other:
+                        other.execute(
+                            "UPDATE billing_periods SET prepared_by=%s WHERE id=%s",
+                            (ADMIN, draft),
+                        )
                 changed = True
 
     class Connection:
@@ -1193,4 +1202,28 @@ def test_concurrent_preparation_does_not_mix_attention_snapshots(
     assert "<title>Oktober 2026 wartet auf Ihre Freigabe. | OpenLEG</title>" in html
     assert f'href="{ROOT}/billing/period/{draft}"' in html
     refreshed = operating.get(OVERVIEW).text
-    assert "wartet auf Ihre" not in refreshed
+    if concurrent_change == "revoke":
+        assert (
+            "<title>Oktober 2026 wartet auf Ihre Vorbereitung. | OpenLEG</title>"
+            in refreshed
+        )
+    else:
+        assert "wartet auf Ihre" not in refreshed
+
+
+def test_dual_control_attention_works_with_one_pooled_connection(
+    operating, monkeypatch
+):
+    _dual_control()
+    _roles(AUDITOR, "billing_preparer")
+    draft = _period(10, status="draft", preparer=AUDITOR)
+    monkeypatch.setattr(db._connection_pool, "maxconn", 1)
+
+    response = operating.get(OVERVIEW)
+    assert response.status_code == 200
+    assert (
+        "<title>Oktober 2026 wartet auf Ihre Freigabe. | OpenLEG</title>"
+        in response.text
+    )
+    assert f'href="{ROOT}/billing/period/{draft}"' in response.text
+    _nav_count(response.text, "billing", 1)
