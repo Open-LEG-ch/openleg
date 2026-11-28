@@ -125,27 +125,33 @@ def test_seed_keeps_september_exercise_empty_and_august_approvable(village):
     assert "01.10.2026 00:00" in metering.text
     assert "SONNWIL-SIM-2026-08-VALID" not in metering.text
     path = prefix + "/leg/community/sonnwil-operating-leg/billing"
-    page = client.get(path)
-    assert 'name="confirm_prepare"' in page.text
-    assert 'name="confirm_approval"' not in page.text
     with (
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cursor,
     ):
         cursor.execute("SELECT id FROM billing_periods")
         period_id = cursor.fetchone()[0]
-    prepare = path + f"/period/{period_id}/prepare"
+    period_path = path + f"/period/{period_id}"
+    overview = client.get(path)
+    assert overview.status_code == 200
+    assert f'href="{period_path}"' in overview.text
+    page = client.get(period_path)
+    assert page.status_code == 200
+    assert 'name="confirm_prepare"' in page.text
+    assert 'name="confirm_approval"' not in page.text
     assert (
         client.post(
-            prepare, data={"csrf_token": _csrf(page), "confirm_prepare": "yes"}
+            period_path + "/prepare",
+            data={"csrf_token": _csrf(page), "confirm_prepare": "yes"},
         ).status_code
         == 302
     )
     _switch(client, prefix, "administrator")
-    page = client.get(path)
+    page = client.get(period_path)
+    assert page.status_code == 200
     assert "Entwurf" in page.text
     assert 'name="confirm_approval"' in page.text
-    approve = path + f"/period/{period_id}/approve"
+    approve = period_path + "/approve"
     assert client.post(approve, data={"csrf_token": _csrf(page)}).status_code == 400
     response = client.post(
         approve,
