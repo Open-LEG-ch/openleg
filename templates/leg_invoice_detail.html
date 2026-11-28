@@ -3,7 +3,7 @@
 {% set workspace_section = "invoices" %}
 {% set workspace_billing = true %}
 {% set invoice_title = _('Rechnung %(number)s', number=invoice.invoice_number or invoice.id) %}
-{% block meta %}<title>{{ invoice_title }} | OpenLEG</title>{% endblock %}
+{% set workspace_title = invoice_title %}
 {% block workspace_content %}
 <div class="max-w-3xl wrap-anywhere">
   <a href="{{ url_for('.leg_invoice_list', community_id=community_id) }}" class="inline-flex items-center font-semibold text-brand underline">{{ _('Zurück zu den Rechnungen') }}</a>
@@ -99,7 +99,7 @@
         <p><span class="font-semibold">{{ _(event.previous_status_label) }}</span> {{ _('zu') }} <span class="font-semibold">{{ _(event.new_status_label) }}</span></p>
         <p class="text-ink-muted">{{ event.created_at }} · {{ event.actor_id }}</p>
         {% if event.reason %}<p>{{ _('Grund:') }} {{ event.reason }}</p>{% endif %}
-        {% if event.reference and (event.payment_match or {}).get('reference_stand_in') == 'AcctSvcrRef' %}<p>{{ _('Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz') }}: {{ event.reference }}</p>
+        {% if event.reference and event.reference_stand_in == 'AcctSvcrRef' %}<p>{{ _('Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz') }}: {{ event.reference }}</p>
         {% elif event.reference %}<p>{{ _('Referenz:') }} {{ event.reference }}</p>{% endif %}
         {% if event.effective_date %}<p>{{ _('Datum:') }} {{ event.effective_date }}</p>{% endif %}
       </li>

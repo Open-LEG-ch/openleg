@@ -1972,7 +1972,8 @@ def list_invoice_events(invoice_id, community_id):
             cur.execute(
                 """
                 SELECT event_type, actor_id, previous_state, new_state,
-                       reason, reference, effective_date, created_at
+                       reason, reference, effective_date, created_at,
+                       payment_match->>'reference_stand_in' AS reference_stand_in
                 FROM invoice_lifecycle_events
                 WHERE invoice_id = %s AND community_id = %s
                 ORDER BY id

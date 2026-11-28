@@ -183,7 +183,7 @@ def test_invoice_list_combines_filters_and_search(workspace, invoices):
 def test_invoice_list_has_a_title_columns_and_tabular_amounts(workspace, invoices):
     response = workspace.get(LIST)
     assert response.status_code == 200
-    assert "<title>Rechnungen | OpenLEG</title>" in response.text
+    assert "<title>Rechnungen · Invoice LEG | OpenLEG</title>" in response.text
     assert "<table" in response.text
     for text in (
         "Rechnungsnummer",
@@ -226,9 +226,9 @@ def test_invoice_page_titles_are_localized(
     )
     invoice = _invoice("INV-LOCAL")
     listing = workspace.get(LIST, query_string={"lang": locale}, follow_redirects=True)
-    assert f"<title>{list_title} | OpenLEG</title>" in listing.text
+    assert f"<title>{list_title} · Invoice LEG | OpenLEG</title>" in listing.text
     assert (
-        f"<title>{detail_title} | OpenLEG</title>"
+        f"<title>{detail_title} · Invoice LEG | OpenLEG</title>"
         in workspace.get(f"{LIST}/{invoice}").text
     )
 
@@ -263,7 +263,7 @@ def test_invoice_detail_shows_metadata_audit_and_reply(workspace):
     assert response.status_code == 200
     assert response.headers["Cache-Control"] == "no-store"
     for text in (
-        "<title>Rechnung INV-DETAIL | OpenLEG</title>",
+        "<title>Rechnung INV-DETAIL · Invoice LEG | OpenLEG</title>",
         f'href="{LIST}"',
         "Bärenweg 12",
         "12.30 CHF",

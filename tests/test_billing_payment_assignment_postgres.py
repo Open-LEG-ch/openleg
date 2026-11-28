@@ -1667,7 +1667,9 @@ def test_preparer_assigns_credit_without_reference_by_servicer_reference(workspa
             COMMUNITY, event_types=("invoice.paid", "payment.match.confirmed")
         )
     ) == ["invoice.paid", "payment.match.confirmed"]
-    audit = workspace.get(BILLING).text.split("Audit-Verlauf", 1)[1]
+    detail = workspace.get(f"/leg/community/{COMMUNITY}/invoices/{invoice}")
+    assert detail.status_code == 200
+    audit = detail.text.split("Audit-Verlauf", 1)[1]
     assert f"{STAND_IN}: bank-entry-1" in audit
 
 

@@ -2474,7 +2474,7 @@ msgid "Beteiligte klären"
 msgstr ""
 
 #: templates/admin/abrechnungen.html:134 templates/leg_invoice_detail.html:23
-#: templates/leg_invoices.html:35 templates/member_invoice_detail.html:224
+#: templates/leg_invoices.html:34 templates/member_invoice_detail.html:224
 #: templates/release/donations.html:6
 msgid "Betrag"
 msgstr ""
@@ -5880,7 +5880,7 @@ msgstr ""
 msgid "Ergebnis zum Fernzugriff"
 msgstr ""
 
-#: templates/leg_invoices.html:62 templates/leg_verzeichnis/liste.html:22
+#: templates/leg_invoices.html:61 templates/leg_verzeichnis/liste.html:22
 #: templates/release/search.html:47
 msgid "Ergebnisseiten"
 msgstr ""
@@ -6483,7 +6483,7 @@ msgstr ""
 msgid "Fähigkeiten"
 msgstr ""
 
-#: templates/leg_invoice_detail.html:27 templates/leg_invoices.html:37
+#: templates/leg_invoice_detail.html:27 templates/leg_invoices.html:36
 #: templates/member_invoices.html:24 templates/verein/dues.html:2
 msgid "Fällig am"
 msgstr ""
@@ -7235,7 +7235,7 @@ msgstr ""
 msgid "Gesamtbetrag"
 msgstr ""
 
-#: templates/leg_invoice_detail.html:24 templates/leg_invoices.html:52
+#: templates/leg_invoice_detail.html:24 templates/leg_invoices.html:51
 msgid "Gesamtbetrag unlesbar"
 msgstr ""
 
@@ -8952,7 +8952,7 @@ msgstr ""
 msgid "Keine Prognose verfügbar"
 msgstr ""
 
-#: templates/leg_invoices.html:73
+#: templates/leg_invoices.html:72
 msgid "Keine Rechnungen gefunden."
 msgstr ""
 
@@ -10985,8 +10985,8 @@ msgstr ""
 
 #: billing_workspace.py:269 billing_workspace.py:276 billing_workspace.py:323 billing_workspace.py:328
 #: dashboard.py:526 templates/leg_invoice_detail.html:20 templates/leg_invoice_detail.html:22
-#: templates/leg_invoice_detail.html:27 templates/leg_invoices.html:46 templates/leg_invoices.html:49
-#: templates/leg_invoices.html:55 templates/utility/dashboard.html:64
+#: templates/leg_invoice_detail.html:27 templates/leg_invoices.html:45 templates/leg_invoices.html:48
+#: templates/leg_invoices.html:54 templates/utility/dashboard.html:64
 #: templates/utility/dashboard.html:133 templates/utility/dashboard.html:141
 msgid "Nicht angegeben"
 msgstr ""
@@ -11172,7 +11172,7 @@ msgstr ""
 msgid "Noch keine angenommene Quelle. Importieren Sie den vollständigen September."
 msgstr ""
 
-#: templates/leg_invoices.html:75
+#: templates/leg_invoices.html:74
 msgid "Noch keine freigegebenen Rechnungen vorhanden."
 msgstr ""
 
@@ -11250,7 +11250,7 @@ msgstr ""
 msgid "Notizen zurückziehen"
 msgstr ""
 
-#: templates/leg_invoices.html:14
+#: templates/leg_invoices.html:13
 msgid "Nummer, Adresse oder Zahlungsreferenz"
 msgstr ""
 
@@ -11344,7 +11344,7 @@ msgstr ""
 msgid "Nächste Schritte"
 msgstr ""
 
-#: templates/leg_invoices.html:68 templates/leg_verzeichnis/liste.html:22
+#: templates/leg_invoices.html:67 templates/leg_verzeichnis/liste.html:22
 #: templates/release/search.html:47 templates/verein/queue.html:17
 msgid "Nächste Seite"
 msgstr ""
@@ -11964,7 +11964,7 @@ msgstr ""
 msgid "Period not found"
 msgstr ""
 
-#: billing_workspace.py:119 templates/leg_invoice_detail.html:22 templates/leg_invoices.html:33
+#: billing_workspace.py:119 templates/leg_invoice_detail.html:22 templates/leg_invoices.html:32
 msgid "Periode"
 msgstr ""
 
@@ -12772,8 +12772,7 @@ msgstr ""
 msgid "Rechnung nicht gefunden."
 msgstr ""
 
-#: templates/leg_invoices.html:4 templates/leg_invoices.html:6 templates/leg_invoices.html:28
-#: templates/leg_workspace_base.html:13
+#: templates/leg_invoices.html:5 templates/leg_invoices.html:27 templates/leg_workspace_base.html:13
 msgid "Rechnungen"
 msgstr ""
 
@@ -12785,7 +12784,7 @@ msgstr ""
 msgid "Rechnungen freigeben, verschicken, korrigieren und eingegangene Zahlungen zuordnen."
 msgstr ""
 
-#: templates/leg_invoices.html:10
+#: templates/leg_invoices.html:9
 msgid "Rechnungen suchen"
 msgstr ""
 
@@ -12822,7 +12821,7 @@ msgstr ""
 msgid "Rechnungsfragen ausprobieren"
 msgstr ""
 
-#: templates/leg_invoices.html:32
+#: templates/leg_invoices.html:31
 msgid "Rechnungsnummer"
 msgstr ""
 
@@ -12836,7 +12835,7 @@ msgid ""
 "Buchstabe oder Ziffer."
 msgstr ""
 
-#: templates/leg_invoices.html:19
+#: templates/leg_invoices.html:18
 msgid "Rechnungsstatus filtern"
 msgstr ""
 
@@ -13307,7 +13306,7 @@ msgid ""
 "durch die Gründung. Kostenlos, Open Source, gehostet in der Schweiz."
 msgstr ""
 
-#: templates/leg_invoices.html:66 templates/leg_verzeichnis/liste.html:22
+#: templates/leg_invoices.html:65 templates/leg_verzeichnis/liste.html:22
 #: templates/leg_verzeichnis/liste.html:23 templates/release/search.html:47
 #, python-format
 msgid "Seite %(page)s"
@@ -13977,7 +13976,7 @@ msgid "Starten Sie mit Ihrer Adresse. Die Karte zeigt Haushalte anonymisiert."
 msgstr ""
 
 #: templates/admin/ops.html:91 templates/admin/ops.html:263 templates/leg_invoice_detail.html:26
-#: templates/leg_invoice_detail.html:129 templates/leg_invoices.html:36
+#: templates/leg_invoice_detail.html:129 templates/leg_invoices.html:35
 #: templates/leg_verzeichnis/detail.html:32 templates/leg_verzeichnis/eintragen.html:66
 #: templates/leg_workspace/formation.html:45 templates/leg_workspace/members.html:10
 #: templates/sandbox/questions.html:28 templates/utility/dashboard.html:55
@@ -14186,7 +14185,7 @@ msgstr ""
 msgid "Suche: %(query)s"
 msgstr ""
 
-#: templates/gemeinde/verzeichnis.html:35 templates/leg_invoices.html:15
+#: templates/gemeinde/verzeichnis.html:35 templates/leg_invoices.html:14
 #: templates/leg_verzeichnis/liste.html:16 templates/partials/site_search.html:4
 #: templates/partials/site_search.html:6 templates/release/search.html:16
 msgid "Suchen"
@@ -14307,7 +14306,7 @@ msgstr ""
 
 #: templates/admin/abrechnungen.html:112 templates/admin/abrechnungen.html:134
 #: templates/documents/participant_contract.html:14 templates/leg_invoice_detail.html:18
-#: templates/leg_invoices.html:34 templates/leg_workspace/battery_shares.html:24
+#: templates/leg_invoices.html:33 templates/leg_workspace/battery_shares.html:24
 msgid "Teilnehmer"
 msgstr ""
 
@@ -15281,7 +15280,7 @@ msgstr ""
 msgid "Vorher prüfen"
 msgstr ""
 
-#: templates/leg_invoices.html:64 templates/leg_verzeichnis/liste.html:22
+#: templates/leg_invoices.html:63 templates/leg_verzeichnis/liste.html:22
 #: templates/release/search.html:47 templates/verein/queue.html:17
 msgid "Vorherige Seite"
 msgstr ""
