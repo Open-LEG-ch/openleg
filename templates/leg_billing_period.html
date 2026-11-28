@@ -2,7 +2,7 @@
 {% set workspace_page = "billing" %}
 {% set workspace_billing = true %}
 {% set heading = _('Abrechnung %(period)s', period=period.period_label|periodlabel) %}
-{% block meta %}<title>{{ heading }} | OpenLEG</title>{% endblock %}
+{% set workspace_title = heading %}
 {% block workspace_content %}
 <p class="mb-2"><a href="{{ url_for('.leg_billing_workspace', community_id=community_id) }}" class="inline-flex items-center text-brand underline">{{ _('Abrechnungen') }}</a></p>
 <h1 class="mb-6 text-3xl">{{ heading }}</h1>

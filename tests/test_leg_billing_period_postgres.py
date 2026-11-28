@@ -49,7 +49,7 @@ def test_billing_lists_local_periods_and_links_to_the_detail(workspace):  # noqa
 
     response = workspace.get(BILLING)
     assert response.status_code == 200
-    assert "<title>Abrechnungen | OpenLEG</title>" in response.text
+    assert "<title>Abrechnungen · Invoice LEG | OpenLEG</title>" in response.text
     assert f'href="{url}"' in response.text
     assert "August 2026" in response.text
     assert "Entwurf" in response.text
@@ -57,7 +57,9 @@ def test_billing_lists_local_periods_and_links_to_the_detail(workspace):  # noqa
 
     response = workspace.get(url)
     assert response.status_code == 200
-    assert "<title>Abrechnung August 2026 | OpenLEG</title>" in response.text
+    assert (
+        "<title>Abrechnung August 2026 · Invoice LEG | OpenLEG</title>" in response.text
+    )
     assert f'href="{BILLING}"' in response.text
 
 
@@ -302,7 +304,9 @@ def test_empty_and_unapprovable_period_show_help_without_actions(workspace):  # 
     )
     assert conflict.status_code == 409
     assert "Dieser Abrechnungsentwurf konnte nicht freigegeben werden." in conflict.text
-    assert "<title>Abrechnung August 2026 | OpenLEG</title>" in conflict.text
+    assert (
+        "<title>Abrechnung August 2026 · Invoice LEG | OpenLEG</title>" in conflict.text
+    )
 
 
 @pytest.mark.parametrize("dual_control", [False, True])
@@ -426,9 +430,9 @@ def test_period_titles_are_localized(
     listing = workspace.get(
         BILLING, query_string={"lang": locale}, follow_redirects=True
     )
-    assert f"<title>{list_title} | OpenLEG</title>" in listing.text
+    assert f"<title>{list_title} · Invoice LEG | OpenLEG</title>" in listing.text
     detail = workspace.get(f"{BILLING}/period/{period}")
-    assert f"<title>{detail_title} | OpenLEG</title>" in detail.text
+    assert f"<title>{detail_title} · Invoice LEG | OpenLEG</title>" in detail.text
 
 
 def test_period_marks_unknown_legacy_preparation_time(workspace):  # noqa: F811

@@ -1,7 +1,7 @@
 {% extends "leg_workspace_base.html" %}
 {% set workspace_page = "payments" if payment_section else "billing" %}
 {% set workspace_billing = not payment_notice_only %}
-{% block meta %}<title>{{ _('Zahlungen') if payment_section else _('Abrechnungen') }} | OpenLEG</title>{% endblock %}
+{% set workspace_title = _('Zahlungen') if payment_section else _('Abrechnungen') %}
 {% block workspace_content %}
 {% set can_prepare_billing = can_prepare_billing|default(false) %}
 {% set can_approve_billing = can_approve_billing|default(false) %}
