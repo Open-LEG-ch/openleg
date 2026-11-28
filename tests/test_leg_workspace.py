@@ -392,6 +392,17 @@ def test_billing_approval_error_keeps_the_period_context(workspace, monkeypatch)
     import billing_approval
     import dashboard
 
+    monkeypatch.setattr(
+        dashboard.formation_wizard,
+        "get_user_communities",
+        lambda _bid: [
+            {
+                "community_id": "c0ffee",
+                "name": "LEG Musterweg",
+                "member_status": "confirmed",
+            }
+        ],
+    )
     client, _ = workspace
     _set_session(client, "b-admin")
     monkeypatch.setattr(
@@ -452,7 +463,10 @@ def test_billing_approval_error_keeps_the_period_context(workspace, monkeypatch)
     )
     assert response.status_code == 409
     assert "Dieser Abrechnungsentwurf konnte nicht freigegeben werden." in response.text
-    assert "<title>Abrechnung August 2026 | OpenLEG</title>" in response.text
+    assert (
+        "<title>Abrechnung August 2026 · LEG Musterweg | OpenLEG</title>"
+        in response.text
+    )
     assert "SYNTHETIC-PAID" not in response.text
     assert "Noch keine Bankzahlungen abgeglichen." not in response.text
 
