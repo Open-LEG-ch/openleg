@@ -113,10 +113,12 @@ def test_recreated_household_cannot_read_previous_registration_question(
         == 400
     )
     _switch(client, prefix, "administrator")
-    assert (
-        "43.20"
-        in client.get(prefix + "/leg/community/sonnwil-operating-leg/billing").text
+    admin_detail = client.get(
+        f"{prefix}/leg/community/sonnwil-operating-leg/invoices/{invoice}"
     )
+    assert admin_detail.status_code == 200
+    assert "43.20" in admin_detail.text
+    assert "Original registration private question" in admin_detail.text
     with (
         _workspace_connection(village, prefix) as connection,
         connection.cursor() as cursor,

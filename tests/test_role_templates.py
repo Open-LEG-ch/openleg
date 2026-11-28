@@ -15,6 +15,11 @@ def template_app():
     application = Flask(__name__, template_folder=str(TEMPLATES))
     application.secret_key = "role-template-test"
     init_app(application)
+    application.add_url_rule(
+        "/leg/community/<community_id>/invoices",
+        endpoint="leg_invoice_list",
+        view_func=lambda community_id: "",
+    )
     return application
 
 
