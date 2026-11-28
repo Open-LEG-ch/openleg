@@ -148,7 +148,7 @@ def test_dual_control_refuses_the_person_who_prepared_the_period(monkeypatch):
     monkeypatch.setattr(
         dashboard.db,
         "get_billing_period",
-        lambda _period_id: {"prepared_by": "b1"},
+        lambda _period_id, _community_id: {"status": "draft", "prepared_by": "b1"},
     )
 
     result = dashboard.leg_approve_billing_period("c1", "b1", 42)
@@ -168,7 +168,11 @@ def test_dual_control_refuses_a_period_without_a_recorded_preparer(monkeypatch):
         "get_community_status",
         lambda _community_id, _viewer=None: {"require_dual_control": True},
     )
-    monkeypatch.setattr(dashboard.db, "get_billing_period", lambda _period_id: {})
+    monkeypatch.setattr(
+        dashboard.db,
+        "get_billing_period",
+        lambda _period_id, _community_id: {"status": "draft"},
+    )
 
     result = dashboard.leg_approve_billing_period("c1", "b2", 42)
 

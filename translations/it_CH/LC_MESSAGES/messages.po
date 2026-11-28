@@ -23094,3 +23094,8 @@ msgstr "Invia di nuovo"
 #: templates/partials/registry_trust.html:16
 msgid ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
 msgstr ", ma non da un operatore che ha rivendicato la voce."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard_routes.py:1194
+msgid "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
+msgstr "Un'altra operazione sta modificando le autorizzazioni. Riprova."

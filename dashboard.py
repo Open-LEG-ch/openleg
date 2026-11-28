@@ -614,10 +614,32 @@ def leg_billing_workspace_view(
     )
     if not member:
         return {"error": _N("Kein Zugriff.")}
+    from functools import cache
+
     capabilities = community_access.capabilities_for(member)
     can_prepare = community_access.PREPARE_BILLING in capabilities
-    periods = db.list_community_billing_periods(community_id)
-    flag_counts = _veracity_flag_counts(periods)
+    can_approve = community_access.APPROVE_BILLING in capabilities
+    community = None
+    if can_approve:
+        community = formation_wizard.get_community_status(community_id, building_id)
+    stored_periods = db.list_community_billing_periods(community_id)
+    flag_counts, periods = _veracity_flag_counts(stored_periods), []
+    allows_approval = cache(billing_approval.dual_control_allows_approval)
+    for stored_period in stored_periods:
+        period = _billing_workspace_period(
+            stored_period, flag_counts.get(stored_period.get("id"), 0)
+        )
+        period["can_approve"] = (
+            community is not None
+            and period["approvable"]
+            and allows_approval(
+                community_id,
+                period["prepared_by"],
+                building_id,
+                require_dual_control=bool(community.get("require_dual_control")),
+            )
+        )
+        periods.append(period)
     invoices = [
         billing_lifecycle.describe_invoice(invoice)
         for invoice in db.list_community_invoices(community_id)
@@ -707,10 +729,7 @@ def leg_billing_workspace_view(
     view = {
         "error": None,
         "community_id": community_id,
-        "periods": [
-            _billing_workspace_period(period, flag_counts.get(period.get("id"), 0))
-            for period in periods
-        ],
+        "periods": periods,
         "invoices": invoices,
         "statement_invoice_candidates": [
             invoice
@@ -729,14 +748,8 @@ def leg_billing_workspace_view(
         "next_statement_before": next_statement_before,
         "billing_approved": False,
         "approval_error": None,
-        "viewer_building_id": building_id,
-        "require_dual_control": bool(
-            (
-                formation_wizard.get_community_status(community_id, building_id) or {}
-            ).get("require_dual_control")
-        ),
         "can_prepare_billing": can_prepare,
-        "can_approve_billing": community_access.APPROVE_BILLING in capabilities,
+        "can_approve_billing": can_approve,
         "can_import_bank_statement": _is_confirmed_admin(member),
     }
     view.update(extra)
@@ -939,6 +952,11 @@ def leg_correct_invoice(
     return {"error": None}
 
 
+DUAL_CONTROL_APPROVAL_MESSAGE = _N(
+    "Vorbereitung und Freigabe müssen durch verschiedene Personen erfolgen."
+)
+
+
 def leg_approve_billing_period(
     community_id: str, building_id: str, period_id: int
 ) -> dict:
@@ -949,19 +967,23 @@ def leg_approve_billing_period(
         return {"error": _N("Kein Zugriff."), "invoices": []}
     status = formation_wizard.get_community_status(community_id, building_id) or {}
     if status.get("require_dual_control"):
-        period = db.get_billing_period(period_id) or {}
-        if not period.get("prepared_by") or period.get("prepared_by") == building_id:
+        period = db.get_billing_period(period_id, community_id) or {}
+        if not billing_approval.dual_control_allows_approval(
+            community_id,
+            period.get("prepared_by"),
+            building_id,
+            require_dual_control=period.get("status") == "draft",
+        ):
             return {
-                "error": (
-                    _N(
-                        "Vorbereitung und Freigabe müssen durch verschiedene "
-                        "Personen erfolgen."
-                    )
-                ),
+                "error": DUAL_CONTROL_APPROVAL_MESSAGE,
+                "dual_control_denied": True,
                 "invoices": [],
             }
     invoices = billing_approval.approve_billing_period(
-        period_id, community_id, approver_id=building_id
+        period_id,
+        community_id,
+        approver_id=building_id,
+        require_approver_capability=True,
     )
     return {"error": None, "invoices": invoices}
 

@@ -381,17 +381,14 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
     @bp.route("/dashboard/access/request", methods=["POST"])
     @_rate_limit(limiter, "5 per minute")
     def dashboard_access_request():
-        email = (request.form.get("email") or "").strip().lower()
         generic_message = _(
             "Falls ein Profil zu dieser E-Mail-Adresse existiert, haben wir einen "
             "neuen Zugangslink gesendet."
         )
-        (
-            is_valid_email,
-            normalized_email,
-            _error,
-        ) = security_utils.validate_email_address(email)
-        if not is_valid_email or not normalized_email:
+        normalized_email = security_utils.normalize_dashboard_sign_in_email(
+            request.form.get("email")
+        )
+        if not normalized_email:
             return render_city_template(
                 "dashboard.html",
                 **_dashboard_public_context(
@@ -1171,6 +1168,23 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             + "?period=prepared"
         )
 
+    def _billing_approval_error_response(community_id, building_id, message, status):
+        try:
+            view = dashboard_module.leg_billing_workspace_view(
+                community_id, building_id
+            )
+        except db.BillingStoreError:
+            abort(503)
+        if view["error"]:
+            abort(403)
+        view["approval_error"] = message
+        return (
+            render_leg_workspace(
+                "leg_billing.html", csrf_token=_dashboard_csrf_token(), **view
+            ),
+            status,
+        )
+
     @bp.route(
         "/leg/community/<community_id>/billing/period/<int:period_id>/approve",
         methods=["POST"],
@@ -1184,33 +1198,42 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             result = dashboard_module.leg_approve_billing_period(
                 community_id, building_id, period_id
             )
-        except billing_approval.BillingApprovalError:
-            # Domain conflict (invalid, stale, or unreconciled draft): tell the
-            # admin without leaking storage or reconciliation internals.
-            try:
-                view = dashboard_module.leg_billing_workspace_view(
-                    community_id, building_id
-                )
-            except db.BillingStoreError:
-                abort(503)
-            if view["error"]:
-                abort(403)
-            view["approval_error"] = _(
-                "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. "
-                "Er ist unvollständig, nicht vollständig abgeglichen oder wurde "
-                "zwischenzeitlich verändert. Prüfen Sie die Periode und versuchen "
-                "Sie es erneut."
+        except billing_approval.BillingApprovalAccessDenied:
+            abort(403)
+        except billing_approval.BillingApprovalConflict:
+            return _billing_approval_error_response(
+                community_id,
+                building_id,
+                _(
+                    "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
+                ),
+                409,
             )
-            return (
-                render_leg_workspace(
-                    "leg_billing.html",
-                    csrf_token=_dashboard_csrf_token(),
-                    **view,
+        except billing_approval.DualControlApprovalError:
+            return _billing_approval_error_response(
+                community_id,
+                building_id,
+                dashboard_module.DUAL_CONTROL_APPROVAL_MESSAGE,
+                409,
+            )
+        except billing_approval.BillingApprovalError:
+            return _billing_approval_error_response(
+                community_id,
+                building_id,
+                _(
+                    "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. "
+                    "Er ist unvollständig, nicht vollständig abgeglichen oder wurde "
+                    "zwischenzeitlich verändert. Prüfen Sie die Periode und versuchen "
+                    "Sie es erneut."
                 ),
                 409,
             )
         except db.BillingStoreError:
             abort(503)
+        if result.get("dual_control_denied"):
+            return _billing_approval_error_response(
+                community_id, building_id, result["error"], 403
+            )
         if result["error"]:
             abort(403)
         return redirect(

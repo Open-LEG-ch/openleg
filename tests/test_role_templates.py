@@ -23,7 +23,7 @@ def test_billing_actions_fail_closed_when_capabilities_are_absent(template_app):
         rendered = render_template(
             "leg_billing.html",
             community_id="c1",
-            periods=[{"id": 1, "approvable": True}],
+            periods=[{"id": 1, "approvable": True, "can_approve": True}],
             invoices=[],
             queries_by_invoice={},
         )
@@ -36,7 +36,7 @@ def test_approval_only_operator_sees_the_approval_action(template_app):
         rendered = render_template(
             "leg_billing.html",
             community_id="c1",
-            periods=[{"id": 1, "approvable": True}],
+            periods=[{"id": 1, "approvable": True, "can_approve": True}],
             invoices=[],
             can_prepare_billing=False,
             can_approve_billing=True,

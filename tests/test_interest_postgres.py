@@ -19,7 +19,7 @@ import database as db
 
 
 @pytest.fixture
-def interest_database(monkeypatch):
+def interest_database(monkeypatch, request):
     url = os.environ.get("DATABASE_URL")
     if not url:
         pytest.skip("requires PostgreSQL DATABASE_URL")
@@ -28,7 +28,13 @@ def interest_database(monkeypatch):
     admin = psycopg2.connect(urlunsplit(parsed._replace(path="/postgres")))
     admin.autocommit = True
     with admin.cursor() as cur:
-        cur.execute(f'CREATE DATABASE "{name}"')
+        locale = getattr(request, "param", None)
+        if locale:
+            cur.execute(
+                f'CREATE DATABASE "{name}" TEMPLATE template0 LOCALE %s', (locale,)
+            )
+        else:
+            cur.execute(f'CREATE DATABASE "{name}"')
     pool = None
     try:
         pool = psycopg2.pool.ThreadedConnectionPool(

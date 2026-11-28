@@ -19404,3 +19404,7 @@ msgstr "Erneut einleiten"
 #: templates/partials/registry_trust.html:16
 msgid ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
 msgstr ", aber nicht durch einen Betreiber, der den Eintrag beansprucht hat."
+
+#: dashboard_routes.py:1194
+msgid "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
+msgstr "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."

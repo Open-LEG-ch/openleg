@@ -18,6 +18,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import cast
 
+from psycopg2.errors import LockNotAvailable
 from psycopg2.extras import Json
 
 import billing_lifecycle
@@ -45,6 +46,10 @@ class BillingStoreError(RuntimeError):
 
 class BillingPolicyConflict(BillingStoreError):
     """A billing policy version already exists for this effective date."""
+
+
+class BillingApprovalIdentitiesBusy(BillingStoreError):
+    """The approval identities are locked by a concurrent change."""
 
 
 def _is_unique_violation(error) -> bool:
@@ -263,6 +268,86 @@ def record_billing_period_preparer(
         raise BillingStoreError("Could not record billing preparer") from e
 
 
+def lock_billing_approver_membership(
+    cursor: BillingCursor, community_id: str, approver_id: str
+) -> dict[str, object] | None:
+    """Lock approval rights without locking the approver's profile."""
+    try:
+        cursor.execute(
+            """
+            SELECT role, access_roles, status FROM community_members
+            WHERE community_id = %s AND building_id = %s
+            FOR SHARE NOWAIT
+            """,
+            (community_id, approver_id),
+        )
+    except LockNotAvailable as e:
+        raise BillingApprovalIdentitiesBusy(
+            "Billing approval membership is being updated"
+        ) from e
+    row = cursor.fetchone()
+    return dict(row) if row else None
+
+
+def get_billing_approval_memberships(
+    community_id: str,
+    approver_id: str,
+    preparer_id: str,
+    *,
+    cursor: BillingCursor | None = None,
+    lock: bool = False,
+) -> dict[str, object] | None:
+    """Read the approver and preparer, using dashboard email matching."""
+    if cursor is None:
+        try:
+            with _get_connection() as conn, conn.cursor() as cur:
+                return get_billing_approval_memberships(
+                    community_id, approver_id, preparer_id, cursor=cur, lock=lock
+                )
+        except BillingApprovalIdentitiesBusy:
+            raise
+        except Exception as e:
+            raise BillingStoreError(
+                "Could not load billing approval memberships"
+            ) from e
+    # Role changes can hold the membership while their audit insert waits for
+    # the community row already locked by approval.
+    lock_clause = "FOR SHARE OF membership, building NOWAIT" if lock else ""
+    try:
+        cursor.execute(
+            f"""
+            WITH identities AS MATERIALIZED (
+                SELECT membership.building_id, membership.role, membership.access_roles,
+                       membership.status, building.email
+                FROM community_members membership
+                JOIN buildings building ON building.building_id = membership.building_id
+                WHERE membership.community_id = %s
+                  AND membership.building_id IN (%s, %s)
+                ORDER BY membership.building_id
+                {lock_clause}
+            )
+            SELECT preparer.role, preparer.access_roles, preparer.status,
+                   jsonb_build_object(
+                       'role', approver.role,
+                       'access_roles', approver.access_roles,
+                       'status', approver.status
+                   ) AS approver_membership,
+                   preparer.email AS preparer_email, approver.email AS approver_email,
+                   LOWER(preparer.email) = LOWER(approver.email) AS same_sign_in_email
+            FROM identities approver
+            LEFT JOIN identities preparer ON preparer.building_id = %s
+            WHERE approver.building_id = %s
+            """,
+            (community_id, approver_id, preparer_id, preparer_id, approver_id),
+        )
+    except LockNotAvailable as e:
+        raise BillingApprovalIdentitiesBusy(
+            "Billing approval identities are being updated"
+        ) from e
+    row = cursor.fetchone()
+    return dict(row) if row else None
+
+
 def get_active_communities() -> list[dict]:
     """Get all communities with status='active'."""
     try:
@@ -459,15 +544,15 @@ def lock_billing_registrations(
     cur: BillingCursor, participants: AbstractSet[str]
 ) -> dict[str, str]:
     """Lock registrations until the caller's approval transaction completes."""
-    cur.execute(
-        """SELECT building_id,referral_code FROM buildings
-           WHERE building_id=ANY(%s) ORDER BY building_id FOR SHARE""",
-        (sorted(participants),),
-    )
-    return {
-        cast(str, row["building_id"]): cast(str, row["referral_code"])
-        for row in cur.fetchall()
-    }
+    try:
+        cur.execute(
+            """SELECT building_id,referral_code FROM buildings
+               WHERE building_id=ANY(%s) ORDER BY building_id FOR SHARE NOWAIT""",
+            (sorted(participants),),
+        )
+    except LockNotAvailable as e:
+        raise BillingApprovalIdentitiesBusy from e
+    return _locked_registration_codes(cur)
 
 
 def insert_approved_invoice(
@@ -1831,3 +1916,10 @@ def list_billing_policies(community_id: str) -> list[dict]:
     except Exception as e:
         logger.error(f"[DB] Error listing billing policies: {e}")
         raise BillingStoreError("Could not list billing policies") from e
+
+
+def _locked_registration_codes(cur: BillingCursor) -> dict[str, str]:
+    return {
+        cast(str, row["building_id"]): cast(str, row["referral_code"])
+        for row in cur.fetchall()
+    }
