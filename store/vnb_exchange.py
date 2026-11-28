@@ -233,17 +233,40 @@ def record_mutation_outcome(case_id: str, outcome: MutationOutcome) -> dict:
         return row
 
 
-def list_mutations(community_id: str, limit: int = 100) -> list[dict]:
+def latest_attempts_sql(table: str) -> str:
+    """Latest case for each contract and payload in the requested LEG."""
+    return f"""
+        SELECT DISTINCT ON (community_id, contract_version, payload_fingerprint)
+               case_id, state
+        FROM {table}
+        WHERE community_id = %(community)s
+        ORDER BY community_id, contract_version, payload_fingerprint,
+                 created_at DESC, case_id DESC
+    """
+
+
+def list_mutations(
+    community_id: str, limit: int = 100, *, prioritize_attention: bool = False
+) -> list[dict]:
     """List the VNB projection with immutable LEG facts, scoped by community."""
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """SELECT case_id, mutation_id, community_id, participant_id, actor,
-                      mutation_type, effective_date, source_agreement_id,
-                      before_facts, after_facts, state, next_action,
-                      response_status, created_at, updated_at
-               FROM vnb_mutation_cases WHERE community_id = %s
-               ORDER BY created_at DESC LIMIT %s""",
-            (community_id, max(1, min(int(limit), 100))),
+            f"""SELECT c.case_id, community_id, mutation_id, participant_id, actor,
+                       mutation_type, effective_date, source_agreement_id,
+                       before_facts, after_facts, c.state, next_action,
+                       response_status, created_at, updated_at
+                FROM vnb_mutation_cases c
+                LEFT JOIN ({latest_attempts_sql("vnb_mutation_cases")}) latest
+                  ON %(prioritize)s AND latest.case_id = c.case_id
+                WHERE community_id = %(community)s
+                ORDER BY (latest.case_id IS NOT NULL AND (c.state = 'failed' OR retryable)) DESC,
+                         created_at DESC
+                LIMIT %(limit)s""",
+            {
+                "community": community_id,
+                "prioritize": prioritize_attention,
+                "limit": max(1, min(int(limit), 100)),
+            },
         )
         return [dict(row) for row in cur.fetchall()]
 
@@ -795,20 +818,31 @@ def get_manual_package(community_id: str, case_id: str) -> dict | None:
         return dict(row) if row else None
 
 
-def list_cases(community_id: str, limit: int = 20) -> list[dict]:
-    """List private-safe submission case summaries, newest first."""
+def list_cases(
+    community_id: str, limit: int = 20, *, prioritize_attention: bool = False
+) -> list[dict]:
+    """List summaries newest first unless the workspace requests attention first."""
     with _get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            """
-                SELECT case_id, community_id, actor, adapter_key, contract_version,
-                       state, next_action, response_status, retryable,
-                       failure_code, created_at, delivered_at, acknowledged_at
-                FROM vnb_submission_cases
-                WHERE community_id = %s
-                ORDER BY created_at DESC
-                LIMIT %s
+            f"""
+                SELECT c.case_id, community_id, actor, adapter_key, contract_version,
+                       payload_fingerprint, c.state, next_action, response_status, retryable,
+                       failure_code, created_at, delivered_at, acknowledged_at,
+                       latest.case_id IS NOT NULL AS is_latest_attempt
+                FROM vnb_submission_cases c
+                LEFT JOIN ({latest_attempts_sql("vnb_submission_cases")}) latest
+                  ON latest.case_id = c.case_id
+                WHERE community_id = %(community)s
+                ORDER BY (%(prioritize)s AND latest.case_id IS NOT NULL
+                          AND (c.state = 'failed' OR retryable)) DESC,
+                         created_at DESC, c.case_id DESC
+                LIMIT %(limit)s
             """,
-            (community_id, max(1, min(int(limit), 100))),
+            {
+                "community": community_id,
+                "prioritize": prioritize_attention,
+                "limit": max(1, min(int(limit), 100)),
+            },
         )
         return [dict(row) for row in cur.fetchall()]
 

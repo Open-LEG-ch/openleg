@@ -76,6 +76,7 @@ history or retention period. Scheduled email delivery reads the current choice.
 | store/correspondence | Life of the LEG | Not implemented | - | The shared journal is the LEG's memory |
 | store/agent_confirmation | No automatic deletion; pending requests expire after 72 hours | Not implemented | Expiry changes state and emits an event; it does not delete the request | Canonical payload, fingerprint, originating actor, confirming identity and result for replay and audit |
 | store/vnb_exchange | Life of the LEG | Community deletion cascades; no separate deletion flow | Formation and membership cases, private packages and response evidence | Nothing after community deletion; ordinary reads exclude private blobs |
+| store/workspace_attention | Computed per workspace request | Follows the source tables | No separate records | Source records keep their existing retention rules. Task counts and destinations are recomputed from current workflow state and access rights. |
 | store/dashboard_profile | Follows its tables | Profile deletion | Rows via CASCADE (see store/building) | Nothing of its own |
 | store/token | Until used or expired | Profile deletion (CASCADE); expiry at use time | The token rows | Nothing |
 | store/access_token | Until used or expired | Profile deletion (CASCADE on `dashboard_access_tokens`) | The token rows | Nothing; hashes make leftovers useless |

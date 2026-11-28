@@ -575,6 +575,27 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 for member in memberships
                 if member["member_status"] == "confirmed"
             ]
+            attention = view.get("attention")
+            if not attention and (
+                current := next(
+                    (
+                        member
+                        for member in view["workspace_communities"]
+                        if member["community_id"] == community_id
+                        and member.get("status") == "active"
+                    ),
+                    None,
+                )
+            ):
+                attention = dashboard_module.leg_workspace_attention(
+                    community_id,
+                    building_id,
+                    {**current, "status": current["member_status"]},
+                    require_dual_control=bool(current.get("require_dual_control")),
+                )
+            if attention:
+                view["workspace_counts"] = attention["counts"]
+                view["bank_assignment_count"] = attention["bank_assignment_count"]
             profile = db.get_building(building_id) or {}
             view["workspace_account"] = profile.get("email")
         return render_city_template(template, **view)
@@ -856,7 +877,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         except db.ActivationDenied:
             abort(403)
         except (db.ActivationConflict, ValueError) as error:
-            context = dashboard_module.leg_overview(community_id, building_id)
+            context = dashboard_module.leg_overview(
+                community_id, building_id, workspace_page=None
+            )
             if context.get("error"):
                 abort(403)
             return render_leg_workspace(
@@ -1038,6 +1061,8 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 if invoice_before and invoice_before > 0
                 else None,
                 statement_upload=statement_upload,
+                overdue_only=request.args.get("overdue") == "1",
+                assignable_only=request.args.get("assignable") == "1",
                 review_invoice_id=(
                     feedback["invoice_id"]
                     if feedback and feedback.get("duplicate_review_required")
@@ -1066,6 +1091,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             feedback
             and feedback.get("duplicate_review_required")
             and view.get("can_prepare_billing")
+            and not view["overdue_only"]
         ):
             entry_id, invoice_id = feedback["entry_id"], feedback["invoice_id"]
             try:
@@ -1180,11 +1206,16 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(503)
         if result["error"]:
             abort(403)
+        overdue_only = request.args.get("overdue") == "1"
         return redirect(
             url_for(
                 ".leg_payments",
                 community_id=community_id,
                 upload=upload_id,
+                overdue=1 if overdue_only else None,
+                assignable=1
+                if not overdue_only and request.args.get("assignable") == "1"
+                else None,
             )
         )
 
@@ -1248,6 +1279,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 ".leg_payments",
                 community_id=community_id,
                 assignment=receipt,
+                assignable=1 if request.args.get("assignable") == "1" else None,
                 statement_before=statement_before,
                 invoice_before=request.args.get("invoice_before", type=int)
                 if error_status

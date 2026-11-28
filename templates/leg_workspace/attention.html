@@ -1,0 +1,61 @@
+{% if not attention.tasks_unavailable %}
+<section class="mb-8" aria-labelledby="attention-title">
+  <h2 id="attention-title" class="mb-3 text-xl font-bold">{{ _('Ausserdem offen') }}</h2>
+  {% if attention.tasks|length > 1 %}
+  <ul class="divide-y divide-line border-y border-line">
+    {% for task in attention.tasks[1:] %}
+    <li class="flex flex-wrap items-center justify-between gap-x-4 py-2">
+      <p>{{ task.title }}</p>
+      <a href="{{ task.href }}" class="inline-flex items-center text-brand underline">{{ task.action }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>{{ _('Es gibt keine weiteren offenen Aufgaben.') }}</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if attention.ledger or attention.ledger_unavailable %}
+<section class="mb-8" aria-labelledby="ledger-title">
+  <h2 id="ledger-title" class="mb-3 text-xl font-bold">{{ _('Abrechnungen %(year)s', year=attention.year) }}</h2>
+  {% if attention.ledger_unavailable %}
+  <p>{{ _('Abrechnung vorübergehend nicht verfügbar.') }}</p>
+  {% else %}
+  {% if attention.ledger.empty %}
+  <p class="mb-3">{{ _('Für %(year)s liegen noch keine Abrechnungen vor.', year=attention.year) }}</p>
+  {% endif %}
+  <div class="overflow-x-auto" tabindex="0" role="region" aria-labelledby="ledger-title">
+    <table class="w-full text-left text-sm">
+      <caption class="sr-only">{{ _('Abrechnungen %(year)s', year=attention.year) }}</caption>
+      <thead>
+        <tr class="border-b border-line">
+          <th scope="col" class="p-2">{{ _('Monat') }}</th>
+          <th scope="col" class="p-2 text-right">{{ _('Rechnungen') }}</th>
+          <th scope="col" class="p-2 text-right">{{ _('Betrag (CHF)') }}</th>
+          <th scope="col" class="p-2 text-right">{{ _('Bezahlt (CHF)') }}</th>
+          <th scope="col" class="p-2 text-right">{{ _('Offen (CHF)') }}</th>
+          <th scope="col" class="p-2">{{ _('Status') }}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {% for row in attention.ledger.rows %}
+        <tr data-ledger-period="{{ row.period }}">
+          <th scope="row" class="p-2">{{ row.label }}</th>
+          {% for cell in row.cells %}<td class="p-2 text-right tabular-nums{% if cell == _('Unlesbar') %} font-semibold text-accent-dark{% endif %}">{{ cell }}</td>{% endfor %}
+          <td class="p-2">{{ row.state }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="border-t border-line font-semibold">
+        <tr data-ledger-period="total">
+          <th scope="row" class="p-2">{{ _('Total') }}</th>
+          {% for cell in attention.ledger.total %}<td class="p-2 text-right tabular-nums{% if cell == _('Unlesbar') %} font-semibold text-accent-dark{% endif %}">{{ cell }}</td>{% endfor %}
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endif %}

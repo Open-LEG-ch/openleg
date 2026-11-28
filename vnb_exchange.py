@@ -688,10 +688,12 @@ def submit_package(
     return _outcome_from_row(cases.record_outcome(row["case_id"], outcome))
 
 
-def may_submit_formation(community_id: str, actor_building_id: str) -> bool:
-    """Run the submission's read-only preview and report whether it would pass."""
+def formation_submission_preview(
+    community_id: str, actor_building_id: str
+) -> SubmissionPreview | None:
+    """Return the current bundle identity only if the read-only preview passes."""
     try:
-        submit_formation(
+        preview = submit_formation(
             FormationSubmission(community_id, actor_building_id), dry_run=True
         )
     except (
@@ -700,12 +702,17 @@ def may_submit_formation(community_id: str, actor_building_id: str) -> bool:
         ValueError,
         db.VnbExchangeStoreError,
     ):
-        return False
+        return None
     except psycopg2.Error:
         # The page still renders; it only leaves out the retry offer.
         logger.exception("VNB submission preview failed")
-        return False
-    return True
+        return None
+    return preview if isinstance(preview, SubmissionPreview) else None
+
+
+def may_submit_formation(community_id: str, actor_building_id: str) -> bool:
+    """Report whether the submission's read-only preview passes."""
+    return formation_submission_preview(community_id, actor_building_id) is not None
 
 
 def submit_formation(

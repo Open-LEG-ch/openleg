@@ -467,6 +467,8 @@ def fetch_user_communities(building_id: str) -> list[dict] | None:
                         c.distribution_model,
                         cm.role,
                         cm.status as member_status,
+                        cm.access_roles,
+                        c.require_dual_control,
                         (
                             SELECT COUNT(*)
                             FROM community_members counted

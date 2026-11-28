@@ -157,7 +157,7 @@ def format_number_label(value, places=None):
     )
 
 
-def format_date_label(value):
+def format_date_label(value, *, pattern="long"):
     if value is None:
         return ""
     if isinstance(value, datetime):
@@ -169,7 +169,7 @@ def format_date_label(value):
         if has_app_context() and "babel" in current_app.extensions
         else "de_CH"
     )
-    return format_date(value, format="long", locale=locale)
+    return format_date(value, format=pattern, locale=locale)
 
 
 def format_timestamp_label(value):

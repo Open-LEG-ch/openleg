@@ -3,7 +3,7 @@
 
 {% block meta %}
 {{ page_meta(
-  title=workspace_document_title if community and page != "overview" else _("LEG-Dashboard | OpenLEG"),
+  title=_("%(title)s | OpenLEG", title=attention.title) if page == "overview" and attention else workspace_document_title if community and page != "overview" else _("LEG-Dashboard | OpenLEG"),
   description=_("Gründung und Betrieb Ihrer Lokalen Elektrizitätsgemeinschaft: Status, Mitglieder und nächste Schritte auf einen Blick."),
   path="/leg/dashboard",
   site_url=site_url|default(""),
@@ -31,7 +31,11 @@
 {% else %}
 <header class="mb-6">
   {% if page == "overview" %}
-  <h1 class="mb-3 text-4xl tracking-tight wrap-anywhere">{{ community.name }}</h1>
+  <h1 class="mb-3 text-4xl tracking-tight wrap-anywhere">{{ attention.title if attention else community.name }}</h1>
+  {% if attention and attention.tasks %}
+  {% set primary = attention.tasks[0] %}
+  <a href="{{ primary.href }}" class="mb-3 inline-flex items-center rounded-full bg-brand px-4 py-2 font-semibold text-white">{{ primary.action }}</a>
+  {% endif %}
   <dl class="flex flex-wrap gap-x-6 gap-y-2 text-ink-muted">
     <div><dt class="inline">{{ _('Status:') }}</dt> <dd class="inline font-semibold {% if community.status == 'active' %}text-sage-dark{% elif community.status == 'rejected' %}text-accent-dark{% endif %}">{{ _(community.status_label) }}</dd></div>
     <div><dt class="inline">{{ _('Verteilmodell:') }}</dt> <dd class="inline">{{ _(community.distribution_model_label) }}</dd></div>
@@ -55,6 +59,7 @@
   {% if community.status != "active" %}
   {% include "leg_workspace/formation.html" %}
   {% endif %}
+  {% if attention %}{% include "leg_workspace/attention.html" %}{% endif %}
   {% include "leg_workspace/battery_shares.html" %}
 {% elif page == "formation" %}
   {% if community.status == "active" %}

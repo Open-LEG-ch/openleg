@@ -1697,7 +1697,9 @@ def test_statement_summary_counts_only_credits_that_can_be_assigned(workspace):
     page = workspace.get(PAYMENTS).text
     assert f"/statements/{eligible_entry['id']}/assign" in page
     assert f"/statements/{refused_entry['id']}/assign" not in page
-    assert "<dt>Warten auf Zuordnung</dt> <dd>1</dd>" in " ".join(page.split())
+    assert "<dt>In diesem Import zur Zuordnung bereit</dt> <dd>1</dd>" in " ".join(
+        page.split()
+    )
 
 
 def test_repeated_credit_without_reference_needs_duplicate_review(workspace):
@@ -1859,7 +1861,7 @@ def test_payments_summarizes_upload_replay_and_assignment(workspace):
         ("Importierte Einträge", 2),
         ("Automatisch verbucht", 1),
         ("Manuell zugeordnet", 0),
-        ("Warten auf Zuordnung", 1),
+        ("In diesem Import zur Zuordnung bereit", 1),
         ("Doppelte Einträge übersprungen", 0),
     ):
         assert f"<dt>{label}</dt> <dd>{count}</dd>" in " ".join(first.text.split())
@@ -1883,7 +1885,7 @@ def test_payments_summarizes_upload_replay_and_assignment(workspace):
     summary = " ".join(after_assignment.text.split())
     assert "<dt>Automatisch verbucht</dt> <dd>1</dd>" in summary
     assert "<dt>Manuell zugeordnet</dt> <dd>1</dd>" in summary
-    assert "<dt>Warten auf Zuordnung</dt> <dd>0</dd>" in summary
+    assert "<dt>In diesem Import zur Zuordnung bereit</dt> <dd>0</dd>" in summary
 
 
 def test_payments_lists_only_delivered_unpaid_invoices_with_due_state(workspace):
@@ -2089,7 +2091,9 @@ def test_payment_summary_excludes_entry_level_refusals(workspace, facts, refusal
     assert page.status_code == 200
     assert refusal in page.text
     assert f"/statements/{entry}/assign" not in page.text
-    assert "<dt>Warten auf Zuordnung</dt> <dd>0</dd>" in " ".join(page.text.split())
+    assert "<dt>In diesem Import zur Zuordnung bereit</dt> <dd>0</dd>" in " ".join(
+        page.text.split()
+    )
 
 
 def _upload_statement(client, body):
@@ -2307,3 +2311,40 @@ def test_unknown_upload_does_not_consume_assignment_feedback_after_role_revocati
     assert denial.status_code == 200
     assert "Sie dürfen in dieser LEG keine Zahlungen zuordnen." in denial.text
     assert workspace.get(response.location).status_code == 403
+
+
+@pytest.mark.parametrize("mode", ["assignable", "overdue"])
+def test_statement_upload_preserves_payments_mode_and_scoped_outcome(workspace, mode):
+    import re
+    from io import BytesIO
+
+    _set_session(workspace, ADMIN)
+    page = workspace.get(f"{PAYMENTS}?{mode}=1")
+    action = re.search(r'enctype="multipart/form-data" action="([^"]+)"', page.text)
+    assert action
+    upload_url = unescape(action[1])
+    target = urlsplit(upload_url)
+    assert target.path == f"{BILLING}/statements"
+    assert parse_qs(target.query) == {mode: ["1"]}
+
+    other = "overdue" if mode == "assignable" else "assignable"
+    response = workspace.post(
+        upload_url + f"&{other}=true&next=https://example.invalid/",
+        data={
+            "csrf_token": "csrf-secret",
+            "statement": (
+                BytesIO(_statement_xml(reference="unknown")),
+                "statement.xml",
+            ),
+        },
+    )
+    assert response.status_code == 302
+    location = urlsplit(response.location)
+    assert not (location.scheme or location.netloc)
+    assert location.path == PAYMENTS
+    flags = parse_qs(location.query)
+    assert set(flags) == {mode, "upload"}
+    assert flags[mode] == ["1"]
+    notice = "Der Kontoauszug wurde importiert und abgeglichen."
+    assert notice in workspace.get(response.location).text
+    assert notice in workspace.get(response.location).text

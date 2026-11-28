@@ -62,7 +62,10 @@ def test_member_list_has_its_own_page(workspace):
 
 
 def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
+    import dashboard
     from dashboard import formation_wizard
+
+    monkeypatch.setattr(dashboard.db, "is_db_available", lambda: False)
 
     client, _ = workspace
     monkeypatch.setattr(
@@ -77,7 +80,7 @@ def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
         ],
     )
     expected = {
-        OVERVIEW: "LEG-Dashboard | OpenLEG",
+        OVERVIEW: "Offene Aufgaben sind derzeit nicht verfügbar. | OpenLEG",
         ROOT + "/members": "Mitglieder · LEG Musterweg | OpenLEG",
         ROOT + "/correspondence": "Korrespondenz · LEG Musterweg | OpenLEG",
         ROOT + "/formation": "Gründung · LEG Musterweg | OpenLEG",
@@ -177,7 +180,7 @@ def test_formation_shows_unavailable_submission_data(
     )
     assert empty_state in client.get(page).text
 
-    def unavailable(_cid):
+    def unavailable(_cid, **_kwargs):
         raise dashboard.db.VnbExchangeStoreError("submission read unavailable")
 
     monkeypatch.setattr(dashboard.db, "list_vnb_submission_cases", unavailable)

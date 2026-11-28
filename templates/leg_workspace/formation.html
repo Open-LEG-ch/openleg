@@ -63,7 +63,7 @@
   {% endif %}
 </section>
 <section class="mb-10">
-  <h2 class="font-bold mb-2">{{ _('Anmeldung beim Netzbetreiber') }}</h2>
+  <h2 id="vnb-submissions-title" class="font-bold mb-2">{{ _('Anmeldung beim Netzbetreiber') }}</h2>
   <p class="text-sm text-ink-muted mb-4">{{ _('OpenLEG hält Paket, Zustellung und Antwort als eigenen Vorgang fest. Ohne konfigurierte Schnittstelle laden Sie dasselbe Paket herunter und bestätigen die Zustellung von Hand.') }}</p>
   {% if not vnb_exchange_available|default(true) %}
   <p class="mb-4 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Der Austausch mit dem Netzbetreiber ist derzeit nicht verfügbar.') }}</p>
@@ -74,7 +74,7 @@
       <p><strong>{{ _('Status:') }}</strong> {{ {"prepared": _("Paket bereit"), "delivered": _("Zugestellt"), "acknowledged": _("Bestätigt"), "rejected": _("Abgelehnt"), "failed": _("Fehlgeschlagen"), "claimed": _("Wird vorbereitet")}.get(submission.state, submission.state) }}</p>
       {% with actor=submission.actor, actor_multiline=true %}{% include "partials/operator_actor.html" %}{% endwith %}
       {% if submission.response_status %}<p class="mt-1 text-ink-muted">{{ _('Antwort:') }} {{ submission.response_status }}</p>{% endif %}
-      {% set can_retry = loop.first and can_retry_vnb_submission and viewer_has_session %}
+      {% set can_retry = viewer_has_session and vnb_retry_case_id and submission.case_id == vnb_retry_case_id %}
       {% if submission.state in ["failed", "rejected"] and submission.next_action and (submission.next_action != "retry" or can_retry) %}<p class="mt-1 text-ink-muted">{{ _('Nächster Schritt:') }} {{ {"retry": _("Einleitung erneut möglich"), "review_rejection": _("Ablehnung prüfen"), "contact_vnb": _("Netzbetreiber kontaktieren"), "escalate": _("An den Netzbetreiber eskalieren")}.get(submission.next_action, submission.next_action) }}</p>{% endif %}
       {% if can_retry %}
       <form method="post" action="/leg/community/{{ community.community_id }}/vnb-submissions/{{ submission.case_id }}/retry" class="mt-3">

@@ -1085,6 +1085,7 @@ LEFT JOIN buildings b ON b.building_id = i.participant_id
 LEFT JOIN billing_periods period ON period.id = i.billing_period_id
   AND period.community_id = i.community_id
 LEFT JOIN invoice_delivery_jobs delivery ON delivery.invoice_id = i.id
+  AND delivery.community_id = i.community_id
 LEFT JOIN invoice_corrections correction
   ON correction.corrected_invoice_id = i.id
 LEFT JOIN invoices original
@@ -1189,7 +1190,11 @@ def list_community_invoice_payment_rows(
 
 
 def page_open_payment_invoices(
-    community_id: str, *, limit: int, before: int | None
+    community_id: str,
+    *,
+    limit: int,
+    before: int | None,
+    overdue_before: date | None = None,
 ) -> list[dict]:
     """Read only delivered, unpaid invoices for the payments page."""
     return _read_community_invoice_rows(
@@ -1198,10 +1203,89 @@ def page_open_payment_invoices(
         FROM invoices i
         WHERE i.community_id = %s AND i.status = 'issued'
           AND (%s IS NULL OR i.id < %s)
+          AND (%s IS NULL OR i.due_date < %s)
           AND {_INVOICE_LIFECYCLE_STATE} = 'delivered'
         ORDER BY i.id DESC LIMIT %s
         """,
-        (community_id, before, before, limit),
+        (community_id, before, before, overdue_before, overdue_before, limit),
+    )
+
+
+_UNREADABLE_GROSS = "gross_chf IS NULL OR gross_chf IN ('NaN', 'Infinity', '-Infinity')"
+
+
+def get_community_billing_ledger(
+    community_id: str, start: date, end: date
+) -> list[dict]:
+    """Aggregate one Zurich calendar year, with a separate total over the same rows."""
+    return _read_community_invoice_rows(
+        f"""
+        WITH scope AS (
+            SELECT %s AS community_id, %s::date AS start_on, %s::date AS end_on
+        ), periods AS (
+            SELECT id, status, prepared_by,
+                   date_trunc('month', period_start AT TIME ZONE 'Europe/Zurich')::date AS month
+            FROM billing_periods JOIN scope USING (community_id)
+            WHERE period_start >= start_on::timestamp AT TIME ZONE 'Europe/Zurich'
+              AND period_start < end_on::timestamp AT TIME ZONE 'Europe/Zurich'
+        ), invoice_months AS (
+            SELECT p.month, i.gross_chf, {_INVOICE_LIFECYCLE_STATE} AS state
+            FROM periods p
+            JOIN invoices i ON i.billing_period_id = p.id
+            JOIN scope s ON s.community_id = i.community_id
+            WHERE i.status = 'issued'
+            UNION ALL
+            SELECT date_trunc('month', legacy.start_on::timestamp)::date,
+                   i.gross_chf, {_INVOICE_LIFECYCLE_STATE}
+            FROM invoices i JOIN scope s USING (community_id)
+            CROSS JOIN LATERAL (VALUES (i.provenance_snapshot->>'period_start')) raw(start_at)
+            CROSS JOIN LATERAL (
+                SELECT CASE
+                    WHEN raw.start_at ~ '^[0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}$'
+                         AND pg_input_is_valid(raw.start_at, 'date')
+                    THEN raw.start_at::date
+                    WHEN raw.start_at ~ '^[0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}[T ]'
+                         AND pg_input_is_valid(raw.start_at, 'timestamp with time zone')
+                    THEN (raw.start_at::timestamptz AT TIME ZONE 'Europe/Zurich')::date
+                END AS start_on
+            ) legacy
+            WHERE i.status = 'issued' AND i.billing_period_id IS NULL
+              AND legacy.start_on >= s.start_on AND legacy.start_on < s.end_on
+        ), active_invoices AS (
+            SELECT month, state, {_UNREADABLE_GROSS} AS unreadable,
+                   CASE WHEN NOT ({_UNREADABLE_GROSS}) THEN gross_chf END AS amount
+            FROM invoice_months
+            WHERE state NOT IN ('cancelled', 'corrected')
+        ), invoice_totals AS (
+            SELECT month, count(*) AS invoices,
+                   bool_or(unreadable) AS amount_unreadable,
+                   bool_or(unreadable) FILTER (WHERE state = 'paid') AS paid_unreadable,
+                   bool_or(unreadable) FILTER (WHERE state <> 'paid') AS open_unreadable,
+                   sum(amount) AS amount,
+                   sum(amount) FILTER (WHERE state = 'paid') AS paid,
+                   sum(amount) FILTER (WHERE state <> 'paid') AS open,
+                   bool_and(state = 'paid') AS all_paid,
+                   bool_and(state IN ('delivered', 'paid')) AS all_delivered
+            FROM active_invoices
+            GROUP BY GROUPING SETS ((month), ())
+        ), closed_months AS (
+            SELECT month
+            FROM invoice_months
+            GROUP BY month
+            HAVING bool_and(state IN ('cancelled', 'corrected'))
+        ), period_months AS (
+            SELECT DISTINCT ON (month) month, status, prepared_by
+            FROM periods
+            ORDER BY month, CASE WHEN status = 'issued' THEN 1 ELSE 0 END, id DESC
+        )
+        SELECT month, t.invoices, t.amount, t.amount_unreadable, t.paid, t.paid_unreadable,
+               t.open, t.open_unreadable, t.all_paid, t.all_delivered, p.prepared_by,
+               c.month IS NOT NULL AS all_cancelled,
+               COALESCE(p.status, CASE WHEN t.month IS NOT NULL OR c.month IS NOT NULL THEN 'issued' END) AS status
+        FROM invoice_totals t FULL JOIN period_months p USING (month)
+        FULL JOIN closed_months c USING (month)
+        """,
+        (community_id, start, end),
     )
 
 
@@ -1993,25 +2077,45 @@ def reconcile_bank_statement(
         raise BillingStoreError("Could not reconcile bank statement") from error
 
 
+# Keep the aggregate in parity with payment_reconciliation.payment_entry_refusal.
+def bank_assignable_sql(alias: str) -> str:
+    return f"""
+    {alias}.match_decision = ANY(%(reviewable_decisions)s)
+    AND {alias}.is_reversal IS FALSE
+    AND {alias}.booking_status = 'BOOK'
+    AND {alias}.amount_basis IN ('entry', 'reconciled_batch')
+    AND {alias}.credit_debit_indicator = 'CRDT'
+    AND {alias}.currency = 'CHF'
+    AND (
+        btrim({alias}.payment_reference, %(bank_reference_whitespace)s) <> ''
+        OR btrim({alias}.servicer_reference, %(bank_reference_whitespace)s) <> ''
+    )
+"""
+
+
+def bank_assignment_query_parameters() -> dict:
+    return {
+        "reviewable_decisions": sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
+        "bank_reference_whitespace": payment_reconciliation.BANK_REFERENCE_WHITESPACE,
+    }
+
+
 def get_bank_statement_summary(community_id, upload_id, building_id):
     """Summarize one import and apply the workspace's entry eligibility rules."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
-            # Keep the booking counts and the assignment eligibility scan in
-            # the same snapshot while another request assigns an entry.
-            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
             cur.execute(
-                """
+                f"""
                 WITH statement AS (
                     SELECT i.id, i.source_name, i.imported_at, i.community_id, u.duplicate
                     FROM bank_statement_imports i
                     LEFT JOIN bank_statement_uploads u
-                      ON u.id = %s AND u.statement_import_id = i.id AND u.membership_id = (
+                      ON u.id = %(upload)s AND u.statement_import_id = i.id AND u.membership_id = (
                           SELECT m.id FROM community_members m
-                          WHERE m.community_id = i.community_id AND m.building_id = %s
+                          WHERE m.community_id = i.community_id AND m.building_id = %(building)s
                             AND m.status = 'confirmed'
                       )
-                    WHERE i.community_id = %s AND (%s IS NULL OR u.id IS NOT NULL)
+                    WHERE i.community_id = %(community)s AND (%(upload)s IS NULL OR u.id IS NOT NULL)
                     ORDER BY i.id DESC LIMIT 1
                 )
                 SELECT s.id, s.source_name, s.imported_at, s.duplicate,
@@ -2025,42 +2129,22 @@ def get_bank_statement_summary(community_id, upload_id, building_id):
                                  AND event.event_type = 'paid'
                                  AND starts_with(event.idempotency_key, 'bank:' || s.id::text || ':')
                            )
-                       ) AS automatic
+                       ) AS automatic,
+                       count(*) FILTER (WHERE {bank_assignable_sql("e")}) AS unassigned
                 FROM statement s
                 LEFT JOIN bank_statement_entries e
                     ON e.statement_import_id = s.id AND e.community_id = s.community_id
                 GROUP BY s.id, s.source_name, s.imported_at, s.duplicate
                 """,
-                (upload_id, building_id, community_id, upload_id),
+                {
+                    "community": community_id,
+                    "upload": upload_id,
+                    "building": building_id,
+                    **bank_assignment_query_parameters(),
+                },
             )
             summary = cur.fetchone()
-            if not summary:
-                return None
-            # Stream only the eligibility fields of reviewable entries in
-            # this import. Use the same predicate as the assignment card.
-            with conn.cursor(name="statement_assignment_summary") as entries:
-                entries.execute(
-                    """
-                    SELECT is_reversal, booking_status, amount_basis,
-                           credit_debit_indicator, currency, payment_reference,
-                           servicer_reference
-                    FROM bank_statement_entries
-                    WHERE community_id = %s AND statement_import_id = %s
-                      AND match_decision = ANY(%s)
-                    """,
-                    (
-                        community_id,
-                        summary["id"],
-                        sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
-                    ),
-                )
-                return {
-                    **summary,
-                    "unassigned": sum(
-                        payment_reconciliation.payment_entry_refusal(entry) is None
-                        for entry in entries
-                    ),
-                }
+            return dict(summary) if summary else None
     except Exception as error:
         logger.error("[DB] Error summarizing statement import: %s", error)
         raise BillingStoreError("Could not summarize statement import") from error
@@ -2072,6 +2156,7 @@ def list_bank_statement_entries(
     *,
     confirmation_key_prefix=None,
     reviewable=None,
+    assignable_only: bool = False,
     before=None,
 ):
     """Return scoped decisions with replay availability for the caller's key namespace."""
@@ -2090,37 +2175,36 @@ def list_bank_statement_entries(
                           AND EXISTS (
                               SELECT 1 FROM unnest(e.bank_references) AS booked(reference)
                               JOIN unnest(c.bank_references) AS reported(reference)
-                                ON btrim(booked.reference, %s) = btrim(reported.reference, %s)
+                                ON btrim(booked.reference, %(bank_reference_whitespace)s)
+                                 = btrim(reported.reference, %(bank_reference_whitespace)s)
                           )
                         ORDER BY e.id LIMIT 1) AS likely_duplicate_invoice_number,
                        EXISTS (
                            SELECT 1 FROM operator_action_idempotency a
                            WHERE a.community_id=c.community_id
                              AND a.action='payment.confirm:' || c.id::text
-                             AND a.idempotency_key=%s || c.id::text
+                             AND a.idempotency_key=%(confirmation_key_prefix)s || c.id::text
                              AND jsonb_typeof(a.response)='object'
                        ) AS confirmation_replay_available
                 FROM bank_statement_entries c
                 JOIN bank_statement_imports s ON s.id = c.statement_import_id
-                WHERE c.community_id = %s AND s.community_id = %s
-                  AND (%s IS NULL OR (c.match_decision = ANY(%s)) = %s)
-                  AND (%s IS NULL OR c.id < %s)
+                WHERE c.community_id = %(community)s AND s.community_id = %(community)s
+                  AND (%(reviewable)s IS NULL OR
+                       (c.match_decision = ANY(%(reviewable_decisions)s)) = %(reviewable)s)
+                  AND (NOT %(assignable_only)s OR ({bank_assignable_sql("c")}))
+                  AND (%(before)s IS NULL OR c.id < %(before)s)
                 ORDER BY c.id DESC
-                LIMIT %s
+                LIMIT %(limit)s
                 """,
-                (
-                    payment_reconciliation.BANK_REFERENCE_WHITESPACE,
-                    payment_reconciliation.BANK_REFERENCE_WHITESPACE,
-                    confirmation_key_prefix,
-                    community_id,
-                    community_id,
-                    reviewable,
-                    sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
-                    reviewable,
-                    before,
-                    before,
-                    bounded_limit,
-                ),
+                {
+                    "confirmation_key_prefix": confirmation_key_prefix,
+                    "community": community_id,
+                    "reviewable": reviewable,
+                    "assignable_only": assignable_only,
+                    "before": before,
+                    "limit": bounded_limit,
+                    **bank_assignment_query_parameters(),
+                },
             )
             return [dict(row) for row in cur.fetchall()]
     except Exception as error:
