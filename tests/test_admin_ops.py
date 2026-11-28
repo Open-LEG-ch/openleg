@@ -311,8 +311,8 @@ class TestAdminRegistryModeration:
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
             patch(
-                "database.update_registry_entry_moderation", return_value=True
-            ) as mock_update,
+                "database.publish_registry_entry", return_value="published"
+            ) as publish,
         ):
             from app import create_app
 
@@ -321,7 +321,7 @@ class TestAdminRegistryModeration:
             client = app.test_client()
             resp = client.post("/admin/registry/1/approve")
             assert resp.status_code == 403
-            mock_update.assert_not_called()
+            publish.assert_not_called()
 
     def test_admin_registry_approve_calls_store_with_published(self):
         with (
@@ -337,8 +337,8 @@ class TestAdminRegistryModeration:
             patch("database._connection_pool", MagicMock()),
             patch("database.is_db_available", return_value=True),
             patch(
-                "database.update_registry_entry_moderation", return_value=True
-            ) as mock_update,
+                "database.publish_registry_entry", return_value="published"
+            ) as publish,
         ):
             from app import create_app
 
@@ -348,9 +348,10 @@ class TestAdminRegistryModeration:
             resp = client.post(
                 "/admin/registry/1/approve",
                 headers={"X-Admin-Token": "test123"},
+                data={"municipality": "4021"},
             )
             assert resp.status_code in (200, 302)
-            mock_update.assert_called_once_with(1, "published", "")
+            publish.assert_called_once_with(1, 4021, without_municipality=False)
 
     def test_admin_registry_reject_accepts_optional_reason(self):
         with (

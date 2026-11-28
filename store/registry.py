@@ -13,6 +13,7 @@ unchanged and ``database`` can re-export these functions for legacy callers.
 """
 
 import logging
+from typing import Literal
 
 import action_token
 from locale_policy import require_recipient_locale
@@ -221,25 +222,87 @@ def list_registry_entries(
         return []
 
 
+def list_registry_entries_needing_municipality() -> list[dict]:
+    """List published entries whose municipality still needs a decision."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT * FROM leg_registry
+                WHERE moderation_status = 'published' AND bfs_number IS NULL
+                    AND NOT without_municipality
+                ORDER BY created_at ASC, id ASC
+                LIMIT 250
+            """)
+            return [dict(row) for row in cur.fetchall()]
+    except Exception:
+        logger.exception("[DB] Error listing registry entries needing a municipality")
+        return []
+
+
+def publish_registry_entry(
+    entry_id: int, bfs_number: int | None, *, without_municipality: bool = False
+) -> Literal["published", "stale", "invalid"]:
+    """Apply the decision or classify the failure against the locked entry."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                WITH target AS (
+                    SELECT id, bfs_number
+                    FROM leg_registry
+                    WHERE id = %s
+                        AND (
+                            moderation_status = 'pending'
+                            OR (moderation_status = 'published' AND bfs_number IS NULL
+                                AND NOT without_municipality)
+                        )
+                    FOR UPDATE
+                ), decision AS (
+                    SELECT %s::integer AS bfs_number, %s::boolean AS without_municipality
+                ), publication AS (
+                    UPDATE leg_registry AS entry
+                    SET moderation_status = 'published',
+                        bfs_number = CASE WHEN decision.without_municipality THEN NULL
+                                          ELSE COALESCE(decision.bfs_number, target.bfs_number) END,
+                        without_municipality = decision.without_municipality,
+                        updated_at = CURRENT_TIMESTAMP
+                    FROM target, decision
+                    WHERE entry.id = target.id
+                        AND CASE
+                            WHEN decision.without_municipality THEN decision.bfs_number IS NULL
+                            WHEN decision.bfs_number IS NULL THEN target.bfs_number IS NOT NULL
+                            ELSE EXISTS (
+                                SELECT 1 FROM municipality_profiles
+                                WHERE bfs_number = decision.bfs_number
+                            )
+                        END
+                    RETURNING entry.id
+                )
+                SELECT CASE
+                    WHEN EXISTS (SELECT 1 FROM publication) THEN 'published'
+                    WHEN EXISTS (SELECT 1 FROM target) THEN 'invalid'
+                    ELSE 'stale'
+                END AS outcome
+            """,
+            (entry_id, bfs_number, without_municipality),
+        )
+        return cur.fetchone()["outcome"]
+
+
 def update_registry_entry_moderation(
     entry_id: int, moderation_status: str, moderation_note: str = ""
 ) -> bool:
     """Approve or reject a pending registry entry."""
-    try:
-        with _get_connection() as conn, conn.cursor() as cur:
-            cur.execute(
-                """
-                    UPDATE leg_registry
-                    SET moderation_status = %s, moderation_note = %s,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = %s
-                """,
-                (moderation_status, moderation_note, entry_id),
-            )
-            return cur.rowcount > 0
-    except Exception as e:
-        logger.error(f"[DB] Error updating registry entry moderation: {e}")
-        return False
+    with _get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                UPDATE leg_registry
+                SET moderation_status = %s, moderation_note = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s AND moderation_status = 'pending'
+            """,
+            (moderation_status, moderation_note, entry_id),
+        )
+        return cur.rowcount > 0
 
 
 def get_registry_pending_count() -> int:

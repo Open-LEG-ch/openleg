@@ -2,6 +2,7 @@
 """LEG registry moderation and verification operations."""
 
 import secrets
+import unicodedata
 
 from flask import Blueprint, jsonify, request
 
@@ -11,6 +12,7 @@ import registry_intake
 from email_localization import gettext, recipient_locale
 from i18n import gettext as _
 from i18n import localized_url
+from swiss_postcodes import postcodes_by_municipality
 
 VERIFICATION_TOKEN_TTL_SECONDS = 14 * 24 * 60 * 60
 VERIFICATION_STALE_DAYS = 90
@@ -86,3 +88,38 @@ def annotate_vnb_plausibility(entries):
             )
         annotated.append(entry)
     return annotated
+
+
+def municipality_candidates(entry: dict, profiles: list[dict]) -> list[dict]:
+    """Find all exact municipality or postal-locality matches for the submission."""
+    postcode = (entry.get("plz") or "").strip()
+    locality = unicodedata.normalize("NFC", (entry.get("ort") or "").strip()).casefold()
+    kanton = (entry.get("kanton") or "").strip().upper()
+    if not (postcode or locality):
+        return []
+
+    postcodes = postcodes_by_municipality()
+    matches = []
+    for profile in profiles:
+        bfs = profile["bfs_number"]
+        profile_kanton = profile["kanton"] or ""
+        if kanton and kanton != profile_kanton:
+            continue
+        postal_rows = [
+            names
+            for code, _share, names in postcodes.get(bfs, ())
+            if not postcode or code == postcode
+        ]
+        if postcode and not postal_rows:
+            continue
+        names = {profile["name"].casefold()}
+        for postal_names in postal_rows:
+            names.update(name.casefold() for name in postal_names)
+        if (
+            locality
+            and locality not in names
+            and f"{locality} {profile_kanton.lower()}" not in names
+        ):
+            continue
+        matches.append(profile)
+    return matches

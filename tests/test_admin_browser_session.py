@@ -17,6 +17,7 @@ def browser(app_module, monkeypatch):
         "get_ops_snapshots",
         "get_lea_reports",
         "list_registry_entries",
+        "list_registry_entries_needing_municipality",
         "get_registry_entries_needing_verification",
         "list_sdat_ingestion_schedules",
         "get_operator_interest_records",
@@ -24,8 +25,9 @@ def browser(app_module, monkeypatch):
         monkeypatch.setattr(app_module.db, name, lambda **kwargs: [])
     monkeypatch.setattr(app_module.db, "get_registry_pending_count", lambda: 0)
     monkeypatch.setattr(app_module.db, "get_operator_interest_counts", dict)
-    moderation = Mock(return_value=True)
+    moderation = Mock(return_value="published")
     monkeypatch.setattr(app_module.db, "update_registry_entry_moderation", moderation)
+    monkeypatch.setattr(app_module.db, "publish_registry_entry", moderation)
     return app_module.web.test_client(), moderation
 
 
@@ -66,14 +68,15 @@ def test_browser_moderation_requires_csrf_before_writing(browser, action):
     moderation.assert_not_called()
     with client.session_transaction() as session:
         csrf = session["admin_csrf"]
-    response = client.post(path, data={"csrf_token": csrf, "reason": "duplicate"})
+    response = client.post(
+        path, data={"csrf_token": csrf, "reason": "duplicate", "municipality": "4021"}
+    )
     assert response.status_code == 302
     assert client.get(response.location).status_code == 200
-    moderation.assert_called_once_with(
-        7,
-        "published" if action == "approve" else "rejected",
-        "" if action == "approve" else "duplicate",
-    )
+    if action == "approve":
+        moderation.assert_called_once_with(7, 4021, without_municipality=False)
+    else:
+        moderation.assert_called_once_with(7, "rejected", "duplicate")
 
 
 def test_admin_cookie_does_not_authorize_machine_endpoints(browser):
@@ -120,6 +123,7 @@ def test_header_moderation_can_follow_its_redirect(browser):
     response = client.post(
         "/admin/registry/7/approve",
         headers={"X-Admin-Token": "synthetic-admin-credential"},
+        data={"municipality": "4021"},
     )
     assert response.status_code == 302
     assert client.get(response.location).status_code == 200

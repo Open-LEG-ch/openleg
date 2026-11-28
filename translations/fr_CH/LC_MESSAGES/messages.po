@@ -1679,10 +1679,6 @@ msgstr "Accès, rectification, suppression"
 msgid "Ausserhalb dieses Firmwarebereichs"
 msgstr "Hors de cette plage de micrologiciel"
 
-#: templates/admin/ops.html:114
-msgid "Ausstehende LEG-Einträge"
-msgstr "Entrées CEL en attente"
-
 #: templates/documents/member_invoice.html:15 templates/member_invoice_detail.html:44
 msgid "Aussteller:"
 msgstr "Émetteur :"
@@ -20455,3 +20451,53 @@ msgstr ", mais pas par un exploitant ayant revendiqué l’entrée."
 #: dashboard_routes.py:1194
 msgid "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
 msgstr "Une autre opération est en train de modifier les autorisations. Veuillez réessayer."
+
+#. Draft translation; native language and domain review pending.
+#: admin.py:599
+msgid "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde»."
+msgstr "Sélectionnez une commune valide ou confirmez « Aucune commune »."
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:115
+msgid "LEG-Einträge moderieren"
+msgstr "Modérer les fiches CEL"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:134
+msgid "Veröffentlicht, Gemeinde fehlt"
+msgstr "Publiée, commune manquante"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:152 templates/admin/ops.html:157
+msgid "BFS-Nummer"
+msgstr "Numéro OFS"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:155
+msgid "Keine passende Gemeinde gefunden."
+msgstr "Aucune commune correspondante trouvée."
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:168
+msgid "Keine Gemeinde"
+msgstr "Aucune commune"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:172
+msgid "Gemeindezuordnung speichern"
+msgstr "Enregistrer la commune associée"
+
+#. Draft translation; native language and domain review pending.
+#: admin.py:619
+msgid "Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."
+msgstr "Cette fiche a déjà été traitée. Rechargez la page de modération."
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/ops.html:168
+msgid "Oder BFS-Nummer eingeben"
+msgstr "Ou saisissez un numéro OFS"
+
+#. Draft translation; native language and domain review pending.
+#: templates/admin/registry_error.html:6
+msgid "Moderationsseite neu laden"
+msgstr "Recharger la page de modération"

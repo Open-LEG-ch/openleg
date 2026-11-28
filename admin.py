@@ -31,6 +31,7 @@ import e66_evidence
 import leg_registry
 import sdat_ingestion
 import vnb_calculated_values
+from i18n import gettext as _
 from security_extensions import limiter
 from security_utils import log_security_event
 
@@ -499,6 +500,9 @@ def admin_ops():
     pending_registry = leg_registry.annotate_vnb_plausibility(
         db.list_registry_entries(moderation_status="pending")
     )
+    registry_needing_municipality = leg_registry.annotate_vnb_plausibility(
+        db.list_registry_entries_needing_municipality()
+    )
     stale_registry = db.get_registry_entries_needing_verification(
         stale_days=leg_registry.VERIFICATION_STALE_DAYS, limit=1000
     )
@@ -509,6 +513,7 @@ def admin_ops():
         "snapshots": snapshots[:20],
         "reports": reports,
         "pending_registry": pending_registry,
+        "registry_needing_municipality": registry_needing_municipality,
         "sdat_schedules": sdat_schedules,
         "interest_records": interest_records,
         "counts": {
@@ -528,6 +533,17 @@ def admin_ops():
         },
     }
     if "text/html" in (request.headers.get("Accept") or ""):
+        unresolved = [
+            entry
+            for entry in pending_registry + registry_needing_municipality
+            if entry.get("bfs_number") is None
+        ]
+        if unresolved:
+            profiles = db.get_all_municipality_profiles()
+            for entry in unresolved:
+                entry["municipality_candidates"] = leg_registry.municipality_candidates(
+                    entry, profiles
+                )
         return render_template(
             "admin/ops.html", csrf_token=session["admin_csrf"], **response
         )
@@ -560,10 +576,41 @@ def admin_billing_workspace():
     )
 
 
+def _registry_moderation_error(status):
+    if status == 409:
+        message = _(
+            "Dieser Eintrag wurde bereits moderiert. Laden Sie die Übersicht neu."
+        )
+    else:
+        message = _(
+            "Wählen Sie eine gültige Gemeinde oder bestätigen Sie «Keine Gemeinde»."
+        )
+    return render_template("admin/registry_error.html", message=message), status
+
+
 @admin_bp.route("/admin/registry/<int:entry_id>/approve", methods=["POST"])
 def admin_registry_approve(entry_id):
     require_admin()
-    db.update_registry_entry_moderation(entry_id, "published", "")
+    choices = request.form.getlist("municipality")
+    manual_choices = request.form.getlist("manual_bfs_number")
+    choice = choices[0].strip() if choices else ""
+    manual_bfs = manual_choices[0].strip() if manual_choices else ""
+    if len(choices) > 1 or len(manual_choices) > 1 or (choice and manual_bfs):
+        return _registry_moderation_error(422)
+
+    without_municipality = choice == "none"
+    bfs_value = "" if without_municipality else (choice or manual_bfs)
+    if bfs_value and not re.fullmatch(r"[1-9][0-9]{0,3}", bfs_value):
+        return _registry_moderation_error(422)
+    bfs_number = int(bfs_value) if bfs_value else None
+    try:
+        outcome = db.publish_registry_entry(
+            entry_id, bfs_number, without_municipality=without_municipality
+        )
+    except psycopg2.Error:
+        abort(503)
+    if outcome != "published":
+        return _registry_moderation_error(409 if outcome == "stale" else 422)
     return redirect("/admin/ops")
 
 
@@ -571,7 +618,12 @@ def admin_registry_approve(entry_id):
 def admin_registry_reject(entry_id):
     require_admin()
     reason = (request.form.get("reason") or "").strip()
-    db.update_registry_entry_moderation(entry_id, "rejected", reason)
+    try:
+        rejected = db.update_registry_entry_moderation(entry_id, "rejected", reason)
+    except psycopg2.Error:
+        abort(503)
+    if not rejected:
+        return _registry_moderation_error(409)
     return redirect("/admin/ops")
 
 

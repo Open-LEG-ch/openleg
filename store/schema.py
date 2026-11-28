@@ -709,6 +709,11 @@ def create_tables():
                     VARCHAR(5) NOT NULL DEFAULT 'de_CH'
                     CHECK (preferred_locale IN ('de_CH', 'fr_CH'))
             """)
+            cur.execute("""
+                ALTER TABLE leg_registry ADD COLUMN IF NOT EXISTS without_municipality
+                    BOOLEAN NOT NULL DEFAULT FALSE
+                    CHECK (NOT without_municipality OR bfs_number IS NULL)
+            """)
 
             # Migration: add verification_token columns to leg_registry if missing
             # (leg_registry shipped in Phase 1 without these Phase 2 columns).
