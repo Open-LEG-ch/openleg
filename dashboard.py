@@ -263,7 +263,7 @@ def leg_overview(
 
     capabilities = community_access.capabilities_for(member)
     can_audit_billing = community_access.AUDIT_BILLING in capabilities
-    if workspace_page in ("settings", "payments", "invoices") and not can_audit_billing:
+    if workspace_page in ("settings", "payments") and not can_audit_billing:
         return {"error": _N("Kein Zugriff."), "community": None}
 
     needs_start_evidence = (
@@ -493,6 +493,140 @@ def _display_gross_chf(invoice: dict) -> tuple[str, bool]:
         return _N("Unlesbar"), True
 
 
+_INVOICE_FILTERS = {
+    "all": _N("Alle"),
+    "open": _N("Offen"),
+    "paid": _N("Bezahlt"),
+    "cancelled": _N("Storniert"),
+    "with-question": _N("Mit Frage"),
+}
+_INVOICE_FILTER_STATES = {
+    "open": ("issued", "delivered"),
+    "paid": ("paid",),
+    "cancelled": ("cancelled", "corrected"),
+}
+
+
+def _describe_leg_invoice(row):
+    invoice = billing_lifecycle.describe_invoice(row)
+    invoice["display_gross_chf"], invoice["gross_unreadable"] = _display_gross_chf(row)
+    if row.get("period_start"):
+        invoice["period_label"] = billing_workspace.period_label(row["period_start"])
+    return invoice
+
+
+def _describe_leg_invoice_details(invoice, events, queries, invoices):
+    policy_snapshot = invoice.get("policy_snapshot")
+    delivery_method = (
+        policy_snapshot.get("delivery_method")
+        if isinstance(policy_snapshot, dict)
+        else None
+    )
+    invoice["delivery_method_label"] = billing_policy.DELIVERY_METHOD_LABELS.get(
+        delivery_method, _N("Nicht angegeben")
+    )
+    invoice["display_unit_price_rp"] = billing_policy.rate_rp_text(
+        policy_snapshot.get("internal_price_chf_per_kwh")
+        if isinstance(policy_snapshot, dict)
+        else None
+    )
+    invoice["events"] = [
+        {
+            **event,
+            "previous_status_label": billing_lifecycle.STATE_LABELS.get(
+                event.get("previous_state"), event.get("previous_state")
+            ),
+            "new_status_label": billing_lifecycle.STATE_LABELS.get(
+                event.get("new_state"), event.get("new_state")
+            ),
+        }
+        for event in events
+    ]
+    invoice["correction_candidates"] = [
+        {
+            "id": candidate["id"],
+            "invoice_number": candidate["invoice_number"],
+        }
+        for candidate in invoices
+        if candidate["id"] != invoice["id"]
+        and candidate.get("participant_id") == invoice.get("participant_id")
+        and candidate["lifecycle_state"] == "issued"
+        and candidate.get("corrects_invoice_id") is None
+    ]
+    invoice["queries"] = queries
+
+
+_INVOICE_PAGE_SIZE = 50
+
+
+def leg_invoice_list(community_id, building_id, *, state, search, page=1):
+    if not _require_capability(
+        community_id, building_id, community_access.AUDIT_BILLING
+    ):
+        return {"error_status": 403}
+    if page < 1 or "\x00" in search:
+        return {"error_status": 400}
+
+    state = state if state in _INVOICE_FILTERS else "all"
+    search = search.strip()
+    rows = db.page_community_invoices(
+        community_id,
+        states=_INVOICE_FILTER_STATES.get(state, ()),
+        with_question=state == "with-question",
+        search=search,
+        limit=_INVOICE_PAGE_SIZE + 1,
+        offset=(page - 1) * _INVOICE_PAGE_SIZE,
+    )
+    if page > 1 and not rows:
+        return {"error_status": 404}
+
+    return {
+        "error_status": None,
+        "community_id": community_id,
+        "invoices": [_describe_leg_invoice(row) for row in rows[:_INVOICE_PAGE_SIZE]],
+        "has_invoices": bool(rows)
+        or (
+            (state != "all" or bool(search)) and db.has_community_invoices(community_id)
+        ),
+        "filters": _INVOICE_FILTERS,
+        "state": state,
+        "search": search,
+        "invoice_page": page,
+        "has_next": len(rows) > _INVOICE_PAGE_SIZE,
+    }
+
+
+def leg_invoice_detail(community_id, building_id, invoice_id):
+    member = _require_capability(
+        community_id, building_id, community_access.AUDIT_BILLING
+    )
+    if not member:
+        return {"error": _N("Kein Zugriff.")}
+    rows = db.list_community_invoices(community_id, invoice_id=invoice_id)
+    if not rows:
+        return {"error": None, "invoice": None}
+
+    invoice = _describe_leg_invoice(rows[0])
+    can_prepare = community_access.allows(member, community_access.PREPARE_BILLING)
+    candidates = (
+        db.list_community_invoices(community_id)
+        if can_prepare and invoice["lifecycle_state"] == "cancelled"
+        else []
+    )
+    _describe_leg_invoice_details(
+        invoice,
+        db.list_invoice_events(invoice_id, community_id),
+        db.list_invoice_queries(invoice_id, community_id=community_id),
+        candidates,
+    )
+    return {
+        "error": None,
+        "community_id": community_id,
+        "invoice": invoice,
+        "can_prepare_billing": can_prepare,
+    }
+
+
 _DASHBOARD_PAYMENT_KEY_PREFIX = "dashboard-payment-"
 _PAYMENT_REFUSALS = {
     "debit": (
@@ -640,79 +774,16 @@ def leg_billing_workspace_view(
             )
         )
         periods.append(period)
-    invoices = [
-        billing_lifecycle.describe_invoice(invoice)
-        for invoice in db.list_community_invoices(community_id)
-    ]
-    events_by_invoice = {}
-    community_events = (
-        db.list_community_invoice_events(community_id) if invoices else []
-    )
-    for event in community_events:
-        events_by_invoice.setdefault(event["invoice_id"], []).append(event)
-    queries_by_invoice = {}
-    if db.is_db_available():
-        invoice_queries = db.list_invoice_queries(None, community_id=community_id)
-    else:
-        # Unit and demo configurations can intentionally run without a DB pool.
-        invoice_queries = []
-    for query in invoice_queries:
-        queries_by_invoice.setdefault(query["invoice_id"], []).append(query)
-    for invoice in invoices:
-        (
-            invoice["display_gross_chf"],
-            invoice["gross_unreadable"],
-        ) = _display_gross_chf(invoice)
-        policy_snapshot = invoice.get("policy_snapshot")
-        delivery_method = (
-            policy_snapshot.get("delivery_method")
-            if isinstance(policy_snapshot, dict)
-            else None
-        )
-        invoice["delivery_method_label"] = billing_policy.DELIVERY_METHOD_LABELS.get(
-            delivery_method, _N("Nicht angegeben")
-        )
-        invoice["display_unit_price_rp"] = billing_policy.rate_rp_text(
-            policy_snapshot.get("internal_price_chf_per_kwh")
-            if isinstance(policy_snapshot, dict)
-            else None
-        )
-        invoice["events"] = [
-            {
-                **event,
-                "previous_status_label": billing_lifecycle.STATE_LABELS.get(
-                    event.get("previous_state"), event.get("previous_state")
-                ),
-                "new_status_label": billing_lifecycle.STATE_LABELS.get(
-                    event.get("new_state"), event.get("new_state")
-                ),
-            }
-            for event in events_by_invoice.get(invoice["id"], [])
-        ]
-        invoice["correction_candidates"] = [
-            {
-                "id": candidate["id"],
-                "invoice_number": candidate["invoice_number"],
-            }
-            for candidate in invoices
-            if candidate["id"] != invoice["id"]
-            and candidate.get("participant_id") == invoice.get("participant_id")
-            and candidate["lifecycle_state"] == "issued"
-            and not candidate.get("corrects_invoice_number")
-        ]
-        invoice["queries"] = queries_by_invoice.get(invoice["id"], [])
-        if include_statement_entries:
-            invoice["statement_amount"] = _display_statement_amount(
-                invoice.get("gross_chf")
-            )
-    statement_invoices = (
-        {invoice["id"]: invoice for invoice in invoices}
-        if include_statement_entries
-        else {}
-    )
+    statement_invoices = {}
     statement_entries = []
     next_statement_before = None
     if include_statement_entries:
+        for invoice in db.list_community_invoice_payment_rows(community_id):
+            invoice["gross_unreadable"] = _display_gross_chf(invoice)[1]
+            invoice["statement_amount"] = _display_statement_amount(
+                invoice["gross_chf"]
+            )
+            statement_invoices[invoice["id"]] = invoice
         open_entries = db.list_bank_statement_entries(
             community_id, limit=201, reviewable=True, before=statement_before
         )
@@ -730,7 +801,6 @@ def leg_billing_workspace_view(
         "error": None,
         "community_id": community_id,
         "periods": periods,
-        "invoices": invoices,
         "statement_invoice_candidates": [
             invoice
             for invoice in statement_invoices.values()
@@ -892,7 +962,9 @@ def leg_deliver_invoice(
         if not sent:
             error = "E-Mail-Versand fehlgeschlagen"
             db.fail_invoice_delivery(invoice_id, community_id, building_id, error)
-            return {"error": "Die Rechnung konnte nicht per E-Mail zugestellt werden."}
+            return {
+                "error": _N("Die Rechnung konnte nicht per E-Mail zugestellt werden.")
+            }
     completed = db.complete_invoice_delivery(invoice_id, community_id, building_id)
     return {"error": None, **completed}
 
@@ -1209,9 +1281,15 @@ def operator_update_invoice_query(
     if not _require_capability(
         community_id, building_id, community_access.PREPARE_BILLING
     ):
-        return {"error": _N("Kein Zugriff.")}
+        return {"error": _N("Kein Zugriff."), "error_status": 403}
     if not (message or "").strip() and not (status or "").strip():
-        return {"error": _N("Antwort oder Status ist erforderlich.")}
+        return {
+            "error": _N("Antwort oder Status ist erforderlich."),
+            "error_status": 400,
+        }
+    invoice_id = db.invoice_id_for_query(query_id, community_id)
+    if invoice_id is None:
+        return {"error": _N("Rechnung nicht gefunden."), "error_status": 404}
     try:
         if not db.update_invoice_query(
             query_id,
@@ -1220,10 +1298,10 @@ def operator_update_invoice_query(
             message=message,
             target_status=status,
         ):
-            return {"error": _N("Kein Zugriff.")}
+            return {"error": _N("Rechnung nicht gefunden."), "error_status": 404}
     except ValueError as exc:
-        return {"error": str(exc)}
-    return {"error": None}
+        return {"error": str(exc), "error_status": 400}
+    return {"error": None, "invoice_id": invoice_id}
 
 
 def member_invoice_pdf_bytes(invoice: dict) -> bytes:

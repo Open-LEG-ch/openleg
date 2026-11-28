@@ -195,7 +195,12 @@ def test_invoice_lifecycle_conflict_is_localized_through_real_route(
         MagicMock(side_effect=dashboard.InvoiceLifecycleError()),
     )
     monkeypatch.setattr(
-        dashboard, "leg_billing_workspace_view", lambda *args: _workspace()
+        dashboard,
+        "leg_invoice_detail",
+        lambda *args: {
+            **_workspace(),
+            "invoice": {"id": 1, "invoice_number": "SYNTHETIC"},
+        },
     )
     client = web.test_client()
     _set_session(client)

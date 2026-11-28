@@ -896,38 +896,145 @@ def _policy_dict(value):
     )
 
 
-def list_community_invoices(community_id: str) -> list[dict]:
+_INVOICE_LIFECYCLE_STATE = """
+    COALESCE((
+        SELECT e.new_state FROM invoice_lifecycle_events e
+        WHERE e.invoice_id = i.id AND e.community_id = i.community_id
+        ORDER BY e.id DESC LIMIT 1
+    ), 'issued')
+"""
+_COMMUNITY_INVOICE_ROWS = f"""
+SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
+       i.gross_chf, i.issue_date, i.due_date, i.policy_snapshot,
+       b.address AS participant_address,
+       COALESCE(i.provenance_snapshot->>'period_start',
+                period.period_start::text) AS period_start,
+       EXISTS (
+           SELECT 1 FROM invoice_queries q
+           WHERE q.invoice_id = i.id AND q.community_id = i.community_id
+       ) AS has_question,
+       (
+           SELECT e.reference FROM invoice_lifecycle_events e
+           WHERE e.invoice_id = i.id AND e.community_id = i.community_id
+             AND e.event_type = 'paid'
+           ORDER BY e.id DESC LIMIT 1
+       ) AS payment_reference,
+       i.provenance_snapshot->>'participant_registration_id'
+           AS participant_registration_id,
+       {_INVOICE_LIFECYCLE_STATE} AS lifecycle_state,
+       correction.original_invoice_id AS corrects_invoice_id,
+       original.invoice_number AS corrects_invoice_number,
+       replacement.invoice_number AS corrected_by_invoice_number,
+       delivery.status AS delivery_job_status
+FROM invoices i
+LEFT JOIN buildings b ON b.building_id = i.participant_id
+  AND {REGISTRATION_MATCH_SQL}
+LEFT JOIN billing_periods period ON period.id = i.billing_period_id
+  AND period.community_id = i.community_id
+LEFT JOIN invoice_delivery_jobs delivery ON delivery.invoice_id = i.id
+LEFT JOIN invoice_corrections correction
+  ON correction.corrected_invoice_id = i.id
+LEFT JOIN invoices original
+  ON original.id = correction.original_invoice_id
+LEFT JOIN invoice_corrections reverse_correction
+  ON reverse_correction.original_invoice_id = i.id
+LEFT JOIN invoices replacement
+  ON replacement.id = reverse_correction.corrected_invoice_id
+WHERE i.community_id = %s AND i.status = 'issued'
+"""
+
+
+def list_community_invoices(
+    community_id: str, *, invoice_id: int | None = None
+) -> list[dict]:
     """List issued invoices with their derived lifecycle and correction links."""
+    invoice_filter = "" if invoice_id is None else "AND i.id = %s"
+    params = (community_id,) if invoice_id is None else (community_id, invoice_id)
+    return _read_community_invoice_rows(
+        f"{_COMMUNITY_INVOICE_ROWS} {invoice_filter} ORDER BY i.issue_date DESC, i.id DESC",
+        params,
+    )
+
+
+def page_community_invoices(
+    community_id: str,
+    *,
+    states: tuple[str, ...] = (),
+    with_question: bool = False,
+    search: str = "",
+    limit: int,
+    offset: int,
+) -> list[dict]:
+    """Return a bounded slice of one LEG's invoices after applying its filters."""
+    conditions = []
+    params: list = [community_id]
+    if states:
+        conditions.append("lifecycle_state = ANY(%s)")
+        params.append(list(states))
+    if with_question:
+        conditions.append("has_question")
+    if search:
+        # Fold sharp S and both Greek sigma forms after ICU lowercasing.
+        literal = search.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+        pattern = f"%{literal}%"
+        fold_sql = (
+            """translate(replace(lower({} COLLATE "und-x-icu"), 'ß', 'ss'), 'ς', 'σ')"""
+        )
+        fields = ("invoice_number", "participant_address", "payment_reference")
+        matches = [
+            f"{fold_sql.format(field)} LIKE {fold_sql.format('%s')} ESCAPE '!'"
+            for field in fields
+        ]
+        conditions.append("(" + " OR ".join(matches) + ")")
+        params.extend([pattern] * len(fields))
+    filters = "WHERE " + " AND ".join(conditions) if conditions else ""
+    return _read_community_invoice_rows(
+        f"""
+        SELECT * FROM ({_COMMUNITY_INVOICE_ROWS}) AS scoped_invoices
+        {filters}
+        ORDER BY issue_date DESC, id DESC
+        LIMIT %s OFFSET %s
+        """,
+        (*params, limit, offset),
+    )
+
+
+def has_community_invoices(community_id: str) -> bool:
+    """Check for an issued invoice without loading rows or counting history."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT i.id, i.community_id, i.participant_id, i.invoice_number,
-                       i.gross_chf, i.issue_date, i.due_date, i.policy_snapshot,
-                       i.provenance_snapshot->>'participant_registration_id'
-                           AS participant_registration_id,
-                       COALESCE((
-                           SELECT e.new_state FROM invoice_lifecycle_events e
-                           WHERE e.invoice_id = i.id ORDER BY e.id DESC LIMIT 1
-                       ), 'issued') AS lifecycle_state,
-                       original.invoice_number AS corrects_invoice_number,
-                       replacement.invoice_number AS corrected_by_invoice_number,
-                       delivery.status AS delivery_job_status
-                FROM invoices i
-                LEFT JOIN invoice_delivery_jobs delivery ON delivery.invoice_id = i.id
-                LEFT JOIN invoice_corrections correction
-                  ON correction.corrected_invoice_id = i.id
-                LEFT JOIN invoices original
-                  ON original.id = correction.original_invoice_id
-                LEFT JOIN invoice_corrections reverse_correction
-                  ON reverse_correction.original_invoice_id = i.id
-                LEFT JOIN invoices replacement
-                  ON replacement.id = reverse_correction.corrected_invoice_id
-                WHERE i.community_id = %s AND i.status = 'issued'
-                ORDER BY i.issue_date DESC, i.id DESC
+                SELECT EXISTS (
+                    SELECT 1 FROM invoices WHERE community_id = %s AND status = 'issued'
+                ) AS has_invoices
                 """,
                 (community_id,),
             )
+            return cur.fetchone()["has_invoices"]
+    except Exception as e:
+        logger.error(f"[DB] Error checking for community invoices: {e}")
+        raise BillingStoreError("Could not check for community invoices") from e
+
+
+def list_community_invoice_payment_rows(community_id: str) -> list[dict]:
+    """Read invoice amounts and lifecycle state for bank statement review."""
+    return _read_community_invoice_rows(
+        f"""
+        SELECT i.id, i.invoice_number, i.gross_chf,
+               {_INVOICE_LIFECYCLE_STATE} AS lifecycle_state
+        FROM invoices i
+        WHERE i.community_id = %s AND i.status = 'issued'
+        ORDER BY i.issue_date DESC, i.id DESC
+        """,
+        (community_id,),
+    )
+
+
+def _read_community_invoice_rows(query: str, params: tuple) -> list[dict]:
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(query, params)
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error listing community invoices: {e}")
@@ -1865,7 +1972,8 @@ def list_invoice_events(invoice_id, community_id):
             cur.execute(
                 """
                 SELECT event_type, actor_id, previous_state, new_state,
-                       reason, reference, effective_date, created_at
+                       reason, reference, effective_date, created_at,
+                       payment_match->>'reference_stand_in' AS reference_stand_in
                 FROM invoice_lifecycle_events
                 WHERE invoice_id = %s AND community_id = %s
                 ORDER BY id
