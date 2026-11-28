@@ -67,6 +67,61 @@ def release_page():
                 browser.close()
 
 
+@pytest.mark.parametrize("locale", ["de-CH", "it-CH"])
+def test_progress_ranking_rows_are_readable_on_phones(
+    release_page, monkeypatch, locale
+):
+    from store import ranking
+
+    rows = [
+        {
+            "bfs_number": bfs,
+            "name": name,
+            "kanton": canton,
+            "score_now": score,
+            "delta": delta,
+            "year": 2025,
+        }
+        for bfs, name, canton, score, delta in (
+            (2016, "Fétigny", "FR", 28.9, 15.23),
+            (85, "Dänikon", "ZH", 17.3, 12.1),
+            (2325, "Châtel-Saint-Denis", "FR", 20.5, 3.62),
+        )
+    ]
+    monkeypatch.setattr(ranking, "get_pv_movers", lambda: rows)
+
+    page = release_page
+    page.set_viewport_size({"width": 320, "height": 900})
+    assert (
+        page.goto(f"http://qa.test/rangliste/fortschritte?lang={locale}").status == 200
+    )
+    page.evaluate("document.fonts.ready")
+    names = page.locator('main a[href^="/gemeinde/profil/"]')
+    assert names.all_text_contents() == [row["name"] for row in rows]
+    for width in (320, 375, 390):
+        page.set_viewport_size({"width": width, "height": 900})
+        assert page.evaluate("document.documentElement.scrollWidth") == width
+        name_sizes = names.evaluate_all(
+            "links => links.map(link => [link.clientWidth, link.scrollWidth])"
+        )
+        assert all(
+            visible >= 100 and text <= visible for visible, text in name_sizes
+        ), (
+            width,
+            name_sizes,
+        )
+        label_lines = page.locator(
+            'main a[href^="/gemeinde/profil/"] + span'
+        ).evaluate_all(
+            """labels => labels.map(label => {
+                const text = document.createRange();
+                text.selectNodeContents(label);
+                return text.getClientRects().length;
+            })"""
+        )
+        assert label_lines == [1] * len(rows), (width, label_lines)
+
+
 def test_german_software_roles_fit_tablet_viewport(release_page):
     page = release_page
     assert page.goto("http://qa.test/software?lang=de-CH").status == 200
