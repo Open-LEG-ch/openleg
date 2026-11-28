@@ -62,17 +62,10 @@ def test_member_list_has_its_own_page(workspace):
 
 
 def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
-    from datetime import datetime
-
     import dashboard
     from dashboard import formation_wizard
 
-    class November(datetime):
-        @classmethod
-        def now(cls, tz=None):
-            return cls(2026, 11, 27, tzinfo=tz)
-
-    monkeypatch.setattr(dashboard, "datetime", November)
+    monkeypatch.setattr(dashboard.db, "is_db_available", lambda: False)
 
     client, _ = workspace
     monkeypatch.setattr(
@@ -87,10 +80,7 @@ def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
         ],
     )
     expected = {
-        OVERVIEW: (
-            "Derzeit ist nichts offen, die nächste Abrechnungsperiode beginnt am "
-            "1. Dezember 2026. | OpenLEG"
-        ),
+        OVERVIEW: "Offene Aufgaben sind derzeit nicht verfügbar. | OpenLEG",
         ROOT + "/members": "Mitglieder · LEG Musterweg | OpenLEG",
         ROOT + "/correspondence": "Korrespondenz · LEG Musterweg | OpenLEG",
         ROOT + "/formation": "Gründung · LEG Musterweg | OpenLEG",
