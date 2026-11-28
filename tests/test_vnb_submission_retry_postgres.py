@@ -173,6 +173,27 @@ def test_administrator_retries_a_failed_submission_as_a_new_attempt(signed):
     assert "/retry" not in page
 
 
+def test_repeated_retry_after_success_shows_the_delivered_attempt(signed):
+    client, db, cid, failed_with = signed
+    adapter = ScriptedAdapter(OUTAGE, DELIVERED)
+    failed = failed_with(adapter)
+    path = _retry_path(cid, failed)
+    data = {"csrf_token": "csrf-secret"}
+
+    assert client.post(path, data=data).status_code == 302
+    attempts = _cases(db, cid)
+    assert [case["state"] for case in attempts] == ["failed", "delivered"]
+    assert db.fetch_community_with_members(cid, "founder")["status"] == "dso_submitted"
+
+    repeated = client.post(path, data=data)
+
+    assert repeated.status_code == 302
+    assert repeated.location == f"/leg/dashboard?cid={cid}"
+    assert "Zugestellt" in client.get(repeated.location).text
+    assert _cases(db, cid) == attempts
+    assert adapter.calls == 2
+
+
 def test_second_tab_cannot_retry_an_attempt_that_was_already_retried(signed):
     client, db, cid, failed_with = signed
     adapter = ScriptedAdapter(OUTAGE, OUTAGE)
@@ -194,7 +215,42 @@ def test_second_tab_cannot_retry_an_attempt_that_was_already_retried(signed):
     assert page.count("Einleitung erneut möglich") == 1
 
 
-def test_concurrent_retry_while_delivery_is_in_flight_creates_one_attempt(signed):
+def test_replay_returns_the_failure_that_consumed_the_named_retry(signed, monkeypatch):
+    client, db, cid, failed_with = signed
+    retry_failure = vnb_exchange.DeliveryResult(
+        state="failed", retryable=True, failure_code="synthetic_unavailable"
+    )
+    adapter = ScriptedAdapter(OUTAGE, retry_failure, OUTAGE)
+    failed = failed_with(adapter)
+    data = {"csrf_token": "csrf-secret"}
+
+    assert client.post(_retry_path(cid, failed), data=data).status_code == 302
+    _, consuming_attempt = _cases(db, cid)
+    assert (
+        client.post(
+            _retry_path(cid, consuming_attempt["case_id"]), data=data
+        ).status_code
+        == 302
+    )
+    attempts = _cases(db, cid)
+    assert len(attempts) == 3
+    monkeypatch.delitem(vnb_exchange.ADAPTERS, ADAPTER_KEY)
+
+    replay = vnb_exchange.submit_formation(
+        vnb_exchange.FormationSubmission(cid, "founder"), retry_of=failed
+    )
+
+    assert replay.case_id == consuming_attempt["case_id"]
+    assert replay.state == "failed"
+    assert replay.failure_code == "synthetic_unavailable"
+    assert _cases(db, cid) == attempts
+    assert adapter.calls == 3
+
+
+@pytest.mark.parametrize("claim_race", [False, True])
+def test_concurrent_retry_while_delivery_is_in_flight_creates_one_attempt(
+    signed, monkeypatch, claim_race
+):
     client, db, cid, failed_with = signed
     adapter = ScriptedAdapter(OUTAGE, DELIVERED, DELIVERED, hold_call=2)
     failed = failed_with(adapter)
@@ -210,7 +266,13 @@ def test_concurrent_retry_while_delivery_is_in_flight_creates_one_attempt(signed
     worker.start()
     try:
         assert adapter.entered.wait(30)
+        if claim_race:
+            from store import vnb_exchange as cases
+
+            # Simulate a replay lookup that finished before the first claim.
+            monkeypatch.setattr(cases, "get_retry_outcome", lambda *_: None)
         responses["second"] = other_tab.post(path, data={"csrf_token": "csrf-secret"})
+        assert "Wird vorbereitet" in other_tab.get(responses["second"].location).text
     finally:
         adapter.release.set()
         worker.join(30)
@@ -221,36 +283,46 @@ def test_concurrent_retry_while_delivery_is_in_flight_creates_one_attempt(signed
     assert adapter.calls == 2
 
 
-def test_member_without_the_role_gets_403_and_no_retry_offer(signed):
+@pytest.mark.parametrize("consumed", [False, True])
+def test_member_without_the_role_gets_403_and_no_retry_offer(signed, consumed):
     client, db, cid, failed_with = signed
     adapter = ScriptedAdapter(OUTAGE, DELIVERED)
     failed = failed_with(adapter)
+    path = _retry_path(cid, failed)
+    if consumed:
+        assert client.post(path, data={"csrf_token": "csrf-secret"}).status_code == 302
     before = _cases(db, cid)
+    calls = adapter.calls
     _set_session(client, "member")
 
     page = client.get(f"/leg/dashboard?cid={cid}").text
-    response = client.post(_retry_path(cid, failed), data={"csrf_token": "csrf-secret"})
+    response = client.post(path, data={"csrf_token": "csrf-secret"})
 
     assert "Fehlgeschlagen" in page
     assert "Einleitung erneut möglich" not in page
     assert "/retry" not in page
     assert response.status_code == 403
     assert _cases(db, cid) == before
-    assert adapter.calls == 1
+    assert adapter.calls == calls
 
 
-def test_retry_requires_the_session_csrf_token(signed):
+@pytest.mark.parametrize("consumed", [False, True])
+def test_retry_requires_the_session_csrf_token(signed, consumed):
     client, db, cid, failed_with = signed
     adapter = ScriptedAdapter(OUTAGE, DELIVERED)
     failed = failed_with(adapter)
+    path = _retry_path(cid, failed)
+    if consumed:
+        assert client.post(path, data={"csrf_token": "csrf-secret"}).status_code == 302
     before = _cases(db, cid)
+    calls = adapter.calls
 
     for data in ({}, {"csrf_token": "forged"}):
-        response = client.post(_retry_path(cid, failed), data=data)
+        response = client.post(path, data=data)
         assert response.status_code == 400
 
     assert _cases(db, cid) == before
-    assert adapter.calls == 1
+    assert adapter.calls == calls
 
 
 def test_non_retryable_failure_offers_and_accepts_no_retry(signed):
@@ -494,6 +566,54 @@ def test_retry_offer_follows_the_signed_bundle(village, monkeypatch):
     assert not vnb_exchange.may_submit_formation(cid, "sonnwil-founder")
     with pytest.raises(vnb_exchange.FormationSubmissionInvalid):
         vnb_exchange.submit_formation(command, retry_of=failed.case_id)
+
+
+def test_repeat_replays_delivery_that_finishes_before_receipt_validation(
+    village, founder, monkeypatch
+):
+    from store import vnb_exchange as cases
+    from tests.test_sandbox_formation import _signed
+    from tests.test_sandbox_formation_recovery import _native_factory
+
+    sandbox_client = village.test_client()
+    prefix, cid = _signed(sandbox_client)
+    connect = _native_factory(village, prefix)
+    client, db = founder
+    monkeypatch.setattr(db, "get_connection", connect)
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET vnb_adapter_key = %s WHERE community_id = %s",
+            (ADAPTER_KEY, cid),
+        )
+    adapter = ScriptedAdapter(OUTAGE, DELIVERED)
+    monkeypatch.setitem(vnb_exchange.ADAPTERS, ADAPTER_KEY, adapter)
+    _set_session(client, "sonnwil-founder")
+    other_tab = client.application.test_client()
+    _set_session(other_tab, "sonnwil-founder")
+    data = {"csrf_token": "csrf-secret"}
+    assert (
+        client.post(f"/leg/community/{cid}/vnb-submissions", data=data).status_code
+        == 302
+    )
+    [failed] = _cases(db, cid)
+    path = _retry_path(cid, failed["case_id"])
+    lookup = cases.get_retry_outcome
+
+    def finish_first_retry_after_lookup(community_id, retry_of):
+        prior = lookup(community_id, retry_of)
+        assert prior is None
+        monkeypatch.setattr(cases, "get_retry_outcome", lookup)
+        assert client.post(path, data=data).status_code == 302
+        assert db.fetch_community_with_members(cid)["status"] == "dso_submitted"
+        return prior
+
+    monkeypatch.setattr(cases, "get_retry_outcome", finish_first_retry_after_lookup)
+    repeated = other_tab.post(path, data=data)
+
+    assert [case["state"] for case in _cases(db, cid)] == ["failed", "delivered"]
+    assert adapter.calls == 2
+    assert repeated.status_code == 302
+    assert "Zugestellt" in other_tab.get(repeated.location).text
 
 
 def test_page_renders_without_the_offer_when_the_preview_cannot_read(

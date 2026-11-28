@@ -216,6 +216,8 @@ def adapter_for(adapter_key: str | None) -> VnbAdapter:
 
 
 class SubmissionCases(Protocol):
+    def get_retry_outcome(self, community_id: str, retry_of: str) -> dict | None: ...
+
     def check_submission(self, submission: SubmissionClaim) -> None: ...
 
     def claim(self, submission: SubmissionClaim) -> dict: ...
@@ -632,7 +634,7 @@ def submit_package(
         cases.check_submission(submission)
         return _preview(contract, FORMATION_SUBMISSION, fingerprint, manifest)
     row = cases.claim(submission)
-    if row["state"] != "claimed":
+    if row["state"] != "claimed" or row.get("replayed"):
         return _outcome_from_row(row)
 
     if FORMATION_SUBMISSION not in contract.capabilities:
@@ -738,6 +740,13 @@ def submit_formation(
     )
     if not community_access.allows(actor, community_access.MANAGE_DOCUMENTS):
         raise FormationSubmissionForbidden
+    if cases is None:
+        from store import vnb_exchange as cases
+
+    if retry_of is not None and not dry_run:
+        replay = cases.get_retry_outcome(command.community_id, retry_of)
+        if replay is not None:
+            return _outcome_from_row(replay)
     if community.get("status") != "signatures_pending":
         raise FormationSubmissionInvalid("Formation signatures are not complete")
 
@@ -763,6 +772,11 @@ def submit_formation(
         except db.SignatureDenied as error:
             raise FormationSubmissionForbidden from error
         except db.SignatureConflict as error:
+            # Delivery can advance the community after the first replay lookup.
+            if retry_of is not None and not dry_run:
+                replay = cases.get_retry_outcome(command.community_id, retry_of)
+                if replay is not None:
+                    return _outcome_from_row(replay)
             raise FormationSubmissionInvalid(str(error)) from error
     documents = []
     for item in metadata:
@@ -780,9 +794,6 @@ def submit_formation(
                 content=stored["pdf_data"],
             )
         )
-    if cases is None:
-        from store import vnb_exchange as cases
-
     return submit_package(
         FormationPackage(command.community_id, tuple(documents)),
         command.actor_building_id,
