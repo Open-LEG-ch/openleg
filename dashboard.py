@@ -661,7 +661,13 @@ def _workspace_today() -> date:
 
 
 def leg_workspace_attention(
-    community_id, building_id, member, *, require_dual_control, include_ledger=False
+    community_id,
+    building_id,
+    member,
+    *,
+    require_dual_control,
+    include_ledger=False,
+    approval_check=None,
 ):
     """Use the same role-scoped tasks for overview content and navigation."""
     today = _workspace_today()
@@ -684,6 +690,7 @@ def leg_workspace_attention(
                     building_id,
                     today,
                     require_dual_control=require_dual_control,
+                    approval_check=approval_check,
                     **task_capabilities,
                 )
             except db.BillingStoreError:
@@ -788,7 +795,9 @@ def _billing_workspace_period(period: dict, progress: dict) -> dict:
     }
 
 
-def leg_billing_period_detail(community_id, building_id, period_id, *, after=None):
+def leg_billing_period_detail(
+    community_id, building_id, period_id, *, after=None, approval_check=None
+):
     member = db.fetch_community_viewer_membership(community_id, building_id)
     capabilities = community_access.capabilities_for(member)
     if community_access.AUDIT_BILLING not in capabilities:
@@ -836,7 +845,7 @@ def leg_billing_period_detail(community_id, building_id, period_id, *, after=Non
     preparer_allows_approval = (
         can_approve
         and summary["approvable"]
-        and billing_approval.dual_control_allows_approval(
+        and (approval_check or billing_approval.dual_control_allows_approval)(
             community_id,
             period.get("prepared_by"),
             building_id,

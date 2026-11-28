@@ -12,6 +12,7 @@ import io
 import json
 import re
 import secrets
+from functools import cache
 
 import psycopg2
 from flask import (
@@ -549,7 +550,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             download_name=f"rechnung-{invoice['invoice_number']}.pdf",
         )
 
-    def render_leg_workspace(template, **view):
+    def render_leg_workspace(template, *, approval_check=None, **view):
         community = view.get("community") or {}
         community_id = community.get("community_id") or view.get("community_id")
         building_id = (
@@ -592,6 +593,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                     building_id,
                     {**current, "status": current["member_status"]},
                     require_dual_control=bool(current.get("require_dual_control")),
+                    approval_check=approval_check,
                 )
             if attention:
                 view["workspace_counts"] = attention["counts"]
@@ -1152,12 +1154,14 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
 
     def render_billing_period(community_id, building_id, period_id, **extra):
         after = request.args.get("after", "")
+        approval_check = cache(billing_approval.dual_control_allows_approval)
         try:
             view = dashboard_module.leg_billing_period_detail(
                 community_id,
                 building_id,
                 period_id,
                 after=after if len(after) <= 64 and "\x00" not in after else None,
+                approval_check=approval_check,
             )
         except (db.BillingStoreError, psycopg2.Error):
             abort(503)
@@ -1167,6 +1171,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             abort(404)
         return render_leg_workspace(
             "leg_billing_period.html",
+            approval_check=approval_check,
             csrf_token=_dashboard_csrf_token(),
             **view,
             **extra,

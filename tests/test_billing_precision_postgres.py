@@ -601,7 +601,7 @@ def test_issued_period_retry_does_not_requalify_historical_preparer(rounded_deli
     assert db.list_community_invoices(cid) == invoices
 
 
-def test_billing_period_checks_approval_once_and_the_index_only_lists_periods(
+def test_billing_pages_check_the_shared_preparer_once_per_request(
     rounded_delivery, monkeypatch
 ):
     client, db, _, _ = rounded_delivery
@@ -622,10 +622,13 @@ def test_billing_period_checks_approval_once_and_the_index_only_lists_periods(
     assert page.status_code == 200
     for shown_id in (period_id, second_id):
         assert f'href="{workspace}/period/{shown_id}"' in page.text
-    lookup.assert_not_called()
+    assert (
+        sum(call.kwargs.get("cursor") is not None for call in lookup.call_args_list)
+        == 1
+    )
 
     period_page = f"{workspace}/period/{period_id}"
-    for expected_queries in (1, 2):
+    for expected_queries in (2, 3):
         page = client.get(period_page)
         assert page.status_code == 200
         assert f'action="{period_page}/approve"' in page.text

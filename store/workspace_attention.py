@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Bounded task aggregates for the LEG administration workspace."""
 
+from collections.abc import Callable
 from datetime import date
 
 import psycopg2
@@ -65,6 +66,7 @@ def get_workspace_attention(
     require_dual_control: bool,
     can_manage_documents: bool,
     can_manage_members: bool,
+    approval_check: Callable[..., bool] | None = None,
 ) -> dict[str, dict]:
     """Return at most one count and one destination per task in this LEG."""
     import billing_approval
@@ -72,6 +74,9 @@ def get_workspace_attention(
     import database
 
     try:
+        allows_approval = (
+            approval_check or billing_approval.dual_control_allows_approval
+        )
         confirmed_preparers = []
         eligible_preparers = []
         if require_dual_control and (can_prepare or can_approve):
@@ -97,7 +102,7 @@ def get_workspace_attention(
                 eligible_preparers = [
                     preparer
                     for preparer in confirmed_preparers
-                    if billing_approval.dual_control_allows_approval(
+                    if allows_approval(
                         community_id, preparer, building_id, require_dual_control=True
                     )
                 ]
