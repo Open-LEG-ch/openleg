@@ -61,9 +61,9 @@
           {% endfor %}
         </select>
       </div>
-      <div>
+      <div class="max-sm:max-w-full">
         <label class="block text-xs text-ink-muted mb-1" for="fortschritte-density">{{ _("Dichte") }}</label>
-        <select id="fortschritte-density" name="density" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+        <select id="fortschritte-density" name="density" class="border border-slate-200 rounded-lg px-3 py-2 text-sm max-sm:max-w-full">
           {% for value, label in density_options %}
           <option value="{{ value }}" {{ 'selected' if value == density }}>{{ _(label) }}</option>
           {% endfor %}
@@ -81,20 +81,20 @@
     </p>
 
     {% set max_abs_delta = (rows|map(attribute='delta')|map('float')|map('abs')|list or [1])|max %}
-    <div class="border-t border-slate-200">
+    <ol role="list" class="border-t border-slate-200">
       {% for r in rows %}
       {% set is_up = r.delta|float > 0 %}
       {% set bar_pct = (((r.delta|float|abs) / (max_abs_delta or 1)) * 50)|round(1) %}
-      <div class="grid grid-cols-[2rem_1fr_5rem_9rem] md:grid-cols-[2.5rem_14rem_6rem_16rem] items-center gap-3 py-3 border-b border-slate-100 hover:bg-slate-50/60">
+      <li class="grid grid-cols-[1.5rem_minmax(0,1fr)_7rem] sm:grid-cols-[2rem_1fr_5rem_9rem] md:grid-cols-[2.5rem_14rem_6rem_16rem] items-center gap-3 max-sm:gap-y-1 py-3 border-b border-slate-100 hover:bg-slate-50/60">
         <span class="font-mono tabular-nums text-xs text-ink-muted">{{ loop.index }}</span>
-        <span class="min-w-0">
-          <a href="/gemeinde/profil/{{ r.bfs_number }}" class="font-medium hover:text-brand truncate block">{{ r.name }}</a>
+        <span class="min-w-0 max-sm:col-span-2">
+          <a href="/gemeinde/profil/{{ r.bfs_number }}" class="font-medium hover:text-brand sm:truncate max-sm:wrap-anywhere block">{{ r.name }}</a>
           <span class="text-xs text-ink-muted">{{ _("%(kanton)s · %(score)s%% Ende %(year)s", kanton=r.kanton, year=r.year, score="%.1f"|format([r.score_now|float, 100]|min)) }}</span>
         </span>
-        <span class="font-mono tabular-nums font-semibold text-right {{ 'text-green-700' if is_up else 'text-ink-muted' }}">
+        <span class="font-mono tabular-nums font-semibold text-right max-sm:col-start-3 max-sm:row-start-2 {{ 'text-green-700' if is_up else 'text-ink-muted' }}">
           {{ _("%(if_is_up_else)s%(value_2f_format_r_delta_float)s Pkt", if_is_up_else='+' if is_up else '', value_2f_format_r_delta_float="%.2f"|format(r.delta|float)) }}
         </span>
-        <span class="ol-deltabar-track" aria-hidden="true">
+        <span class="ol-deltabar-track max-sm:col-start-2 max-sm:row-start-2" aria-hidden="true">
           <span class="ol-baseline"></span>
           <span
             class="ol-deltabar"
@@ -102,9 +102,9 @@
             style="{% if is_up %}left: 50%; width: {{ bar_pct }}%;{% else %}right: 50%; width: {{ bar_pct }}%;{% endif %}"
           ></span>
         </span>
-      </div>
+      </li>
       {% endfor %}
-    </div>
+    </ol>
     <p class="text-xs text-ink-muted mt-4">
       {{ _("Der Wert zählt nur Anlagen mit Inbetriebnahme seit 2016 und liegt deshalb unter dem Wert in der Rangliste. Der Fortschritt zeigt die Veränderung in Prozentpunkten vom Ende des Vorjahres bis zum Ende des angegebenen Jahres.") }}
     </p>
