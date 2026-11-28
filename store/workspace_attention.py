@@ -163,8 +163,15 @@ def get_workspace_attention(
                 WHERE %(prepare)s AND {bank_assignable_sql("e")}
                 UNION ALL
                 SELECT 'submission', count(*), NULL, NULL, NULL, FALSE
-                FROM vnb_submission_cases JOIN scope USING (community_id)
-                WHERE %(documents)s AND state = 'failed'
+                FROM (
+                    SELECT DISTINCT ON (community_id, contract_version, payload_fingerprint)
+                           state
+                    FROM vnb_submission_cases JOIN scope USING (community_id)
+                    WHERE %(documents)s
+                    ORDER BY community_id, contract_version, payload_fingerprint,
+                             created_at DESC, case_id DESC
+                ) latest_attempts
+                WHERE state = 'failed'
                 UNION ALL
                 SELECT 'mutation', count(*), NULL, NULL, NULL, FALSE
                 FROM vnb_mutation_cases JOIN scope USING (community_id)

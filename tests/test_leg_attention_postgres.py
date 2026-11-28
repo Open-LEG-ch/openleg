@@ -311,6 +311,39 @@ def test_period_tasks_respect_roles_and_dual_control(operating):
     _nav_count(html, "billing", 1)
 
 
+@pytest.mark.parametrize("retry_state", ["failed", "delivered"])
+def test_vnb_attention_counts_only_the_latest_attempt_for_a_payload(
+    operating, retry_state
+):
+    _failed_submission()
+    _failed_submission(OTHER)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE vnb_submission_cases SET created_at='2026-11-24' WHERE community_id=%s",
+            (COMMUNITY,),
+        )
+        cur.execute(
+            """INSERT INTO vnb_submission_cases (
+                   case_id, community_id, created_by, adapter_key, contract_version,
+                   payload_fingerprint, state, next_action, created_at
+               ) VALUES ('a-retry', %s, %s, 'manual', '1', 'fingerprint', %s,
+                         'retry', '2026-11-25')""",
+            (COMMUNITY, ADMIN, retry_state),
+        )
+
+    page = operating.get(OVERVIEW)
+    assert page.status_code == 200
+    if retry_state == "delivered":
+        assert f'href="{ROOT}/formation#vnb-submissions-title"' not in page.text
+        assert "Derzeit ist nichts offen" in page.text
+    else:
+        _nav_count(page.text, "formation", 1)
+        assert (
+            "<title>Eine Anmeldung beim Netzbetreiber ist fehlgeschlagen. | OpenLEG</title>"
+            in page.text
+        )
+
+
 def test_invoice_payment_and_vnb_tasks_match_navigation(operating):
     delivery = _invoice("delivery")
     overdue = _invoice("overdue", amount="1071.70")
