@@ -568,6 +568,54 @@ def test_retry_offer_follows_the_signed_bundle(village, monkeypatch):
         vnb_exchange.submit_formation(command, retry_of=failed.case_id)
 
 
+def test_repeat_replays_delivery_that_finishes_before_receipt_validation(
+    village, founder, monkeypatch
+):
+    from store import vnb_exchange as cases
+    from tests.test_sandbox_formation import _signed
+    from tests.test_sandbox_formation_recovery import _native_factory
+
+    sandbox_client = village.test_client()
+    prefix, cid = _signed(sandbox_client)
+    connect = _native_factory(village, prefix)
+    client, db = founder
+    monkeypatch.setattr(db, "get_connection", connect)
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE communities SET vnb_adapter_key = %s WHERE community_id = %s",
+            (ADAPTER_KEY, cid),
+        )
+    adapter = ScriptedAdapter(OUTAGE, DELIVERED)
+    monkeypatch.setitem(vnb_exchange.ADAPTERS, ADAPTER_KEY, adapter)
+    _set_session(client, "sonnwil-founder")
+    other_tab = client.application.test_client()
+    _set_session(other_tab, "sonnwil-founder")
+    data = {"csrf_token": "csrf-secret"}
+    assert (
+        client.post(f"/leg/community/{cid}/vnb-submissions", data=data).status_code
+        == 302
+    )
+    [failed] = _cases(db, cid)
+    path = _retry_path(cid, failed["case_id"])
+    lookup = cases.get_retry_outcome
+
+    def finish_first_retry_after_lookup(community_id, retry_of):
+        prior = lookup(community_id, retry_of)
+        assert prior is None
+        monkeypatch.setattr(cases, "get_retry_outcome", lookup)
+        assert client.post(path, data=data).status_code == 302
+        assert db.fetch_community_with_members(cid)["status"] == "dso_submitted"
+        return prior
+
+    monkeypatch.setattr(cases, "get_retry_outcome", finish_first_retry_after_lookup)
+    repeated = other_tab.post(path, data=data)
+
+    assert [case["state"] for case in _cases(db, cid)] == ["failed", "delivered"]
+    assert adapter.calls == 2
+    assert repeated.status_code == 302
+    assert "Zugestellt" in other_tab.get(repeated.location).text
+
+
 def test_page_renders_without_the_offer_when_the_preview_cannot_read(
     signed, monkeypatch
 ):

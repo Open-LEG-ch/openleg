@@ -772,6 +772,11 @@ def submit_formation(
         except db.SignatureDenied as error:
             raise FormationSubmissionForbidden from error
         except db.SignatureConflict as error:
+            # Delivery can advance the community after the first replay lookup.
+            if retry_of is not None and not dry_run:
+                replay = cases.get_retry_outcome(command.community_id, retry_of)
+                if replay is not None:
+                    return _outcome_from_row(replay)
             raise FormationSubmissionInvalid(str(error)) from error
     documents = []
     for item in metadata:
