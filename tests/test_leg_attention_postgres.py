@@ -311,6 +311,32 @@ def test_period_tasks_respect_roles_and_dual_control(operating):
     _nav_count(html, "billing", 1)
 
 
+def test_approval_attention_checks_a_shared_preparer_once_per_view(
+    operating, monkeypatch
+):
+    from unittest.mock import Mock
+
+    from store import billing as billing_store
+
+    _dual_control()
+    first = _period(9, status="draft", preparer=ADMIN)
+    _period(10, status="draft", preparer=ADMIN)
+    _roles(AUDITOR, "billing_approver")
+    _set_session(operating, AUDITOR)
+    lookup = Mock(wraps=billing_store.get_billing_approval_memberships)
+    monkeypatch.setattr(billing_store, "get_billing_approval_memberships", lookup)
+
+    for expected_queries in (1, 2):
+        page = operating.get(OVERVIEW)
+        assert page.status_code == 200
+        _nav_count(page.text, "billing", 2)
+        assert f'href="{ROOT}/billing/period/{first}"' in page.text
+        assert (
+            sum(call.kwargs.get("cursor") is not None for call in lookup.call_args_list)
+            == expected_queries
+        )
+
+
 @pytest.mark.parametrize("retry_state", ["failed", "delivered"])
 def test_vnb_attention_counts_only_the_latest_attempt_for_a_payload(
     operating, retry_state
