@@ -143,7 +143,7 @@ def test_statement_import_requires_confirmed_community_admin(monkeypatch):
     )
 
     result = dashboard.leg_import_bank_statement(
-        "community-a", "outsider", "konto.xml", CAMT_053
+        "community-a", "outsider", "konto.xml", CAMT_053, upload_id="fixture-upload"
     )
 
     assert result == {"error": "Kein Zugriff."}
@@ -158,8 +158,8 @@ def test_confirmed_admin_imports_into_the_exact_community(monkeypatch):
     )
     called = []
 
-    def import_statement(*args):
-        called.append(args)
+    def import_statement(*args, upload_id):
+        called.append((args, upload_id))
         return {"duplicate": False, "entries": [{"match_decision": "matched"}]}
 
     monkeypatch.setattr(
@@ -167,10 +167,15 @@ def test_confirmed_admin_imports_into_the_exact_community(monkeypatch):
     )
 
     result = dashboard.leg_import_bank_statement(
-        "community-a", "admin-a", "konto.xml", CAMT_053
+        "community-a", "admin-a", "konto.xml", CAMT_053, upload_id="fixture-upload"
     )
 
-    assert called == [("community-a", "admin-a", "konto.xml", CAMT_053, dashboard.db)]
+    assert called == [
+        (
+            ("community-a", "admin-a", "konto.xml", CAMT_053, dashboard.db),
+            "fixture-upload",
+        )
+    ]
     assert result["error"] is None
 
 

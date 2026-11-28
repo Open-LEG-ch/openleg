@@ -1,12 +1,9 @@
 {% extends "leg_workspace_base.html" %}
-{% set workspace_page = "payments" if payment_section else "billing" %}
-{% set workspace_billing = not payment_notice_only %}
-{% set workspace_title = _('Zahlungen') if payment_section else _('Abrechnungen') %}
+{% set workspace_page = "billing" %}
+{% set workspace_billing = true %}
+{% set workspace_title = _('Abrechnungen') %}
 {% block workspace_content %}
-{% set can_prepare_billing = can_prepare_billing|default(false) %}
-{% set can_approve_billing = can_approve_billing|default(false) %}
 <div class="max-w-3xl mx-auto px-4 py-8">
-  {% if not payment_notice_only %}
   <p class="mb-2 text-sm"><a href="/leg/dashboard?cid={{ community_id }}" class="inline-flex items-center text-brand hover:underline font-semibold">{{ _('Zurück zum LEG-Dashboard') }}</a></p>
   <h1 class="text-2xl font-bold mb-2">{{ _('Abrechnungen') }}</h1>
   <p class="text-sm text-ink-muted mb-4">{{ _('Hier prüfen Sie Abrechnungsentwürfe und geben sie frei. Die Freigabe erstellt unveränderliche Rechnungen pro Teilnehmer mit der eingefrorenen Richtlinie, dem Abgleich und den Quelldokumenten der Periode.') }}</p>
@@ -15,144 +12,6 @@
     {{ _('Freigegebene Rechnungen bleiben unverändert und nachvollziehbar. Prüfen Sie Tarif, Abgleich und Quelldokumente vor der Freigabe.') }}
   </div>
 
-  {% if statement_status == 'imported' %}<p class="mb-6 rounded-lg border border-brand bg-brand/10 px-4 py-3 text-sm" role="status">{{ _('Der Kontoauszug wurde importiert und abgeglichen.') }}</p>{% endif %}
-  {% if statement_status == 'duplicate' %}<p class="mb-6 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm" role="status">{{ _('Dieser Kontoauszug wurde bereits importiert. Es wurden keine Zahlungen doppelt verbucht.') }}</p>{% endif %}
-  {% endif %}
-
-  <section id="payments" aria-labelledby="payments-title" class="mb-6">
-    <h2 id="payments-title" class="text-xl font-bold mb-4">{{ _('Zahlungen') }}</h2>
-    {% if assignment_feedback %}
-    {% if assignment_feedback.error %}
-    <p id="assignment-feedback" role="alert" class="mb-4 rounded-lg border border-line bg-paper-deep p-3">
-      {{ _(assignment_feedback.error) }}{% if assignment_feedback.recovery %} {{ _(assignment_feedback.recovery) }}{% endif %}
-    </p>
-    {% if assignment_feedback.duplicate_review and can_prepare_billing %}
-    <form method="post" action="{{ url_for('.leg_billing_statement_assign', community_id=community_id, entry_id=assignment_feedback.entry_id, statement_before=statement_before) }}" class="mb-4 rounded-xl bg-white border border-line p-4">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <input type="hidden" name="invoice_id" value="{{ assignment_feedback.invoice_id }}">
-      <input type="hidden" name="confirm" value="yes">
-      <input type="hidden" name="duplicate_review" value="{{ assignment_feedback.duplicate_review }}">
-      <dl class="mb-3 grid gap-2 wrap-anywhere sm:grid-cols-2">
-        <div><dt class="text-sm text-ink-muted">{{ _('Zahlung zuordnen') }}</dt><dd>{{ assignment_feedback.candidate.booking_date|datelabel }} <span class="font-mono">{{ assignment_feedback.candidate.currency }} {{ assignment_feedback.candidate.display_amount }}</span></dd><dd>{{ assignment_feedback.candidate.review_reference }}</dd></div>
-        <div><dt class="text-sm text-ink-muted">{{ _('Rechnung') }}</dt><dd>{{ assignment_feedback.target_invoice }}</dd></div>
-      </dl>
-      <ul id="duplicate-review-matches" class="mb-4 divide-y divide-line wrap-anywhere">
-        {% for match in assignment_feedback.matches %}
-        <li class="py-3">
-          <p class="font-semibold">{{ match.booking_date|datelabel }} <span class="font-mono">{{ match.currency }} {{ match.display_amount }}</span></p>
-          {% if match.likely_repeat %}<p class="mt-1 font-semibold">{{ _('Sehr wahrscheinlich dieselbe Zahlung') }}</p>{% endif %}
-          {% if match.indirect %}<p class="mt-1 text-sm text-ink-muted">{{ _('Über einen weiteren Eintrag verbunden.') }}</p>{% endif %}
-          <p class="mt-1 text-sm text-ink-muted">{% for reason in match.reasons %}{{ _(reason) }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
-          <dl class="mt-2 grid gap-2 sm:grid-cols-3">
-            <div><dt class="text-sm text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ match.review_reference }}</dd></div>
-            <div><dt class="text-sm text-ink-muted">{{ _('Kontoauszug') }}</dt><dd>{{ match.statement_reference or match.source_name }}{% if match.statement_reference and match.source_name %}<span class="block text-sm text-ink-muted">{{ match.source_name }}</span>{% endif %}</dd></div>
-            {% if match.invoice_number %}<div><dt class="text-sm text-ink-muted">{{ _('Rechnung') }}</dt><dd>{{ match.invoice_number }}</dd></div>{% endif %}
-          </dl>
-        </li>
-        {% endfor %}
-      </ul>
-      <label class="flex items-start gap-2">
-        <input type="checkbox" name="confirm_distinct" value="yes" required class="mt-1">
-        <span>{{ _('Ich habe alle aufgeführten Zahlungen geprüft. Es ist eine andere Zahlung.') }}</span>
-      </label>
-      <button type="submit" class="mt-3 rounded-full bg-brand px-5 py-3 font-semibold text-white">{{ _('Trotzdem zuordnen') }}</button>
-    </form>
-    {% endif %}
-    {% else %}
-    <p id="assignment-feedback" role="status" class="mb-4 rounded-lg border border-brand bg-brand/10 p-3">{{ _('Zahlung zugeordnet') }}</p>
-    {% endif %}
-    {% endif %}
-    {% if not payment_notice_only %}
-    {% if can_import_bank_statement %}
-    <section class="bg-white rounded-xl border p-6 mb-6">
-      <h3 class="font-bold mb-2">{{ _('Bankzahlungen abgleichen') }}</h3>
-      <p class="text-sm text-ink-muted mb-4">{{ _('Laden Sie einen ISO-20022-Kontoauszug im Format camt.053 oder camt.054 hoch. Nur eine eindeutige Zahlung mit passender Referenz, CHF-Betrag und LEG wird automatisch verbucht.') }}</p>
-      <form method="post" enctype="multipart/form-data" action="/leg/community/{{ community_id }}/billing/statements">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <input type="file" name="statement" accept=".xml,application/xml,text/xml" required class="block w-full border rounded-lg px-3 py-2 mb-3">
-        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-lg font-semibold">{{ _('Kontoauszug importieren') }}</button>
-      </form>
-    </section>
-    {% endif %}
-
-  {% if statement_entries or statement_before %}
-  <section id="statement-assignments" class="mb-6" aria-labelledby="statement-heading">
-    <h3 id="statement-heading" class="font-bold mb-3">{{ _('Zahlungsabgleich prüfen') }}</h3>
-    {% if statement_before or next_statement_before %}
-    <div class="mb-4 flex flex-wrap gap-4">
-      {% if statement_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_billing_workspace', community_id=community_id, section='payments') }}#payments">{{ _('Neueste offene Buchungen') }}</a>{% endif %}
-      {% if next_statement_before %}<a class="inline-flex items-center text-brand underline" href="{{ url_for('.leg_billing_workspace', community_id=community_id, section='payments', statement_before=next_statement_before) }}#payments">{{ _('Ältere offene Buchungen') }}</a>{% endif %}
-    </div>
-    {% endif %}
-    <div class="space-y-4">
-      {% for entry in statement_entries %}
-      <article id="statement-{{ entry.id }}" class="p-5 wrap-anywhere {% if entry.match_decision == 'matched' %}border-b border-line{% else %}rounded-xl bg-white border border-line{% endif %}">
-        <div class="flex items-baseline justify-between gap-3">
-          <h4 class="min-w-0 font-semibold">{{ _(entry.heading) }}</h4>
-          <p class="shrink-0 font-semibold font-mono">{{ entry.currency }} {{ _(entry.display_amount) }}</p>
-        </div>
-        <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-          <div><dt class="text-sm text-ink-muted">{{ _('Eingang') }}</dt><dd>{{ entry.booking_date|datelabel }}</dd></div>
-          {% if entry.debtor_name %}
-          <div><dt class="text-sm text-ink-muted">{{ _('Von') }}</dt><dd>{{ entry.debtor_name }}</dd></div>
-          {% endif %}
-          {% if entry.remittance_information and entry.remittance_information != entry.payment_reference %}
-          <div><dt class="text-sm text-ink-muted">{{ _('Mitteilung') }}</dt><dd class="whitespace-pre-line">{{ entry.remittance_information }}</dd></div>
-          {% endif %}
-          <div><dt class="text-sm text-ink-muted">{{ _('Zahlungsreferenz') }}</dt><dd>{{ entry.payment_reference }}</dd>{% for reference in entry.creditor_references %}{% if reference != entry.payment_reference %}<dd>{{ reference }}</dd>{% endif %}{% endfor %}</div>
-          {% if not (entry.payment_reference or '').strip() and entry.servicer_reference %}
-          <div><dt class="text-sm text-ink-muted">{{ _('Bankreferenz (AcctSvcrRef) anstelle der Zahlungsreferenz') }}</dt><dd>{{ entry.servicer_reference }}</dd></div>
-          {% endif %}
-          <div><dt class="text-sm text-ink-muted">{{ _('Richtung') }}</dt><dd>{{ _('Gutschrift') if entry.credit_debit_indicator == 'CRDT' else _('Belastung') }}</dd></div>
-          {% if entry.related_invoice %}
-          <div>
-            <dt class="text-sm text-ink-muted">{{ _('Rechnung') if entry.match_decision == 'matched' else _('Referenz gehört zu') }}</dt>
-            <dd>{{ entry.related_invoice.invoice_number }}, CHF {{ _(entry.related_invoice.statement_amount) }}</dd>
-          </div>
-          {% endif %}
-          {% if entry.shortfall %}
-          <div><dt class="text-sm text-ink-muted">{{ _('Es fehlen') }}</dt><dd class="font-mono">CHF {{ entry.shortfall }}</dd></div>
-          {% endif %}
-          <div><dt class="text-sm text-ink-muted">{{ _('Quelle') }}</dt><dd>{{ entry.source_name }}</dd></div>
-          <div><dt class="text-sm text-ink-muted">{{ _('Importiert am') }}</dt><dd><time datetime="{{ entry.imported_at.isoformat() }}">{{ entry.imported_at|datelabel }}</time></dd></div>
-          <div><dt class="text-sm text-ink-muted">{{ _('Importiert von') }}</dt><dd>{{ entry.actor_id }}</dd></div>
-        </dl>
-        {% if entry.recovery %}
-        <p class="mt-4 text-ink-muted">{{ _(entry.recovery) }}</p>
-        {% elif can_prepare_billing and entry.can_assign %}
-          {% if statement_invoice_candidates %}
-          <form method="post" action="{{ url_for('.leg_billing_statement_assign', community_id=community_id, entry_id=entry.id, statement_before=statement_before) }}" class="mt-4 max-w-lg">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <label for="statement-invoice-{{ entry.id }}" class="block font-semibold">{{ _('Rechnung') }}</label>
-            <select id="statement-invoice-{{ entry.id }}" name="invoice_id" required class="mt-2 block w-full rounded-lg border border-brand px-3 py-3 text-base">
-              <option value="">{{ _('Rechnung auswählen') }}</option>
-              {% for invoice in statement_invoice_candidates %}
-              <option value="{{ invoice.id }}">{{ invoice.invoice_number }}, CHF {{ _(invoice.statement_amount) }}</option>
-              {% endfor %}
-            </select>
-            <label class="mt-3 flex items-start gap-2">
-              <input type="checkbox" name="confirm" value="yes" required class="mt-1">
-              <span>{{ _('Ich habe Betrag, Währung, Richtung, Referenz und Rechnungsstatus geprüft.') }}</span>
-            </label>
-            <button type="submit" class="mt-4 rounded-full bg-brand px-5 py-3 font-semibold text-white">{{ _('Zahlung zuordnen') }}</button>
-          </form>
-          {% else %}
-          <p class="mt-3">{{ _('Es gibt keine zugestellte Rechnung zur Auswahl. Stellen Sie die passende Rechnung zuerst zu.') }}</p>
-          {% endif %}
-        {% endif %}
-      </article>
-      {% endfor %}
-    </div>
-  </section>
-  {% elif statement_entries_loaded %}
-  <p class="text-sm text-ink-muted">{{ _('Noch keine Bankzahlungen abgeglichen.') }}</p>
-  {% else %}
-  <p class="text-sm text-ink-muted">{{ _('Diese Ansicht lädt keine Zahlungsdaten.') }}</p>
-  {% endif %}
-  {% endif %}
-  </section>
-
-  {% if not payment_notice_only %}
   <div id="billing-periods">
   {% if periods %}
   <div class="space-y-6">
@@ -170,8 +29,8 @@
   {% endif %}
   {% if period_before or next_period_before %}
   <div class="mt-2 flex flex-wrap gap-4">
-    {% if period_before %}<a href="{{ url_for('.leg_billing_workspace', community_id=community_id, section='payments' if payment_section else none) }}#billing-periods" class="inline-flex items-center text-brand underline">{{ _('Neueste Abrechnungsperioden') }}</a>{% endif %}
-    {% if next_period_before %}<a href="{{ url_for('.leg_billing_workspace', community_id=community_id, section='payments' if payment_section else none, period_before=next_period_before) }}#billing-periods" class="inline-flex items-center text-brand underline">{{ _('Ältere Abrechnungsperioden') }}</a>{% endif %}
+    {% if period_before %}<a href="{{ url_for('.leg_billing_workspace', community_id=community_id) }}#billing-periods" class="inline-flex items-center text-brand underline">{{ _('Neueste Abrechnungsperioden') }}</a>{% endif %}
+    {% if next_period_before %}<a href="{{ url_for('.leg_billing_workspace', community_id=community_id, period_before=next_period_before) }}#billing-periods" class="inline-flex items-center text-brand underline">{{ _('Ältere Abrechnungsperioden') }}</a>{% endif %}
   </div>
   {% endif %}
   </div>
@@ -180,6 +39,5 @@
     <h2 id="issued-invoices-title" class="mb-2 text-xl font-bold">{{ _('Freigegebene Rechnungen') }}</h2>
     <a href="{{ url_for('.leg_invoice_list', community_id=community_id) }}" class="inline-flex items-center text-brand underline font-semibold">{{ _('Rechnungen öffnen') }}</a>
   </section>
-  {% endif %}
 </div>
 {% endblock %}

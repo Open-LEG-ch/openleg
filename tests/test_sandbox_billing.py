@@ -134,7 +134,7 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
     fields = {"csrf_token": _csrf(prepared), "confirm_approval": "yes"}
     assert client.post(approval, data=fields).status_code == 403
     _switch(client, prefix, "administrator")
-    workspace = client.get(prefix + COMMUNITY + "/billing")
+    workspace = client.get(prefix + COMMUNITY + "/payments")
     fields["csrf_token"] = _csrf(workspace)
     for _ in range(2):
         assert client.post(approval, data=fields).status_code == 302
@@ -196,7 +196,7 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
             "SELECT id, participant_id, invoice_number, policy_snapshot, line_items_snapshot, provenance_snapshot, gross_chf FROM invoices ORDER BY id"
         )
         frozen = cur.fetchall()
-    workspace = client.get(prefix + COMMUNITY + "/billing")
+    workspace = client.get(prefix + COMMUNITY + "/payments")
     for row in frozen:
         endpoint = prefix + COMMUNITY + f"/billing/invoice/{row[0]}/deliver"
         for _ in range(2):
@@ -238,7 +238,7 @@ def test_draft_requires_policy_and_evidence_then_issues_independent_totals(villa
     assert archive.status_code == 200
     assert archive.json["manifest"]["simulation"].startswith("SIMULATION SONNWIL")
     _policy(client, prefix, effective_from="2026-11-01", internal_price_rp="19")
-    workspace = client.get(prefix + COMMUNITY + "/billing")
+    workspace = client.get(prefix + COMMUNITY + "/payments")
     cancel = prefix + COMMUNITY + f"/billing/invoice/{resident[0]}/cancel"
     assert client.post(cancel, data={"csrf_token": _csrf(workspace)}).status_code == 409
     fields = {
@@ -391,7 +391,7 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
             )
             original, status, fingerprint = cur.fetchone()
             assert status == "invalidated"
-        page = client.get(prefix + COMMUNITY + "/billing")
+        page = client.get(prefix + COMMUNITY + "/payments")
         assert (
             client.post(
                 prefix + COMMUNITY + f"/billing/period/{original}/approve",
@@ -412,7 +412,7 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
             assert len(rows) == 2 and rows[0] == (original, "invalidated", fingerprint)
             replacement = rows[1][0]
         _switch(client, prefix, "administrator")
-        page = client.get(prefix + COMMUNITY + "/billing")
+        page = client.get(prefix + COMMUNITY + "/payments")
         assert (
             client.post(
                 prefix + COMMUNITY + f"/billing/period/{replacement}/approve",
@@ -456,7 +456,7 @@ def test_ordinary_evidence_guards_cannot_be_bypassed_in_the_demo(village, fault)
         )
         periods = cur.fetchall()
     for (period,) in periods:
-        page = client.get(prefix + COMMUNITY + "/billing")
+        page = client.get(prefix + COMMUNITY + "/payments")
         assert (
             client.post(
                 prefix + COMMUNITY + f"/billing/period/{period}/approve",

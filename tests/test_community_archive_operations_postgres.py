@@ -24,6 +24,7 @@ assignment_request = evidence.assignment_request
 configured_e66 = evidence.configured_e66
 rounded_delivery = evidence.rounded_delivery
 pytestmark = pytest.mark.integration
+UPLOAD_ID = "e" * 32
 
 TABLES = (
     "bank_statement_imports",
@@ -85,7 +86,7 @@ def operating_archive(rounded_delivery):
     )
     assert answer["status"] == "acknowledged"
     bank = payment_reconciliation.import_statement(
-        cid, "member", "synthetic.xml", CAMT_053, db
+        cid, "member", "synthetic.xml", CAMT_053, db, upload_id=UPLOAD_ID
     )
     assert bank["duplicate"] is False
     db.prepare_invoice_delivery(own["id"], cid, "member")
@@ -185,6 +186,11 @@ def operating_archive(rounded_delivery):
                 ),
             )
     archive = community_archive.export_community_archive(cid)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM bank_statement_uploads WHERE id=%s", (UPLOAD_ID,))
+        assert cur.fetchone()
+    assert UPLOAD_ID.encode() not in archive
+    assert "bank_statement_uploads" not in json.loads(archive)["datasets"]
     assert b"PRIVATE-FOREIGN" not in archive
     assert b"PRIVATE-SOURCE-CLIENT" not in archive
     assert b"source-only.invalid" not in archive
@@ -215,6 +221,7 @@ def test_operating_records_and_api_replay_survive_clean_restore(
                 "operator_api_clients",
                 "operator_webhook_deliveries",
                 "operator_api_usage",
+                "bank_statement_uploads",
             ):
                 cur.execute(f"SELECT COUNT(*) AS n FROM {table}")
                 assert cur.fetchone()["n"] == 0

@@ -18348,23 +18348,6 @@ msgid "2. Kontoauszüge herunterladen und importieren"
 msgstr "2. Télécharger et importer les relevés"
 
 #. Draft translation; native language and domain review pending.
-#: templates/sandbox/payments.html:15
-msgid ""
-"Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, "
-"Belastung und Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge "
-"bleiben unverbucht. Laden Sie danach die unbekannte Referenz mit passendem Betrag und"
-" bestätigen Sie die geprüfte Zuordnung unten. Verwenden Sie für die automatische "
-"Verbuchung eine andere zugestellte Rechnung und deren exakte CHF-Gutschrift. "
-"Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen."
-msgstr ""
-"Choisissez une facture. Dans la vue habituelle de facturation, importez d’abord le "
-"montant erroné, la devise erronée, le débit et l’extourne. Ces écritures restent non "
-"comptabilisées. Chargez ensuite la référence inconnue avec le montant correspondant "
-"et confirmez ci-dessous la correspondance vérifiée. Pour la comptabilisation "
-"automatique, utilisez une autre facture envoyée et son crédit CHF exact. Répétez le "
-"même import : il ne doit pas créer un second paiement."
-
-#. Draft translation; native language and domain review pending.
 #: templates/sandbox/payments.html:18
 msgid "Rechnung für die Übungsdateien"
 msgstr "Facture pour les fichiers d’essai"
@@ -18385,11 +18368,6 @@ msgid ""
 "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen"
 " aus."
 msgstr "Aucune facture de montant positif. Émettez d’abord les factures de septembre."
-
-#. Draft translation; native language and domain review pending.
-#: templates/sandbox/payments.html:27
-msgid "Auszug in der Abrechnungsübersicht importieren"
-msgstr "Importer le relevé dans la vue de facturation"
 
 #. Draft translation; native language and domain review pending.
 #: templates/sandbox/payments.html:30
@@ -19006,11 +18984,6 @@ msgid "Gründungsstand auf der Übersicht öffnen"
 msgstr "Voir l’avancement de la création dans la vue d’ensemble"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_dashboard.html:60
-msgid "Bankzahlungen in der Abrechnung öffnen"
-msgstr "Ouvrir les paiements bancaires dans la facturation"
-
-#. Draft translation; native language and domain review pending.
 #: templates/leg_workspace_base.html:9
 msgid "Übersicht"
 msgstr "Vue d’ensemble"
@@ -19098,16 +19071,6 @@ msgstr "Vous pouvez créer des projets de contrat uniquement avant la mise en se
 #: templates/leg_workspace/formation.html:55
 msgid "Für diese LEG liegen keine Vertragsdokumente vor."
 msgstr "Aucun document contractuel n’est disponible pour cette CEL."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:55
-msgid "Noch keine Bankzahlungen abgeglichen."
-msgstr "Aucun paiement bancaire n’a encore été rapproché."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:57
-msgid "Diese Ansicht lädt keine Zahlungsdaten."
-msgstr "Cette vue ne charge pas les données de paiement."
 
 #. Draft translation; native language and domain review pending.
 #: dashboard.py:1119
@@ -20709,3 +20672,109 @@ msgstr "Aucun paiement dû"
 #: templates/leg_billing_period.html:36
 msgid "Entfällt"
 msgstr "Sans objet"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:8
+msgid "Neueste offene Rechnungen"
+msgstr "Factures ouvertes les plus récentes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:9
+msgid "Ältere offene Rechnungen"
+msgstr "Factures ouvertes plus anciennes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:74
+msgid "Letzter Import"
+msgstr "Dernier import"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:74
+msgid "Importierter Kontoauszug"
+msgstr "Relevé bancaire importé"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:79
+msgid "Importierte Einträge"
+msgstr "Écritures importées"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:81
+msgid "Manuell zugeordnet"
+msgstr "Affectées manuellement"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:82
+msgid "Warten auf Zuordnung"
+msgstr "En attente d’affectation"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:84
+msgid "Doppelte Einträge übersprungen"
+msgstr "Écritures en double ignorées"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:89
+msgid "Noch kein Kontoauszug importiert."
+msgstr "Aucun relevé bancaire importé pour le moment."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:101
+msgid "Die Rechnungsauswahl zeigt die offenen Rechnungen dieser Seite."
+msgstr "Vous pouvez sélectionner les factures ouvertes affichées sur cette page."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:108
+msgid "Keine Einträge warten auf eine Zuordnung."
+msgstr "Aucune écriture en attente d’affectation."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:114
+msgid "Offene Rechnungen"
+msgstr "Factures ouvertes"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:127
+msgid "Überfällig"
+msgstr "En retard"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:127
+msgid "Fällig heute"
+msgstr "À payer aujourd’hui"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:136
+msgid "Keine weiteren offenen Rechnungen."
+msgstr "Il n’y a pas d’autres factures ouvertes."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:136
+msgid "Keine offenen Rechnungen."
+msgstr "Aucune facture ouverte."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_payments.html:143
+msgid "Weitere importierte Einträge"
+msgstr "Autres écritures importées"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_workspace/payment_entry.html:52
+msgid "Auf dieser Seite steht keine Rechnung zur Auswahl."
+msgstr "Aucune facture à sélectionner sur cette page."
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/payments.html:15
+msgid ""
+"Wählen Sie eine Rechnung. Importieren Sie unter Zahlungen zuerst die Auszüge mit falschem Betrag,"
+" falscher Währung, Belastung und Rückbuchung. Diese Einträge bleiben unverbucht. Importieren Sie "
+"danach den Auszug mit unbekannter Referenz und passendem Betrag. Kehren Sie hierher zurück und "
+"bestätigen Sie unten die geprüfte Zuordnung. Verwenden Sie für die automatische Verbuchung eine "
+"andere zugestellte Rechnung und deren exakte CHF-Gutschrift. Wiederholen Sie denselben Import, um"
+" zu prüfen, dass nur eine Zahlung verbucht wird."
+msgstr "Sélectionnez une facture. Dans la rubrique Paiements, importez d’abord les relevés contenant un montant incorrect, une devise incorrecte, un débit et une contrepassation. Ces écritures ne seront pas comptabilisées. Importez ensuite le relevé dont la référence est inconnue et le montant correct. Revenez ici et confirmez l’affectation ci-dessous après l’avoir vérifiée. Pour essayer la comptabilisation automatique, utilisez une autre facture envoyée et le crédit en CHF qui lui correspond exactement. Importez de nouveau le même relevé pour vérifier qu’un seul paiement est comptabilisé."
+
+#. Draft translation; native language and domain review pending.
+#: templates/sandbox/payments.html:28
+msgid "Auszug unter Zahlungen importieren"
+msgstr "Importer le relevé dans la rubrique Paiements"

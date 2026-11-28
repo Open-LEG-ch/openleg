@@ -17605,22 +17605,6 @@ msgstr ""
 msgid "2. Kontoauszüge herunterladen und importieren"
 msgstr "2. Kontoauszüge herunterladen und importieren"
 
-#: templates/sandbox/payments.html:15
-msgid ""
-"Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, "
-"Belastung und Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge "
-"bleiben unverbucht. Laden Sie danach die unbekannte Referenz mit passendem Betrag und"
-" bestätigen Sie die geprüfte Zuordnung unten. Verwenden Sie für die automatische "
-"Verbuchung eine andere zugestellte Rechnung und deren exakte CHF-Gutschrift. "
-"Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen."
-msgstr ""
-"Wählen Sie eine Rechnung. Importieren Sie zuerst falschen Betrag, falsche Währung, "
-"Belastung und Rückbuchung in der gewöhnlichen Abrechnungsübersicht. Diese Einträge "
-"bleiben unverbucht. Laden Sie danach die unbekannte Referenz mit passendem Betrag und"
-" bestätigen Sie die geprüfte Zuordnung unten. Verwenden Sie für die automatische "
-"Verbuchung eine andere zugestellte Rechnung und deren exakte CHF-Gutschrift. "
-"Wiederholen Sie denselben Import: Er darf keine zweite Zahlung erzeugen."
-
 #: templates/sandbox/payments.html:18
 msgid "Rechnung für die Übungsdateien"
 msgstr "Rechnung für die Übungsdateien"
@@ -17640,10 +17624,6 @@ msgid ""
 msgstr ""
 "Noch keine Rechnung mit positivem Betrag. Stellen Sie zuerst die September-Rechnungen"
 " aus."
-
-#: templates/sandbox/payments.html:27
-msgid "Auszug in der Abrechnungsübersicht importieren"
-msgstr "Auszug in der Abrechnungsübersicht importieren"
 
 #: templates/sandbox/payments.html:30
 msgid "Kontoauszug (camt.053 oder camt.054)"
@@ -18194,10 +18174,6 @@ msgstr ""
 msgid "Gründungsstand auf der Übersicht öffnen"
 msgstr "Gründungsstand auf der Übersicht öffnen"
 
-#: templates/leg_dashboard.html:60
-msgid "Bankzahlungen in der Abrechnung öffnen"
-msgstr "Bankzahlungen in der Abrechnung öffnen"
-
 #: templates/leg_workspace_base.html:9
 msgid "Übersicht"
 msgstr "Übersicht"
@@ -18270,14 +18246,6 @@ msgstr "Vertragsentwürfe lassen sich nur vor dem Betriebsstart erstellen."
 #: templates/leg_workspace/formation.html:55
 msgid "Für diese LEG liegen keine Vertragsdokumente vor."
 msgstr "Für diese LEG liegen keine Vertragsdokumente vor."
-
-#: templates/leg_billing.html:55
-msgid "Noch keine Bankzahlungen abgeglichen."
-msgstr "Noch keine Bankzahlungen abgeglichen."
-
-#: templates/leg_billing.html:57
-msgid "Diese Ansicht lädt keine Zahlungsdaten."
-msgstr "Diese Ansicht lädt keine Zahlungsdaten."
 
 #: dashboard.py:1119
 msgid ""
@@ -19607,3 +19575,95 @@ msgstr "Keine Zahlung fällig"
 #: templates/leg_billing_period.html:36
 msgid "Entfällt"
 msgstr "Entfällt"
+
+#: templates/leg_payments.html:8
+msgid "Neueste offene Rechnungen"
+msgstr "Neueste offene Rechnungen"
+
+#: templates/leg_payments.html:9
+msgid "Ältere offene Rechnungen"
+msgstr "Ältere offene Rechnungen"
+
+#: templates/leg_payments.html:74
+msgid "Letzter Import"
+msgstr "Letzter Import"
+
+#: templates/leg_payments.html:74
+msgid "Importierter Kontoauszug"
+msgstr "Importierter Kontoauszug"
+
+#: templates/leg_payments.html:79
+msgid "Importierte Einträge"
+msgstr "Importierte Einträge"
+
+#: templates/leg_payments.html:81
+msgid "Manuell zugeordnet"
+msgstr "Manuell zugeordnet"
+
+#: templates/leg_payments.html:82
+msgid "Warten auf Zuordnung"
+msgstr "Warten auf Zuordnung"
+
+#: templates/leg_payments.html:84
+msgid "Doppelte Einträge übersprungen"
+msgstr "Doppelte Einträge übersprungen"
+
+#: templates/leg_payments.html:89
+msgid "Noch kein Kontoauszug importiert."
+msgstr "Noch kein Kontoauszug importiert."
+
+#: templates/leg_payments.html:101
+msgid "Die Rechnungsauswahl zeigt die offenen Rechnungen dieser Seite."
+msgstr "Die Rechnungsauswahl zeigt die offenen Rechnungen dieser Seite."
+
+#: templates/leg_payments.html:108
+msgid "Keine Einträge warten auf eine Zuordnung."
+msgstr "Keine Einträge warten auf eine Zuordnung."
+
+#: templates/leg_payments.html:114
+msgid "Offene Rechnungen"
+msgstr "Offene Rechnungen"
+
+#: templates/leg_payments.html:127
+msgid "Überfällig"
+msgstr "Überfällig"
+
+#: templates/leg_payments.html:127
+msgid "Fällig heute"
+msgstr "Fällig heute"
+
+#: templates/leg_payments.html:136
+msgid "Keine weiteren offenen Rechnungen."
+msgstr "Keine weiteren offenen Rechnungen."
+
+#: templates/leg_payments.html:136
+msgid "Keine offenen Rechnungen."
+msgstr "Keine offenen Rechnungen."
+
+#: templates/leg_payments.html:143
+msgid "Weitere importierte Einträge"
+msgstr "Weitere importierte Einträge"
+
+#: templates/leg_workspace/payment_entry.html:52
+msgid "Auf dieser Seite steht keine Rechnung zur Auswahl."
+msgstr "Auf dieser Seite steht keine Rechnung zur Auswahl."
+
+#: templates/sandbox/payments.html:15
+msgid ""
+"Wählen Sie eine Rechnung. Importieren Sie unter Zahlungen zuerst die Auszüge mit falschem Betrag,"
+" falscher Währung, Belastung und Rückbuchung. Diese Einträge bleiben unverbucht. Importieren Sie "
+"danach den Auszug mit unbekannter Referenz und passendem Betrag. Kehren Sie hierher zurück und "
+"bestätigen Sie unten die geprüfte Zuordnung. Verwenden Sie für die automatische Verbuchung eine "
+"andere zugestellte Rechnung und deren exakte CHF-Gutschrift. Wiederholen Sie denselben Import, um"
+" zu prüfen, dass nur eine Zahlung verbucht wird."
+msgstr ""
+"Wählen Sie eine Rechnung. Importieren Sie unter Zahlungen zuerst die Auszüge mit falschem Betrag,"
+" falscher Währung, Belastung und Rückbuchung. Diese Einträge bleiben unverbucht. Importieren Sie "
+"danach den Auszug mit unbekannter Referenz und passendem Betrag. Kehren Sie hierher zurück und "
+"bestätigen Sie unten die geprüfte Zuordnung. Verwenden Sie für die automatische Verbuchung eine "
+"andere zugestellte Rechnung und deren exakte CHF-Gutschrift. Wiederholen Sie denselben Import, um"
+" zu prüfen, dass nur eine Zahlung verbucht wird."
+
+#: templates/sandbox/payments.html:28
+msgid "Auszug unter Zahlungen importieren"
+msgstr "Auszug unter Zahlungen importieren"

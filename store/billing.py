@@ -1170,17 +1170,38 @@ def has_community_invoices(community_id: str) -> bool:
         raise BillingStoreError("Could not check for community invoices") from e
 
 
-def list_community_invoice_payment_rows(community_id: str) -> list[dict]:
-    """Read invoice amounts and lifecycle state for bank statement review."""
+def list_community_invoice_payment_rows(
+    community_id: str, invoice_ids: list[int]
+) -> list[dict]:
+    """Read the invoices referenced by this page of bank statement entries."""
+    if not invoice_ids:
+        return []
     return _read_community_invoice_rows(
         f"""
         SELECT i.id, i.invoice_number, i.gross_chf,
                {_INVOICE_LIFECYCLE_STATE} AS lifecycle_state
         FROM invoices i
         WHERE i.community_id = %s AND i.status = 'issued'
-        ORDER BY i.issue_date DESC, i.id DESC
+          AND i.id = ANY(%s)
         """,
-        (community_id,),
+        (community_id, invoice_ids),
+    )
+
+
+def page_open_payment_invoices(
+    community_id: str, *, limit: int, before: int | None
+) -> list[dict]:
+    """Read only delivered, unpaid invoices for the payments page."""
+    return _read_community_invoice_rows(
+        f"""
+        SELECT i.id, i.invoice_number, i.gross_chf, i.due_date
+        FROM invoices i
+        WHERE i.community_id = %s AND i.status = 'issued'
+          AND (%s IS NULL OR i.id < %s)
+          AND {_INVOICE_LIFECYCLE_STATE} = 'delivered'
+        ORDER BY i.id DESC LIMIT %s
+        """,
+        (community_id, before, before, limit),
     )
 
 
@@ -1767,7 +1788,15 @@ def confirm_payment(
         return response
 
 
-def _statement_import_result(cur, import_id, *, duplicate):
+def _statement_import_result(cur, import_id, *, duplicate, membership_id, upload_id):
+    if upload_id is not None:
+        cur.execute(
+            """
+            INSERT INTO bank_statement_uploads (id, statement_import_id, membership_id, duplicate)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (upload_id, import_id, membership_id, duplicate),
+        )
     cur.execute(
         """
                 SELECT bank_account, entry_reference, booking_date, amount, currency,
@@ -1795,6 +1824,7 @@ def reconcile_bank_statement(
     statement_reference,
     fingerprint,
     entries,
+    upload_id=None,
 ):
     """Persist one statement and append paid events for exact unique matches.
 
@@ -1805,6 +1835,20 @@ def reconcile_bank_statement(
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             _lock_payment_booking(cur, community_id)
+            membership_id = None
+            if upload_id is not None:
+                cur.execute(
+                    """
+                    SELECT id FROM community_members
+                    WHERE community_id = %s AND building_id = %s AND status = 'confirmed'
+                    FOR SHARE
+                    """,
+                    (community_id, actor_id),
+                )
+                membership = cur.fetchone()
+                if not membership:
+                    raise BillingStoreError("Upload membership no longer exists")
+                membership_id = membership["id"]
             cur.execute(
                 """
                 INSERT INTO bank_statement_imports (
@@ -1833,7 +1877,11 @@ def reconcile_bank_statement(
                     (community_id, fingerprint),
                 )
                 return _statement_import_result(
-                    cur, cur.fetchone()["id"], duplicate=True
+                    cur,
+                    cur.fetchone()["id"],
+                    duplicate=True,
+                    membership_id=membership_id,
+                    upload_id=upload_id,
                 )
             import_id = imported["id"]
             cur.execute(
@@ -1933,10 +1981,89 @@ def reconcile_bank_statement(
                         entry["id"],
                     ),
                 )
-            return _statement_import_result(cur, import_id, duplicate=False)
+            return _statement_import_result(
+                cur,
+                import_id,
+                duplicate=False,
+                membership_id=membership_id,
+                upload_id=upload_id,
+            )
     except Exception as error:
         logger.error("[DB] Error reconciling bank statement: %s", error)
         raise BillingStoreError("Could not reconcile bank statement") from error
+
+
+def get_bank_statement_summary(community_id, upload_id, building_id):
+    """Summarize one import and apply the workspace's entry eligibility rules."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            # Keep the booking counts and the assignment eligibility scan in
+            # the same snapshot while another request assigns an entry.
+            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+            cur.execute(
+                """
+                WITH statement AS (
+                    SELECT i.id, i.source_name, i.imported_at, i.community_id, u.duplicate
+                    FROM bank_statement_imports i
+                    LEFT JOIN bank_statement_uploads u
+                      ON u.id = %s AND u.statement_import_id = i.id AND u.membership_id = (
+                          SELECT m.id FROM community_members m
+                          WHERE m.community_id = i.community_id AND m.building_id = %s
+                            AND m.status = 'confirmed'
+                      )
+                    WHERE i.community_id = %s AND (%s IS NULL OR u.id IS NOT NULL)
+                    ORDER BY i.id DESC LIMIT 1
+                )
+                SELECT s.id, s.source_name, s.imported_at, s.duplicate,
+                       count(e.id) AS entries,
+                       count(*) FILTER (WHERE e.match_decision = 'matched') AS booked,
+                       count(*) FILTER (
+                           WHERE e.match_decision = 'matched' AND EXISTS (
+                               SELECT 1 FROM invoice_lifecycle_events event
+                               WHERE event.community_id = s.community_id
+                                 AND event.invoice_id = e.invoice_id
+                                 AND event.event_type = 'paid'
+                                 AND starts_with(event.idempotency_key, 'bank:' || s.id::text || ':')
+                           )
+                       ) AS automatic
+                FROM statement s
+                LEFT JOIN bank_statement_entries e
+                    ON e.statement_import_id = s.id AND e.community_id = s.community_id
+                GROUP BY s.id, s.source_name, s.imported_at, s.duplicate
+                """,
+                (upload_id, building_id, community_id, upload_id),
+            )
+            summary = cur.fetchone()
+            if not summary:
+                return None
+            # Stream only the eligibility fields of reviewable entries in
+            # this import. Use the same predicate as the assignment card.
+            with conn.cursor(name="statement_assignment_summary") as entries:
+                entries.execute(
+                    """
+                    SELECT is_reversal, booking_status, amount_basis,
+                           credit_debit_indicator, currency, payment_reference,
+                           servicer_reference
+                    FROM bank_statement_entries
+                    WHERE community_id = %s AND statement_import_id = %s
+                      AND match_decision = ANY(%s)
+                    """,
+                    (
+                        community_id,
+                        summary["id"],
+                        sorted(payment_reconciliation.REVIEWABLE_DECISIONS),
+                    ),
+                )
+                return {
+                    **summary,
+                    "unassigned": sum(
+                        payment_reconciliation.payment_entry_refusal(entry) is None
+                        for entry in entries
+                    ),
+                }
+    except Exception as error:
+        logger.error("[DB] Error summarizing statement import: %s", error)
+        raise BillingStoreError("Could not summarize statement import") from error
 
 
 def list_bank_statement_entries(

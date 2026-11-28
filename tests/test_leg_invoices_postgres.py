@@ -518,9 +518,7 @@ def test_invoice_address_and_participant_id_appear_together(workspace):
         assert PARTICIPANT in response.text
 
 
-@pytest.mark.parametrize(
-    "path", [ROOT + "/billing", ROOT + "/billing?section=payments"]
-)
+@pytest.mark.parametrize("path", [ROOT + "/billing", ROOT + "/payments"])
 def test_billing_and_payments_skip_invoice_detail_reads(workspace, monkeypatch, path):
     _question(_invoice("INV-WITH-DETAILS"))
 

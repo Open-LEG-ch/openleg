@@ -1254,6 +1254,20 @@ def create_tables():
                 )
             """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS bank_statement_uploads (
+                    id CHAR(32) PRIMARY KEY,
+                    statement_import_id BIGINT NOT NULL
+                        REFERENCES bank_statement_imports(id) ON DELETE CASCADE,
+                    membership_id INTEGER NOT NULL
+                        REFERENCES community_members(id) ON DELETE CASCADE,
+                    duplicate BOOLEAN NOT NULL
+                )
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS ix_bank_statement_uploads_membership
+                    ON bank_statement_uploads (membership_id)
+            """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS bank_statement_entries (
                     id BIGSERIAL PRIMARY KEY,
                     statement_import_id BIGINT NOT NULL REFERENCES bank_statement_imports(id),
