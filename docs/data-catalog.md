@@ -511,6 +511,21 @@ it.
 - **Resident-visible:** only to authorized community members.
 - **Consent gate:** membership and explicit workflow capability.
 
+## store/workspace_attention
+
+- **Tables:** reads `billing_periods`, `invoices`, `invoice_lifecycle_events`,
+  `invoice_delivery_jobs`, `invoice_queries`, `bank_statement_entries`,
+  `bank_statement_imports`, `vnb_submission_cases`, `vnb_mutation_cases`,
+  `community_members` and `buildings`. It creates no tables.
+- **Returns:** counts and a destination per task. Overdue invoices can also
+  contribute a total, and the next payment can contribute a due date.
+- **Purpose:** show the signed-in operator what needs attention in their LEG.
+- **Owner:** the LEG.
+- **Sensitivity:** private billing and operational data. The approval check
+  uses membership and sign-in addresses without including them in task results.
+- **Access gate:** confirmed membership in the selected LEG and the capability
+  for each task. Approval tasks also depend on dual control when enabled.
+
 ## store/dashboard_profile
 
 - **Tables:** none of its own; it is the seam for the resident's
