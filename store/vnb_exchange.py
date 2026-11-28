@@ -539,7 +539,7 @@ def _require_current_bundle(cursor, submission):
 
 
 def _current_attempt(cursor, submission):
-    """Return the payload's newest case, or the named stale case of a retry."""
+    """Return the payload's newest case or check whether it can be retried."""
     cursor.execute(
         """SELECT * FROM vnb_submission_cases
            WHERE community_id = %s AND contract_version = %s
@@ -554,7 +554,7 @@ def _current_attempt(cursor, submission):
     latest = cursor.fetchone()
     retry_of = submission.retry_of
     if retry_of is not None and (latest is None or latest["case_id"] != retry_of):
-        return _earlier_failure(cursor, submission)
+        raise VnbSubmissionConflict("This VNB submission cannot be retried")
     if latest is None:
         return None
     if not (latest["state"] == "failed" and latest["retryable"]):
@@ -567,31 +567,35 @@ def _current_attempt(cursor, submission):
     return None
 
 
-def _earlier_failure(cursor, submission):
-    """Return an already retried failure unchanged, so nothing is delivered."""
-    # Another tab or a double click retried this attempt first.
+def _retry_outcome(cursor, community_id, retry_of):
     cursor.execute(
-        """SELECT * FROM vnb_submission_cases
-           WHERE community_id = %s AND case_id = %s AND state = 'failed'
-             AND contract_version = %s AND payload_fingerprint = %s""",
-        (
-            submission.community_id,
-            submission.retry_of,
-            submission.contract_version,
-            submission.payload_fingerprint,
-        ),
+        """SELECT successor.* FROM vnb_submission_cases AS failed
+           JOIN vnb_submission_cases AS successor
+             ON successor.community_id = failed.community_id
+            AND successor.contract_version = failed.contract_version
+            AND successor.payload_fingerprint = failed.payload_fingerprint
+            AND (successor.created_at, successor.case_id) >
+                (failed.created_at, failed.case_id)
+           WHERE failed.community_id = %s AND failed.case_id = %s
+             AND failed.state = 'failed' AND failed.retryable
+           ORDER BY successor.created_at, successor.case_id LIMIT 1""",
+        (community_id, retry_of),
     )
-    earlier = cursor.fetchone()
-    if not earlier:
-        raise VnbSubmissionConflict("This VNB submission cannot be retried")
-    return dict(earlier)
+    row = cursor.fetchone()
+    return dict(row) if row else None
+
+
+def get_retry_outcome(community_id: str, retry_of: str) -> dict | None:
+    """Read the attempt that consumed a failure, including in-flight delivery."""
+    with _get_connection() as conn, conn.cursor() as cur:
+        return _retry_outcome(cur, community_id, retry_of)
 
 
 def claim(submission: SubmissionClaim) -> dict:
     """Claim one stable formation submission or return its existing case.
 
     A retryable failure stays in the history. Retrying it claims a new case,
-    and a repeated retry of the same failure returns that failure unchanged.
+    and a repeated retry returns the attempt that consumed it.
     """
     case_id = str(uuid.uuid4())
     try:
@@ -600,6 +604,12 @@ def claim(submission: SubmissionClaim) -> dict:
             # of the community, even if this transaction started earlier or the
             # server clock stepped back.
             _lock_community(cur, submission.community_id)
+            if submission.retry_of is not None:
+                replay = _retry_outcome(
+                    cur, submission.community_id, submission.retry_of
+                )
+                if replay is not None:
+                    return dict(replay, replayed=True)
             existing = _guard_current_formation_bundle(cur, submission)
             if existing is not None:
                 return existing
