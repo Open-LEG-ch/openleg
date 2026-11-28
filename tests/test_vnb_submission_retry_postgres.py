@@ -515,3 +515,25 @@ def test_page_renders_without_the_offer_when_the_preview_cannot_read(
     assert page.status_code == 200
     assert "Fehlgeschlagen" in page.text
     assert "/retry" not in page.text
+
+
+def test_retry_form_targets_current_bundle_even_when_another_payload_is_newer(signed):
+    client, db, cid, failed_with = signed
+    adapter = ScriptedAdapter(OUTAGE, DELIVERED)
+    failed = failed_with(adapter)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO vnb_submission_cases (
+                   case_id, community_id, created_by, adapter_key, contract_version,
+                   payload_fingerprint, state, next_action, retryable, created_at
+               ) SELECT 'other-payload', community_id, created_by, adapter_key, contract_version,
+                        'different-fingerprint', 'failed', 'retry', true, created_at + interval '1 minute'
+                 FROM vnb_submission_cases WHERE case_id=%s""",
+            (failed,),
+        )
+    page = client.get(f"/leg/dashboard?cid={cid}").text
+    assert _retry_form(page, cid, "other-payload") is None
+    assert _retry_form(page, cid, failed) is not None
+    response = client.post(_retry_path(cid, failed), data={"csrf_token": "csrf-secret"})
+    assert response.status_code == 302
+    assert adapter.calls == 2

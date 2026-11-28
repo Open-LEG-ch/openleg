@@ -13,6 +13,8 @@ from store.billing import (
     bank_assignable_sql,
     bank_assignment_query_parameters,
 )
+from store.invoice_identity import REGISTRATION_MATCH_SQL
+from store.vnb_exchange import latest_attempts_sql
 
 # Match billing_workspace.readiness_flags for the draft review affordance.
 # Walk only objects, as the Python check does, and never cast invalid numbers.
@@ -79,8 +81,11 @@ def get_workspace_attention(
         )
         confirmed_preparers = []
         eligible_preparers = []
-        if require_dual_control and (can_prepare or can_approve):
-            with database.get_connection() as conn, conn.cursor() as cur:
+        with database.get_connection() as conn, conn.cursor() as cur:
+            if require_dual_control and (can_prepare or can_approve):
+                cur.execute(
+                    "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"
+                )
                 cur.execute(
                     """
                     SELECT m.building_id, m.role, m.status, m.access_roles
@@ -98,15 +103,17 @@ def get_workspace_attention(
                     for row in cur.fetchall()
                     if community_access.allows(row, community_access.PREPARE_BILLING)
                 ]
-            if can_approve:
-                eligible_preparers = [
-                    preparer
-                    for preparer in confirmed_preparers
-                    if allows_approval(
-                        community_id, preparer, building_id, require_dual_control=True
-                    )
-                ]
-        with database.get_connection() as conn, conn.cursor() as cur:
+                if can_approve:
+                    eligible_preparers = [
+                        preparer
+                        for preparer in confirmed_preparers
+                        if allows_approval(
+                            community_id,
+                            preparer,
+                            building_id,
+                            require_dual_control=True,
+                        )
+                    ]
             cur.execute(
                 f"""
                 WITH scope AS (
@@ -153,11 +160,16 @@ def get_workspace_attention(
                 UNION ALL
                 SELECT CASE WHEN j.status IS NULL THEN 'deliver' ELSE 'review_delivery' END,
                        count(*), min(i.id), NULL, NULL, FALSE
-                FROM issued i
-                JOIN scope s ON TRUE
+                FROM issued current
+                JOIN invoices i ON i.id = current.id
+                JOIN scope s ON s.community_id = i.community_id
                 LEFT JOIN invoice_delivery_jobs j ON j.invoice_id = i.id
                   AND j.community_id = s.community_id
-                WHERE i.state = 'issued' AND (j.status IS NULL OR j.status IN ('pending', 'failed'))
+                LEFT JOIN buildings b ON b.building_id = i.participant_id
+                  AND {REGISTRATION_MATCH_SQL}
+                WHERE current.state = 'issued'
+                  AND ((j.status IS NULL AND b.building_id IS NOT NULL)
+                       OR j.status IN ('pending', 'failed'))
                 GROUP BY (j.status IS NULL)
                 UNION ALL
                 SELECT 'overdue', count(*), NULL, NULL,
@@ -182,18 +194,11 @@ def get_workspace_attention(
                 WHERE %(prepare)s AND {bank_assignable_sql("e")}
                 UNION ALL
                 SELECT 'submission', count(*), NULL, NULL, NULL, FALSE
-                FROM (
-                    SELECT DISTINCT ON (community_id, contract_version, payload_fingerprint)
-                           state
-                    FROM vnb_submission_cases JOIN scope USING (community_id)
-                    WHERE %(documents)s
-                    ORDER BY community_id, contract_version, payload_fingerprint,
-                             created_at DESC, case_id DESC
-                ) latest_attempts
-                WHERE state = 'failed'
+                FROM ({latest_attempts_sql("vnb_submission_cases")}) latest_attempts
+                WHERE %(documents)s AND state = 'failed'
                 UNION ALL
                 SELECT 'mutation', count(*), NULL, NULL, NULL, FALSE
-                FROM vnb_mutation_cases JOIN scope USING (community_id)
+                FROM ({latest_attempts_sql("vnb_mutation_cases")}) latest_attempts
                 WHERE %(members)s AND state = 'failed'
                 """,
                 {

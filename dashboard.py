@@ -230,7 +230,7 @@ def _money_display(value) -> str:
 
 
 def leg_overview(
-    community_id: str, building_id: str, *, workspace_page: str = "overview"
+    community_id: str, building_id: str, *, workspace_page: str | None = "overview"
 ) -> dict:
     """Operator view of one community, gated on membership.
 
@@ -261,6 +261,8 @@ def leg_overview(
     if member.get("status") != "confirmed":
         return {"error": _N("Kein Zugriff."), "community": None}
 
+    if workspace_page is None:
+        workspace_page = leg_formation_page(status)
     capabilities = community_access.capabilities_for(member)
     can_audit_billing = community_access.AUDIT_BILLING in capabilities
     if workspace_page == "settings" and not can_audit_billing:
@@ -302,14 +304,7 @@ def leg_overview(
     else:
         vnb_submissions = []
         vnb_mutations = []
-    newest_submission = vnb_submissions[0] if vnb_submissions else {}
-    # Offer a retry only where the submission itself would accept the viewer.
-    can_retry_vnb_submission = (
-        newest_submission.get("state") == "failed"
-        and bool(newest_submission.get("retryable"))
-        and newest_submission.get("next_action") == "retry"
-        and vnb_exchange.may_submit_formation(community_id, building_id)
-    )
+    retry_case_id = _current_vnb_retry_case(status, building_id, vnb_submissions)
     battery_unavailable = False
     try:
         battery = db.get_battery(community_id)
@@ -375,13 +370,43 @@ def leg_overview(
         "leg_documents": db.list_leg_documents(community_id) if show_formation else [],
         "correspondence": correspondence,
         "vnb_submissions": vnb_submissions,
-        "can_retry_vnb_submission": can_retry_vnb_submission,
+        "vnb_retry_case_id": retry_case_id,
         "vnb_mutations": vnb_mutations,
         "vnb_exchange_available": vnb_exchange_available,
         "battery": battery_view,
         "battery_unavailable": battery_unavailable,
         "battery_form_values": battery_form_values,
     }
+
+
+def _current_vnb_retry_case(status, building_id, submissions):
+    if status["status"] != "signatures_pending":
+        return None
+    candidates = [
+        case
+        for case in submissions
+        if case.get("is_latest_attempt")
+        and case["state"] == "failed"
+        and case.get("retryable")
+        and case.get("next_action") == "retry"
+    ]
+    if not candidates:
+        return None
+    preview = vnb_exchange.formation_submission_preview(
+        status["community_id"], building_id
+    )
+    if preview is None:
+        return None
+    contract_version = (preview.canonical_payload or {}).get("contract_version")
+    return next(
+        (
+            case["case_id"]
+            for case in candidates
+            if case["payload_fingerprint"] == preview.payload_fingerprint
+            and case["contract_version"] == contract_version
+        ),
+        None,
+    )
 
 
 def _community_member(community_id: str, building_id: str):
@@ -458,9 +483,9 @@ _BILLING_PAGE_SIZE = 50
 
 
 def _billing_period_stage(period, progress):
+    if progress.get("all_cancelled"):
+        return "cancelled"
     if period["status"] == "issued":
-        if progress.get("all_cancelled"):
-            return "cancelled"
         if progress.get("all_paid"):
             return "paid"
         if progress.get("all_delivered"):

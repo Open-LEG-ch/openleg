@@ -879,7 +879,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         except db.ActivationDenied:
             abort(403)
         except (db.ActivationConflict, ValueError) as error:
-            context = dashboard_module.leg_overview(community_id, building_id)
+            context = dashboard_module.leg_overview(
+                community_id, building_id, workspace_page=None
+            )
             if context.get("error"):
                 abort(403)
             return render_leg_workspace(

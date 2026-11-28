@@ -1025,3 +1025,172 @@ def test_vnb_task_destination_keeps_older_failure_inside_page_limit(operating, p
         db.list_vnb_submission_cases if page == "formation" else db.list_vnb_mutations
     )
     assert list_cases(COMMUNITY)[0]["response_status"] == f"RECENT-{newest}"
+
+
+def test_stale_start_confirmation_renders_current_formation_evidence(operating):
+    db.store_leg_document(
+        COMMUNITY, "dso_notification", b"%PDF", "signed-agreement.pdf"
+    )
+    _failed_submission()
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE vnb_submission_cases SET response_status='VNB-EVIDENCE' WHERE community_id=%s",
+            (COMMUNITY,),
+        )
+    evidence = db.log_correspondence(
+        COMMUNITY,
+        "in",
+        "email",
+        "VNB",
+        "Start",
+        logged_by=ADMIN,
+        attachment_data=b"pdf",
+    )
+    assert evidence is not None
+    normal = operating.get(OVERVIEW).text
+    assert "signed-agreement.pdf" not in normal
+    assert "VNB-EVIDENCE" not in normal
+    response = operating.post(
+        ROOT + "/vnb-start-confirmation",
+        data={
+            "csrf_token": "csrf-secret",
+            "confirm_start": "yes",
+            "correspondence_id": evidence,
+            "effective_date": "2026-11-01",
+            "reference": "STALE",
+        },
+    )
+    assert response.status_code == 409
+    assert "signed-agreement.pdf" in response.text
+    assert "VNB-EVIDENCE" in response.text
+
+
+def test_ledger_cancelled_legacy_invoice_takes_precedence_over_draft(operating):
+    _period(9, status="draft")
+    _period(10, status="draft")
+    _event(_invoice("cancelled-legacy", period_start="2026-09-01"), "cancelled")
+    html = operating.get(OVERVIEW).text
+    assert _ledger_row(html, "2026-09")[-1] == "Storniert"
+    assert _ledger_row(html, "2026-10")[-1] == "Entwurf"
+
+
+@pytest.mark.parametrize("kind", ["submission", "mutation"])
+def test_vnb_attention_order_demotes_superseded_attempts(operating, kind):
+    if kind == "submission":
+        _failed_submission()
+        table = "vnb_submission_cases"
+        columns = "created_by, adapter_key, contract_version, payload_fingerprint"
+        values = columns
+        list_cases = db.list_vnb_submission_cases
+    else:
+        _failed_mutation()
+        table = "vnb_mutation_cases"
+        columns = (
+            "mutation_id, participant_id, created_by, mutation_type, effective_date, "
+            "source_agreement_id, before_facts, after_facts, adapter_key, contract_version, payload_fingerprint"
+        )
+        values = columns.replace("mutation_id", "'another-mutation'", 1)
+        list_cases = db.list_vnb_mutations
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            f"UPDATE {table} SET retryable=true, created_at='2026-01-01' WHERE community_id=%s",
+            (COMMUNITY,),
+        )
+        cur.execute(
+            f"""INSERT INTO {table} (case_id, community_id, {columns}, state, next_action, created_at)
+                SELECT 'replacement', community_id, {values}, 'delivered', 'await_acknowledgement', '2026-01-02'
+                FROM {table} WHERE community_id=%s""",
+            (COMMUNITY,),
+        )
+    assert (
+        list_cases(COMMUNITY, limit=1, prioritize_attention=True)[0]["case_id"]
+        == "replacement"
+    )
+    assert list_cases(COMMUNITY, limit=1)[0]["case_id"] == "replacement"
+    html = operating.get(OVERVIEW).text
+    assert "ist fehlgeschlagen." not in html
+
+
+@pytest.mark.parametrize("re_register", [False, True])
+def test_delivery_task_skips_invoice_when_original_registration_is_gone(
+    operating, re_register
+):
+    blocked = _invoice("blocked")
+    if re_register:
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE buildings SET referral_code='different-code' WHERE building_id=%s",
+                (PARTICIPANT,),
+            )
+    else:
+        assert db.delete_building(PARTICIPANT)
+    sendable = _invoice("sendable", participant=ADMIN)
+
+    html = operating.get(OVERVIEW).text
+    assert "<title>Eine Rechnung wartet auf Zustellung. | OpenLEG</title>" in html
+    assert f'href="{ROOT}/invoices/{sendable}"' in html
+    assert f'href="{ROOT}/invoices/{blocked}"' not in html
+    _nav_count(html, "invoices", 1)
+
+
+def test_concurrent_preparation_does_not_mix_attention_snapshots(
+    operating, monkeypatch
+):
+    from contextlib import contextmanager
+
+    _dual_control()
+    _roles(AUDITOR, "billing_preparer")
+    draft = _period(10, status="draft", preparer=AUDITOR)
+    connect = db.get_connection
+    changed = False
+
+    class Cursor:
+        def __init__(self, cursor):
+            self.cursor = cursor
+
+        def __enter__(self):
+            self.cursor.__enter__()
+            return self
+
+        def __exit__(self, *args):
+            return self.cursor.__exit__(*args)
+
+        def __getattr__(self, name):
+            return getattr(self.cursor, name)
+
+        def execute(self, sql, *args):
+            nonlocal changed
+            self.cursor.execute(sql, *args)
+            if (
+                not changed
+                and "SELECT m.building_id, m.role, m.status, m.access_roles" in sql
+            ):
+                with connect() as conn, conn.cursor() as other:
+                    other.execute(
+                        "UPDATE billing_periods SET prepared_by=%s WHERE id=%s",
+                        (ADMIN, draft),
+                    )
+                changed = True
+
+    class Connection:
+        def __init__(self, conn):
+            self.conn = conn
+
+        def cursor(self, *args, **kwargs):
+            return Cursor(self.conn.cursor(*args, **kwargs))
+
+        def __getattr__(self, name):
+            return getattr(self.conn, name)
+
+    @contextmanager
+    def connect_with_concurrent_prepare():
+        with connect() as conn:
+            yield Connection(conn)
+
+    monkeypatch.setattr(db, "get_connection", connect_with_concurrent_prepare)
+    html = operating.get(OVERVIEW).text
+    assert changed
+    assert "<title>Oktober 2026 wartet auf Ihre Freigabe. | OpenLEG</title>" in html
+    assert f'href="{ROOT}/billing/period/{draft}"' in html
+    refreshed = operating.get(OVERVIEW).text
+    assert "wartet auf Ihre" not in refreshed
