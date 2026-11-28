@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from flask import Flask, render_template
+from flask import Blueprint, Flask, render_template
 
 from i18n import init_app
 
@@ -15,20 +15,30 @@ def template_app():
     application = Flask(__name__, template_folder=str(TEMPLATES))
     application.secret_key = "role-template-test"
     init_app(application)
-    application.add_url_rule(
-        "/leg/community/<community_id>/invoices",
-        endpoint="leg_invoice_list",
-        view_func=lambda community_id: "",
-    )
+    billing = Blueprint("dashboard", __name__)
+
+    @billing.get("/leg/community/<community_id>/billing")
+    def leg_billing_workspace(community_id):
+        return ""
+
+    @billing.get("/leg/community/<community_id>/billing/period/1")
+    def period_page(community_id):
+        return ""
+
+    @billing.get("/leg/community/<community_id>/invoices")
+    def leg_invoice_list(community_id):
+        return ""
+
+    application.register_blueprint(billing)
     return application
 
 
 def test_billing_actions_fail_closed_when_capabilities_are_absent(template_app):
-    with template_app.test_request_context("/leg/community/c1/billing"):
+    with template_app.test_request_context("/leg/community/c1/billing/period/1"):
         rendered = render_template(
-            "leg_billing.html",
+            "leg_billing_period.html",
             community_id="c1",
-            periods=[{"id": 1, "approvable": True, "can_approve": True}],
+            period={"id": 1, "approvable": True},
             invoices=[],
             queries_by_invoice={},
         )
@@ -37,11 +47,11 @@ def test_billing_actions_fail_closed_when_capabilities_are_absent(template_app):
 
 
 def test_approval_only_operator_sees_the_approval_action(template_app):
-    with template_app.test_request_context("/leg/community/c1/billing"):
+    with template_app.test_request_context("/leg/community/c1/billing/period/1"):
         rendered = render_template(
-            "leg_billing.html",
+            "leg_billing_period.html",
             community_id="c1",
-            periods=[{"id": 1, "approvable": True, "can_approve": True}],
+            period={"id": 1, "approvable": True},
             invoices=[],
             can_prepare_billing=False,
             can_approve_billing=True,

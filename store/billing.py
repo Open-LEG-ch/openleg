@@ -136,9 +136,10 @@ def save_billing_period(
                      network_level, internal_price_chf_per_kwh, grid_fee_chf_per_kwh,
                      timezone, input_fingerprint, source_document_ids,
                      reconciliation, billing_policy_snapshot, prepared_by,
-                     battery_snapshot, calculated_values_fingerprint, status)
+                     battery_snapshot, prepared_at, calculated_values_fingerprint, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s::jsonb, %s, %s)
+                            %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s::jsonb,
+                            CASE WHEN %s THEN NOW() END, %s, %s)
                     RETURNING id
                 """,
                     (
@@ -174,6 +175,7 @@ def save_billing_period(
                             if summary.get("battery_snapshot")
                             else None
                         ),
+                        bool(prepared_by and prepared_by != "system"),
                         summary.get("calculated_values_fingerprint"),
                         status,
                     ),
@@ -256,7 +258,7 @@ def record_billing_period_preparer(
             cur.execute(
                 """
                     UPDATE billing_periods
-                    SET prepared_by = %s
+                    SET prepared_by = %s, prepared_at = NOW()
                     WHERE id = %s AND community_id = %s AND status = 'draft'
                     RETURNING id
                 """,
@@ -398,7 +400,12 @@ def list_billing_periods(limit: int = 100) -> list[dict]:
         raise BillingStoreError("Could not list billing periods") from e
 
 
-def get_billing_period(period_id: int, community_id: str | None = None) -> dict | None:
+def get_billing_period(
+    period_id: int,
+    community_id: str | None = None,
+    *,
+    include_line_items: bool = True,
+) -> dict | None:
     """Get billing period with line items."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
@@ -416,33 +423,179 @@ def get_billing_period(period_id: int, community_id: str | None = None) -> dict 
             if not period:
                 return None
             result = dict(period)
-            cur.execute(
-                "SELECT * FROM billing_line_items WHERE billing_period_id = %s",
-                (period_id,),
-            )
-            result["line_items"] = [dict(row) for row in cur.fetchall()]
+            if include_line_items:
+                cur.execute(
+                    "SELECT * FROM billing_line_items WHERE billing_period_id = %s",
+                    (period_id,),
+                )
+                result["line_items"] = [dict(row) for row in cur.fetchall()]
             return result
     except Exception as e:
         logger.error(f"[DB] Error getting billing period: {e}")
         raise BillingStoreError("Could not load billing period") from e
 
 
-def list_community_billing_periods(community_id: str) -> list[dict]:
-    """List one community's billing periods, newest period first."""
+def list_community_billing_periods(
+    community_id: str, *, limit: int | None = None, before: int | None = None
+) -> list[dict]:
+    """List a page of one community's billing periods, newest period first."""
     try:
         with _get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT * FROM billing_periods
-                WHERE community_id = %s
-                ORDER BY period_start DESC, id DESC
+                SELECT p.id, p.period_start, p.status, p.prepared_by
+                FROM billing_periods p
+                WHERE p.community_id = %s
+                  AND (%s IS NULL OR (p.period_start, p.id) < (
+                      SELECT cursor_period.period_start, cursor_period.id
+                      FROM billing_periods cursor_period
+                      WHERE cursor_period.id = %s
+                        AND cursor_period.community_id = p.community_id
+                  ))
+                ORDER BY p.period_start DESC, p.id DESC
+                LIMIT %s
                 """,
-                (community_id,),
+                (community_id, before, before, limit),
             )
             return [dict(row) for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"[DB] Error listing community billing periods: {e}")
         raise BillingStoreError("Could not list community billing periods") from e
+
+
+def list_billing_draft_items(
+    community_id: str, period_id: int, *, limit: int, after: str | None = None
+) -> list[dict]:
+    """Load the persisted positions for a page of draft participants."""
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                WITH selected_period AS (
+                    SELECT id, reconciliation FROM billing_periods
+                    WHERE id = %s AND community_id = %s
+                      AND status IN ('draft', 'invalidated')
+                ), participants AS (
+                    SELECT DISTINCT item.participant_id
+                    FROM billing_line_items item
+                    JOIN selected_period p ON p.id = item.billing_period_id
+                    WHERE (%s IS NULL OR item.participant_id > %s)
+                    ORDER BY item.participant_id
+                    LIMIT %s
+                )
+                SELECT item.*, b.address AS participant_address
+                FROM billing_line_items item
+                JOIN participants USING (participant_id)
+                JOIN selected_period p ON p.id = item.billing_period_id
+                LEFT JOIN buildings b ON b.building_id = item.participant_id
+                  AND b.referral_code = (
+                      p.reconciliation->'participant_registrations'->>item.participant_id
+                  )
+                ORDER BY item.participant_id, item.id
+                """,
+                (period_id, community_id, after, after, limit),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error listing billing draft positions: {e}")
+        raise BillingStoreError("Could not load billing draft positions") from e
+
+
+def get_community_billing_progress(
+    community_id: str, period_ids: list[int], *, include_timestamps: bool = False
+) -> dict[int, dict]:
+    """Summarize issued invoices and the current state of active ones per period."""
+    if not period_ids:
+        return {}
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT i.billing_period_id, max(i.issued_at) AS approved_at,
+                       bool_and(COALESCE(state.new_state, 'issued') IN ('delivered', 'paid'))
+                           FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
+                           AS all_delivered,
+                       bool_and(COALESCE(state.new_state, 'issued') = 'paid')
+                           FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
+                           AS all_paid,
+                       bool_and(COALESCE(state.new_state, 'issued') IN ('cancelled', 'corrected'))
+                           AS all_cancelled,
+                       CASE WHEN bool_and(
+                           history.delivered_at IS NOT NULL OR history.cancelled_before_delivery
+                       ) THEN max(history.delivered_at) END AS closed_delivered_at,
+                       max(history.delivered_at)
+                           FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
+                           AS delivered_at,
+                       max(history.cancelled_at) AS cancelled_at,
+                       max(history.paid_at)
+                           FILTER (WHERE COALESCE(state.new_state, 'issued') NOT IN ('cancelled', 'corrected'))
+                           AS paid_at
+                FROM invoices i
+                JOIN billing_periods p ON p.id = i.billing_period_id
+                  AND p.community_id = i.community_id
+                LEFT JOIN LATERAL (
+                    SELECT e.new_state
+                    FROM invoice_lifecycle_events e
+                    WHERE e.invoice_id = i.id AND e.community_id = i.community_id
+                    ORDER BY e.id DESC LIMIT 1
+                ) state ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT max(e.created_at) FILTER (WHERE e.new_state = 'delivered')
+                               AS delivered_at,
+                           max(e.created_at) FILTER (WHERE e.new_state = 'paid')
+                               AS paid_at,
+                           max(e.created_at) FILTER (WHERE e.new_state = 'cancelled')
+                               AS cancelled_at,
+                           count(*) FILTER (
+                               WHERE e.new_state = 'cancelled' AND e.previous_state = 'issued'
+                           ) > 0 AS cancelled_before_delivery
+                    FROM invoice_lifecycle_events e
+                    WHERE %s AND e.invoice_id = i.id AND e.community_id = i.community_id
+                      AND e.new_state <> e.previous_state
+                      AND e.new_state IN ('delivered', 'paid', 'cancelled')
+                ) history ON TRUE
+                WHERE i.community_id = %s AND i.billing_period_id = ANY(%s)
+                  AND p.status = 'issued' AND i.status = 'issued'
+                GROUP BY i.billing_period_id
+                """,
+                (include_timestamps, community_id, period_ids),
+            )
+            return {row["billing_period_id"]: dict(row) for row in cur.fetchall()}
+    except Exception as e:
+        logger.error(f"[DB] Error summarizing billing progress: {e}")
+        raise BillingStoreError("Could not summarize billing progress") from e
+
+
+def count_billing_period_veracity_flags(
+    community_id: str, period_ids: list[int]
+) -> dict[int, int]:
+    """Count flagged windows from each period's recorded sources and LEG meters."""
+    if not period_ids:
+        return {}
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT p.id, (
+                    SELECT count(*) FROM sdat_veracity_flags f
+                    JOIN metering_points mp
+                      ON mp.metering_point_id = f.metering_point_id
+                     AND mp.community_id = p.community_id
+                    WHERE p.source_document_ids ? f.document_id
+                      AND f.window_start < p.period_end
+                      AND COALESCE(f.window_end, f.window_start) >= p.period_start
+                ) AS flag_count
+                FROM billing_periods p
+                WHERE p.community_id = %s AND p.id = ANY(%s)
+                  AND jsonb_typeof(p.source_document_ids) = 'array'
+                  AND p.source_document_ids <> '[]'::jsonb
+                """,
+                (community_id, period_ids),
+            )
+            return {row["id"]: row["flag_count"] for row in cur.fetchall()}
+    except Exception as e:
+        logger.error(f"[DB] Error counting billing veracity flags: {e}")
+        return {}
 
 
 def list_period_invoices(cur: BillingCursor, period_id: int) -> list[dict[str, object]]:

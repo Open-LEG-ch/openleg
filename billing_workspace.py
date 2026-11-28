@@ -7,7 +7,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
 
 import database as db
-from money_display import InvalidMoneyAmount, format_amount
+from money_display import InvalidMoneyAmount, finite_decimal, format_amount
 from translation_markers import gettext_noop as _N
 
 # Perioden sind halboffene Zürcher Kalendermonate, gespeichert in UTC.
@@ -137,6 +137,60 @@ def readiness_flags(period):
         "exact_source": _is_exact_source(reconciliation),
         "source_count": len(source_ids),
     }
+
+
+def _draft_energy(items):
+    consumer = [
+        item for item in items if item["item_type"] in (None, "consumer_charge")
+    ]
+    if len(consumer) != 1:
+        return None, None
+    item = consumer[0]
+    try:
+        local = finite_decimal(item["allocated_kwh"])
+    except InvalidMoneyAmount:
+        return None, None
+    if local < 0:
+        return None, None
+    try:
+        total = finite_decimal(item["consumption_kwh"])
+    except InvalidMoneyAmount:
+        return local, None
+    return local, total - local if local <= total else None
+
+
+def draft_invoice_rows(line_items):
+    """Summarize persisted draft positions per participant before VAT."""
+    by_participant = {}
+    for item in line_items:
+        by_participant.setdefault(item["participant_id"], []).append(item)
+    rows = []
+    for participant, items in by_participant.items():
+        local, grid = _draft_energy(items)
+        try:
+            net = sum(
+                (
+                    finite_decimal(
+                        item["amount_chf"]
+                        if item["item_type"] is not None
+                        else item["internal_cost_chf"]
+                    )
+                    for item in items
+                ),
+                Decimal(0),
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        except (InvalidMoneyAmount, ArithmeticError):
+            net = None
+        rows.append(
+            {
+                "participant": participant,
+                "address": items[0].get("participant_address"),
+                "local_kwh": local,
+                "grid_kwh": grid,
+                "net_chf": net,
+            }
+        )
+    return rows
 
 
 def _period_summary(period):

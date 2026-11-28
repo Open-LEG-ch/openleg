@@ -41,7 +41,7 @@ def workspace(app_module, monkeypatch):  # noqa: F811
         "list_community_invoice_payment_rows",
         "list_billing_policies",
     ):
-        monkeypatch.setattr(app_module.db, operation, lambda _cid: [])
+        monkeypatch.setattr(app_module.db, operation, lambda _cid, **kwargs: [])
     monkeypatch.setattr(
         app_module.db, "page_community_invoices", lambda _cid, **_filters: []
     )
@@ -85,7 +85,7 @@ def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
         ROOT + "/settings": "Einstellungen · LEG Musterweg | OpenLEG",
         ROOT + "/payments": "Zahlungen · LEG Musterweg | OpenLEG",
         ROOT + "/invoices": "Rechnungen · LEG Musterweg | OpenLEG",
-        ROOT + "/billing": "Abrechnung · LEG Musterweg | OpenLEG",
+        ROOT + "/billing": "Abrechnungen · LEG Musterweg | OpenLEG",
         ROOT + "/billing-policy": "Abrechnungs-Richtlinie · LEG Musterweg | OpenLEG",
     }
 
@@ -172,8 +172,10 @@ def test_formation_shows_unavailable_submission_data(
     status["status"] = leg_status
     _set_session(client, "b-admin")
     monkeypatch.setattr(dashboard.db, "is_db_available", lambda: True)
-    monkeypatch.setattr(dashboard.db, "list_vnb_mutations", lambda _cid: [])
-    monkeypatch.setattr(dashboard.db, "list_vnb_submission_cases", lambda _cid: [])
+    monkeypatch.setattr(dashboard.db, "list_vnb_mutations", lambda _cid, **kwargs: [])
+    monkeypatch.setattr(
+        dashboard.db, "list_vnb_submission_cases", lambda _cid, **kwargs: []
+    )
     assert empty_state in client.get(page).text
 
     def unavailable(_cid):
@@ -386,10 +388,21 @@ def test_statement_import_form_is_reserved_for_confirmed_admins(
     assert ('name="statement"' in response.text) is may_import
 
 
-def test_billing_approval_error_distinguishes_unloaded_payments(workspace, monkeypatch):
+def test_billing_approval_error_keeps_the_period_context(workspace, monkeypatch):
     import billing_approval
     import dashboard
 
+    monkeypatch.setattr(
+        dashboard.formation_wizard,
+        "get_user_communities",
+        lambda _bid: [
+            {
+                "community_id": "c0ffee",
+                "name": "LEG Musterweg",
+                "member_status": "confirmed",
+            }
+        ],
+    )
     client, _ = workspace
     _set_session(client, "b-admin")
     monkeypatch.setattr(
@@ -417,17 +430,44 @@ def test_billing_approval_error_distinguishes_unloaded_payments(workspace, monke
         ),
     )
 
+    monkeypatch.setattr(
+        dashboard.db,
+        "fetch_community_viewer_membership",
+        lambda *_: {
+            "role": "admin",
+            "status": "confirmed",
+            "require_dual_control": False,
+        },
+    )
+
     def reject_approval(*_args):
         raise billing_approval.BillingApprovalError("synthetic refusal")
 
     monkeypatch.setattr(dashboard, "leg_approve_billing_period", reject_approval)
+    monkeypatch.setattr(
+        dashboard.db,
+        "get_billing_period",
+        lambda *args, **kwargs: {
+            "id": 1,
+            "status": "draft",
+            "period_start": "2026-08-01",
+        },
+    )
+    monkeypatch.setattr(
+        dashboard.db, "list_billing_draft_items", lambda *args, **kwargs: []
+    )
     assert "SYNTHETIC-PAID" in client.get(ROOT + "/billing").text
     response = client.post(
         ROOT + "/billing/period/1/approve",
         data={"csrf_token": "csrf-secret", "confirm_approval": "yes"},
     )
     assert response.status_code == 409
-    assert "Diese Ansicht lädt keine Zahlungsdaten." in response.text
+    assert "Dieser Abrechnungsentwurf konnte nicht freigegeben werden." in response.text
+    assert (
+        "<title>Abrechnung August 2026 · LEG Musterweg | OpenLEG</title>"
+        in response.text
+    )
+    assert "SYNTHETIC-PAID" not in response.text
     assert "Noch keine Bankzahlungen abgeglichen." not in response.text
 
 

@@ -89,7 +89,9 @@ def test_json_exchange_retains_exactly_representable_quantities(unit, value):
         ("vnb_imbalance_release", {"id": 7}),
     ],
 )
-def test_obsolete_or_unequal_source_draft_has_no_approve_action(field, value):
+def test_obsolete_or_unequal_source_draft_has_no_approve_action(
+    monkeypatch, field, value
+):
     draft = _draft()
     draft["reconciliation"].update(
         precision_policy={"format_version": "e66/1"},
@@ -97,9 +99,25 @@ def test_obsolete_or_unequal_source_draft_has_no_approve_action(field, value):
         vnb_imbalance_ratio=0,
     )
     draft["reconciliation"][field] = value
+    draft.update(id=1, status="draft", prepared_by=None)
     original = deepcopy(draft)
+    monkeypatch.setattr(
+        dashboard.db,
+        "fetch_community_viewer_membership",
+        lambda *_: {
+            "role": "admin",
+            "status": "confirmed",
+            "require_dual_control": False,
+        },
+    )
+    monkeypatch.setattr(dashboard.db, "get_billing_period", lambda *_, **__: draft)
+    monkeypatch.setattr(
+        dashboard.db, "count_billing_period_veracity_flags", lambda *_: {}
+    )
+    monkeypatch.setattr(dashboard.db, "list_billing_draft_items", lambda *_, **__: [])
     assert billing_workspace.readiness_flags(draft)["reconciled"] is False
-    assert dashboard._billing_workspace_period(draft)["approvable"] is False
+    detail = dashboard.leg_billing_period_detail("leg", "admin", 1)
+    assert detail["period"]["approvable"] is False
     assert draft == original
 
 

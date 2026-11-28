@@ -787,21 +787,6 @@ msgid "Abgewiesen"
 msgstr "Dismissed"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: Abweichung prüfen."
-msgstr "Comparison with VNB: Check deviation."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
-msgstr "Comparison with the VNB: Exact VNB source, deviation from the model indicated."
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: vollständig abgeglichen."
-msgstr "Comparison with the VNB: completely synchronized."
-
-#. Draft translation; native language and domain review pending.
 #: templates/advisories.html:47
 msgid "Abhilfe laut Quelle"
 msgstr "Remedy according to source"
@@ -1786,11 +1771,6 @@ msgstr "On your own hardware, a command. Your LEG has box and data. Free and ope
 #: templates/fuer_gemeinden.html:96 templates/self_host.html:57
 msgid "Auf eigener Infrastruktur"
 msgstr "On own infrastructure"
-
-#. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:62
-msgid "Auffällige Messfenster:"
-msgstr "Distinctive measuring windows:"
 
 #. Draft translation; native language and domain review pending.
 #: templates/release/software.html:13
@@ -14120,11 +14100,6 @@ msgid "Quelldokumente"
 msgstr "Source documents"
 
 #. Draft translation; native language and domain review pending.
-#: templates/leg_billing.html:60
-msgid "Quelldokumente:"
-msgstr "Source documents:"
-
-#. Draft translation; native language and domain review pending.
 #: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38
 #: templates/telemetry_dashboard.html:52 templates/telemetry_dashboard.html:126
 #: templates/telemetry_shared.html:50
@@ -22927,3 +22902,179 @@ msgstr "No invoices found."
 #: dashboard.py:967
 msgid "Die Rechnung konnte nicht per E-Mail zugestellt werden."
 msgstr "The invoice could not be sent by email."
+
+#. Draft translation; native language and domain review pending.
+#: dashboard.py:417
+msgid "Vorbereitet"
+msgstr "Prepared"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:4
+#, python-format
+msgid "Abrechnung %(period)s"
+msgstr "Billing period %(period)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:11
+msgid "Der Entwurf wurde zur Freigabe vorbereitet."
+msgstr "The draft is ready for approval."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:20
+msgid "Abrechnungsschritte"
+msgstr "Billing steps"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:29
+msgid "Messdaten vorhanden"
+msgstr "Meter readings available"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:29
+msgid "Keine Messquellen dokumentiert"
+msgstr "No sources for meter readings recorded"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:31
+msgid "Abgeschlossen"
+msgstr "Complete"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:34
+msgid "Ausstehend"
+msgstr "Pending"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:39
+msgid "Zeitpunkt nicht erfasst"
+msgstr "Date and time not recorded"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:47
+msgid "Prüfungen vor der Freigabe"
+msgstr "Checks before approval"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:50
+msgid "Richtlinienversion"
+msgstr "Billing policy version"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:51
+#, python-format
+msgid "Version %(version)s"
+msgstr "Version %(version)s"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:51
+msgid "Keine Richtlinienversion gespeichert"
+msgstr "No policy version saved"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:54
+msgid "Abgleich mit dem VNB"
+msgstr "Grid operator reconciliation"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:63
+#, python-format
+msgid "%(count)s vorhanden"
+msgstr "%(count)s available"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:63
+msgid "Keine Quelldokumente vorhanden"
+msgstr "No source documents available"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:66
+msgid "Messfenster"
+msgstr "Measurement windows"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:68
+msgid "Keine Messfenster prüfbar"
+msgstr "Measurement windows could not be checked"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:70
+#, python-format
+msgid "%(count)s auffälliges Messfenster"
+msgid_plural "%(count)s auffällige Messfenster"
+msgstr[0] "%(count)s flagged measurement window"
+msgstr[1] "%(count)s flagged measurement windows"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:72
+msgid "Keine auffälligen Messfenster"
+msgstr "No measurement windows flagged"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:82
+msgid "Rechnungsentwürfe"
+msgstr "Draft invoices"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:90
+msgid "LEG-Verbrauch"
+msgstr "LEG consumption"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:91
+msgid "Netzanteil"
+msgstr "Grid share"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:92
+msgid "Betrag vor MWST"
+msgstr "Amount before VAT"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:106
+msgid "Betrag unlesbar"
+msgstr "Unreadable amount"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:115
+msgid "Noch keine Rechnungsentwürfe vorhanden."
+msgstr "There are no draft invoices yet."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:172
+msgid "Keine weiteren Abrechnungsperioden vorhanden."
+msgstr "There are no more billing periods."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:177
+msgid "Neueste Abrechnungsperioden"
+msgstr "Latest billing periods"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing.html:178
+msgid "Ältere Abrechnungsperioden"
+msgstr "Older billing periods"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:118
+msgid "Keine weiteren Rechnungsentwürfe vorhanden."
+msgstr "There are no more draft invoices."
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:122
+msgid "Erste Rechnungsentwürfe"
+msgstr "First draft invoices"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:123
+msgid "Weitere Rechnungsentwürfe"
+msgstr "More draft invoices"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:31
+msgid "Keine Zahlung fällig"
+msgstr "No payment due"
+
+#. Draft translation; native language and domain review pending.
+#: templates/leg_billing_period.html:36
+msgid "Entfällt"
+msgstr "Skipped"

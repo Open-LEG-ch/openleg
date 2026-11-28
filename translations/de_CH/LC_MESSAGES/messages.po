@@ -664,18 +664,6 @@ msgstr "Abgesagt"
 msgid "Abgewiesen"
 msgstr "Abgewiesen"
 
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: Abweichung prüfen."
-msgstr "Abgleich mit dem VNB: Abweichung prüfen."
-
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
-msgstr "Abgleich mit dem VNB: exakte VNB-Quelle massgebend, Abweichung zum Modell ausgewiesen."
-
-#: templates/leg_billing.html:59
-msgid "Abgleich mit dem VNB: vollständig abgeglichen."
-msgstr "Abgleich mit dem VNB: vollständig abgeglichen."
-
 #: templates/advisories.html:47
 msgid "Abhilfe laut Quelle"
 msgstr "Abhilfe laut Quelle"
@@ -1494,10 +1482,6 @@ msgstr "Auf eigener Hardware, ein Befehl. Ihre LEG besitzt Box und Daten. Kosten
 #: templates/fuer_gemeinden.html:96 templates/self_host.html:57
 msgid "Auf eigener Infrastruktur"
 msgstr "Auf eigener Infrastruktur"
-
-#: templates/leg_billing.html:62
-msgid "Auffällige Messfenster:"
-msgstr "Auffällige Messfenster:"
 
 #: templates/release/software.html:13
 msgid "Aufgabe"
@@ -12012,10 +11996,6 @@ msgstr "Quellcode und Lizenz"
 msgid "Quelldokumente"
 msgstr "Quelldokumente"
 
-#: templates/leg_billing.html:60
-msgid "Quelldokumente:"
-msgstr "Quelldokumente:"
-
 #: templates/admin/ops.html:89 templates/gemeinde/methodik.html:38
 #: templates/telemetry_dashboard.html:52 templates/telemetry_dashboard.html:126
 #: templates/telemetry_shared.html:50
@@ -19485,3 +19465,145 @@ msgstr "Keine Rechnungen gefunden."
 #: dashboard.py:967
 msgid "Die Rechnung konnte nicht per E-Mail zugestellt werden."
 msgstr "Die Rechnung konnte nicht per E-Mail zugestellt werden."
+
+#: dashboard.py:417
+msgid "Vorbereitet"
+msgstr "Vorbereitet"
+
+#: templates/leg_billing_period.html:4
+#, python-format
+msgid "Abrechnung %(period)s"
+msgstr "Abrechnung %(period)s"
+
+#: templates/leg_billing_period.html:11
+msgid "Der Entwurf wurde zur Freigabe vorbereitet."
+msgstr "Der Entwurf wurde zur Freigabe vorbereitet."
+
+#: templates/leg_billing_period.html:20
+msgid "Abrechnungsschritte"
+msgstr "Abrechnungsschritte"
+
+#: templates/leg_billing_period.html:29
+msgid "Messdaten vorhanden"
+msgstr "Messdaten vorhanden"
+
+#: templates/leg_billing_period.html:29
+msgid "Keine Messquellen dokumentiert"
+msgstr "Keine Messquellen dokumentiert"
+
+#: templates/leg_billing_period.html:31
+msgid "Abgeschlossen"
+msgstr "Abgeschlossen"
+
+#: templates/leg_billing_period.html:34
+msgid "Ausstehend"
+msgstr "Ausstehend"
+
+#: templates/leg_billing_period.html:39
+msgid "Zeitpunkt nicht erfasst"
+msgstr "Zeitpunkt nicht erfasst"
+
+#: templates/leg_billing_period.html:47
+msgid "Prüfungen vor der Freigabe"
+msgstr "Prüfungen vor der Freigabe"
+
+#: templates/leg_billing_period.html:50
+msgid "Richtlinienversion"
+msgstr "Richtlinienversion"
+
+#: templates/leg_billing_period.html:51
+#, python-format
+msgid "Version %(version)s"
+msgstr "Version %(version)s"
+
+#: templates/leg_billing_period.html:51
+msgid "Keine Richtlinienversion gespeichert"
+msgstr "Keine Richtlinienversion gespeichert"
+
+#: templates/leg_billing_period.html:54
+msgid "Abgleich mit dem VNB"
+msgstr "Abgleich mit dem VNB"
+
+#: templates/leg_billing_period.html:63
+#, python-format
+msgid "%(count)s vorhanden"
+msgstr "%(count)s vorhanden"
+
+#: templates/leg_billing_period.html:63
+msgid "Keine Quelldokumente vorhanden"
+msgstr "Keine Quelldokumente vorhanden"
+
+#: templates/leg_billing_period.html:66
+msgid "Messfenster"
+msgstr "Messfenster"
+
+#: templates/leg_billing_period.html:68
+msgid "Keine Messfenster prüfbar"
+msgstr "Keine Messfenster prüfbar"
+
+#: templates/leg_billing_period.html:70
+#, python-format
+msgid "%(count)s auffälliges Messfenster"
+msgid_plural "%(count)s auffällige Messfenster"
+msgstr[0] "%(count)s auffälliges Messfenster"
+msgstr[1] "%(count)s auffällige Messfenster"
+
+#: templates/leg_billing_period.html:72
+msgid "Keine auffälligen Messfenster"
+msgstr "Keine auffälligen Messfenster"
+
+#: templates/leg_billing_period.html:82
+msgid "Rechnungsentwürfe"
+msgstr "Rechnungsentwürfe"
+
+#: templates/leg_billing_period.html:90
+msgid "LEG-Verbrauch"
+msgstr "LEG-Verbrauch"
+
+#: templates/leg_billing_period.html:91
+msgid "Netzanteil"
+msgstr "Netzanteil"
+
+#: templates/leg_billing_period.html:92
+msgid "Betrag vor MWST"
+msgstr "Betrag vor MWST"
+
+#: templates/leg_billing_period.html:106
+msgid "Betrag unlesbar"
+msgstr "Betrag unlesbar"
+
+#: templates/leg_billing_period.html:115
+msgid "Noch keine Rechnungsentwürfe vorhanden."
+msgstr "Noch keine Rechnungsentwürfe vorhanden."
+
+#: templates/leg_billing.html:172
+msgid "Keine weiteren Abrechnungsperioden vorhanden."
+msgstr "Keine weiteren Abrechnungsperioden vorhanden."
+
+#: templates/leg_billing.html:177
+msgid "Neueste Abrechnungsperioden"
+msgstr "Neueste Abrechnungsperioden"
+
+#: templates/leg_billing.html:178
+msgid "Ältere Abrechnungsperioden"
+msgstr "Ältere Abrechnungsperioden"
+
+#: templates/leg_billing_period.html:118
+msgid "Keine weiteren Rechnungsentwürfe vorhanden."
+msgstr "Keine weiteren Rechnungsentwürfe vorhanden."
+
+#: templates/leg_billing_period.html:122
+msgid "Erste Rechnungsentwürfe"
+msgstr "Erste Rechnungsentwürfe"
+
+#: templates/leg_billing_period.html:123
+msgid "Weitere Rechnungsentwürfe"
+msgstr "Weitere Rechnungsentwürfe"
+
+#: templates/leg_billing_period.html:31
+msgid "Keine Zahlung fällig"
+msgstr "Keine Zahlung fällig"
+
+#: templates/leg_billing_period.html:36
+msgid "Entfällt"
+msgstr "Entfällt"

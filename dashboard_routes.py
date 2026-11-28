@@ -1009,6 +1009,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
 
     def render_billing_workspace(community_id, building_id, **extra):
         statement_before = request.args.get("statement_before", type=int)
+        period_before = request.args.get("period_before", type=int)
         payment_section = request.args.get("section") == "payments"
         receipt = request.args.get("assignment") if payment_section else None
         pending = session.get(_PAYMENT_ASSIGNMENT_FEEDBACK, {})
@@ -1026,6 +1027,9 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
                 include_statement_entries=True,
                 statement_before=statement_before
                 if statement_before and statement_before > 0
+                else None,
+                period_before=period_before
+                if period_before and period_before > 0
                 else None,
                 **extra,
             )
@@ -1093,8 +1097,40 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         return render_billing_workspace(
             community_id,
             building_id,
-            billing_approved=request.args.get("approved") == "1",
             statement_status=request.args.get("statement"),
+        )
+
+    def render_billing_period(community_id, building_id, period_id, **extra):
+        after = request.args.get("after", "")
+        try:
+            view = dashboard_module.leg_billing_period_detail(
+                community_id,
+                building_id,
+                period_id,
+                after=after if len(after) <= 64 and "\x00" not in after else None,
+            )
+        except (db.BillingStoreError, psycopg2.Error):
+            abort(503)
+        if view["error"]:
+            abort(403)
+        if not view["period"]:
+            abort(404)
+        return render_leg_workspace(
+            "leg_billing_period.html",
+            csrf_token=_dashboard_csrf_token(),
+            **view,
+            **extra,
+        )
+
+    @bp.get("/leg/community/<community_id>/billing/period/<int:period_id>")
+    def leg_billing_period_detail(community_id, period_id):
+        building_id = _require_dashboard_session()
+        return render_billing_period(
+            community_id,
+            building_id,
+            period_id,
+            billing_prepared=request.args.get("prepared") == "1",
+            billing_approved=request.args.get("approved") == "1",
         )
 
     @bp.route("/leg/community/<community_id>/billing/statements", methods=["POST"])
@@ -1206,23 +1242,20 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         if result["error"]:
             abort(result["error_status"])
         return redirect(
-            dashboard_module.leg_billing_workspace_location(community_id)
-            + "?period=prepared"
+            url_for(
+                ".leg_billing_period_detail",
+                community_id=community_id,
+                period_id=period_id,
+                prepared=1,
+            )
         )
 
-    def _billing_approval_error_response(community_id, building_id, message, status):
-        try:
-            view = dashboard_module.leg_billing_workspace_view(
-                community_id, building_id
-            )
-        except db.BillingStoreError:
-            abort(503)
-        if view["error"]:
-            abort(403)
-        view["approval_error"] = message
+    def _billing_approval_error_response(
+        community_id, building_id, period_id, message, status
+    ):
         return (
-            render_leg_workspace(
-                "leg_billing.html", csrf_token=_dashboard_csrf_token(), **view
+            render_billing_period(
+                community_id, building_id, period_id, approval_error=message
             ),
             status,
         )
@@ -1246,6 +1279,7 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             return _billing_approval_error_response(
                 community_id,
                 building_id,
+                period_id,
                 _(
                     "Ein anderer Vorgang ändert gerade die Berechtigungen. Bitte erneut versuchen."
                 ),
@@ -1255,13 +1289,15 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
             return _billing_approval_error_response(
                 community_id,
                 building_id,
-                dashboard_module.DUAL_CONTROL_APPROVAL_MESSAGE,
+                period_id,
+                _(dashboard_module.DUAL_CONTROL_APPROVAL_MESSAGE),
                 409,
             )
         except billing_approval.BillingApprovalError:
             return _billing_approval_error_response(
                 community_id,
                 building_id,
+                period_id,
                 _(
                     "Dieser Abrechnungsentwurf konnte nicht freigegeben werden. "
                     "Er ist unvollständig, nicht vollständig abgeglichen oder wurde "
@@ -1273,14 +1309,19 @@ def register_dashboard_routes(bp, *, send_email, limiter, render_city_template):
         except db.BillingStoreError:
             abort(503)
         if result.get("dual_control_denied"):
+            message = result["error"]
             return _billing_approval_error_response(
-                community_id, building_id, result["error"], 403
+                community_id, building_id, period_id, _(message), 403
             )
         if result["error"]:
-            abort(403)
+            abort(result.get("error_status", 403))
         return redirect(
-            dashboard_module.leg_billing_workspace_location(community_id)
-            + "?approved=1"
+            url_for(
+                ".leg_billing_period_detail",
+                community_id=community_id,
+                period_id=period_id,
+                approved=1,
+            )
         )
 
     def _invoice_lifecycle_response(community_id, invoice_id, action):
