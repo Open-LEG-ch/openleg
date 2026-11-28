@@ -544,15 +544,15 @@ def lock_billing_registrations(
     cur: BillingCursor, participants: AbstractSet[str]
 ) -> dict[str, str]:
     """Lock registrations until the caller's approval transaction completes."""
-    cur.execute(
-        """SELECT building_id,referral_code FROM buildings
-           WHERE building_id=ANY(%s) ORDER BY building_id FOR SHARE""",
-        (sorted(participants),),
-    )
-    return {
-        cast(str, row["building_id"]): cast(str, row["referral_code"])
-        for row in cur.fetchall()
-    }
+    try:
+        cur.execute(
+            """SELECT building_id,referral_code FROM buildings
+               WHERE building_id=ANY(%s) ORDER BY building_id FOR SHARE NOWAIT""",
+            (sorted(participants),),
+        )
+    except LockNotAvailable as e:
+        raise BillingApprovalIdentitiesBusy from e
+    return _locked_registration_codes(cur)
 
 
 def insert_approved_invoice(
@@ -1916,3 +1916,10 @@ def list_billing_policies(community_id: str) -> list[dict]:
     except Exception as e:
         logger.error(f"[DB] Error listing billing policies: {e}")
         raise BillingStoreError("Could not list billing policies") from e
+
+
+def _locked_registration_codes(cur: BillingCursor) -> dict[str, str]:
+    return {
+        cast(str, row["building_id"]): cast(str, row["referral_code"])
+        for row in cur.fetchall()
+    }

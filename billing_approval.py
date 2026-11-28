@@ -1183,6 +1183,8 @@ def approve_billing_period(
             period = cast(Period, dict(row))
             status = period.get("status")
             if status == "issued":
+                if require_approver_capability:
+                    _require_billing_approver(cur, community_id, approver_id)
                 invoices = billing_store.list_period_invoices(cur, period_id)
                 if not invoices:
                     raise BillingApprovalError("Issued billing period has no invoices")

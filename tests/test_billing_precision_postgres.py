@@ -18,6 +18,7 @@ import billing_approval
 import billing_reconciliation
 import billing_runner
 import community_access
+from store import billing as billing_store
 from tests import test_e66_evidence_postgres as e66
 from tests.test_dashboard_access_routes import _set_session
 
@@ -538,9 +539,10 @@ def test_dual_control_retries_contended_preparer_and_refuses_deleted_preparer(
     assert db.list_community_invoices(cid) == []
 
 
+@pytest.mark.parametrize("issued", [False, True])
 @pytest.mark.parametrize("dual_control", [True, False])
 def test_billing_approval_rechecks_committed_approver_revocation(
-    rounded_delivery, monkeypatch, dual_control
+    rounded_delivery, monkeypatch, dual_control, issued
 ):
     client, db, _, _ = rounded_delivery
     cid = _enable_dual_control_with_second_admin(rounded_delivery)
@@ -550,6 +552,10 @@ def test_billing_approval_rechecks_committed_approver_revocation(
     workspace = f"/leg/community/{cid}/billing"
     approve = f"{workspace}/period/{period_id}/approve"
     assert approve in client.get(workspace).text
+    approval = {"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+    if issued:
+        assert client.post(approve, data=approval).status_code == 302
+    invoices = db.list_community_invoices(cid)
     operation = billing_approval.approve_billing_period
 
     def revoke_after_dashboard_check(*args, **kwargs):
@@ -566,12 +572,86 @@ def test_billing_approval_rechecks_committed_approver_revocation(
     monkeypatch.setattr(
         billing_approval, "approve_billing_period", revoke_after_dashboard_check
     )
-    response = client.post(
-        approve, data={"csrf_token": "csrf-secret", "confirm_approval": "yes"}
-    )
+    response = client.post(approve, data=approval)
     assert response.status_code == 403
+    assert db.get_billing_period(period_id, cid)["status"] == (
+        "issued" if issued else "draft"
+    )
+    assert db.list_community_invoices(cid) == invoices
+
+
+def test_issued_period_retry_does_not_requalify_historical_preparer(rounded_delivery):
+    client, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+    approve = f"/leg/community/{cid}/billing/period/{period_id}/approve"
+    approval = {"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+    _set_session(client, "member")
+    assert client.post(approve, data=approval).status_code == 302
+    invoices = db.list_community_invoices(cid)
+    assert len(invoices) == 3
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "DELETE FROM community_members WHERE community_id = %s AND building_id = 'producer'",
+            (cid,),
+        )
+    response = client.post(approve, data=approval)
+    assert response.status_code == 302
+    assert "approved=1" in response.location
+    assert db.list_community_invoices(cid) == invoices
+
+
+def test_billing_workspace_checks_shared_preparer_once_per_view(
+    rounded_delivery, monkeypatch
+):
+    client, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+    (period,) = db.list_community_billing_periods(cid)
+    second_id = period_id + 1
+    monkeypatch.setattr(
+        db,
+        "list_community_billing_periods",
+        lambda _community_id: [period, {**period, "id": second_id}],
+    )
+    lookup = Mock(wraps=billing_store.get_billing_approval_memberships)
+    monkeypatch.setattr(billing_store, "get_billing_approval_memberships", lookup)
+    _set_session(client, "member")
+    workspace = f"/leg/community/{cid}/billing"
+    for expected_queries in (1, 2):
+        page = client.get(workspace)
+        assert page.status_code == 200
+        for shown_id in (period_id, second_id):
+            assert f'action="{workspace}/period/{shown_id}/approve"' in page.text
+        assert (
+            sum(call.kwargs.get("cursor") is not None for call in lookup.call_args_list)
+            == expected_queries
+        )
+
+
+def test_approval_returns_retry_conflict_for_contended_participant_registration(
+    rounded_delivery,
+):
+    client, db, _, _ = rounded_delivery
+    cid = _enable_dual_control_with_second_admin(rounded_delivery)
+    period_id, _ = prepare_rounded(rounded_delivery, prepared_by="producer")
+    approve = f"/leg/community/{cid}/billing/period/{period_id}/approve"
+    approval = {"csrf_token": "csrf-secret", "confirm_approval": "yes"}
+    _set_session(client, "member")
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE buildings SET phone = '+41445550123' WHERE building_id = 'consumer-b'"
+            )
+            response = executor.submit(client.post, approve, data=approval).result(
+                timeout=5
+            )
+            assert response.status_code == 409
+            assert "Bitte erneut versuchen." in response.text
     assert db.get_billing_period(period_id, cid)["status"] == "draft"
     assert db.list_community_invoices(cid) == []
+    assert client.post(approve, data=approval).status_code == 302
+    assert len(db.list_community_invoices(cid)) == 3
 
 
 @pytest.mark.parametrize(

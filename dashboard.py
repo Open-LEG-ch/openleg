@@ -614,17 +614,17 @@ def leg_billing_workspace_view(
     )
     if not member:
         return {"error": _N("Kein Zugriff.")}
+    from functools import cache
+
     capabilities = community_access.capabilities_for(member)
     can_prepare = community_access.PREPARE_BILLING in capabilities
     can_approve = community_access.APPROVE_BILLING in capabilities
-    community = (
-        formation_wizard.get_community_status(community_id, building_id)
-        if can_approve
-        else None
-    )
+    community = None
+    if can_approve:
+        community = formation_wizard.get_community_status(community_id, building_id)
     stored_periods = db.list_community_billing_periods(community_id)
-    flag_counts = _veracity_flag_counts(stored_periods)
-    periods = []
+    flag_counts, periods = _veracity_flag_counts(stored_periods), []
+    allows_approval = cache(billing_approval.dual_control_allows_approval)
     for stored_period in stored_periods:
         period = _billing_workspace_period(
             stored_period, flag_counts.get(stored_period.get("id"), 0)
@@ -632,7 +632,7 @@ def leg_billing_workspace_view(
         period["can_approve"] = (
             community is not None
             and period["approvable"]
-            and billing_approval.dual_control_allows_approval(
+            and allows_approval(
                 community_id,
                 period["prepared_by"],
                 building_id,
@@ -972,7 +972,7 @@ def leg_approve_billing_period(
             community_id,
             period.get("prepared_by"),
             building_id,
-            require_dual_control=True,
+            require_dual_control=period.get("status") == "draft",
         ):
             return {
                 "error": DUAL_CONTROL_APPROVAL_MESSAGE,
