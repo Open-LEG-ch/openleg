@@ -82,7 +82,7 @@ def test_each_workspace_page_has_its_own_title(workspace, monkeypatch):
         ROOT + "/correspondence": "Korrespondenz · LEG Musterweg | OpenLEG",
         ROOT + "/formation": "Gründung · LEG Musterweg | OpenLEG",
         ROOT + "/settings": "Einstellungen · LEG Musterweg | OpenLEG",
-        ROOT + "/payments": "Zahlungen | OpenLEG",
+        ROOT + "/payments": "Zahlungen · LEG Musterweg | OpenLEG",
         ROOT + "/invoices": "Rechnungen · LEG Musterweg | OpenLEG",
         ROOT + "/billing": "Abrechnungen · LEG Musterweg | OpenLEG",
         ROOT + "/billing-policy": "Abrechnungs-Richtlinie · LEG Musterweg | OpenLEG",
@@ -345,13 +345,26 @@ def test_formation_feedback_is_shown_only_on_its_destination(
     assert message not in client.get(result.location).text
 
 
-def test_payments_and_billing_have_separate_titles_and_data(workspace):
+def test_payments_and_billing_have_separate_titles_and_data(workspace, monkeypatch):
+    from dashboard import formation_wizard
+
+    monkeypatch.setattr(
+        formation_wizard,
+        "get_user_communities",
+        lambda _bid: [
+            {
+                "community_id": "c0ffee",
+                "name": "LEG Musterweg",
+                "member_status": "confirmed",
+            }
+        ],
+    )
     client, _ = workspace
     _set_session(client, "auditor")
     payments = client.get(ROOT + "/payments").text
     billing = client.get(ROOT + "/billing").text
-    assert "<title>Zahlungen | OpenLEG</title>" in payments
-    assert "<title>Abrechnungen | OpenLEG</title>" in billing
+    assert "<title>Zahlungen · LEG Musterweg | OpenLEG</title>" in payments
+    assert "<title>Abrechnungen · LEG Musterweg | OpenLEG</title>" in billing
     assert 'id="payments"' in payments
     assert 'id="payments"' not in billing
     assert 'id="billing-periods"' in billing

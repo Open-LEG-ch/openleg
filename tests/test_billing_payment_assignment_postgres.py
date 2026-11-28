@@ -1811,7 +1811,7 @@ def test_payments_is_the_workspace_for_import_and_review(workspace):
     _set_session(workspace, ADMIN)
     response = workspace.get(PAYMENTS)
     assert response.status_code == 200
-    assert "<title>Zahlungen | OpenLEG</title>" in response.text
+    assert "<title>Zahlungen · Fictional LEG | OpenLEG</title>" in response.text
     assert f'href="{PAYMENTS}" aria-current="page"' in " ".join(response.text.split())
     assert "camt.053 oder camt.054" in response.text
     assert f'action="{BILLING}/statements"' in response.text
@@ -2063,7 +2063,7 @@ def test_payment_title_and_empty_state_are_localized(
         PAYMENTS, query_string={"lang": locale}, follow_redirects=True
     )
     assert response.status_code == 200
-    assert f"<title>{title} | OpenLEG</title>" in response.text
+    assert f"<title>{title} · Fictional LEG | OpenLEG</title>" in response.text
     assert empty in response.text
 
 

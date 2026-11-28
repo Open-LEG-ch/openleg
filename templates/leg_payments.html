@@ -1,7 +1,6 @@
 {% extends "leg_workspace_base.html" %}
 {% set workspace_page = "payments" %}
 {% set workspace_billing = not payment_notice_only %}
-{% block meta %}<title>{{ _('Zahlungen') }} | OpenLEG</title>{% endblock %}
 {% macro invoice_pagination(anchor) %}
   {% if invoice_before or next_invoice_before %}
   <div class="my-2 flex flex-wrap gap-4">
