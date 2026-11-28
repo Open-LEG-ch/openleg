@@ -68,28 +68,39 @@ def get_workspace_attention(
 ) -> dict[str, dict]:
     """Return at most one count and one destination per task in this LEG."""
     import billing_approval
+    import community_access
     import database
 
     try:
+        confirmed_preparers = []
         eligible_preparers = []
-        if can_approve and require_dual_control:
+        if require_dual_control and (can_prepare or can_approve):
             with database.get_connection() as conn, conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT DISTINCT prepared_by
-                    FROM billing_periods
-                    WHERE community_id = %s AND status = 'draft'
+                    SELECT m.building_id, m.role, m.status, m.access_roles
+                    FROM community_members m
+                    WHERE m.community_id = %s AND m.building_id IN (
+                        SELECT p.prepared_by FROM billing_periods p
+                        WHERE p.community_id = m.community_id AND p.status = 'draft'
+                          AND p.prepared_by NOT IN ('', 'system')
+                    )
                     """,
                     (community_id,),
                 )
-                preparers = [row["prepared_by"] for row in cur.fetchall()]
-            eligible_preparers = [
-                preparer
-                for preparer in preparers
-                if billing_approval.dual_control_allows_approval(
-                    community_id, preparer, building_id, require_dual_control=True
-                )
-            ]
+                confirmed_preparers = [
+                    row["building_id"]
+                    for row in cur.fetchall()
+                    if community_access.allows(row, community_access.PREPARE_BILLING)
+                ]
+            if can_approve:
+                eligible_preparers = [
+                    preparer
+                    for preparer in confirmed_preparers
+                    if billing_approval.dual_control_allows_approval(
+                        community_id, preparer, building_id, require_dual_control=True
+                    )
+                ]
         with database.get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 f"""
@@ -103,7 +114,10 @@ def get_workspace_attention(
                                  AND (NOT %(dual)s OR p.prepared_by = ANY(%(eligible_preparers)s))
                                    THEN 'approve'
                                WHEN %(prepare)s
-                                 AND COALESCE(p.prepared_by, '') IN ('', 'system')
+                                 AND (
+                                     COALESCE(p.prepared_by, '') IN ('', 'system')
+                                     OR (%(dual)s AND NOT (p.prepared_by = ANY(%(confirmed_preparers)s)))
+                                 )
                                    THEN 'prepare'
                            END AS task
                     FROM billing_periods p JOIN scope s USING (community_id)
@@ -184,6 +198,7 @@ def get_workspace_attention(
                     "approve": can_approve,
                     "dual": require_dual_control,
                     "eligible_preparers": eligible_preparers,
+                    "confirmed_preparers": confirmed_preparers,
                     "documents": can_manage_documents,
                     "members": can_manage_members,
                     **bank_assignment_query_parameters(),

@@ -516,6 +516,51 @@ def test_approval_attention_agrees_with_period_page_for_ineligible_preparer(
     assert f'href="{url}"' not in overview.text
 
 
+@pytest.mark.parametrize("membership", ["revoked", "without-preparation"])
+def test_repreparation_attention_reaches_a_draft_with_an_ineligible_preparer(
+    operating, membership
+):
+    _dual_control()
+    period = _period(10, status="draft", preparer=AUDITOR)
+    if membership == "revoked":
+        with db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM community_members WHERE community_id=%s AND building_id=%s",
+                (COMMUNITY, AUDITOR),
+            )
+    else:
+        _roles(AUDITOR, "billing_approver")
+
+    url = f"{ROOT}/billing/period/{period}"
+    detail = operating.get(url)
+    assert detail.status_code == 200
+    assert 'name="confirm_prepare"' in detail.text
+    assert 'name="confirm_approval"' not in detail.text
+    overview = operating.get(OVERVIEW)
+    assert overview.status_code == 200
+    assert f'href="{url}"' in overview.text
+    assert "Oktober 2026 wartet auf Ihre Vorbereitung." in overview.text
+    _nav_count(overview.text, "billing", 1)
+
+
+def test_shared_mailbox_does_not_turn_an_eligible_preparer_into_a_preparation_task(
+    operating,
+):
+    _dual_control()
+    _roles(AUDITOR, "billing_preparer")
+    period = _period(10, status="draft", preparer=AUDITOR)
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE buildings SET email=%s WHERE building_id=%s",
+            (ADMIN.upper() + "@example.org", AUDITOR),
+        )
+    url = f"{ROOT}/billing/period/{period}"
+    overview = operating.get(OVERVIEW)
+    assert overview.status_code == 200
+    assert f'href="{url}"' not in overview.text
+    assert "wartet auf Ihre Vorbereitung" not in overview.text
+
+
 def test_bank_attention_matches_payment_summary_and_assignment_forms(operating):
     invoice = _invoice("open", amount="15.00", due_date="2026-12-04")
     _event(invoice, "delivered")
