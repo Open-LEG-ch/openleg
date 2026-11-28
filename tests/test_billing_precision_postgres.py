@@ -601,7 +601,7 @@ def test_issued_period_retry_does_not_requalify_historical_preparer(rounded_deli
     assert db.list_community_invoices(cid) == invoices
 
 
-def test_billing_workspace_checks_shared_preparer_once_per_view(
+def test_billing_period_checks_approval_once_and_the_index_only_lists_periods(
     rounded_delivery, monkeypatch
 ):
     client, db, _, _ = rounded_delivery
@@ -612,17 +612,23 @@ def test_billing_workspace_checks_shared_preparer_once_per_view(
     monkeypatch.setattr(
         db,
         "list_community_billing_periods",
-        lambda _community_id: [period, {**period, "id": second_id}],
+        lambda _community_id, **_filters: [period, {**period, "id": second_id}],
     )
     lookup = Mock(wraps=billing_store.get_billing_approval_memberships)
     monkeypatch.setattr(billing_store, "get_billing_approval_memberships", lookup)
     _set_session(client, "member")
     workspace = f"/leg/community/{cid}/billing"
+    page = client.get(workspace)
+    assert page.status_code == 200
+    for shown_id in (period_id, second_id):
+        assert f'href="{workspace}/period/{shown_id}"' in page.text
+    lookup.assert_not_called()
+
+    period_page = f"{workspace}/period/{period_id}"
     for expected_queries in (1, 2):
-        page = client.get(workspace)
+        page = client.get(period_page)
         assert page.status_code == 200
-        for shown_id in (period_id, second_id):
-            assert f'action="{workspace}/period/{shown_id}/approve"' in page.text
+        assert f'action="{period_page}/approve"' in page.text
         assert (
             sum(call.kwargs.get("cursor") is not None for call in lookup.call_args_list)
             == expected_queries
